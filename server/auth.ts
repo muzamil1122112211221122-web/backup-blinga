@@ -29,7 +29,7 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Google OAuth Strategy
+  // Google OAuth Strategy - only configure if credentials are available
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(
       new GoogleStrategy(
@@ -71,17 +71,50 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Auth routes
-  app.get("/api/auth/google", 
-    passport.authenticate("google", { scope: ["profile", "email"] })
-  );
+  // Auth routes - only add Google routes if credentials are configured
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    app.get("/api/auth/google", 
+      passport.authenticate("google", { scope: ["profile", "email"] })
+    );
 
-  app.get("/api/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
-    (req, res) => {
-      res.redirect("/");
+    app.get("/api/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/?error=google_auth_failed" }),
+      (req, res) => {
+        res.redirect("/");
+      }
+    );
+  } else {
+    // Fallback route when Google OAuth is not configured
+    app.get("/api/auth/google", (req, res) => {
+      res.status(500).json({ message: "Google OAuth not configured" });
+    });
+  }
+
+  // Demo authentication route for testing
+  app.post("/api/auth/demo", async (req, res) => {
+    try {
+      let user = await storage.getUserByEmail('demo@lineusapi.com');
+      
+      if (!user) {
+        user = await storage.createUser({
+          username: 'demo-user',
+          email: 'demo@lineusapi.com',
+          password: '',
+          provider: 'demo',
+          providerId: 'demo-1',
+        });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Login failed' });
+        }
+        res.json({ message: 'Demo login successful', user });
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Demo login failed' });
     }
-  );
+  });
 
   app.get("/api/auth/user", (req, res) => {
     if (!req.isAuthenticated()) {
