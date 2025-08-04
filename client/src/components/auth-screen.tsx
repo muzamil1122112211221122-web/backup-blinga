@@ -96,7 +96,7 @@ export function AuthScreen({ onSkip }: AuthScreenProps) {
       </Card>
       
       {/* Terms and Privacy */}
-      <div className="text-center mt-8 text-xs text-[var(--text-secondary)]">
+      <div className="text-center mt-8 text-xs text-[var(--text-secondary)] pb-16">
         By continuing you agree to the{" "}
         <a href="#" className="underline hover:text-[var(--text-primary)]">
           Terms of Service
@@ -107,8 +107,8 @@ export function AuthScreen({ onSkip }: AuthScreenProps) {
         </a>
       </div>
       
-      {/* Attribution */}
-      <div className="absolute bottom-6 right-6 attribution text-[var(--text-secondary)]">
+      {/* Attribution - Fixed positioning with proper spacing */}
+      <div className="fixed bottom-4 right-4 attribution text-[var(--text-secondary)] z-10">
         Made by Muzamil
       </div>
     </div>

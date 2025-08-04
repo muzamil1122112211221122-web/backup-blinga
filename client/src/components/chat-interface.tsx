@@ -186,26 +186,26 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--dark-primary)]">
       {/* Header */}
-      <header className="bg-[var(--dark-secondary)] border-b border-[var(--border)] p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+      <header className="bg-[var(--dark-secondary)] border-b border-[var(--border)] p-3 sm:p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
             data-testid="button-menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <Logo size="sm" />
-          <span className="font-semibold text-[var(--text-primary)]">LineusAPI</span>
+          <span className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">LineusAPI</span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           <Button
             variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('ask')}
-            className={activeTab === 'ask' ? 'bg-[var(--dark-accent)]' : ''}
+            className={`text-xs sm:text-sm px-2 sm:px-3 ${activeTab === 'ask' ? 'bg-[var(--dark-accent)]' : ''}`}
             data-testid="tab-ask"
           >
             Ask
@@ -214,7 +214,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             variant={activeTab === 'imagine' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('imagine')}
-            className={activeTab === 'imagine' ? 'bg-[var(--dark-accent)]' : ''}
+            className={`text-xs sm:text-sm px-2 sm:px-3 ${activeTab === 'imagine' ? 'bg-[var(--dark-accent)]' : ''}`}
             data-testid="tab-imagine"
           >
             Imagine
@@ -222,10 +222,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
             data-testid="button-notifications"
           >
-            <Bell className="h-4 w-4" />
+            <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </header>
@@ -324,63 +324,63 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons */}
-      <div className="bg-[var(--dark-secondary)] border-t border-[var(--border)] p-4">
-        <div className="flex justify-center space-x-6 mb-4">
+      <div className="bg-[var(--dark-secondary)] border-t border-[var(--border)] p-3 sm:p-4">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 mb-4">
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             onClick={toggleListening}
             disabled={!speechSupported}
             data-testid="button-voice-mode"
           >
-            {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            <span className="text-xs">Voice Mode</span>
+            {isListening ? <MicOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
+            <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             data-testid="button-create-images"
           >
-            <Image className="h-5 w-5" />
-            <span className="text-xs">Create Images</span>
+            <Image className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Create Images</span>
           </Button>
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             data-testid="button-open-camera"
           >
-            <Camera className="h-5 w-5" />
-            <span className="text-xs">Open Camera</span>
+            <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Open Camera</span>
           </Button>
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             data-testid="button-edit-image"
           >
-            <Edit className="h-5 w-5" />
-            <span className="text-xs">Edit Image</span>
+            <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Edit Image</span>
           </Button>
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             data-testid="button-analyze-docs"
           >
-            <FileText className="h-5 w-5" />
-            <span className="text-xs">Analyze Docs</span>
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Analyze Docs</span>
           </Button>
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-customize"
           >
-            <Settings className="h-5 w-5" />
-            <span className="text-xs">Customize LineusAPI</span>
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Customize LineusAPI</span>
           </Button>
         </div>
         
@@ -392,44 +392,44 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Anything"
-            className="message-input w-full bg-[var(--dark-primary)] border border-[var(--border)] rounded-2xl px-4 py-4 pr-20 text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-none focus:outline-none focus:border-[var(--text-primary)]"
+            className="message-input w-full bg-[var(--dark-primary)] border border-[var(--border)] rounded-2xl px-3 py-3 pr-16 sm:px-4 sm:py-4 sm:pr-20 text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-none focus:outline-none focus:border-[var(--text-primary)]"
             data-testid="input-message"
           />
           
-          <div className="absolute right-3 bottom-3 flex items-center space-x-2">
+          <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-center space-x-1 sm:space-x-2">
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
               data-testid="button-attach-file"
             >
-              <Paperclip className="h-4 w-4" />
+              <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className={`${isListening ? 'text-green-400' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)]`}
+              className={`${isListening ? 'text-green-400' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10`}
               onClick={toggleListening}
               disabled={!speechSupported}
               data-testid="button-voice-input"
             >
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {isListening ? <MicOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Mic className="h-3 w-3 sm:h-4 sm:w-4" />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10 hidden sm:flex"
               data-testid="button-undo"
             >
-              <Undo className="h-4 w-4" />
+              <Undo className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10 hidden sm:flex"
               data-testid="button-ideas"
             >
-              <Lightbulb className="h-4 w-4" />
+              <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               onClick={handleSendMessage}
@@ -437,7 +437,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               className="bg-[var(--text-primary)] text-[var(--dark-primary)] rounded-full p-2 hover:bg-[var(--text-secondary)]"
               data-testid="button-send-message"
             >
-              <ArrowUp className="h-4 w-4" />
+              <ArrowUp className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>
@@ -453,7 +453,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         )}
         
         {/* Model Selector */}
-        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-[var(--text-secondary)] mt-2 space-y-2 sm:space-y-0">
           <div className="flex items-center space-x-2">
             <span>Model:</span>
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
@@ -472,7 +472,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs self-start sm:self-center"
             data-testid="button-fast-mode"
           >
             <Zap className="h-3 w-3 mr-1" />
@@ -482,7 +482,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Attribution */}
-      <div className="text-right p-2 attribution text-[var(--text-secondary)]">
+      <div className="text-right p-3 sm:p-4 attribution text-[var(--text-secondary)]">
         Made by Muzamil
       </div>
 
