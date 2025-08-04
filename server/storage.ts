@@ -66,6 +66,10 @@ export class MemStorage implements IStorage {
     const conversation: Conversation = {
       ...insertConversation,
       id,
+      isPrivate: insertConversation.isPrivate ?? false,
+      preset: insertConversation.preset ?? "custom",
+      customInstructions: insertConversation.customInstructions ?? null,
+      model: insertConversation.model ?? "anthropic/claude-3.5-sonnet",
       createdAt: now,
       updatedAt: now,
     };
@@ -106,6 +110,7 @@ export class MemStorage implements IStorage {
     const message: Message = {
       ...insertMessage,
       id,
+      metadata: insertMessage.metadata ?? null,
       createdAt: new Date(),
     };
     this.messages.set(id, message);
