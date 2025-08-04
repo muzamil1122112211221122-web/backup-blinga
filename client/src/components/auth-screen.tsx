@@ -8,9 +8,15 @@ interface AuthScreenProps {
 export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const handleStart = async () => {
     try {
-      const response = await fetch('/api/auth/demo', { method: 'POST' });
+      const response = await fetch('/api/auth/demo', { 
+        method: 'POST',
+        credentials: 'include' // Include cookies for session
+      });
       if (response.ok) {
-        onAuthSuccess();
+        // Wait a moment for session to be established
+        setTimeout(() => {
+          window.location.reload(); // Force page reload to refresh authentication state
+        }, 100);
       }
     } catch (error) {
       console.error('Start failed:', error);
