@@ -2,24 +2,22 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import createMemoryStore from "memorystore";
 import { storage } from "./storage";
 
-const PostgresSessionStore = connectPg(session);
+const MemoryStore = createMemoryStore(session);
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key-here',
     resave: false,
-    saveUninitialized: false,
-    store: new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    saveUninitialized: true, // Changed to true for demo
+    store: new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
     },
   };
@@ -61,12 +59,19 @@ export function setupAuth(app: Express) {
     );
   }
 
-  passport.serializeUser((user: any, done) => done(null, user.id));
+  passport.serializeUser((user: any, done) => {
+    console.log('Serializing user:', user);
+    done(null, user.id);
+  });
+  
   passport.deserializeUser(async (id: string, done) => {
     try {
+      console.log('Deserializing user with id:', id);
       const user = await storage.getUser(id);
+      console.log('Found user:', user);
       done(null, user);
     } catch (error) {
+      console.log('Error deserializing user:', error);
       done(error);
     }
   });

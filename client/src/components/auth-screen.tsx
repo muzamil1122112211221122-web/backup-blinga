@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
 
@@ -6,20 +7,30 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleStart = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/auth/demo', { 
         method: 'POST',
-        credentials: 'include' // Include cookies for session
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      
       if (response.ok) {
-        // Wait a moment for session to be established
-        setTimeout(() => {
-          window.location.reload(); // Force page reload to refresh authentication state
-        }, 100);
+        console.log('Demo login successful');
+        // Force a complete page reload to ensure session is properly established
+        window.location.href = window.location.href;
+      } else {
+        console.error('Login failed:', response.status);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Start failed:', error);
+      setIsLoading(false);
     }
   };
 
@@ -43,10 +54,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           <div className="px-8 pb-8">
             <Button
               onClick={handleStart}
-              className="w-full h-14 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--dark-primary)] rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              disabled={isLoading}
+              className="w-full h-14 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--dark-primary)] rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
               data-testid="button-start"
             >
-              Start
+              {isLoading ? 'Starting...' : 'Start'}
             </Button>
 
           </div>
