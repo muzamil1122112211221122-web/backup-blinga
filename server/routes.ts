@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { setupAuth, requireAuth } from "./auth";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -14,43 +15,24 @@ interface ChatClient {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
+  // Setup authentication
+  setupAuth(app);
+  
   // WebSocket server for real-time chat
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const clients = new Map<string, ChatClient>();
 
-  // Mock authentication middleware for demo
-  app.use('/api', (req, res, next) => {
-    // In production, implement proper JWT authentication
-    req.user = { id: 'demo-user-1', email: 'demo@example.com' };
-    next();
-  });
-
   // User routes
-  app.get('/api/user', async (req, res) => {
+  app.get('/api/user', requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-
-      let user = await storage.getUser(userId);
-      if (!user) {
-        // Create demo user
-        user = await storage.createUser({
-          username: 'demo-user',
-          email: 'demo@example.com',
-          password: 'hashed-password'
-        });
-      }
-
-      res.json(user);
+      res.json(req.user);
     } catch (error) {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Conversation routes
-  app.get('/api/conversations', async (req, res) => {
+  app.get('/api/conversations', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -64,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/conversations', async (req, res) => {
+  app.post('/api/conversations', requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -86,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:id', async (req, res) => {
+  app.get('/api/conversations/:id', requireAuth, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {
@@ -103,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:id/messages', async (req, res) => {
+  app.get('/api/conversations/:id/messages', requireAuth, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {
@@ -121,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/conversations/:id', async (req, res) => {
+  app.delete('/api/conversations/:id', requireAuth, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {

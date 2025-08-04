@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Logo } from "./logo";
 import { CustomizeModal } from "./customize-modal";
+import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
 import { ChatMessage, ChatPreset, AVAILABLE_MODELS, AvailableModel, WebSocketMessage } from "../types/chat";
@@ -43,6 +44,35 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'imagine'>('ask');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [conversations, setConversations] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
+  const [user, setUser] = useState<{email: string; username: string} | null>(null);
+
+  // Load user data and conversations
+  useEffect(() => {
+    const loadUserAndConversations = async () => {
+      try {
+        const userResponse = await fetch('/api/auth/user');
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData);
+          
+          // Load conversations after user is loaded
+          const conversationsResponse = await fetch('/api/conversations');
+          if (conversationsResponse.ok) {
+            const conversationsData = await conversationsResponse.json();
+            setConversations(conversationsData.map((conv: any) => ({
+              ...conv,
+              createdAt: new Date(conv.createdAt)
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user and conversations:', error);
+      }
+    };
+    loadUserAndConversations();
+  }, []);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -183,14 +213,99 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // TODO: Save to conversation settings
   };
 
+  const handleNewConversation = async () => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'New Conversation',
+          preset: currentPreset,
+          model: selectedModel,
+        }),
+      });
+
+      if (response.ok) {
+        const newConversation = await response.json();
+        setCurrentConversationId(newConversation.id);
+        setMessages([]);
+        setConversations(prev => [newConversation, ...prev]);
+        setIsSidebarOpen(false);
+      }
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+    }
+  };
+
+  const handleConversationSelect = (id: string) => {
+    setCurrentConversationId(id);
+    // Load messages for this conversation
+    loadConversationMessages(id);
+    setIsSidebarOpen(false);
+  };
+
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setConversations(prev => prev.filter(conv => conv.id !== id));
+        if (currentConversationId === id) {
+          setCurrentConversationId(null);
+          setMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      onShowAuth();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      onShowAuth();
+    }
+  };
+
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`);
+      if (response.ok) {
+        const messages = await response.json();
+        setMessages(messages);
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--dark-primary)]">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onLogout={handleLogout}
+        conversations={conversations}
+        currentConversationId={currentConversationId}
+        onConversationSelect={handleConversationSelect}
+        onNewConversation={handleNewConversation}
+        onDeleteConversation={handleDeleteConversation}
+        user={user}
+      />
       {/* Header */}
       <header className="bg-[var(--dark-secondary)] border-b border-[var(--border)] p-3 sm:p-4 flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Button 
             variant="ghost" 
             size="icon"
+            onClick={() => setIsSidebarOpen(true)}
             className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
             data-testid="button-menu"
           >
@@ -452,33 +567,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           </div>
         )}
         
-        {/* Model Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-[var(--text-secondary)] mt-2 space-y-2 sm:space-y-0">
-          <div className="flex items-center space-x-2">
-            <span>Model:</span>
-            <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-auto bg-[var(--dark-secondary)] border-[var(--border)] text-[var(--text-primary)]" data-testid="select-model">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[var(--dark-secondary)] border-[var(--border)]">
-                {AVAILABLE_MODELS.map((model) => (
-                  <SelectItem key={model} value={model} className="text-[var(--text-primary)]">
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs self-start sm:self-center"
-            data-testid="button-fast-mode"
-          >
-            <Zap className="h-3 w-3 mr-1" />
-            Fast
-          </Button>
-        </div>
+
       </div>
       
       {/* Attribution */}
