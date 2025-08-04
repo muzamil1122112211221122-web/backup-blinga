@@ -1,0 +1,333 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { storage } from "./storage";
+import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
+import { z } from "zod";
+
+interface ChatClient {
+  ws: WebSocket;
+  userId?: string;
+  conversationId?: string;
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+  
+  // WebSocket server for real-time chat
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const clients = new Map<string, ChatClient>();
+
+  // Mock authentication middleware for demo
+  app.use('/api', (req, res, next) => {
+    // In production, implement proper JWT authentication
+    req.user = { id: 'demo-user-1', email: 'demo@example.com' };
+    next();
+  });
+
+  // User routes
+  app.get('/api/user', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      let user = await storage.getUser(userId);
+      if (!user) {
+        // Create demo user
+        user = await storage.createUser({
+          username: 'demo-user',
+          email: 'demo@example.com',
+          password: 'hashed-password'
+        });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Conversation routes
+  app.get('/api/conversations', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const conversations = await storage.getUserConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/conversations', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const validatedData = insertConversationSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      const conversation = await storage.createConversation(validatedData);
+      res.status(201).json(conversation);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/conversations/:id', async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      if (conversation.userId !== req.user?.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      res.json(conversation);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/conversations/:id/messages', async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      if (conversation.userId !== req.user?.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const messages = await storage.getConversationMessages(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.delete('/api/conversations/:id', async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      if (conversation.userId !== req.user?.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      await storage.deleteConversation(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // WebSocket connection handling
+  wss.on('connection', (ws: WebSocket, req) => {
+    const clientId = Math.random().toString(36).substring(7);
+    clients.set(clientId, { ws });
+
+    console.log(`Client ${clientId} connected`);
+
+    ws.on('message', async (data: Buffer) => {
+      try {
+        const message = JSON.parse(data.toString());
+        const client = clients.get(clientId);
+        
+        if (!client) return;
+
+        switch (message.type) {
+          case 'join_conversation':
+            client.conversationId = message.conversationId;
+            client.userId = message.userId;
+            break;
+
+          case 'send_message':
+            await handleChatMessage(message, client, clients);
+            break;
+
+          case 'typing':
+            broadcastToConversation(message.conversationId, {
+              type: 'typing',
+              userId: client.userId,
+              isTyping: message.isTyping,
+            }, clientId, clients);
+            break;
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+      }
+    });
+
+    ws.on('close', () => {
+      console.log(`Client ${clientId} disconnected`);
+      clients.delete(clientId);
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clients.delete(clientId);
+    });
+  });
+
+  return httpServer;
+}
+
+async function handleChatMessage(message: any, client: ChatClient, clients: Map<string, ChatClient>) {
+  try {
+    // Validate and save user message
+    const userMessage = await storage.createMessage({
+      conversationId: message.conversationId,
+      role: 'user',
+      content: message.content,
+    });
+
+    // Broadcast user message to other clients in the conversation
+    broadcastToConversation(message.conversationId, {
+      type: 'message',
+      message: userMessage,
+    }, '', clients);
+
+    // Get conversation for context
+    const conversation = await storage.getConversation(message.conversationId);
+    if (!conversation) return;
+
+    // Call OpenRouter API
+    const openRouterResponse = await callOpenRouterAPI(message.content, conversation);
+    
+    // Save AI response
+    const aiMessage = await storage.createMessage({
+      conversationId: message.conversationId,
+      role: 'assistant',
+      content: openRouterResponse.content,
+      metadata: openRouterResponse.metadata,
+    });
+
+    // Broadcast AI response
+    broadcastToConversation(message.conversationId, {
+      type: 'message',
+      message: aiMessage,
+    }, '', clients);
+
+    // Update conversation timestamp
+    await storage.updateConversation(message.conversationId, {
+      updatedAt: new Date(),
+    });
+
+  } catch (error) {
+    console.error('Chat message handling error:', error);
+    client.ws.send(JSON.stringify({
+      type: 'error',
+      message: 'Failed to process message'
+    }));
+  }
+}
+
+function broadcastToConversation(conversationId: string, message: any, excludeClientId: string, clients: Map<string, ChatClient>) {
+  clients.forEach((client, clientId) => {
+    if (clientId !== excludeClientId && 
+        client.conversationId === conversationId && 
+        client.ws.readyState === WebSocket.OPEN) {
+      client.ws.send(JSON.stringify(message));
+    }
+  });
+}
+
+async function callOpenRouterAPI(userMessage: string, conversation: any) {
+  const openRouterApiKey = process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_KEY || "";
+  
+  if (!openRouterApiKey) {
+    throw new Error('OpenRouter API key not configured');
+  }
+
+  const systemPrompt = getSystemPrompt(conversation);
+  
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openRouterApiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+      'X-Title': 'LineusAPI',
+    },
+    body: JSON.stringify({
+      model: conversation.model || 'anthropic/claude-3.5-sonnet',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  
+  return {
+    content: data.choices[0]?.message?.content || 'I apologize, but I encountered an error generating a response.',
+    metadata: {
+      model: data.model,
+      usage: data.usage,
+      provider: 'OpenRouter',
+    }
+  };
+}
+
+function getSystemPrompt(conversation: any): string {
+  const basePrompt = "You are LineusAPI, a helpful AI assistant. Your tagline is 'Ask anything Lineus will do till death' - you are dedicated to helping users with any question or task to the best of your abilities.";
+  
+  let systemPrompt = basePrompt;
+  
+  switch (conversation.preset) {
+    case 'concise':
+      systemPrompt += " Be concise and direct in your responses. Provide clear, brief answers without unnecessary elaboration.";
+      break;
+    case 'formal':
+      systemPrompt += " Respond in a formal, professional manner. Use proper grammar and maintain a respectful, academic tone.";
+      break;
+    case 'socratic':
+      systemPrompt += " Use the Socratic method to help the user learn. Ask guiding questions and encourage critical thinking rather than providing direct answers.";
+      break;
+    case 'custom':
+      if (conversation.customInstructions) {
+        systemPrompt += ` ${conversation.customInstructions}`;
+      }
+      break;
+  }
+  
+  return systemPrompt;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+      };
+    }
+  }
+}
