@@ -39,14 +39,6 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       {/* Moving Grid Background */}
       <div className="moving-grid"></div>
       
-      {/* Floating AI Function Previews */}
-      <div className="floating-ai-functions">
-        <div className="ai-function-hint chat-hint">💬</div>
-        <div className="ai-function-hint voice-hint">🎤</div>
-        <div className="ai-function-hint imagine-hint">🎨</div>
-        <div className="ai-function-hint customize-hint">⚙️</div>
-      </div>
-      
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Main Auth Card */}
         <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl backdrop-blur-sm">
@@ -84,7 +76,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             Forus Heavy API
           </h2>
           <p className="text-lg text-muted-foreground italic">
-            Forus from Plant M
+            Forus from Planet M
           </p>
         </div>
       </div>
