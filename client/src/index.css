@@ -68,20 +68,13 @@
 }
 
 @layer components {
-  .logo-f {
-    font-weight: 900;
-    color: hsl(0, 0%, 0%);
-    font-family: 'Poppins', sans-serif;
+  .logo-container {
     animation: logoFloat 3s ease-in-out infinite;
     transform-origin: center;
   }
 
-  .logo-f:hover {
+  .logo-container:hover {
     animation: logoSpin 0.8s ease-in-out;
-  }
-
-  .dark .logo-f {
-    color: hsl(0, 0%, 100%);
   }
 
   .moving-grid {
