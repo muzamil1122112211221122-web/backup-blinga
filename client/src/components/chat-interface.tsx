@@ -35,7 +35,8 @@ import {
   BookOpen,
   Lightbulb,
   TrendingUp,
-  Brain
+  Brain,
+  Hammer
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -57,6 +58,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [conversations, setConversations] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [input, setInput] = useState("");
+  const [forusIntegrationMode, setForusIntegrationMode] = useState(false);
+  const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
+  const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
 
   // Conversation starters
   const conversationStarters = [
@@ -201,13 +207,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   }, [inputValue]);
 
-  const createNewConversation = async () => {
+  const createNewConversation = async (firstMessage?: string) => {
     try {
+      const conversationTitle = firstMessage 
+        ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
+        : 'New Conversation';
+        
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'New Conversation',
+          title: conversationTitle,
           isPrivate: isPrivateMode,
           preset: currentPreset,
           customInstructions,
@@ -233,7 +243,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // Create conversation if needed
     let conversationId = currentConversationId;
     if (!conversationId) {
-      conversationId = await createNewConversation();
+      conversationId = await createNewConversation(content);
       if (!conversationId) return;
     }
 
@@ -250,18 +260,23 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setInputValue("");
     setIsTyping(true);
 
+    // Modify content if Forus Integration mode is enabled
+    const enhancedContent = forusIntegrationMode 
+      ? `${content}\n\n[Please provide the most comprehensive, detailed, and longest possible answer to this question. Include examples, explanations, and any relevant background information.]`
+      : content;
+
     // Try WebSocket first, if that fails, use direct API call
     if (isConnected) {
       console.log('Sending via WebSocket...');
       sendWsMessage({
         type: 'send_message',
         conversationId,
-        content,
+        content: enhancedContent,
         userId: user?.email,
       });
     } else {
       console.log('WebSocket not connected, using direct API...');
-      await handleDirectApiCall(content, conversationId);
+      await handleDirectApiCall(enhancedContent, conversationId);
     }
   };
 
@@ -313,9 +328,44 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleCopyMessage = (content: string) => {
+  const handleCopyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
-    // TODO: Show toast notification
+    setCopiedMessageId(messageId);
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
+  const handleLikeMessage = (messageId: string) => {
+    setLikedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+        setDislikedMessages(current => {
+          const newDisliked = new Set(current);
+          newDisliked.delete(messageId);
+          return newDisliked;
+        });
+      }
+      return newSet;
+    });
+  };
+
+  const handleDislikeMessage = (messageId: string) => {
+    setDislikedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+        setLikedMessages(current => {
+          const newLiked = new Set(current);
+          newLiked.delete(messageId);
+          return newLiked;
+        });
+      }
+      return newSet;
+    });
   };
 
   const handleSpeakMessage = (content: string) => {
@@ -536,8 +586,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
-                            onClick={() => handleCopyMessage(message.content)}
+                            className={`h-6 w-6 rounded-xl transition-colors ${
+                              copiedMessageId === message.id 
+                                ? 'text-green-500 hover:text-green-600' 
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                            onClick={() => handleCopyMessage(message.content, message.id)}
                             data-testid={`button-copy-${message.id}`}
                           >
                             <Copy className="h-3 w-3" />
@@ -545,7 +599,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
+                            className={`h-6 w-6 rounded-xl transition-colors ${
+                              likedMessages.has(message.id)
+                                ? 'text-blue-500 hover:text-blue-600'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                            onClick={() => handleLikeMessage(message.id)}
                             data-testid={`button-like-${message.id}`}
                           >
                             <ThumbsUp className="h-3 w-3" />
@@ -553,7 +612,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
+                            className={`h-6 w-6 rounded-xl transition-colors ${
+                              dislikedMessages.has(message.id)
+                                ? 'text-red-500 hover:text-red-600'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                            onClick={() => handleDislikeMessage(message.id)}
                             data-testid={`button-dislike-${message.id}`}
                           >
                             <ThumbsDown className="h-3 w-3" />
@@ -568,9 +632,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                             <Volume2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          Via OpenRouter
-                        </span>
+
                       </div>
                     </div>
                   </div>
@@ -600,16 +662,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 p-3 sm:p-4 shadow-sm">
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
+      <div className="bg-card macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 shadow-sm" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4">
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            onClick={toggleListening}
-            disabled={!speechSupported}
+            onClick={() => setIsVoiceModeOpen(true)}
             data-testid="button-voice-mode"
           >
-            {isListening ? <MicOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
+            <div className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-current"></div>
+            </div>
             <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
           
@@ -633,54 +696,67 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            data-testid="button-edit-image"
+            className={`macos-button flex flex-col items-center space-y-1 px-2 sm:px-3 rounded-2xl transition-colors ${
+              forusIntegrationMode 
+                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setForusIntegrationMode(!forusIntegrationMode)}
+            data-testid="button-forus-integration"
           >
-            <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Edit Image</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            data-testid="button-analyze-docs"
-          >
-            <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Analyze Docs</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            onClick={() => {
-              // Create macOS app opening line animation
-              const line = document.createElement('div');
-              line.className = 'macos-app-line';
-              document.body.appendChild(line);
-              
-              // Remove line after animation
-              setTimeout(() => {
-                document.body.removeChild(line);
-              }, 800);
-              
-              // Show dialog with delay for authentic macOS timing
-              setTimeout(() => {
-                setIsCustomizeModalOpen(true);
-                // Add opening class to dialog content
-                setTimeout(() => {
-                  const dialog = document.querySelector('.macos-dialog-content');
-                  if (dialog) dialog.classList.add('opening');
-                }, 50);
-              }, 600);
-            }}
-            data-testid="button-customize"
-          >
-            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Customize Forus</span>
+            <Hammer className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Forus Integration</span>
           </Button>
         </div>
       </div>
         
+      {/* Voice Mode Modal */}
+      {isVoiceModeOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card rounded-3xl p-8 max-w-md w-full mx-4 text-center">
+            <div className="relative mb-6">
+              <div 
+                className="w-32 h-32 mx-auto rounded-full flex items-center justify-center transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                  transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.1})`,
+                }}
+              >
+                <Logo size="lg" className="text-white" />
+              </div>
+              {isListening && (
+                <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full border-4 border-blue-500 animate-pulse"></div>
+              )}
+            </div>
+            
+            <h3 className="text-xl font-semibold mb-2">Voice Mode</h3>
+            <p className="text-muted-foreground mb-6">
+              {isListening ? "I'm listening..." : "Click to start speaking"}
+            </p>
+            
+            <div className="flex gap-4 justify-center">
+              <Button
+                onClick={toggleListening}
+                className={`w-16 h-16 rounded-full ${
+                  isListening 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+              >
+                {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+              </Button>
+              <Button
+                onClick={() => setIsVoiceModeOpen(false)}
+                variant="outline"
+                className="w-16 h-16 rounded-full"
+              >
+                <X className="w-6 h-6" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Message Input - Separate Section */}
       <div className="bg-card p-3 sm:p-4">
         <div className="relative">
@@ -698,7 +774,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           />
           
           {/* Custom Placeholder */}
-          {!inputValue && (
+          {!inputValue && messages.length === 0 && (
             <div 
               className="absolute font-medium text-muted-foreground pointer-events-none"
               style={{

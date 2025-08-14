@@ -12,6 +12,30 @@ import {
 } from "lucide-react";
 import { Logo } from "./logo";
 
+// Generate vibrant colors based on name
+function getVibrantColor(name: string, secondary = false): string {
+  const colors = [
+    ['#667eea', '#764ba2'], // Purple gradient
+    ['#f093fb', '#f5576c'], // Pink gradient  
+    ['#4facfe', '#00f2fe'], // Blue gradient
+    ['#43e97b', '#38f9d7'], // Green gradient
+    ['#fa709a', '#fee140'], // Pink-yellow gradient
+    ['#a8edea', '#fed6e3'], // Teal-pink gradient
+    ['#ff9a9e', '#fecfef'], // Pink gradient
+    ['#667eea', '#764ba2'], // Purple gradient
+    ['#ffecd2', '#fcb69f'], // Orange gradient
+    ['#a18cd1', '#fbc2eb'], // Purple-pink gradient
+  ];
+  
+  const hash = name.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const colorPair = colors[Math.abs(hash) % colors.length];
+  return secondary ? colorPair[1] : colorPair[0];
+}
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -137,16 +161,18 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* User Profile & Settings */}
+        {/* User Profile */}
         <div className="p-4 border-t border-[var(--border)]">
           {user && (
-            <div className="flex items-center space-x-3 mb-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} />
-                <AvatarFallback className="bg-[var(--dark-accent)] text-[var(--text-primary)]">
-                  {user.username?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex items-center space-x-3">
+              <div 
+                className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-lg"
+                style={{
+                  background: `linear-gradient(45deg, ${getVibrantColor((user as any).displayName || user.username || user.email)}, ${getVibrantColor((user as any).displayName || user.username || user.email, true)})`
+                }}
+              >
+                {((user as any).displayName || user.username || user.email).charAt(0).toUpperCase()}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                   {(user as any).displayName || user.username || user.email}
@@ -157,26 +183,6 @@ export function Sidebar({
               </div>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              data-testid="button-settings"
-            >
-              <Settings className="h-4 w-4 mr-3" />
-              Settings
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-[var(--text-secondary)] hover:text-red-400"
-              onClick={onLogout}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4 mr-3" />
-              Log out
-            </Button>
-          </div>
         </div>
       </div>
     </>
