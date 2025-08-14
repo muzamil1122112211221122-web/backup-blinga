@@ -362,27 +362,29 @@
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     transform-origin: center;
     will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   /* First normalize all buttons when function bar is hovered */
   .macos-function-bar:hover .macos-button {
-    transform: scale(1.0);
+    transform: scale3d(1.0, 1.0, 1) translateZ(0);
     transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   /* Then apply hover effect to specific button */
   .macos-function-bar:hover .macos-button:hover {
-    transform: scale(1.35) !important;
+    transform: scale3d(1.35, 1.35, 1) translateZ(0) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   /* Direct hover when not in function bar context */
   .macos-button:hover {
-    transform: scale(1.35);
+    transform: scale3d(1.35, 1.35, 1) translateZ(0);
   }
 
   .macos-button:active {
-    transform: scale(1.2);
+    transform: scale3d(1.2, 1.2, 1) translateZ(0);
     transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
