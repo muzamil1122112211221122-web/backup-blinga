@@ -542,7 +542,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               className="absolute text-lg font-medium text-muted-foreground pointer-events-none"
               style={{
                 top: '20px',
-                left: '24px'
+                left: '26px'
               }}
             >
               Ask Anything

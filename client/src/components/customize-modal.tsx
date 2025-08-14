@@ -33,15 +33,15 @@ export function CustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="macos-dialog-content bg-[var(--dark-secondary)] border-[var(--macos-border-light)] max-w-md glassmorphism">
+      <DialogContent className="macos-dialog-content bg-white border-gray-300 max-w-md shadow-2xl rounded-2xl [&>button]:hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between text-xl font-semibold text-[var(--text-primary)]">
-            Customize LineusAPI
+          <DialogTitle className="flex items-center justify-between text-xl font-semibold text-gray-900">
+            Customize Forus
             <Button 
               variant="ghost" 
               size="icon"
               onClick={onClose}
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-gray-500 hover:text-gray-900 h-8 w-8 rounded-full"
               data-testid="button-close-customize"
             >
               <X className="h-4 w-4" />
@@ -52,8 +52,8 @@ export function CustomizeModal({
         {/* Enable Customization Toggle */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <Settings className="h-4 w-4 text-[var(--text-secondary)]" />
-            <span className="text-[var(--text-primary)]">Enable Customization</span>
+            <Settings className="h-4 w-4 text-gray-500" />
+            <span className="text-gray-900">Enable Customization</span>
           </div>
           <Switch
             checked={isEnabled}
@@ -64,24 +64,24 @@ export function CustomizeModal({
         
         {/* Presets */}
         <div className="mb-6">
-          <h4 className="text-sm font-medium mb-3 text-[var(--text-secondary)]">Presets</h4>
+          <h4 className="text-sm font-medium mb-3 text-gray-500">Presets</h4>
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(CHAT_PRESETS).map(([key, preset]) => (
               <Card
                 key={key}
                 className={`cursor-pointer transition-colors border ${
                   selectedPreset === key
-                    ? 'border-[var(--text-primary)] bg-[var(--dark-accent)]'
-                    : 'border-[var(--border)] bg-[var(--dark-primary)] hover:bg-[var(--dark-accent)]'
+                    ? 'border-gray-900 bg-gray-50'
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
                 }`}
                 onClick={() => setSelectedPreset(key as ChatPreset)}
                 data-testid={`preset-${key}`}
               >
                 <CardContent className="p-3">
-                  <div className="font-medium text-sm text-[var(--text-primary)]">
+                  <div className="font-medium text-sm text-gray-900">
                     {preset.name}
                   </div>
-                  <div className="text-xs text-[var(--text-secondary)] mt-1">
+                  <div className="text-xs text-gray-500 mt-1">
                     {preset.description}
                   </div>
                 </CardContent>
@@ -92,14 +92,14 @@ export function CustomizeModal({
         
         {/* Custom Instructions */}
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2 text-[var(--text-secondary)]">
+          <label className="block text-sm font-medium mb-2 text-gray-500">
             Custom Instructions
           </label>
           <Textarea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            placeholder="Tell LineusAPI how to behave..."
-            className="bg-[var(--dark-primary)] border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-none focus:border-[var(--text-primary)]"
+            placeholder="Tell Forus how to behave..."
+            className="bg-white border-gray-200 text-gray-900 placeholder-gray-400 resize-none focus:border-gray-900"
             rows={3}
             data-testid="textarea-custom-instructions"
           />
@@ -108,7 +108,7 @@ export function CustomizeModal({
         {/* Save Button */}
         <Button
           onClick={handleSave}
-          className="w-full bg-[var(--text-primary)] text-[var(--dark-primary)] hover:bg-[var(--text-secondary)] font-medium"
+          className="w-full bg-gray-900 text-white hover:bg-gray-800 font-medium rounded-xl"
           data-testid="button-save-customization"
         >
           Save
