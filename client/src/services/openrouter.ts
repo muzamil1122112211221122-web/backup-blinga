@@ -1,5 +1,29 @@
 import { AvailableModel } from "../types/chat";
 
+// API Keys for different Forus models
+const FORUS_API_KEYS = {
+  'forus-prime': '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',
+  'forus-code': import.meta.env.VITE_FORUS_CODE_API_KEY || '',
+  'forus-flash': import.meta.env.VITE_FORUS_FLASH_API_KEY || '',
+  'forus-creative': import.meta.env.VITE_FORUS_CREATIVE_API_KEY || '',
+  'forus-lite': import.meta.env.VITE_FORUS_LITE_API_KEY || '',
+  'forus-speed': import.meta.env.VITE_FORUS_SPEED_API_KEY || '',
+  'forus-context': import.meta.env.VITE_FORUS_CONTEXT_API_KEY || '',
+  'forus-auto': import.meta.env.VITE_FORUS_AUTO_API_KEY || '',
+};
+
+// Map Forus model names to actual OpenRouter models
+const MODEL_MAPPING = {
+  'forus-prime': 'anthropic/claude-3.5-sonnet',
+  'forus-code': 'openai/gpt-4o',
+  'forus-flash': 'google/gemini-2.0-flash-exp',
+  'forus-creative': 'meta-llama/llama-3.1-70b-instruct',
+  'forus-lite': 'openai/gpt-4o-mini',
+  'forus-speed': 'anthropic/claude-3-haiku',
+  'forus-context': 'google/gemini-pro-1.5',
+  'forus-auto': 'openrouter/auto',
+};
+
 interface OpenRouterResponse {
   choices: Array<{
     message: {
@@ -16,32 +40,42 @@ interface OpenRouterResponse {
 }
 
 export class OpenRouterService {
-  private apiKey: string;
   private baseURL = 'https://openrouter.ai/api/v1';
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  private getApiKey(model: AvailableModel): string {
+    const apiKey = FORUS_API_KEYS[model];
+    if (!apiKey) {
+      throw new Error(`API key not configured for model: ${model}`);
+    }
+    return apiKey;
+  }
+
+  private mapModel(forusModel: AvailableModel): string {
+    return MODEL_MAPPING[forusModel] || forusModel;
   }
 
   async chatCompletion(
     messages: Array<{ role: string; content: string }>,
-    model: AvailableModel = 'anthropic/claude-3.5-sonnet',
+    model: AvailableModel = 'forus-prime',
     options: {
       temperature?: number;
       maxTokens?: number;
       stream?: boolean;
     } = {}
   ): Promise<OpenRouterResponse> {
+    const apiKey = this.getApiKey(model);
+    const mappedModel = this.mapModel(model);
+    
     const response = await fetch(`${this.baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'LineusAPI',
+        'X-Title': 'Forus API',
       },
       body: JSON.stringify({
-        model,
+        model: mappedModel,
         messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? 2000,
@@ -59,22 +93,25 @@ export class OpenRouterService {
 
   async *streamCompletion(
     messages: Array<{ role: string; content: string }>,
-    model: AvailableModel = 'anthropic/claude-3.5-sonnet',
+    model: AvailableModel = 'forus-prime',
     options: {
       temperature?: number;
       maxTokens?: number;
     } = {}
   ): AsyncGenerator<string, void, unknown> {
+    const apiKey = this.getApiKey(model);
+    const mappedModel = this.mapModel(model);
+    
     const response = await fetch(`${this.baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'LineusAPI',
+        'X-Title': 'Forus API',
       },
       body: JSON.stringify({
-        model,
+        model: mappedModel,
         messages,
         temperature: options.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? 2000,
@@ -125,32 +162,17 @@ export class OpenRouterService {
   }
 
   async getModels(): Promise<Array<{ id: string; name: string; description?: string }>> {
-    try {
-      const response = await fetch(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'LineusAPI',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch models');
-      }
-
-      const data = await response.json();
-      return data.data || [];
-    } catch (error) {
-      console.error('Error fetching models:', error);
-      // Return default models if API call fails
-      return [
-        { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
-        { id: 'openai/gpt-4o', name: 'GPT-4o' },
-        { id: 'google/gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-        { id: 'meta-llama/llama-3.1-70b-instruct', name: 'Llama 3.1 70B' },
-        { id: 'openrouter/auto', name: 'Auto (Best Available)' },
-      ];
-    }
+    // Return Forus branded models
+    return [
+      { id: 'forus-prime', name: 'Forus Prime', description: 'Advanced reasoning & analysis' },
+      { id: 'forus-code', name: 'Forus Code', description: 'Programming & development' },
+      { id: 'forus-flash', name: 'Forus Flash', description: 'Fast responses & multimodal' },
+      { id: 'forus-creative', name: 'Forus Creative', description: 'Creative writing & storytelling' },
+      { id: 'forus-lite', name: 'Forus Lite', description: 'Quick tasks & efficiency' },
+      { id: 'forus-speed', name: 'Forus Speed', description: 'Ultra-fast processing' },
+      { id: 'forus-context', name: 'Forus Context', description: 'Long document processing' },
+      { id: 'forus-auto', name: 'Forus Auto', description: 'Intelligent model selection' },
+    ];
   }
 }
 
@@ -159,11 +181,7 @@ let openRouterService: OpenRouterService | null = null;
 
 export function getOpenRouterService(): OpenRouterService {
   if (!openRouterService) {
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '';
-    if (!apiKey) {
-      throw new Error('OpenRouter API key not found. Please set VITE_OPENROUTER_API_KEY environment variable.');
-    }
-    openRouterService = new OpenRouterService(apiKey);
+    openRouterService = new OpenRouterService();
   }
   return openRouterService;
 }
