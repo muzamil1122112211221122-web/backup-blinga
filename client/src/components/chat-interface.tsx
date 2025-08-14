@@ -36,7 +36,9 @@ import {
   Lightbulb,
   TrendingUp,
   Brain,
-  Hammer
+  Hammer,
+  X,
+  Radio
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -376,6 +378,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  // Adjust Forus function - enhances AI responses with additional prompting
+  const adjustForus = useCallback(() => {
+    setForusIntegrationMode(prev => !prev);
+    // You can add additional logic here for forus adjustments if needed
+    console.log('Forus Integration Answer mode:', !forusIntegrationMode ? 'enabled' : 'disabled');
+  }, [forusIntegrationMode]);
+
   const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
@@ -670,9 +679,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onClick={() => setIsVoiceModeOpen(true)}
             data-testid="button-voice-mode"
           >
-            <div className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-current"></div>
-            </div>
+            <Radio className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
           
