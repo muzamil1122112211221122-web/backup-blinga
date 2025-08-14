@@ -121,6 +121,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test AI endpoint (bypass WebSocket)
+  app.post('/api/test-ai', requireAuth, async (req, res) => {
+    try {
+      console.log('Test AI endpoint called with:', req.body);
+      const { message, conversationId } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+
+      // Get conversation or use default
+      const conversation = conversationId ? 
+        await storage.getConversation(conversationId) : 
+        { model: 'forus-prime', preset: 'custom' };
+
+      console.log('Using conversation config:', conversation);
+      
+      // Call OpenRouter API directly
+      const openRouterResponse = await callOpenRouterAPI(message, conversation);
+      console.log('AI response received:', openRouterResponse.content.substring(0, 100));
+      
+      res.json({ 
+        success: true, 
+        response: openRouterResponse.content,
+        metadata: openRouterResponse.metadata 
+      });
+    } catch (error) {
+      console.error('Test AI error:', error);
+      res.status(500).json({ 
+        error: 'Failed to get AI response', 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // WebSocket connection handling
   wss.on('connection', (ws: WebSocket, req) => {
     const clientId = Math.random().toString(36).substring(7);

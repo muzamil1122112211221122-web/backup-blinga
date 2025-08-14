@@ -189,13 +189,60 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setInputValue("");
     setIsTyping(true);
 
-    // Send via WebSocket
-    sendWsMessage({
-      type: 'send_message',
-      conversationId,
-      content,
-      userId: user?.email,
-    });
+    // Try WebSocket first, if that fails, use direct API call
+    if (isWsConnected) {
+      console.log('Sending via WebSocket...');
+      sendWsMessage({
+        type: 'send_message',
+        conversationId,
+        content,
+        userId: user?.email,
+      });
+    } else {
+      console.log('WebSocket not connected, using direct API...');
+      await handleDirectApiCall(content, conversationId);
+    }
+  };
+
+  const handleDirectApiCall = async (content: string, conversationId: string) => {
+    try {
+      console.log('Making direct API call...');
+      const response = await fetch('/api/test-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: content,
+          conversationId: conversationId,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('AI response received:', result);
+        
+        // Add AI response message
+        const aiMessage: ChatMessage = {
+          id: Date.now().toString(),
+          conversationId,
+          role: 'assistant',
+          content: result.response,
+          createdAt: new Date(),
+          metadata: result.metadata,
+        };
+
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        console.error('API call failed:', response.statusText);
+        const error = await response.json();
+        console.error('Error details:', error);
+      }
+    } catch (error) {
+      console.error('Direct API call error:', error);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
