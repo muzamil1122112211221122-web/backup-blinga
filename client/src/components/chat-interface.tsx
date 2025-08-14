@@ -21,14 +21,21 @@ import {
   Settings,
   Paperclip,
   Undo,
-  Lightbulb,
   ArrowUp,
   Copy,
   ThumbsUp,
   ThumbsDown,
   Volume2,
   MicOff,
-  Zap
+  Zap,
+  Code2 as Code,
+  Edit3 as PenTool,
+  Search,
+  Target,
+  BookOpen,
+  Lightbulb,
+  TrendingUp,
+  Brain
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -54,40 +61,58 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Conversation starters
   const conversationStarters = [
     {
-      icon: "🧠",
-      title: "Explain a complex topic",
+      icon: <Zap className="w-6 h-6 text-blue-500" />,
+      title: "Explain complex topics",
       description: "Break down difficult concepts",
       prompt: "Explain quantum computing in simple terms"
     },
     {
-      icon: "💻",
+      icon: <Code className="w-6 h-6 text-green-500" />,
       title: "Code assistance",
-      description: "Help with programming tasks",
+      description: "Help with programming",
       prompt: "Help me write a Python function to sort a list"
     },
     {
-      icon: "✍️",
+      icon: <PenTool className="w-6 h-6 text-purple-500" />,
       title: "Creative writing",
-      description: "Stories, poems, and creative content",
+      description: "Stories and content",
       prompt: "Write a short story about time travel"
     },
     {
-      icon: "🔍",
+      icon: <Search className="w-6 h-6 text-orange-500" />,
       title: "Research & analysis",
-      description: "Deep dive into any topic",
+      description: "Deep dive into topics",
       prompt: "Analyze the benefits of renewable energy"
     },
     {
-      icon: "🎯",
+      icon: <Target className="w-6 h-6 text-red-500" />,
       title: "Problem solving",
-      description: "Work through challenges together",
+      description: "Work through challenges",
       prompt: "Help me plan a productive daily routine"
     },
     {
-      icon: "📚",
+      icon: <BookOpen className="w-6 h-6 text-indigo-500" />,
       title: "Learning & education",
-      description: "Expand your knowledge",
+      description: "Expand knowledge",
       prompt: "Teach me about machine learning basics"
+    },
+    {
+      icon: <Lightbulb className="w-6 h-6 text-yellow-500" />,
+      title: "Creative ideas",
+      description: "Brainstorm solutions",
+      prompt: "Give me 5 creative business ideas for 2025"
+    },
+    {
+      icon: <TrendingUp className="w-6 h-6 text-teal-500" />,
+      title: "Strategy & planning",
+      description: "Strategic thinking",
+      prompt: "Help me create a marketing strategy"
+    },
+    {
+      icon: <Brain className="w-6 h-6 text-pink-500" />,
+      title: "Critical thinking",
+      description: "Analyze and reason",
+      prompt: "What are the pros and cons of remote work?"
     }
   ];
 
@@ -466,7 +491,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
               <h3 className="text-lg font-semibold mb-4 text-foreground">💡 Try asking me about:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {conversationStarters.map((starter, index) => (
                   <button
                     key={index}
@@ -474,7 +499,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                     className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <div className="flex items-start space-x-3">
-                      <span className="text-xl">{starter.icon}</span>
+                      <div className="flex-shrink-0">{starter.icon}</div>
                       <div>
                         <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{starter.title}</h4>
                         <p className="text-sm text-muted-foreground mt-1">{starter.description}</p>
