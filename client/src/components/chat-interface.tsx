@@ -419,17 +419,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               >
                 {message.role === 'user' ? (
                   <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
-                    <ReactMarkdown 
-                      className="text-foreground prose prose-sm max-w-none dark:prose-invert"
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        img: ({src, alt}) => (
-                          <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
-                        )
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                    <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          img: ({src, alt}) => (
+                            <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
+                          )
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
