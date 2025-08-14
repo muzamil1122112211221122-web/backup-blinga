@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
-import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
+import { insertConversationSchema, insertMessageSchema, User } from "@shared/schema";
 import { z } from "zod";
 
 interface ChatClient {
@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Conversation routes
   app.get('/api/conversations', requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
@@ -48,7 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/conversations', requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Conversation not found' });
       }
 
-      if (conversation.userId !== req.user?.id) {
+      if (conversation.userId !== (req.user as any)?.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Conversation not found' });
       }
 
-      if (conversation.userId !== req.user?.id) {
+      if (conversation.userId !== (req.user as any)?.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Conversation not found' });
       }
 
-      if (conversation.userId !== req.user?.id) {
+      if (conversation.userId !== (req.user as any)?.id) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
@@ -332,10 +332,7 @@ function getSystemPrompt(conversation: any): string {
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        email: string;
-      };
+      user?: User;
     }
   }
 }
