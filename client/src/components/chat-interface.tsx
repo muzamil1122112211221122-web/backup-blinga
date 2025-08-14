@@ -436,17 +436,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
                     <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
-                      <ReactMarkdown 
-                        className="text-foreground prose prose-sm max-w-none dark:prose-invert"
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          img: ({src, alt}) => (
-                            <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
-                          )
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            img: ({src, alt}) => (
+                              <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
+                            )
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
                           <Button
