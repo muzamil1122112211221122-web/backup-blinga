@@ -95,24 +95,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       title: "Learning & education",
       description: "Expand knowledge",
       prompt: "Teach me about machine learning basics"
-    },
-    {
-      icon: <Lightbulb className="w-6 h-6 text-yellow-500" />,
-      title: "Creative ideas",
-      description: "Brainstorm solutions",
-      prompt: "Give me 5 creative business ideas for 2025"
-    },
-    {
-      icon: <TrendingUp className="w-6 h-6 text-teal-500" />,
-      title: "Strategy & planning",
-      description: "Strategic thinking",
-      prompt: "Help me create a marketing strategy"
-    },
-    {
-      icon: <Brain className="w-6 h-6 text-pink-500" />,
-      title: "Critical thinking",
-      description: "Analyze and reason",
-      prompt: "What are the pros and cons of remote work?"
     }
   ];
 
