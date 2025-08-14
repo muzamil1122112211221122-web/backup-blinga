@@ -121,13 +121,13 @@
     max-height: 300px;
     resize: none;
     line-height: 1.6;
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .message-input::placeholder {
-    position: absolute;
-    top: 16px;
-    left: 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
   }
 
   .attribution {
