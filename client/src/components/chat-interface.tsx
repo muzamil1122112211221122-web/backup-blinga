@@ -207,12 +207,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, functionModels?: any) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
-    // Store function models for different AI functions
-    if (functionModels) {
-      localStorage.setItem('functionModels', JSON.stringify(functionModels));
+    // Store selected model
+    if (selectedModel) {
+      setSelectedModel(selectedModel);
+      localStorage.setItem('selectedModel', selectedModel);
     }
     // TODO: Save to conversation settings
   };

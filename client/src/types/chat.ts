@@ -55,8 +55,8 @@ export type AvailableModel = typeof AVAILABLE_MODELS[number];
 
 export const CHAT_PRESETS = {
   custom: {
-    name: "OpenRouter API",
-    description: "Multiple AI models for various functions.",
+    name: "Custom",
+    description: "Customize how Forus API responds.",
   },
   concise: {
     name: "Concise", 

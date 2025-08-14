@@ -13,16 +13,7 @@ interface CustomizeModalProps {
   onClose: () => void;
   currentPreset: ChatPreset;
   customInstructions: string;
-  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, functionModels?: FunctionModels) => void;
-}
-
-interface FunctionModels {
-  general: AvailableModel;
-  coding: AvailableModel;
-  creative: AvailableModel;
-  analysis: AvailableModel;
-  image: AvailableModel;
-  voice: AvailableModel;
+  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel) => void;
 }
 
 export function CustomizeModal({
@@ -35,17 +26,10 @@ export function CustomizeModal({
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
-  const [functionModels, setFunctionModels] = useState<FunctionModels>({
-    general: 'anthropic/claude-3.5-sonnet',
-    coding: 'openai/gpt-4o',
-    creative: 'meta-llama/llama-3.1-70b-instruct',
-    analysis: 'google/gemini-2.0-flash-exp',
-    image: 'openai/gpt-4o',
-    voice: 'anthropic/claude-3-haiku',
-  });
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>('anthropic/claude-3.5-sonnet');
 
   const handleSave = () => {
-    onSave(selectedPreset, instructions, isEnabled, functionModels);
+    onSave(selectedPreset, instructions, isEnabled, selectedModel);
     onClose();
   };
 
@@ -108,44 +92,26 @@ export function CustomizeModal({
           </div>
         </div>
         
-        {/* OpenRouter API Functions */}
+        {/* Model Selection */}
         <div className="mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-500">OpenRouter APIs for Functions</h4>
-          <div className="space-y-3">
-            {[
-              { key: 'general', icon: MessageSquare, label: 'General Chat', description: 'Main conversation model' },
-              { key: 'coding', icon: Code, label: 'Code Analysis', description: 'Programming & debugging' },
-              { key: 'creative', icon: Lightbulb, label: 'Creative Writing', description: 'Stories & creative content' },
-              { key: 'analysis', icon: Bot, label: 'Data Analysis', description: 'Research & insights' },
-              { key: 'image', icon: Image, label: 'Image Tasks', description: 'Visual understanding' },
-              { key: 'voice', icon: Mic, label: 'Voice Processing', description: 'Fast voice responses' },
-            ].map(({ key, icon: Icon, label, description }) => (
-              <div key={key} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-xl">
-                <Icon className="h-4 w-4 text-gray-600" />
-                <div className="flex-1">
-                  <div className="font-medium text-sm text-gray-900">{label}</div>
-                  <div className="text-xs text-gray-500">{description}</div>
-                </div>
-                <Select
-                  value={functionModels[key as keyof FunctionModels]}
-                  onValueChange={(value: AvailableModel) => 
-                    setFunctionModels(prev => ({ ...prev, [key]: value }))
-                  }
-                >
-                  <SelectTrigger className="w-48 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AVAILABLE_MODELS.map((model) => (
-                      <SelectItem key={model} value={model} className="text-xs">
-                        {model.split('/')[1] || model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
+          <label className="block text-sm font-medium mb-2 text-gray-500">
+            AI Model
+          </label>
+          <Select
+            value={selectedModel}
+            onValueChange={(value: AvailableModel) => setSelectedModel(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AVAILABLE_MODELS.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model.split('/')[1] || model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Custom Instructions */}
