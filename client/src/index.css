@@ -117,8 +117,8 @@
   }
 
   .message-input {
-    min-height: 120px;
-    max-height: 300px;
+    min-height: 80px;
+    max-height: 200px;
     resize: none;
     line-height: 1.6;
     font-size: 18px;
