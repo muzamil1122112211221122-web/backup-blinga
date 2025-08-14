@@ -37,6 +37,7 @@
   --macos-gray: hsl(220, 9%, 46%);
   --macos-gray-light: hsl(220, 14%, 96%);
   --macos-gray-dark: hsl(220, 13%, 18%);
+  --macos-border-light: hsl(220, 8%, 75%);
 }
 
 .light {
@@ -269,7 +270,7 @@
     resize: none;
     line-height: 1.6;
     font-size: 18px;
-    border: 1px solid var(--macos-gray-dark) !important;
+    border: 1px solid var(--macos-border-light) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
@@ -281,7 +282,7 @@
   }
 
   .dark .message-input {
-    border-color: var(--macos-gray-dark) !important;
+    border-color: var(--macos-border-light) !important;
   }
 
   .dark .message-input:focus {
@@ -290,12 +291,12 @@
   }
 
   .macos-function-bar {
-    border: 1px solid var(--macos-gray-dark) !important;
+    border: 1px solid var(--macos-border-light) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .dark .macos-function-bar {
-    border-color: var(--macos-gray-dark) !important;
+    border-color: var(--macos-border-light) !important;
   }
 
   .macos-button {
