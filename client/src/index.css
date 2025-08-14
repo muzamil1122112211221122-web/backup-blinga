@@ -269,14 +269,14 @@
     resize: none;
     line-height: 1.6;
     font-size: 18px;
-    border: 1px solid var(--macos-gray) !important;
-    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--macos-gray-dark) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   }
 
   .message-input:focus {
     border-color: var(--macos-gray) !important;
     outline: none !important;
-    box-shadow: 0 0 0 1px var(--macos-gray);
+    box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2);
   }
 
   .dark .message-input {
@@ -285,12 +285,12 @@
 
   .dark .message-input:focus {
     border-color: var(--macos-gray) !important;
-    box-shadow: 0 0 0 1px var(--macos-gray);
+    box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.3);
   }
 
   .macos-function-bar {
-    border: 1px solid var(--macos-gray) !important;
-    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--macos-gray-dark) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   }
 
   .dark .macos-function-bar {
@@ -298,15 +298,17 @@
   }
 
   .macos-button {
-    transition: all 0.15s ease-in-out;
+    transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-origin: center;
   }
 
   .macos-button:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
   }
 
   .macos-button:active {
-    transform: scale(1.05);
+    transform: scale(1.08);
+    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
   }
 
   .attribution {

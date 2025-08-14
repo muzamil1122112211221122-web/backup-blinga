@@ -6,7 +6,7 @@ LineusAPI is a real-time chat application built with React, Express.js, and WebS
 
 Preferred communication style: Simple, everyday language.
 Animation preferences: Grid-based moving effects, no floating particles/bubbles.
-UI preferences: macOS-style design elements, gray borders matching macOS function bars, hover scaling effects for buttons.
+UI preferences: macOS-style design elements, default gray borders (not black), smooth cubic-bezier transitions, enhanced hover scaling effects (15% scale increase) for buttons.
 
 # System Architecture
 
