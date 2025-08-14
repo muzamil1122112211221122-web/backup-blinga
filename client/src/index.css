@@ -69,7 +69,6 @@
 
 @layer components {
   .logo-container {
-    animation: logoFloat 20s ease-in-out infinite;
     transform-origin: center;
   }
 
@@ -160,17 +159,7 @@
   50% { opacity: 0.5; }
 }
 
-@keyframes logoFloat {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% { 
-    transform: translateY(-3px) rotate(1deg);
-  }
-  66% { 
-    transform: translateY(2px) rotate(-1deg);
-  }
-}
+
 
 @keyframes logoSpin {
   0% { transform: rotate(0deg) scale(1); }
