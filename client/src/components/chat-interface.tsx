@@ -424,9 +424,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
                   <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex space-x-1">
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce"></div>
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse"></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
                     </div>
                   </div>
                 </div>
@@ -439,7 +439,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card p-3 sm:p-4">
+      <div className="bg-card border border-border rounded-3xl mx-3 sm:mx-4 mb-3 sm:mb-4 p-3 sm:p-4 shadow-sm">
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
           <Button
             variant="ghost"
@@ -551,10 +551,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim()}
-              className="bg-black hover:bg-gray-800 text-white rounded-full p-2 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="bg-black hover:bg-gray-800 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
-              <span className="text-white">➤</span>
+              <span className="text-white text-sm sm:text-base">➤</span>
             </Button>
           </div>
         </div>
