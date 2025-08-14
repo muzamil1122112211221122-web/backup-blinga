@@ -424,9 +424,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
                   <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce"></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
                   </div>
                 </div>
@@ -438,9 +438,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         )}
       </div>
       
-      {/* Tool Buttons */}
-      <div className="bg-card border-t border-border p-3 sm:p-4 rounded-t-3xl">
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 mb-4">
+      {/* Tool Buttons - Separate Section */}
+      <div className="bg-card border-t border-border p-3 sm:p-4">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
           <Button
             variant="ghost"
             className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
@@ -498,8 +498,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <span className="text-xs hidden sm:block">Customize Forus</span>
           </Button>
         </div>
+      </div>
         
-        {/* Message Input */}
+      {/* Message Input - Separate Section */}
+      <div className="bg-card border-t border-border p-3 sm:p-4">
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -549,10 +551,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim()}
-              className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full p-2 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
-              <ArrowUp className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>
@@ -570,10 +572,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
       </div>
       
-      {/* Credit line - Bottom right */}
-      <div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
-        Powered by Plant M
-      </div>
+
 
       {/* Customize Modal */}
       <CustomizeModal

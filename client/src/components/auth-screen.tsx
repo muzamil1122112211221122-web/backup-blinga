@@ -35,10 +35,13 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center relative">
-      <div className="w-full max-w-md px-6">
+    <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      {/* Moving Grid Background */}
+      <div className="moving-grid"></div>
+      
+      <div className="w-full max-w-md px-6 relative z-10">
         {/* Main Auth Card */}
-        <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl">
+        <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl backdrop-blur-sm">
           {/* Header */}
           <div className="px-8 py-8 text-center">
             <Logo size="lg" className="mx-auto mb-6" />
@@ -72,11 +75,6 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             Forus from Plant M
           </p>
         </div>
-      </div>
-
-      {/* Credit line - Bottom right */}
-      <div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
-        Powered by Plant M
       </div>
     </div>
   );

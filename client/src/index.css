@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -63,24 +63,46 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   }
 }
 
 @layer components {
   .logo-f {
     font-weight: 900;
-    background: linear-gradient(135deg, hsl(220, 100%, 50%) 0%, hsl(280, 100%, 70%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-family: 'Inter', sans-serif;
+    color: hsl(0, 0%, 0%);
+    font-family: 'Poppins', sans-serif;
     animation: logoFloat 3s ease-in-out infinite;
     transform-origin: center;
   }
 
   .logo-f:hover {
     animation: logoSpin 0.8s ease-in-out;
+  }
+
+  .dark .logo-f {
+    color: hsl(0, 0%, 100%);
+  }
+
+  .moving-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.05;
+    background-image: 
+      linear-gradient(hsl(0, 0%, 0%) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0, 0%, 0%) 1px, transparent 1px);
+    background-size: 30px 30px;
+    animation: gridMove 20s linear infinite;
+    z-index: 0;
+  }
+
+  .dark .moving-grid {
+    background-image: 
+      linear-gradient(hsl(0, 0%, 100%) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(0, 0%, 100%) 1px, transparent 1px);
   }
 
   .chat-bubble {
@@ -161,6 +183,11 @@
   0% { transform: rotate(0deg) scale(1); }
   50% { transform: rotate(180deg) scale(1.1); }
   100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, 30px); }
 }
 
 /* Scrollbar styling */
