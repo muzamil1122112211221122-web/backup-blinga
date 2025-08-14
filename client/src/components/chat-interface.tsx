@@ -534,7 +534,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             style={{
               paddingTop: '20px',
               paddingLeft: '26px',
-              paddingRight: '64px'
+              paddingRight: '64px',
+              lineHeight: '1.5'
             }}
           />
           
@@ -544,7 +545,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               className="absolute text-lg font-medium text-muted-foreground pointer-events-none"
               style={{
                 top: '20px',
-                left: '26px'
+                left: '26px',
+                lineHeight: '1.5',
+                fontSize: '18px'
               }}
             >
               Ask Anything
