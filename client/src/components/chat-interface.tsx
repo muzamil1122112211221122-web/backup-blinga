@@ -439,7 +439,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card border border-border rounded-3xl mx-3 sm:mx-4 mb-2 p-3 sm:p-4 shadow-sm">
+      <div className="bg-card border border-border rounded-3xl mx-3 sm:mx-4 mb-1 p-3 sm:p-4 shadow-sm">
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
           <Button
             variant="ghost"
@@ -509,7 +509,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Anything"
-            className="message-input w-full min-h-[60px] bg-background border-2 border-border rounded-3xl px-3 py-4 pr-16 sm:px-4 sm:py-5 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
+            className="message-input w-full min-h-[80px] max-h-[200px] bg-background border-2 border-border rounded-3xl px-4 py-5 pr-16 sm:px-5 sm:py-6 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
             data-testid="input-message"
           />
           
