@@ -39,25 +39,6 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       {/* Moving Grid Background */}
       <div className="moving-grid"></div>
       
-      {/* Gradient Orbs */}
-      <div className="gradient-orb"></div>
-      <div className="gradient-orb"></div>
-      <div className="gradient-orb"></div>
-      
-      {/* Floating Particles */}
-      <div className="floating-particles">
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-        <div className="particle"></div>
-      </div>
-      
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Main Auth Card */}
         <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl backdrop-blur-sm">

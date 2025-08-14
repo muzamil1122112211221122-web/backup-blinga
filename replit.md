@@ -5,6 +5,7 @@ LineusAPI is a real-time chat application built with React, Express.js, and WebS
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Animation preferences: Grid-based moving effects, no floating particles/bubbles.
 
 # System Architecture
 
