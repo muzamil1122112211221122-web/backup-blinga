@@ -439,11 +439,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card border border-border rounded-3xl mx-3 sm:mx-4 mb-1 p-3 sm:p-4 shadow-sm">
+      <div className="bg-card macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 p-3 sm:p-4 shadow-sm">
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={toggleListening}
             disabled={!speechSupported}
             data-testid="button-voice-mode"
@@ -454,7 +454,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-create-images"
           >
             <Image className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -463,7 +463,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-open-camera"
           >
             <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -472,7 +472,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-edit-image"
           >
             <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -481,7 +481,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-analyze-docs"
           >
             <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -490,7 +490,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-customize"
           >
@@ -525,7 +525,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
               data-testid="button-attach-file"
             >
               <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -533,7 +533,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className={`${isListening ? 'text-green-400' : 'text-muted-foreground'} hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl`}
+              className={`macos-button ${isListening ? 'text-green-400' : 'text-muted-foreground'} hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl`}
               onClick={toggleListening}
               disabled={!speechSupported}
               data-testid="button-voice-input"
@@ -543,7 +543,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
+              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
               data-testid="button-undo"
             >
               <Undo className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -551,7 +551,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
+              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
               data-testid="button-ideas"
             >
               <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -559,7 +559,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim()}
-              className="bg-black hover:bg-gray-800 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="macos-button bg-black hover:bg-gray-800 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
               <span className="text-white text-sm sm:text-base">➤</span>
