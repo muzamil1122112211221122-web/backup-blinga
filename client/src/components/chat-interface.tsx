@@ -679,7 +679,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onClick={() => setIsVoiceModeOpen(true)}
             data-testid="button-voice-mode"
           >
-            <Radio className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="relative">
+              <div className="w-5 h-5 bg-current rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-background rounded-full"></div>
+              </div>
+              <div className="absolute -top-1 -right-1 w-2 h-2">
+                <div className="w-full h-full border border-current rounded-full animate-ping"></div>
+              </div>
+            </div>
             <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
           
@@ -708,11 +715,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                 ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
                 : 'text-muted-foreground hover:text-foreground'
             }`}
-            onClick={() => setForusIntegrationMode(!forusIntegrationMode)}
+            onClick={adjustForus}
             data-testid="button-forus-integration"
           >
             <Hammer className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Forus Integration</span>
+            <span className="text-xs hidden sm:block">Forus Integration Answer</span>
           </Button>
         </div>
       </div>
