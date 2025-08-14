@@ -69,7 +69,7 @@
 
 @layer components {
   .logo-container {
-    animation: logoFloat 6s ease-in-out infinite;
+    animation: logoFloat 12s ease-in-out infinite;
     transform-origin: center;
   }
 
