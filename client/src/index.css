@@ -270,13 +270,14 @@
     line-height: 1.6;
     font-size: 18px;
     border: 1px solid var(--macos-gray-dark) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .message-input:focus {
     border-color: var(--macos-gray) !important;
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2);
+    transform: scale(1.01);
   }
 
   .dark .message-input {
@@ -290,7 +291,7 @@
 
   .macos-function-bar {
     border: 1px solid var(--macos-gray-dark) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .dark .macos-function-bar {
@@ -298,17 +299,31 @@
   }
 
   .macos-button {
-    transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     transform-origin: center;
+    will-change: transform;
   }
 
   .macos-button:hover {
-    transform: scale(1.15);
+    transform: scale(1.35);
   }
 
   .macos-button:active {
+    transform: scale(1.2);
+    transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* Proximity hover effect for function bar */
+  .macos-function-bar:hover .macos-button:not(:hover) {
     transform: scale(1.08);
-    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* Enhanced proximity effect for adjacent buttons */
+  .macos-button:hover + .macos-button,
+  .macos-button:has(+ .macos-button:hover) {
+    transform: scale(1.15) !important;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .attribution {
