@@ -529,24 +529,25 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-lg leading-relaxed text-foreground placeholder-muted-foreground resize-none focus:outline-none"
+            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-lg text-foreground placeholder-muted-foreground resize-none focus:outline-none border-0"
             data-testid="input-message"
             style={{
               paddingTop: '20px',
               paddingLeft: '26px',
               paddingRight: '64px',
-              lineHeight: '1.5'
+              lineHeight: '27px',
+              fontSize: '18px'
             }}
           />
           
           {/* Custom Placeholder */}
           {!inputValue && (
             <div 
-              className="absolute text-lg font-medium text-muted-foreground pointer-events-none"
+              className="absolute font-medium text-muted-foreground pointer-events-none"
               style={{
                 top: '20px',
                 left: '26px',
-                lineHeight: '1.5',
+                lineHeight: '27px',
                 fontSize: '18px'
               }}
             >
