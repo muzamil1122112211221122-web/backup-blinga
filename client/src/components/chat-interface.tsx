@@ -751,12 +751,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className={`macos-button flex flex-col items-center space-y-1 px-2 sm:px-3 rounded-2xl transition-colors ${
-              forusIntegrationMode 
-                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20' 
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={adjustForus}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
           >
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
