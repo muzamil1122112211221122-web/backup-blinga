@@ -39,6 +39,14 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       {/* Moving Grid Background */}
       <div className="moving-grid"></div>
       
+      {/* Floating AI Function Previews */}
+      <div className="floating-ai-functions">
+        <div className="ai-function-hint chat-hint">💬</div>
+        <div className="ai-function-hint voice-hint">🎤</div>
+        <div className="ai-function-hint imagine-hint">🎨</div>
+        <div className="ai-function-hint customize-hint">⚙️</div>
+      </div>
+      
       <div className="w-full max-w-md px-6 relative z-10">
         {/* Main Auth Card */}
         <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl backdrop-blur-sm">
@@ -58,11 +66,15 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             <Button
               onClick={handleStart}
               disabled={isLoading}
-              className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="begin-experience-btn w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
               data-testid="button-start"
             >
               {isLoading ? 'Connecting...' : 'Begin Experience'}
             </Button>
+            {/* Urdu Translation */}
+            <p className="text-center text-sm text-muted-foreground mt-3 italic">
+              تجربہ شروع کریں
+            </p>
           </div>
         </div>
 
