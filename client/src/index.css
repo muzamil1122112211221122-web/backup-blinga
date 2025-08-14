@@ -124,12 +124,6 @@
     font-size: 18px;
   }
 
-  .message-input::placeholder {
-    font-size: 18px;
-    font-weight: 500;
-    color: hsl(var(--muted-foreground));
-  }
-
   .attribution {
     font-family: 'Inter', sans-serif;
     font-style: italic;
