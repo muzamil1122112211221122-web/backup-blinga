@@ -41,19 +41,22 @@ export interface WebSocketMessage {
 }
 
 export const AVAILABLE_MODELS = [
-  'anthropic/claude-3.5-sonnet',
-  'openai/gpt-4o',
-  'google/gemini-2.0-flash-exp',
-  'meta-llama/llama-3.1-70b-instruct',
-  'openrouter/auto',
+  'anthropic/claude-3.5-sonnet',    // General chat & reasoning
+  'openai/gpt-4o',                  // Advanced analysis & coding
+  'google/gemini-2.0-flash-exp',    // Fast responses & multimodal
+  'meta-llama/llama-3.1-70b-instruct', // Creative writing & roleplay
+  'openai/gpt-4o-mini',             // Quick tasks & lightweight queries
+  'anthropic/claude-3-haiku',       // Speed & efficiency
+  'google/gemini-pro-1.5',          // Long context processing
+  'openrouter/auto',                // Best model auto-selection
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];
 
 export const CHAT_PRESETS = {
   custom: {
-    name: "Custom",
-    description: "Customize how LineusAPI responds.",
+    name: "OpenRouter API",
+    description: "Multiple AI models for various functions.",
   },
   concise: {
     name: "Concise", 

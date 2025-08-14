@@ -61,8 +61,8 @@ export type Message = typeof messages.$inferSelect;
 
 export const chatPresets = {
   custom: {
-    name: "Custom",
-    description: "Customize how LineusAPI responds.",
+    name: "OpenRouter API",
+    description: "Multiple AI models for various functions.",
     systemPrompt: "",
   },
   concise: {

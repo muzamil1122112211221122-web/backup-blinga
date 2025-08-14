@@ -43,7 +43,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'imagine'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [conversations, setConversations] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string} | null>(null);
@@ -207,9 +207,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, functionModels?: any) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
+    // Store function models for different AI functions
+    if (functionModels) {
+      localStorage.setItem('functionModels', JSON.stringify(functionModels));
+    }
     // TODO: Save to conversation settings
   };
 
@@ -324,15 +328,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             data-testid="tab-ask"
           >
             Ask
-          </Button>
-          <Button
-            variant={activeTab === 'imagine' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('imagine')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'imagine' ? 'bg-secondary' : ''}`}
-            data-testid="tab-imagine"
-          >
-            Imagine
           </Button>
           <Button 
             variant="ghost" 
