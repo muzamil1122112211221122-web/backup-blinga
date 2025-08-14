@@ -532,13 +532,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-lg text-foreground placeholder-muted-foreground resize-none focus:outline-none border-0"
             data-testid="input-message"
             style={{
-              paddingTop: '8px',
-              paddingLeft: '16px',
-              paddingRight: '64px',
-              lineHeight: '27px',
-              fontSize: '18px',
-              letterSpacing: '0px',
-              textAlign: 'left'
+              paddingRight: '64px'
             }}
           />
           

@@ -319,18 +319,21 @@
     min-height: 80px;
     max-height: 200px;
     resize: none;
-    line-height: 1.6;
+    line-height: 27px;
     font-size: 18px;
     border: 1px solid var(--macos-border-light) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    padding-top: 0px !important;
+    padding-top: 8px !important;
+    padding-left: 16px !important;
+    letter-spacing: 0px;
+    text-align: left;
   }
 
   .message-input:focus {
     border-color: var(--macos-border-light) !important;
     outline: none !important;
     box-shadow: none !important;
-    transform: scale(1.01);
+    transform: none;
   }
 
   .dark .message-input {
