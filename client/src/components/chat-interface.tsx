@@ -287,32 +287,32 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--dark-primary)]">
+    <div className="min-h-screen flex flex-col bg-background relative">
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onLogout={handleLogout}
         conversations={conversations}
-        currentConversationId={currentConversationId}
+        currentConversationId={currentConversationId || undefined}
         onConversationSelect={handleConversationSelect}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
-        user={user}
+        user={user || undefined}
       />
       {/* Header */}
-      <header className="bg-[var(--dark-secondary)] border-b border-[var(--border)] p-3 sm:p-4 flex items-center justify-between">
+      <header className="bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between rounded-b-3xl shadow-sm">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => setIsSidebarOpen(true)}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
+            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
             data-testid="button-menu"
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <Logo size="sm" />
-          <span className="font-semibold text-[var(--text-primary)] text-sm sm:text-base">LineusAPI</span>
+          <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2">
@@ -320,7 +320,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('ask')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 ${activeTab === 'ask' ? 'bg-[var(--dark-accent)]' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
             data-testid="tab-ask"
           >
             Ask
@@ -329,7 +329,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             variant={activeTab === 'imagine' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('imagine')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 ${activeTab === 'imagine' ? 'bg-[var(--dark-accent)]' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'imagine' ? 'bg-secondary' : ''}`}
             data-testid="tab-imagine"
           >
             Imagine
@@ -337,7 +337,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
+            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
             data-testid="button-notifications"
           >
             <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -350,8 +350,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <Logo size="xl" className="mb-4" />
-            <h2 className="text-2xl font-bold mb-2 text-[var(--text-primary)]">Welcome to LineusAPI</h2>
-            <p className="text-[var(--text-secondary)]">Ask anything Lineus will do till death</p>
+            <h2 className="text-2xl font-bold mb-2 text-foreground">Welcome to Forus Heavy API</h2>
+            <p className="text-muted-foreground">Forus from Plant M</p>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
@@ -362,20 +362,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                 data-testid={`message-${message.role}-${message.id}`}
               >
                 {message.role === 'user' ? (
-                  <div className="bg-[var(--dark-secondary)] rounded-2xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble">
-                    <p className="text-[var(--text-primary)]">{message.content}</p>
+                  <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
+                    <p className="text-foreground">{message.content}</p>
                   </div>
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
-                    <div className="bg-[var(--dark-secondary)] rounded-2xl px-4 py-3 flex-1 chat-bubble">
-                      <p className="text-[var(--text-primary)]">{message.content}</p>
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]">
+                    <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
+                      <p className="text-foreground">{message.content}</p>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
                             onClick={() => handleCopyMessage(message.content)}
                             data-testid={`button-copy-${message.id}`}
                           >
@@ -384,7 +384,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
                             data-testid={`button-like-${message.id}`}
                           >
                             <ThumbsUp className="h-3 w-3" />
@@ -392,7 +392,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
                             data-testid={`button-dislike-${message.id}`}
                           >
                             <ThumbsDown className="h-3 w-3" />
@@ -400,14 +400,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
                             onClick={() => handleSpeakMessage(message.content)}
                             data-testid={`button-speak-${message.id}`}
                           >
                             <Volume2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        <span className="text-xs text-[var(--text-secondary)]">
+                        <span className="text-xs text-muted-foreground">
                           Via OpenRouter
                         </span>
                       </div>
@@ -422,11 +422,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               <div className="flex justify-start" data-testid="typing-indicator">
                 <div className="flex space-x-3">
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
-                  <div className="bg-[var(--dark-secondary)] rounded-2xl px-4 py-3">
+                  <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-[var(--text-secondary)] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
                   </div>
                 </div>
@@ -439,11 +439,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons */}
-      <div className="bg-[var(--dark-secondary)] border-t border-[var(--border)] p-3 sm:p-4">
+      <div className="bg-card border-t border-border p-3 sm:p-4 rounded-t-3xl">
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 mb-4">
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={toggleListening}
             disabled={!speechSupported}
             data-testid="button-voice-mode"
@@ -454,7 +454,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-create-images"
           >
             <Image className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -463,7 +463,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-open-camera"
           >
             <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -472,7 +472,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-edit-image"
           >
             <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -481,7 +481,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-analyze-docs"
           >
             <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -490,12 +490,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 sm:px-3"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-customize"
           >
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Customize LineusAPI</span>
+            <span className="text-xs hidden sm:block">Customize Forus</span>
           </Button>
         </div>
         
@@ -507,7 +507,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Anything"
-            className="message-input w-full bg-[var(--dark-primary)] border border-[var(--border)] rounded-2xl px-3 py-3 pr-16 sm:px-4 sm:py-4 sm:pr-20 text-[var(--text-primary)] placeholder-[var(--text-secondary)] resize-none focus:outline-none focus:border-[var(--text-primary)]"
+            className="message-input w-full bg-background border-2 border-border rounded-3xl px-3 py-3 pr-16 sm:px-4 sm:py-4 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
             data-testid="input-message"
           />
           
@@ -515,7 +515,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
               data-testid="button-attach-file"
             >
               <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -523,7 +523,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className={`${isListening ? 'text-green-400' : 'text-[var(--text-secondary)]'} hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10`}
+              className={`${isListening ? 'text-green-400' : 'text-muted-foreground'} hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl`}
               onClick={toggleListening}
               disabled={!speechSupported}
               data-testid="button-voice-input"
@@ -533,7 +533,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10 hidden sm:flex"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
               data-testid="button-undo"
             >
               <Undo className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -541,7 +541,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] h-8 w-8 sm:h-10 sm:w-10 hidden sm:flex"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
               data-testid="button-ideas"
             >
               <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -549,7 +549,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim()}
-              className="bg-[var(--text-primary)] text-[var(--dark-primary)] rounded-full p-2 hover:bg-[var(--text-secondary)]"
+              className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200"
               data-testid="button-send-message"
             >
               <ArrowUp className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -570,9 +570,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
       </div>
       
-      {/* Attribution */}
-      <div className="text-right p-3 sm:p-4 attribution text-[var(--text-secondary)]">
-        Made by Muzamil
+      {/* Credit line - Bottom right */}
+      <div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
+        Powered by Plant M
       </div>
 
       {/* Customize Modal */}

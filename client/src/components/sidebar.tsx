@@ -55,18 +55,18 @@ export function Sidebar({
       />
 
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-80 bg-[var(--dark-secondary)] border-r border-[var(--border)] z-50 flex flex-col">
+      <div className="fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 flex flex-col rounded-r-3xl shadow-xl">
         {/* Header */}
-        <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Logo size="sm" />
-            <span className="font-semibold text-[var(--text-primary)]">LineusAPI</span>
+            <span className="font-semibold text-foreground">Forus Heavy API</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="text-muted-foreground hover:text-foreground rounded-2xl"
           >
             <X className="h-4 w-4" />
           </Button>

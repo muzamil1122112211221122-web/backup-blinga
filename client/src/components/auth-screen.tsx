@@ -35,18 +35,18 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--dark-primary)] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center relative">
       <div className="w-full max-w-md px-6">
-        {/* Main Auth Card - Grok Style */}
-        <div className="bg-[var(--dark-secondary)] rounded-3xl border border-[var(--border)] overflow-hidden shadow-2xl">
+        {/* Main Auth Card */}
+        <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-2xl">
           {/* Header */}
           <div className="px-8 py-8 text-center">
             <Logo size="lg" className="mx-auto mb-6" />
-            <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
-              Sign in to LineusAPI
+            <h1 className="text-2xl font-semibold text-foreground mb-2">
+              Welcome to Forus Heavy API
             </h1>
-            <p className="text-[var(--text-secondary)] text-sm">
-              Welcome back! Please sign in to your account
+            <p className="text-muted-foreground text-sm">
+              Enter the world of advanced AI conversation
             </p>
           </div>
 
@@ -55,31 +55,28 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             <Button
               onClick={handleStart}
               disabled={isLoading}
-              className="w-full h-14 bg-[var(--text-primary)] hover:bg-[var(--text-secondary)] text-[var(--dark-primary)] rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
               data-testid="button-start"
             >
-              {isLoading ? 'Starting...' : 'Start'}
+              {isLoading ? 'Connecting...' : 'Begin Experience'}
             </Button>
-
           </div>
         </div>
 
         {/* Tagline - Outside card */}
         <div className="text-center mt-8">
-          <h2 className="text-xl font-medium text-[var(--text-primary)] mb-2">
-            Ask anything
+          <h2 className="text-xl font-medium text-foreground mb-2">
+            Forus Heavy API
           </h2>
-          <p className="text-lg text-[var(--text-secondary)] italic">
-            Lineus will do till death
+          <p className="text-lg text-muted-foreground italic">
+            Forus from Plant M
           </p>
         </div>
+      </div>
 
-        {/* Attribution */}
-        <div className="text-center mt-8">
-          <p className="text-[var(--text-secondary)] italic" style={{ fontSize: '14px' }}>
-            Made by Muzamil
-          </p>
-        </div>
+      {/* Credit line - Bottom right */}
+      <div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
+        Powered by Plant M
       </div>
     </div>
   );

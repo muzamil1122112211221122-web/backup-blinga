@@ -24,7 +24,7 @@
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.75rem;
+  --radius: 1.25rem;
 
   /* Custom LineusAPI colors */
   --dark-primary: hsl(240, 10%, 3.9%);
@@ -68,13 +68,19 @@
 }
 
 @layer components {
-  .logo-m {
+  .logo-f {
     font-weight: 900;
-    background: linear-gradient(135deg, hsl(0, 0%, 98%) 0%, hsl(240, 5%, 64.9%) 100%);
+    background: linear-gradient(135deg, hsl(220, 100%, 50%) 0%, hsl(280, 100%, 70%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-family: 'Inter', sans-serif;
+    animation: logoFloat 3s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .logo-f:hover {
+    animation: logoSpin 0.8s ease-in-out;
   }
 
   .chat-bubble {
@@ -137,6 +143,24 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@keyframes logoFloat {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% { 
+    transform: translateY(-3px) rotate(1deg);
+  }
+  66% { 
+    transform: translateY(2px) rotate(-1deg);
+  }
+}
+
+@keyframes logoSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
 }
 
 /* Scrollbar styling */

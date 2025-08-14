@@ -21,8 +21,8 @@ export default function Chat() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--dark-primary)] flex items-center justify-center">
-        <div className="text-[var(--text-primary)]">Loading...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground">Loading...</div>
       </div>
     );
   }

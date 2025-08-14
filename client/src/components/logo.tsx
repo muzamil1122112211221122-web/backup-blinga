@@ -15,10 +15,10 @@ export function Logo({ className, size = "md" }: LogoProps) {
 
   return (
     <div 
-      className={cn("logo-m", sizeClasses[size], className)}
-      data-testid="logo-lineus"
+      className={cn("logo-f", sizeClasses[size], className)}
+      data-testid="logo-forus"
     >
-      M
+      ƒ
     </div>
   );
 }
