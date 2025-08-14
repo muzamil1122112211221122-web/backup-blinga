@@ -175,6 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 async function handleChatMessage(message: any, client: ChatClient, clients: Map<string, ChatClient>) {
   try {
+    console.log('Handling chat message:', message);
     // Validate and save user message
     const userMessage = await storage.createMessage({
       conversationId: message.conversationId,
@@ -193,7 +194,9 @@ async function handleChatMessage(message: any, client: ChatClient, clients: Map<
     if (!conversation) return;
 
     // Call OpenRouter API
+    console.log('Calling OpenRouter API with:', { content: message.content, model: conversation.model });
     const openRouterResponse = await callOpenRouterAPI(message.content, conversation);
+    console.log('OpenRouter response:', openRouterResponse);
     
     // Save AI response
     const aiMessage = await storage.createMessage({
@@ -233,17 +236,8 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
   });
 }
 
-// API Keys for different Forus models
-const FORUS_API_KEYS = {
-  'forus-prime': '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',
-  'forus-code': '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',
-  'forus-flash': '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',
-  'forus-creative': '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',
-  'forus-lite': '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',
-  'forus-speed': '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',
-  'forus-context': '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',
-  'forus-auto': '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',
-};
+// Use the OpenRouter API key from environment variables
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Map Forus model names to actual OpenRouter models
 const MODEL_MAPPING = {
@@ -259,11 +253,10 @@ const MODEL_MAPPING = {
 
 async function callOpenRouterAPI(userMessage: string, conversation: any) {
   const forusModel = conversation.model || 'forus-prime';
-  const apiKey = FORUS_API_KEYS[forusModel as keyof typeof FORUS_API_KEYS];
   const mappedModel = MODEL_MAPPING[forusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
   
-  if (!apiKey) {
-    throw new Error(`API key not configured for model: ${forusModel}`);
+  if (!OPENROUTER_API_KEY) {
+    throw new Error('OpenRouter API key not configured');
   }
 
   const systemPrompt = getSystemPrompt(conversation);
@@ -271,7 +264,7 @@ async function callOpenRouterAPI(userMessage: string, conversation: any) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
       'X-Title': 'Forus API',
