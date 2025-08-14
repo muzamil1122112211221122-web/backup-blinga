@@ -80,7 +80,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // WebSocket connection
   const { isConnected, sendMessage: sendWsMessage } = useWebSocket({
     onMessage: handleWebSocketMessage,
-    onConnect: () => console.log('Connected to chat server'),
+    onConnect: () => {
+      console.log('Connected to chat server');
+      // Join conversation if we have one
+      if (currentConversationId && user) {
+        sendWsMessage({
+          type: 'join_conversation',
+          conversationId: currentConversationId,
+          userId: user.email, // Use email as user identifier since that's what we have
+        });
+      }
+    },
     onDisconnect: () => console.log('Disconnected from chat server'),
   });
 
@@ -184,6 +194,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       type: 'send_message',
       conversationId,
       content,
+      userId: user?.email,
     });
   };
 

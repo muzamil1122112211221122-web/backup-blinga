@@ -20,7 +20,7 @@ export const conversations = pgTable("conversations", {
   isPrivate: boolean("is_private").default(false).notNull(),
   preset: text("preset").default("custom").notNull(),
   customInstructions: text("custom_instructions"),
-  model: text("model").default("anthropic/claude-3.5-sonnet").notNull(),
+  model: text("model").default("forus-prime").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
