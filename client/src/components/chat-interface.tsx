@@ -439,11 +439,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card border-t border-border border-b border-border p-3 sm:p-4 shadow-sm">
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-2 bg-background/50 rounded-3xl border border-border/50">
+      <div className="bg-card p-3 sm:p-4">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6">
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={toggleListening}
             disabled={!speechSupported}
             data-testid="button-voice-mode"
@@ -454,7 +454,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-create-images"
           >
             <Image className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -463,7 +463,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-open-camera"
           >
             <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -472,7 +472,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-edit-image"
           >
             <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -481,7 +481,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             data-testid="button-analyze-docs"
           >
             <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -490,7 +490,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           <Button
             variant="ghost"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl border border-transparent hover:border-border/30"
+            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-customize"
           >
@@ -501,7 +501,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
         
       {/* Message Input - Separate Section */}
-      <div className="bg-card border-t border-border p-3 sm:p-4">
+      <div className="bg-card p-3 sm:p-4">
         <div className="relative">
           <Textarea
             ref={textareaRef}
