@@ -131,17 +131,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', async (data: Buffer) => {
       try {
         const message = JSON.parse(data.toString());
+        console.log('Received WebSocket message:', message);
         const client = clients.get(clientId);
         
-        if (!client) return;
+        if (!client) {
+          console.log('Client not found for ID:', clientId);
+          return;
+        }
 
         switch (message.type) {
           case 'join_conversation':
+            console.log('Client joining conversation:', message.conversationId);
             client.conversationId = message.conversationId;
             client.userId = message.userId;
             break;
 
           case 'send_message':
+            console.log('Processing send_message:', message);
             await handleChatMessage(message, client, clients);
             break;
 
@@ -152,6 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isTyping: message.isTyping,
             }, clientId, clients);
             break;
+            
+          default:
+            console.log('Unknown message type:', message.type);
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
