@@ -207,16 +207,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any, apiKeys?: any) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
-    // Store selected model and API keys
+    // Store selected model
     if (selectedModel) {
       setSelectedModel(selectedModel);
       localStorage.setItem('selectedModel', selectedModel);
-    }
-    if (apiKeys) {
-      localStorage.setItem('forusApiKeys', JSON.stringify(apiKeys));
     }
     // TODO: Save to conversation settings
   };
