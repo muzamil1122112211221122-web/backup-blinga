@@ -6,6 +6,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
   // Conversation operations
   getConversation(id: string): Promise<Conversation | undefined>;
@@ -42,12 +43,26 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = { 
-      ...insertUser, 
+      ...insertUser,
+      password: insertUser.password || null,
+      provider: insertUser.provider || null,
+      providerId: insertUser.providerId || null,
+      displayName: insertUser.displayName || null,
+      birthDate: insertUser.birthDate || null,
       id,
       createdAt: new Date(),
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async getConversation(id: string): Promise<Conversation | undefined> {

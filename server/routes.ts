@@ -128,6 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Test AI endpoint called with:', req.body);
       const { message, conversationId } = req.body;
+      const user = req.user;
       
       if (!message) {
         return res.status(400).json({ error: 'Message is required' });
@@ -140,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Using conversation config:', conversation);
       
-      // Call OpenRouter API directly
+      // Call OpenRouter API directly with user context
       const openRouterResponse = await callOpenRouterAPI(message, conversation);
       console.log('AI response received:', openRouterResponse.content.substring(0, 100));
       
@@ -468,8 +469,13 @@ Let me provide you with a detailed description instead, or you can try asking ag
   };
 }
 
-function getSystemPrompt(conversation: any): string {
-  const basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and dedicated to providing excellent assistance to users with any question or task.";
+function getSystemPrompt(conversation: any, user?: any): string {
+  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and dedicated to providing excellent assistance to users with any question or task.";
+  
+  // Add personalized greeting if user has display name
+  if (user && user.displayName) {
+    basePrompt += ` When greeting or addressing the user, you can call them ${user.displayName}.`;
+  }
   
   let systemPrompt = basePrompt;
   

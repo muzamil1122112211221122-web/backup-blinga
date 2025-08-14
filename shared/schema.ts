@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   password: text("password"),
   provider: text("provider"),
   providerId: text("provider_id"),
+  displayName: text("display_name"), // User's chosen display name
+  birthDate: text("birth_date"), // User's birth date (stored as string)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

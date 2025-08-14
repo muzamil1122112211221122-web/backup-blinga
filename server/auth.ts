@@ -98,16 +98,29 @@ export function setupAuth(app: Express) {
   // Demo authentication route for testing
   app.post("/api/auth/demo", async (req, res) => {
     try {
+      const { displayName, birthDate } = req.body;
       let user = await storage.getUserByEmail('demo@lineusapi.com');
       
       if (!user) {
         user = await storage.createUser({
-          username: 'demo-user',
+          username: displayName || 'demo-user',
           email: 'demo@lineusapi.com',
           password: '',
           provider: 'demo',
           providerId: 'demo-1',
+          displayName: displayName || null,
+          birthDate: birthDate || null,
         });
+      } else {
+        // Update existing user with new info
+        const updatedUser = await storage.updateUser(user.id, {
+          username: displayName || user.username,
+          displayName: displayName || user.displayName,
+          birthDate: birthDate || user.birthDate,
+        });
+        if (updatedUser) {
+          user = updatedUser;
+        }
       }
 
       req.login(user, (err) => {
@@ -118,6 +131,27 @@ export function setupAuth(app: Express) {
       });
     } catch (error) {
       res.status(500).json({ message: 'Demo login failed' });
+    }
+  });
+
+  app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
+    try {
+      const { displayName, birthDate } = req.body;
+      const userId = (req.user as any)?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const updatedUser = await storage.updateUser(userId, {
+        displayName,
+        birthDate,
+        username: displayName, // Also update username to match display name
+      });
+
+      res.json({ message: 'Profile updated successfully', user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: 'Profile update failed' });
     }
   });
 

@@ -149,10 +149,10 @@ export function Sidebar({
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                  {user.username || user.email}
+                  {(user as any).displayName || user.username || user.email}
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] truncate">
-                  {user.email}
+                  {(user as any).displayName ? user.username || user.email : user.email}
                 </p>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
+import { UserInfoDialog } from "./user-info-dialog";
 
 interface AuthScreenProps {
   onAuthSuccess: () => void;
@@ -8,16 +9,28 @@ interface AuthScreenProps {
 
 export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showUserInfoDialog, setShowUserInfoDialog] = useState(false);
 
   const handleStart = async () => {
     setIsLoading(true);
+    setShowUserInfoDialog(true);
+    setIsLoading(false);
+  };
+
+  const handleUserInfoComplete = async (userInfo: { name: string; birthDate: string }) => {
+    setIsLoading(true);
     try {
+      // First create/login the demo user
       const response = await fetch('/api/auth/demo', { 
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          displayName: userInfo.name,
+          birthDate: userInfo.birthDate,
+        })
       });
       
       if (response.ok) {
@@ -80,6 +93,12 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           </p>
         </div>
       </div>
+
+      <UserInfoDialog 
+        open={showUserInfoDialog}
+        onOpenChange={setShowUserInfoDialog}
+        onComplete={handleUserInfoComplete}
+      />
     </div>
   );
 }

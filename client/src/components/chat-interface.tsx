@@ -407,7 +407,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <Logo size="xl" className="mb-4" />
             <h2 className="text-2xl font-bold mb-2 text-foreground">Welcome to Forus Heavy API</h2>
-            <p className="text-muted-foreground">Forus from Plant M</p>
+            <p className="text-muted-foreground">Forus from Planet M</p>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
