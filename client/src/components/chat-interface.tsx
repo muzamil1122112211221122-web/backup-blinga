@@ -707,14 +707,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onClick={() => setIsVoiceModeOpen(true)}
             data-testid="button-voice-mode"
           >
-            <div className="flex items-end justify-center space-x-0.5 h-5 w-5">
-              <div className="w-0.5 h-2 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-3 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-4 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-2 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-5 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-3 bg-current rounded-sm"></div>
-              <div className="w-0.5 h-1 bg-current rounded-sm"></div>
+            <div className="flex items-center justify-center space-x-0.5 h-5 w-5">
+              <div className="w-0.5 h-1.5 bg-current rounded-full"></div>
+              <div className="w-0.5 h-2.5 bg-current rounded-full"></div>
+              <div className="w-0.5 h-4 bg-current rounded-full"></div>
+              <div className="w-0.5 h-3 bg-current rounded-full"></div>
+              <div className="w-0.5 h-1 bg-current rounded-full"></div>
             </div>
             <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
@@ -749,6 +747,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           >
             <Hammer className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs hidden sm:block">Forus Integration Answer</span>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className={`macos-button flex flex-col items-center space-y-1 px-2 sm:px-3 rounded-2xl transition-colors ${
+              forusIntegrationMode 
+                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-900/20' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={adjustForus}
+            data-testid="button-adjust-forus"
+          >
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs hidden sm:block">Adjust Forus</span>
           </Button>
         </div>
       </div>
