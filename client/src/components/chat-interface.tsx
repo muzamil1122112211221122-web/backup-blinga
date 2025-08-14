@@ -380,9 +380,37 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   // Adjust Forus function - enhances AI responses with additional prompting
   const adjustForus = useCallback(() => {
-    setForusIntegrationMode(prev => !prev);
-    // You can add additional logic here for forus adjustments if needed
-    console.log('Forus Integration Answer mode:', !forusIntegrationMode ? 'enabled' : 'disabled');
+    const newMode = !forusIntegrationMode;
+    setForusIntegrationMode(newMode);
+    console.log('Adjust Forus function called - Forus Integration Answer mode:', newMode ? 'enabled' : 'disabled');
+    
+    // Show user feedback
+    if (typeof window !== 'undefined') {
+      const message = newMode 
+        ? 'Forus Integration Answer mode enabled - AI will provide more detailed responses'
+        : 'Forus Integration Answer mode disabled';
+      
+      // Create a simple toast notification
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 9999;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 3000);
+    }
   }, [forusIntegrationMode]);
 
   const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any) => {
@@ -679,13 +707,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onClick={() => setIsVoiceModeOpen(true)}
             data-testid="button-voice-mode"
           >
-            <div className="relative">
-              <div className="w-5 h-5 bg-current rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-background rounded-full"></div>
-              </div>
-              <div className="absolute -top-1 -right-1 w-2 h-2">
-                <div className="w-full h-full border border-current rounded-full animate-ping"></div>
-              </div>
+            <div className="flex items-end justify-center space-x-0.5 h-5 w-5">
+              <div className="w-0.5 h-2 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-3 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-4 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-2 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-5 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-3 bg-current rounded-sm"></div>
+              <div className="w-0.5 h-1 bg-current rounded-sm"></div>
             </div>
             <span className="text-xs hidden sm:block">Voice Mode</span>
           </Button>
