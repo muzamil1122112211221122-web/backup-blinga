@@ -416,7 +416,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(90deg, #007AFF, #5AC8FA);
+    background: linear-gradient(90deg, #ffffff, #f0f0f0);
     border-radius: 4px;
     z-index: 9999;
     animation: macos-app-line 0.8s cubic-bezier(0.23, 1, 0.32, 1);

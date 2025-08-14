@@ -531,11 +531,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             placeholder=""
             className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl px-6 pb-12 pr-16 sm:px-7 sm:pb-16 sm:pr-20 text-lg leading-relaxed text-foreground placeholder-muted-foreground resize-none focus:outline-none"
             data-testid="input-message"
+            style={{
+              paddingTop: '20px'
+            }}
           />
           
           {/* Custom Placeholder */}
           {!inputValue && (
-            <div className="absolute top-0 left-6 sm:top-0 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
+            <div 
+              className="absolute text-lg font-medium text-muted-foreground pointer-events-none"
+              style={{
+                top: '20px',
+                left: '24px'
+              }}
+            >
               Ask Anything
             </div>
           )}
