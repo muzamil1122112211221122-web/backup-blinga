@@ -2,6 +2,12 @@
 
 LineusAPI is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
+## Recent Updates (August 14, 2025)
+- **Critical Fix**: Implemented fallback API system to handle WebSocket instability
+- **API Key Rotation**: Configured 6 OpenRouter API keys for improved reliability and load distribution
+- **Robust Communication**: Chat now automatically switches to direct API calls when WebSocket connection fails
+- **Performance**: AI responses now work consistently despite WebSocket error 1006 issues
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
