@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -68,7 +68,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
   }
 }
 
@@ -304,6 +304,19 @@
     will-change: transform;
   }
 
+  /* First normalize all buttons when function bar is hovered */
+  .macos-function-bar:hover .macos-button {
+    transform: scale(1.0);
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* Then apply hover effect to specific button */
+  .macos-function-bar:hover .macos-button:hover {
+    transform: scale(1.35) !important;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /* Direct hover when not in function bar context */
   .macos-button:hover {
     transform: scale(1.35);
   }
@@ -311,19 +324,6 @@
   .macos-button:active {
     transform: scale(1.2);
     transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  /* Proximity hover effect for function bar */
-  .macos-function-bar:hover .macos-button:not(:hover) {
-    transform: scale(1.08);
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  /* Enhanced proximity effect for adjacent buttons */
-  .macos-button:hover + .macos-button,
-  .macos-button:has(+ .macos-button:hover) {
-    transform: scale(1.15) !important;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .attribution {
