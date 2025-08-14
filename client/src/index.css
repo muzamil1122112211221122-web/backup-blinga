@@ -268,6 +268,9 @@
   .begin-experience-btn {
     position: relative;
     overflow: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: transform, box-shadow;
   }
 
   .begin-experience-btn::before {
@@ -279,6 +282,7 @@
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transition: left 0.5s;
+    backface-visibility: hidden;
   }
 
   .begin-experience-btn:hover::before {
@@ -292,23 +296,23 @@
 
   @keyframes mainFunctionsPreview {
     0% { 
-      transform: scale(1);
+      transform: scale3d(1, 1, 1) translateZ(0);
       box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
     }
     25% { 
-      transform: scale(1.02);
+      transform: scale3d(1.02, 1.02, 1) translateZ(0);
       box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
     }
     50% { 
-      transform: scale(1.05);
+      transform: scale3d(1.05, 1.05, 1) translateZ(0);
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
     }
     75% { 
-      transform: scale(1.02);
+      transform: scale3d(1.02, 1.02, 1) translateZ(0);
       box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
     }
     100% { 
-      transform: scale(1);
+      transform: scale3d(1, 1, 1) translateZ(0);
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
     }
   }
