@@ -509,13 +509,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background border-2 border-border rounded-3xl px-6 pt-4 pb-12 pr-16 sm:px-7 sm:pt-4 sm:pb-16 sm:pr-20 text-lg leading-relaxed text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
+            className="message-input w-full min-h-[80px] max-h-[200px] bg-background border-2 border-border rounded-3xl px-6 pt-3 pb-12 pr-16 sm:px-7 sm:pt-3 sm:pb-16 sm:pr-20 text-lg leading-relaxed text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-border shadow-sm"
             data-testid="input-message"
           />
           
           {/* Custom Placeholder */}
           {!inputValue && (
-            <div className="absolute top-4 left-6 sm:top-4 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
+            <div className="absolute top-5 left-6 sm:top-5 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
               Ask Anything
             </div>
           )}
