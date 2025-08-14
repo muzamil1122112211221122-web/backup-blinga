@@ -272,7 +272,7 @@
     font-size: 18px;
     border: 1px solid var(--macos-border-light) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    padding-top: 5px !important;
+    padding-top: 2px !important;
   }
 
   .message-input:focus {
@@ -374,6 +374,18 @@
 
   .macos-dialog-backdrop {
     animation: macos-backdrop-enter 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  }
+
+  /* macOS app opening animation for buttons */
+  @keyframes macos-app-bounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  .macos-app-open {
+    animation: macos-app-bounce 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .attribution {

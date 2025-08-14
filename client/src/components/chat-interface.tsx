@@ -491,7 +491,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            onClick={() => setIsCustomizeModalOpen(true)}
+            onClick={() => {
+              const button = document.querySelector('[data-testid="button-customize"]');
+              if (button) {
+                button.classList.add('macos-app-open');
+                setTimeout(() => button.classList.remove('macos-app-open'), 600);
+              }
+              setTimeout(() => setIsCustomizeModalOpen(true), 300);
+            }}
             data-testid="button-customize"
           >
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -515,7 +522,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           {/* Custom Placeholder */}
           {!inputValue && (
-            <div className="absolute top-2 left-6 sm:top-2 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
+            <div className="absolute top-1 left-6 sm:top-1 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
               Ask Anything
             </div>
           )}
