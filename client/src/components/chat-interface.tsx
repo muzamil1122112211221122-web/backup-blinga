@@ -536,7 +536,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               paddingLeft: '16px',
               paddingRight: '64px',
               lineHeight: '27px',
-              fontSize: '18px'
+              fontSize: '18px',
+              letterSpacing: '0px',
+              textAlign: 'left'
             }}
           />
           
@@ -548,7 +550,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                 top: '8px',
                 left: '16px',
                 lineHeight: '27px',
-                fontSize: '18px'
+                fontSize: '18px',
+                letterSpacing: '0px',
+                textAlign: 'left',
+                fontFamily: 'inherit'
               }}
             >
               Ask Anything
