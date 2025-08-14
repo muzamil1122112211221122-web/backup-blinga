@@ -41,14 +41,14 @@ export interface WebSocketMessage {
 }
 
 export const AVAILABLE_MODELS = [
-  'anthropic/claude-3.5-sonnet',    // General chat & reasoning
-  'openai/gpt-4o',                  // Advanced analysis & coding
-  'google/gemini-2.0-flash-exp',    // Fast responses & multimodal
-  'meta-llama/llama-3.1-70b-instruct', // Creative writing & roleplay
-  'openai/gpt-4o-mini',             // Quick tasks & lightweight queries
-  'anthropic/claude-3-haiku',       // Speed & efficiency
-  'google/gemini-pro-1.5',          // Long context processing
-  'openrouter/auto',                // Best model auto-selection
+  'forus-prime',        // Advanced reasoning & analysis
+  'forus-code',         // Programming & development
+  'forus-flash',        // Fast responses & multimodal
+  'forus-creative',     // Creative writing & storytelling
+  'forus-lite',         // Quick tasks & efficiency
+  'forus-speed',        // Ultra-fast processing
+  'forus-context',      // Long document processing
+  'forus-auto',         // Intelligent model selection
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];

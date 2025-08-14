@@ -38,7 +38,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>("anthropic/claude-3.5-sonnet");
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>("forus-prime");
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
@@ -207,13 +207,16 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: any, apiKeys?: any) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
-    // Store selected model
+    // Store selected model and API keys
     if (selectedModel) {
       setSelectedModel(selectedModel);
       localStorage.setItem('selectedModel', selectedModel);
+    }
+    if (apiKeys) {
+      localStorage.setItem('forusApiKeys', JSON.stringify(apiKeys));
     }
     // TODO: Save to conversation settings
   };

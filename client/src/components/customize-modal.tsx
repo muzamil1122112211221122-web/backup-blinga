@@ -5,15 +5,20 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, Bot, Zap, Lightbulb, Code, FileText, Image, Mic, MessageSquare } from "lucide-react";
+import { Settings, X, Bot, Zap, Lightbulb, Code, FileText, Image, Mic, MessageSquare, Key } from "lucide-react";
 
 interface CustomizeModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentPreset: ChatPreset;
   customInstructions: string;
-  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel) => void;
+  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel, apiKeys?: ApiKeys) => void;
+}
+
+interface ApiKeys {
+  [key: string]: string;
 }
 
 export function CustomizeModal({
@@ -26,10 +31,16 @@ export function CustomizeModal({
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>('anthropic/claude-3.5-sonnet');
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({
+    'forus-prime': '',
+    'forus-code': '',
+    'forus-flash': '',
+    'forus-creative': '',
+  });
 
   const handleSave = () => {
-    onSave(selectedPreset, instructions, isEnabled, selectedModel);
+    onSave(selectedPreset, instructions, isEnabled, selectedModel, apiKeys);
     onClose();
   };
 
@@ -107,11 +118,41 @@ export function CustomizeModal({
             <SelectContent>
               {AVAILABLE_MODELS.map((model) => (
                 <SelectItem key={model} value={model}>
-                  {model.split('/')[1] || model}
+                  {model.charAt(0).toUpperCase() + model.slice(1).replace('-', ' ')}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* API Keys Configuration */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-3 text-gray-500 flex items-center">
+            <Key className="h-4 w-4 mr-2" />
+            API Keys Configuration
+          </h4>
+          <div className="space-y-3">
+            {[
+              { key: 'forus-prime', label: 'Forus Prime', description: 'Advanced reasoning & analysis' },
+              { key: 'forus-code', label: 'Forus Code', description: 'Programming & development' },
+              { key: 'forus-flash', label: 'Forus Flash', description: 'Fast responses & multimodal' },
+              { key: 'forus-creative', label: 'Forus Creative', description: 'Creative writing & storytelling' },
+            ].map(({ key, label, description }) => (
+              <div key={key} className="space-y-1">
+                <label className="block text-xs font-medium text-gray-700">
+                  {label}
+                  <span className="text-gray-500 ml-1">({description})</span>
+                </label>
+                <Input
+                  type="password"
+                  value={apiKeys[key] || ''}
+                  onChange={(e) => setApiKeys(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={`Enter ${label} API key...`}
+                  className="text-xs h-8"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Custom Instructions */}
