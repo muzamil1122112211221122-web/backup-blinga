@@ -190,7 +190,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setIsTyping(true);
 
     // Try WebSocket first, if that fails, use direct API call
-    if (isWsConnected) {
+    if (isConnected) {
       console.log('Sending via WebSocket...');
       sendWsMessage({
         type: 'send_message',
