@@ -515,7 +515,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           {/* Custom Placeholder */}
           {!inputValue && (
-            <div className="absolute top-3 left-6 sm:top-3 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
+            <div className="absolute top-2 left-6 sm:top-2 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
               Ask Anything
             </div>
           )}

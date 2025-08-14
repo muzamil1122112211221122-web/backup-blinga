@@ -33,7 +33,7 @@ export function CustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[var(--dark-secondary)] border-[var(--border)] max-w-md glassmorphism">
+      <DialogContent className="macos-dialog-content bg-[var(--dark-secondary)] border-[var(--macos-border-light)] max-w-md glassmorphism">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between text-xl font-semibold text-[var(--text-primary)]">
             Customize LineusAPI
