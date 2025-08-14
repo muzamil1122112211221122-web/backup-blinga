@@ -272,7 +272,7 @@
     font-size: 18px;
     border: 1px solid var(--macos-border-light) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    padding-top: 2px !important;
+    padding-top: 0px !important;
   }
 
   .message-input:focus {
@@ -376,16 +376,54 @@
     animation: macos-backdrop-enter 0.3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
   }
 
-  /* macOS app opening animation for buttons */
-  @keyframes macos-app-bounce {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    75% { transform: scale(0.95); }
-    100% { transform: scale(1); }
+  /* macOS authentic app opening animation */
+  @keyframes macos-app-line {
+    0% { 
+      width: 2px; 
+      height: 2px; 
+      opacity: 1;
+    }
+    30% { 
+      width: 60px; 
+      height: 4px; 
+      opacity: 1;
+    }
+    60% { 
+      width: 200px; 
+      height: 8px; 
+      opacity: 0.8;
+    }
+    100% { 
+      width: 0px; 
+      height: 0px; 
+      opacity: 0;
+    }
   }
 
-  .macos-app-open {
-    animation: macos-app-bounce 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  @keyframes macos-window-appear {
+    0% { 
+      opacity: 0; 
+      transform: scale(0.3) translate(-50%, -50%);
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1) translate(-50%, -50%);
+    }
+  }
+
+  .macos-app-line {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(90deg, #007AFF, #5AC8FA);
+    border-radius: 4px;
+    z-index: 9999;
+    animation: macos-app-line 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .macos-dialog-content.opening {
+    animation: macos-window-appear 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.6s both;
   }
 
   .attribution {

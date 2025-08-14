@@ -492,12 +492,25 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
             onClick={() => {
-              const button = document.querySelector('[data-testid="button-customize"]');
-              if (button) {
-                button.classList.add('macos-app-open');
-                setTimeout(() => button.classList.remove('macos-app-open'), 600);
-              }
-              setTimeout(() => setIsCustomizeModalOpen(true), 300);
+              // Create macOS app opening line animation
+              const line = document.createElement('div');
+              line.className = 'macos-app-line';
+              document.body.appendChild(line);
+              
+              // Remove line after animation
+              setTimeout(() => {
+                document.body.removeChild(line);
+              }, 800);
+              
+              // Show dialog with delay for authentic macOS timing
+              setTimeout(() => {
+                setIsCustomizeModalOpen(true);
+                // Add opening class to dialog content
+                setTimeout(() => {
+                  const dialog = document.querySelector('.macos-dialog-content');
+                  if (dialog) dialog.classList.add('opening');
+                }, 50);
+              }, 600);
             }}
             data-testid="button-customize"
           >
@@ -522,7 +535,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           
           {/* Custom Placeholder */}
           {!inputValue && (
-            <div className="absolute top-1 left-6 sm:top-1 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
+            <div className="absolute top-0 left-6 sm:top-0 sm:left-7 text-lg font-medium text-muted-foreground pointer-events-none">
               Ask Anything
             </div>
           )}
