@@ -509,7 +509,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Anything"
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background border-2 border-border rounded-3xl px-4 py-5 pr-16 sm:px-5 sm:py-6 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
+            className="message-input w-full min-h-[120px] max-h-[300px] bg-background border-2 border-border rounded-3xl px-5 py-6 pr-16 sm:px-6 sm:py-7 sm:pr-20 text-base leading-relaxed text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-primary shadow-sm"
             data-testid="input-message"
           />
           
