@@ -196,7 +196,10 @@ async function handleChatMessage(message: any, client: ChatClient, clients: Map<
     // Call OpenRouter API
     console.log('Calling OpenRouter API with:', { content: message.content, model: conversation.model });
     const openRouterResponse = await callOpenRouterAPI(message.content, conversation);
-    console.log('OpenRouter response:', openRouterResponse);
+    console.log('OpenRouter response received:', { 
+      content: openRouterResponse.content.substring(0, 100) + '...', 
+      model: openRouterResponse.metadata?.model 
+    });
     
     // Save AI response
     const aiMessage = await storage.createMessage({
@@ -236,8 +239,26 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
   });
 }
 
-// Use the OpenRouter API key from environment variables
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+// Use multiple OpenRouter API keys with rotation
+const OPENROUTER_API_KEYS = [
+  process.env.OPENROUTER_API_KEY_1,
+  process.env.OPENROUTER_API_KEY_2,
+  process.env.OPENROUTER_API_KEY_3,
+  process.env.OPENROUTER_API_KEY_4,
+  process.env.OPENROUTER_API_KEY_5,
+  process.env.OPENROUTER_API_KEY_6,
+].filter(Boolean) as string[];
+
+let currentKeyIndex = 0;
+
+function getNextApiKey(): string {
+  if (OPENROUTER_API_KEYS.length === 0) {
+    throw new Error('No OpenRouter API keys configured');
+  }
+  const key = OPENROUTER_API_KEYS[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % OPENROUTER_API_KEYS.length;
+  return key;
+}
 
 // Map Forus model names to actual OpenRouter models
 const MODEL_MAPPING = {
@@ -255,16 +276,14 @@ async function callOpenRouterAPI(userMessage: string, conversation: any) {
   const forusModel = conversation.model || 'forus-prime';
   const mappedModel = MODEL_MAPPING[forusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
   
-  if (!OPENROUTER_API_KEY) {
-    throw new Error('OpenRouter API key not configured');
-  }
+  const apiKey = getNextApiKey();
 
   const systemPrompt = getSystemPrompt(conversation);
   
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
       'X-Title': 'Forus API',
