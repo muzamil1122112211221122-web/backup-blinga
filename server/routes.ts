@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Using conversation config:', conversation);
       
       // Call OpenRouter API directly with user context
-      const openRouterResponse = await callOpenRouterAPI(message, conversation);
+      const openRouterResponse = await callOpenRouterAPI(message, conversation, user);
       console.log('AI response received:', openRouterResponse.content.substring(0, 100));
       
       res.json({ 
@@ -366,7 +366,7 @@ const MODEL_MAPPING = {
   'forus-auto': 'openrouter/auto',
 };
 
-async function callOpenRouterAPI(userMessage: string, conversation: any) {
+async function callOpenRouterAPI(userMessage: string, conversation: any, user?: any): Promise<{ content: string; metadata: any }> {
   // Check if user is asking for image generation
   const imageRequestKeywords = ['generate image', 'create image', 'make image', 'draw', 'picture of', 'image of', 'show me', 'give me image'];
   const isImageRequest = imageRequestKeywords.some(keyword => 
@@ -431,7 +431,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
   
   const apiKey = getNextApiKey();
 
-  const systemPrompt = getSystemPrompt(conversation);
+  const systemPrompt = getSystemPrompt(conversation, user);
   
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',

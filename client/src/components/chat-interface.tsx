@@ -48,7 +48,59 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [activeTab, setActiveTab] = useState<'ask'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [conversations, setConversations] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
-  const [user, setUser] = useState<{email: string; username: string} | null>(null);
+  const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
+  const [input, setInput] = useState("");
+
+  // Conversation starters
+  const conversationStarters = [
+    {
+      icon: "🧠",
+      title: "Explain a complex topic",
+      description: "Break down difficult concepts",
+      prompt: "Explain quantum computing in simple terms"
+    },
+    {
+      icon: "💻",
+      title: "Code assistance",
+      description: "Help with programming tasks",
+      prompt: "Help me write a Python function to sort a list"
+    },
+    {
+      icon: "✍️",
+      title: "Creative writing",
+      description: "Stories, poems, and creative content",
+      prompt: "Write a short story about time travel"
+    },
+    {
+      icon: "🔍",
+      title: "Research & analysis",
+      description: "Deep dive into any topic",
+      prompt: "Analyze the benefits of renewable energy"
+    },
+    {
+      icon: "🎯",
+      title: "Problem solving",
+      description: "Work through challenges together",
+      prompt: "Help me plan a productive daily routine"
+    },
+    {
+      icon: "📚",
+      title: "Learning & education",
+      description: "Expand your knowledge",
+      prompt: "Teach me about machine learning basics"
+    }
+  ];
+
+  const handleStarterClick = (prompt: string) => {
+    setInputValue(prompt);
+    // Auto-focus the input field
+    setTimeout(() => {
+      const inputElement = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 100);
+  };
 
   // Load user data and conversations
   useEffect(() => {
@@ -404,10 +456,34 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       {/* Chat Messages Area */}
       <div className="flex-1 overflow-y-auto p-4" data-testid="chat-messages">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <Logo size="xl" className="mb-4" />
-            <h2 className="text-2xl font-bold mb-2 text-foreground">Welcome to Forus Heavy API</h2>
-            <p className="text-muted-foreground">Forus from Planet M</p>
+          <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
+            <Logo size="xl" className="mb-6" />
+            <h2 className="text-3xl font-bold mb-3 text-foreground">
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Forus Heavy API'}
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">Forus from Planet M</p>
+            
+            {/* Conversation Starters */}
+            <div className="w-full max-w-2xl">
+              <h3 className="text-lg font-semibold mb-4 text-foreground">💡 Try asking me about:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {conversationStarters.map((starter, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleStarterClick(starter.prompt)}
+                    className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    <div className="flex items-start space-x-3">
+                      <span className="text-xl">{starter.icon}</span>
+                      <div>
+                        <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{starter.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{starter.description}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
