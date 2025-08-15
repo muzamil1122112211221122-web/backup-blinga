@@ -127,7 +127,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           setUser(userData);
           
           // Load conversations after user is loaded
-          loadConversations();
+          await loadConversations();
+          
+          // Restore last conversation if any exist
+          const savedConversationId = localStorage.getItem('currentConversationId');
+          if (savedConversationId) {
+            setCurrentConversationId(savedConversationId);
+            await loadConversationMessages(savedConversationId);
+          }
         }
       } catch (error) {
         console.error('Failed to load user and conversations:', error);
@@ -223,6 +230,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       if (response.ok) {
         const conversation = await response.json();
         setCurrentConversationId(conversation.id);
+        localStorage.setItem('currentConversationId', conversation.id);
         // Refresh conversations list
         loadConversations();
         return conversation.id;
@@ -439,6 +447,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       if (response.ok) {
         const newConversation = await response.json();
         setCurrentConversationId(newConversation.id);
+        localStorage.setItem('currentConversationId', newConversation.id);
         setMessages([]);
         setConversations(prev => [newConversation, ...prev]);
         setIsSidebarOpen(false);
@@ -448,10 +457,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleConversationSelect = (id: string) => {
+  const handleConversationSelect = async (id: string) => {
     setCurrentConversationId(id);
+    localStorage.setItem('currentConversationId', id);
     // Load messages for this conversation
-    loadConversationMessages(id);
+    await loadConversationMessages(id);
     setIsSidebarOpen(false);
   };
 
@@ -465,6 +475,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         setConversations(prev => prev.filter(conv => conv.id !== id));
         if (currentConversationId === id) {
           setCurrentConversationId(null);
+          localStorage.removeItem('currentConversationId');
           setMessages([]);
         }
       }
@@ -503,13 +514,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     try {
       const response = await fetch(`/api/conversations/${conversationId}/messages`);
       if (response.ok) {
-        const messages = await response.json();
-        setMessages(messages);
+        const messagesData = await response.json();
+        const messagesWithDates = messagesData.map((msg: any) => ({
+          ...msg,
+          createdAt: new Date(msg.createdAt)
+        }));
+        setMessages(messagesWithDates);
       }
     } catch (error) {
-      console.error('Failed to load messages:', error);
+      console.error('Failed to load conversation messages:', error);
+      setMessages([]);
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative">

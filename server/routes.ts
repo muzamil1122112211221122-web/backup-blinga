@@ -70,6 +70,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/conversations/:id/messages', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation || conversation.userId !== userId) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+
+      const messages = await storage.getConversationMessages(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   app.get('/api/conversations/:id', requireAuth, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
@@ -141,9 +160,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Using conversation config:', conversation);
       
+      // Save user message to storage
+      if (conversationId) {
+        await storage.createMessage({
+          conversationId,
+          role: 'user',
+          content: message,
+        });
+      }
+      
       // Call OpenRouter API directly with user context
       const openRouterResponse = await callOpenRouterAPI(message, conversation, user);
       console.log('AI response received:', openRouterResponse.content.substring(0, 100));
+      
+      // Save AI response to storage
+      if (conversationId) {
+        await storage.createMessage({
+          conversationId,
+          role: 'assistant',
+          content: openRouterResponse.content,
+          metadata: openRouterResponse.metadata,
+        });
+        
+        // Update conversation timestamp
+        await storage.updateConversation(conversationId, {
+          updatedAt: new Date(),
+        });
+      }
       
       res.json({ 
         success: true, 
