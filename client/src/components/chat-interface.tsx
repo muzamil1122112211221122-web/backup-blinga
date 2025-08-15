@@ -573,7 +573,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">💡 Try asking me about:</h3>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">💡 ask me about anything for example:</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {conversationStarters.map((starter, index) => (
                   <button
