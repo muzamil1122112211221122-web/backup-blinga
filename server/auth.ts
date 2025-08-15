@@ -99,18 +99,28 @@ export function setupAuth(app: Express) {
   app.post("/api/auth/demo", async (req, res) => {
     try {
       const { displayName, birthDate } = req.body;
-      let user = await storage.getUserByEmail('demo@lineusapi.com');
+      
+      // Create a unique identifier for each demo session
+      // This ensures each user gets their own separate account
+      const sessionId = req.session.id || require('crypto').randomUUID();
+      const uniqueEmail = `demo-${sessionId}@lineusapi.com`;
+      const uniqueProviderId = `demo-${sessionId}`;
+      
+      // Try to find existing user by unique provider ID first
+      let user = await storage.getUserByEmail(uniqueEmail);
       
       if (!user) {
+        // Create a new unique user for this session
         user = await storage.createUser({
           username: displayName || 'demo-user',
-          email: 'demo@lineusapi.com',
+          email: uniqueEmail,
           password: '',
           provider: 'demo',
-          providerId: 'demo-1',
+          providerId: uniqueProviderId,
           displayName: displayName || null,
           birthDate: birthDate || null,
         });
+        console.log(`Created new demo user: ${user.id} with email: ${uniqueEmail}`);
       } else {
         // Update existing user with new info
         const updatedUser = await storage.updateUser(user.id, {
@@ -121,15 +131,18 @@ export function setupAuth(app: Express) {
         if (updatedUser) {
           user = updatedUser;
         }
+        console.log(`Updated existing demo user: ${user.id}`);
       }
 
       req.login(user, (err) => {
         if (err) {
+          console.error('Login error:', err);
           return res.status(500).json({ message: 'Login failed' });
         }
         res.json({ message: 'Demo login successful', user });
       });
     } catch (error) {
+      console.error('Demo login error:', error);
       res.status(500).json({ message: 'Demo login failed' });
     }
   });
