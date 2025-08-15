@@ -188,6 +188,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       case 'error':
         console.error('WebSocket error:', message.error);
         setIsTyping(false);
+        // Show error to user
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          conversationId: currentConversationId || '',
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your message. Please try again.',
+          createdAt: new Date(),
+        }]);
         break;
     }
   }
@@ -270,19 +278,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       ? `${content}\n\n[Please provide the most comprehensive, detailed, and longest possible answer to this question. Include examples, explanations, and any relevant background information.]`
       : content;
 
-    // Try WebSocket first, if that fails, use direct API call
-    if (isConnected) {
-      console.log('Sending via WebSocket...');
-      sendWsMessage({
-        type: 'send_message',
-        conversationId,
-        content: enhancedContent,
-        userId: user?.email,
-      });
-    } else {
-      console.log('WebSocket not connected, using direct API...');
-      await handleDirectApiCall(enhancedContent, conversationId);
-    }
+    // Always use direct API call for better reliability
+    console.log('Using direct API call for better reliability...');
+    await handleDirectApiCall(enhancedContent, conversationId);
   };
 
   const handleDirectApiCall = async (content: string, conversationId: string) => {

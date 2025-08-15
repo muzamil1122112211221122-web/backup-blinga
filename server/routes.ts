@@ -379,12 +379,13 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
 
 // Use multiple OpenRouter API keys with rotation
 const OPENROUTER_API_KEYS = [
-  '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',
-  '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',
-  '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',
-  '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',
-  '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',
-];
+  process.env.OPENROUTER_API_KEY_1,
+  process.env.OPENROUTER_API_KEY_2,
+  process.env.OPENROUTER_API_KEY_3,
+  process.env.OPENROUTER_API_KEY_4,
+  process.env.OPENROUTER_API_KEY_5,
+  process.env.OPENROUTER_API_KEY_6,
+].filter(Boolean) as string[];
 
 let currentKeyIndex = 0;
 
@@ -491,7 +492,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
         { role: 'user', content: userMessage }
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 500,
     }),
   });
 
