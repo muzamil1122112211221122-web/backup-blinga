@@ -46,8 +46,6 @@ export const AVAILABLE_MODELS = [
   'forus-flash',        // Fast responses & multimodal
   'forus-creative',     // Creative writing & storytelling
   'forus-lite',         // Quick tasks & efficiency
-  'forus-speed',        // Ultra-fast processing
-  'forus-context',      // Long document processing
   'forus-auto',         // Intelligent model selection
 ] as const;
 

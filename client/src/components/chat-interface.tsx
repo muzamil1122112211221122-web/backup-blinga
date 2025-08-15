@@ -127,14 +127,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           setUser(userData);
           
           // Load conversations after user is loaded
-          const conversationsResponse = await fetch('/api/conversations');
-          if (conversationsResponse.ok) {
-            const conversationsData = await conversationsResponse.json();
-            setConversations(conversationsData.map((conv: any) => ({
-              ...conv,
-              createdAt: new Date(conv.createdAt)
-            })));
-          }
+          loadConversations();
         }
       } catch (error) {
         console.error('Failed to load user and conversations:', error);
@@ -230,6 +223,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       if (response.ok) {
         const conversation = await response.json();
         setCurrentConversationId(conversation.id);
+        // Refresh conversations list
+        loadConversations();
         return conversation.id;
       }
     } catch (error) {
@@ -311,6 +306,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         };
 
         setMessages(prev => [...prev, aiMessage]);
+        
+        // Refresh conversations list to show updated conversation
+        loadConversations();
       } else {
         console.error('API call failed:', response.statusText);
         const error = await response.json();
@@ -485,6 +483,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  const loadConversations = async () => {
+    try {
+      const response = await fetch('/api/conversations');
+      if (response.ok) {
+        const conversationsData = await response.json();
+        const conversationsWithDates = conversationsData.map((conv: any) => ({
+          ...conv,
+          createdAt: new Date(conv.createdAt)
+        }));
+        setConversations(conversationsWithDates);
+      }
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  };
+
   const loadConversationMessages = async (conversationId: string) => {
     try {
       const response = await fetch(`/api/conversations/${conversationId}/messages`);
@@ -623,10 +637,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-colors ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
                               copiedMessageId === message.id 
-                                ? 'text-green-500 hover:text-green-600' 
-                                : 'text-muted-foreground hover:text-foreground'
+                                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950' 
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                             }`}
                             onClick={() => handleCopyMessage(message.content, message.id)}
                             data-testid={`button-copy-${message.id}`}
@@ -636,10 +650,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-colors ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
                               likedMessages.has(message.id)
-                                ? 'text-blue-500 hover:text-blue-600'
-                                : 'text-muted-foreground hover:text-foreground'
+                                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                             }`}
                             onClick={() => handleLikeMessage(message.id)}
                             data-testid={`button-like-${message.id}`}
@@ -649,10 +663,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-colors ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
                               dislikedMessages.has(message.id)
-                                ? 'text-red-500 hover:text-red-600'
-                                : 'text-muted-foreground hover:text-foreground'
+                                ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                             }`}
                             onClick={() => handleDislikeMessage(message.id)}
                             data-testid={`button-dislike-${message.id}`}
@@ -825,7 +839,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           />
           
           {/* Custom Placeholder */}
-          {!inputValue && messages.length === 0 && (
+          {!inputValue && (
             <div 
               className="absolute font-medium text-muted-foreground pointer-events-none"
               style={{
@@ -842,6 +856,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             </div>
           )}
           
+          {/* Model Switcher - Bottom Left */}
+          <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3">
+            <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
+              <SelectTrigger className="w-32 h-8 text-xs border-muted bg-background">
+                <SelectValue placeholder="Model" />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_MODELS.map((model) => (
+                  <SelectItem key={model} value={model} className="text-xs">
+                    {model.replace('forus-', '').replace('-', ' ').toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-end space-x-1 sm:space-x-2">
             <Button
               variant="ghost"
