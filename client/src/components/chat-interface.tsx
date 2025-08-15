@@ -3,6 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Logo } from "./logo";
+
+// Generate vibrant colors based on user info (matching sidebar colors)
+function getVibrantColor(name: string, secondary = false): string {
+  const colors = [
+    ['#ef4444', '#dc2626'], // Red gradient
+    ['#f59e0b', '#d97706'], // Yellow gradient
+    ['#f97316', '#ea580c'], // Orange gradient
+    ['#3b82f6', '#2563eb'], // Blue gradient
+    ['#10b981', '#059669'], // Green gradient
+    ['#8b5cf6', '#7c3aed'], // Purple gradient
+    ['#ec4899', '#db2777'], // Pink gradient
+    ['#06b6d4', '#0891b2'], // Cyan gradient
+    ['#84cc16', '#65a30d'], // Lime gradient
+    ['#f43f5e', '#e11d48'], // Rose gradient
+  ];
+  
+  const hash = name.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  const colorPair = colors[Math.abs(hash) % colors.length];
+  return secondary ? colorPair[1] : colorPair[0];
+}
 import { CustomizeModal } from "./customize-modal";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
@@ -81,7 +105,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       prompt: "Help me write a Python function to sort a list"
     },
     {
-      icon: <PenTool className="w-6 h-6 text-purple-500" />,
+      icon: <PenTool className="w-6 h-6 text-blue-500" />,
       title: "Creative writing",
       description: "Stories and content",
       prompt: "Write a short story about time travel"
@@ -799,7 +823,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               <div 
                 className="w-32 h-32 mx-auto rounded-full flex items-center justify-center transition-all duration-300"
                 style={{
-                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                  background: `linear-gradient(45deg, ${getVibrantColor(user?.displayName || user?.username || user?.email || 'default')} 0%, ${getVibrantColor(user?.displayName || user?.username || user?.email || 'default', true)} 100%)`,
                   transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.1})`,
                 }}
               >

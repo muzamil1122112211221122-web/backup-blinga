@@ -15,16 +15,16 @@ import { Logo } from "./logo";
 // Generate vibrant colors based on name
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
-    ['#667eea', '#764ba2'], // Purple gradient
-    ['#f093fb', '#f5576c'], // Pink gradient  
-    ['#4facfe', '#00f2fe'], // Blue gradient
-    ['#43e97b', '#38f9d7'], // Green gradient
-    ['#fa709a', '#fee140'], // Pink-yellow gradient
-    ['#a8edea', '#fed6e3'], // Teal-pink gradient
-    ['#ff9a9e', '#fecfef'], // Pink gradient
-    ['#667eea', '#764ba2'], // Purple gradient
-    ['#ffecd2', '#fcb69f'], // Orange gradient
-    ['#a18cd1', '#fbc2eb'], // Purple-pink gradient
+    ['#ef4444', '#dc2626'], // Red gradient
+    ['#f59e0b', '#d97706'], // Yellow gradient
+    ['#f97316', '#ea580c'], // Orange gradient
+    ['#3b82f6', '#2563eb'], // Blue gradient
+    ['#10b981', '#059669'], // Green gradient
+    ['#8b5cf6', '#7c3aed'], // Purple gradient
+    ['#ec4899', '#db2777'], // Pink gradient
+    ['#06b6d4', '#0891b2'], // Cyan gradient
+    ['#84cc16', '#65a30d'], // Lime gradient
+    ['#f43f5e', '#e11d48'], // Rose gradient
   ];
   
   const hash = name.split('').reduce((a, b) => {
@@ -121,10 +121,10 @@ export function Sidebar({
               conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`group relative p-3 rounded-lg cursor-pointer transition-colors ${
+                  className={`group relative p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
                     currentConversationId === conversation.id
-                      ? 'bg-[var(--dark-accent)] text-[var(--text-primary)]'
-                      : 'hover:bg-[var(--dark-accent)] text-[var(--text-secondary)]'
+                      ? 'bg-[var(--dark-accent)] text-[var(--text-primary)] border-[var(--text-primary)] border-opacity-30'
+                      : 'hover:bg-[var(--dark-accent)] text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
                   }`}
                   onClick={() => onConversationSelect(conversation.id)}
                   onMouseEnter={() => setHoveredConversation(conversation.id)}
@@ -133,10 +133,10 @@ export function Sidebar({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate">
+                      <h3 className="text-sm font-semibold truncate">
                         {conversation.title || 'New Conversation'}
                       </h3>
-                      <p className="text-xs opacity-60 mt-1">
+                      <p className="text-xs opacity-80 mt-1 font-medium">
                         {new Date(conversation.createdAt).toLocaleDateString()}
                       </p>
                     </div>
