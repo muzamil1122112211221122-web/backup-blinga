@@ -859,10 +859,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           {/* Model Switcher - Bottom Left */}
           <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-32 h-8 text-xs border-2 border-gray-300 dark:border-gray-600 bg-background rounded-lg shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+              <SelectTrigger className="w-32 h-8 text-xs border border-gray-300 dark:border-gray-600 bg-background rounded-lg shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="Model" />
               </SelectTrigger>
-              <SelectContent className="border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+              <SelectContent className="border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
                 {AVAILABLE_MODELS.map((model) => (
                   <SelectItem key={model} value={model} className="text-xs hover:bg-gray-100 dark:hover:bg-gray-800">
                     {model.replace('forus-', '').replace('-', ' ').toUpperCase()}
