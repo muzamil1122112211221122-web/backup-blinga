@@ -68,11 +68,19 @@ export function setupAuth(app: Express) {
     try {
       console.log('Deserializing user with id:', id);
       const user = await storage.getUser(id);
+      
+      if (!user) {
+        console.log('User not found, clearing session');
+        // User doesn't exist, clear the session
+        return done(null, false);
+      }
+      
       console.log('Found user:', user);
       done(null, user);
     } catch (error) {
       console.log('Error deserializing user:', error);
-      done(error);
+      // Clear the session on any error
+      done(null, false);
     }
   });
 
