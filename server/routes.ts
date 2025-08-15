@@ -154,9 +154,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get conversation or use default
-      const conversation = conversationId ? 
-        await storage.getConversation(conversationId) : 
-        { model: 'forus-prime', preset: 'custom' };
+      let conversation = conversationId ? await storage.getConversation(conversationId) : null;
+      if (!conversation) {
+        conversation = { model: 'forus-prime', preset: 'custom' } as any;
+      }
 
       console.log('Using conversation config:', conversation);
       
