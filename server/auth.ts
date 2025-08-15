@@ -103,11 +103,16 @@ export function setupAuth(app: Express) {
       // Create a unique identifier for each demo session
       // This ensures each user gets their own separate account
       const sessionId = req.session.id || require('crypto').randomUUID();
-      const uniqueEmail = `demo-${sessionId}@lineusapi.com`;
+      const uniqueEmail = `demo-${sessionId}@forus.com`;
       const uniqueProviderId = `demo-${sessionId}`;
       
       // Try to find existing user by unique provider ID first
-      let user = await storage.getUserByEmail(uniqueEmail);
+      let user = await storage.getUserByProviderId(uniqueProviderId);
+      
+      // If not found by provider ID, check by email as fallback
+      if (!user) {
+        user = await storage.getUserByEmail(uniqueEmail);
+      }
       
       if (!user) {
         // Create a new unique user for this session
