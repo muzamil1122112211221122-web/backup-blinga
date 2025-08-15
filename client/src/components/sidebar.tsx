@@ -124,7 +124,7 @@ export function Sidebar({
                   className={`group relative p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
                     currentConversationId === conversation.id
                       ? 'bg-[var(--dark-accent)] text-[var(--text-primary)] border-[var(--text-primary)] border-opacity-30'
-                      : 'hover:bg-[var(--dark-accent)] text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
+                      : 'hover:bg-[var(--dark-accent)] text-[var(--foreground)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
                   }`}
                   onClick={() => onConversationSelect(conversation.id)}
                   onMouseEnter={() => setHoveredConversation(conversation.id)}
@@ -133,10 +133,10 @@ export function Sidebar({
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold truncate">
+                      <h3 className="text-sm font-medium truncate text-current">
                         {conversation.title || 'New Conversation'}
                       </h3>
-                      <p className="text-xs opacity-80 mt-1 font-medium">
+                      <p className="text-xs mt-1 opacity-70 text-current">
                         {new Date(conversation.createdAt).toLocaleDateString()}
                       </p>
                     </div>
