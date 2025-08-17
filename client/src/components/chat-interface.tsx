@@ -457,33 +457,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setIsAttachmentDialogOpen(false);
   };
 
-  const handleCreateImage = () => {
-    console.log('Create Image functionality triggered');
-    showToast('Create Image functionality will be implemented soon. This will allow AI to generate images based on your prompts.');
-    setIsAttachmentDialogOpen(false);
-  };
 
-  const handleOpenCamera = () => {
-    console.log('Open Camera functionality triggered');
-    // Try to access camera
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          // Camera access granted
-          showToast('Camera access granted. Full camera functionality will be implemented soon.');
-          // Stop the stream for now
-          stream.getTracks().forEach(track => track.stop());
-        })
-        .catch(error => {
-          console.error('Camera access error:', error);
-          showToast('Camera access denied or not available. Please check your browser permissions.');
-        });
-    } else {
-      // Fallback to file input with camera capture
-      imageInputRef.current?.click();
-    }
-    setIsAttachmentDialogOpen(false);
-  };
 
   // Adjust Forus function - enhances AI responses with additional prompting
   const adjustForus = useCallback(() => {
@@ -1077,26 +1051,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             >
               <Image className="h-6 w-6" />
               <span className="text-sm">Upload Image</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col items-center justify-center space-y-2"
-              onClick={handleCreateImage}
-              data-testid="attachment-create-image"
-            >
-              <Edit className="h-6 w-6" />
-              <span className="text-sm">Create Image</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col items-center justify-center space-y-2"
-              onClick={handleOpenCamera}
-              data-testid="attachment-open-camera"
-            >
-              <Camera className="h-6 w-6" />
-              <span className="text-sm">Open Camera</span>
             </Button>
           </div>
         </DialogContent>
