@@ -425,12 +425,12 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
 
 // Use multiple OpenRouter API keys with rotation
 const OPENROUTER_API_KEYS = [
-  process.env.OPENROUTER_API_KEY_1,
-  process.env.OPENROUTER_API_KEY_2,
-  process.env.OPENROUTER_API_KEY_3,
-  process.env.OPENROUTER_API_KEY_4,
-  process.env.OPENROUTER_API_KEY_5,
-  process.env.OPENROUTER_API_KEY_6,
+  process.env.OPENAI_API_KEY_1,
+  process.env.OPENAI_API_KEY_2,
+  process.env.OPENAI_API_KEY_3,
+  process.env.OPENAI_API_KEY_4,
+  process.env.OPENAI_API_KEY_5,
+  process.env.OPENAI_API_KEY_6,
 ].filter(Boolean) as string[];
 
 let currentKeyIndex = 0;
