@@ -97,7 +97,51 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
 
   const downloadImage = async (url: string, promptText: string) => {
     try {
-      // Method 1: Try to fetch the image and create a blob URL
+      // For placeholder images, create a proper download
+      if (url.includes('via.placeholder.com')) {
+        // Create a canvas and draw the placeholder image
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          // Create a simple colored background with text
+          ctx.fillStyle = '#4a90e2';
+          ctx.fillRect(0, 0, 1024, 1024);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '48px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(promptText, 512, 512);
+          
+          // Convert to blob and download
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              
+              const safePrompt = promptText.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 30);
+              link.download = `${safePrompt}_${Date.now()}.png`;
+              
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              
+              URL.revokeObjectURL(blobUrl);
+              
+              toast({
+                title: "Download Started",
+                description: "Image download initiated. Check your downloads folder.",
+              });
+            }
+          }, 'image/png');
+          return;
+        }
+      }
+      
+      // For other images, try direct fetch
       const response = await fetch(url);
       if (response.ok) {
         const blob = await response.blob();
@@ -106,7 +150,6 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         const link = document.createElement('a');
         link.href = blobUrl;
         
-        // Create a safe filename from the prompt
         const safePrompt = promptText.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 30);
         link.download = `${safePrompt}_${Date.now()}.jpg`;
         
@@ -114,7 +157,6 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         link.click();
         document.body.removeChild(link);
         
-        // Clean up the blob URL
         URL.revokeObjectURL(blobUrl);
         
         toast({
@@ -238,20 +280,13 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                     <div className="relative">
                       <img
                         src={image.url}
-                        alt={`Found: ${image.prompt}`}
+                        alt={`Generated: ${image.prompt}`}
                         className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover"
                         data-testid={`generated-image-${index}`}
                         onError={(e) => {
-                          console.error('Image load error:', e);
+                          console.error('Image failed to load:', image.url);
                           const target = e.target as HTMLImageElement;
-                          if (!target.src.includes('retry=1')) {
-                            // Try a different variation of the search term
-                            const fallbackUrl = `https://source.unsplash.com/1024x1024/?nature,landscape&retry=1&sig=${Date.now()}`;
-                            target.src = fallbackUrl;
-                          } else if (!target.src.includes('retry=2')) {
-                            // Final fallback to a general nature image
-                            target.src = `https://picsum.photos/1024/1024?random=${Date.now()}`;
-                          }
+                          target.src = `https://via.placeholder.com/1024x1024/cccccc/000000?text=Image+Not+Available`;
                         }}
                         onLoad={() => {
                           console.log('Image loaded successfully:', image.url);
