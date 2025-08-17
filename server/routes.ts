@@ -423,7 +423,11 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Fix and expand: "${originalPrompt}"`;
+      const enhancementPrompt = `Enhance this prompt with perfect grammar and make it 3x longer with more detail:
+
+"${originalPrompt}"
+
+Enhanced:`;
 
       try {
         const apiKey = getNextApiKey();
@@ -440,8 +444,8 @@ Return only the school names as a JSON array of strings. Make them authentic and
           body: JSON.stringify({
             model: 'openai/gpt-4o-mini',
             messages: [{ role: 'user', content: enhancementPrompt }],
-            temperature: 0,
-            max_tokens: 150,
+            temperature: 0.1,
+            max_tokens: 250,
           }),
         });
 

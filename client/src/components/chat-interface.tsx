@@ -676,63 +676,41 @@ Please create a comprehensive test based on my school's examination style and th
     }, 50);
   };
 
-  // Super fast instant prompt enhancement
-  const handleEnhancePrompt = () => {
+  // Lightning-fast AI enhancement with instant display
+  const handleEnhancePrompt = async () => {
     if (!inputValue.trim()) return;
     
-    let enhanced = inputValue.trim();
+    const originalValue = inputValue.trim();
     
-    // Fix grammar, spacing, and capitalization instantly
-    enhanced = enhanced
-      .replace(/\s+/g, ' ') // Remove extra spaces
-      .replace(/([.!?])\s*([a-z])/g, '$1 $2') // Fix spacing after punctuation
-      .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
-      .replace(/\bi\b/g, 'I') // Capitalize standalone "i"
-      .replace(/\bim\b/g, 'I\'m') // Fix "im" to "I'm"
-      .replace(/\bdont\b/g, 'don\'t') // Fix "dont" to "don't"
-      .replace(/\bcant\b/g, 'can\'t') // Fix "cant" to "can't"
-      .replace(/\bwont\b/g, 'won\'t') // Fix "wont" to "won't"
-      .replace(/\bisnt\b/g, 'isn\'t') // Fix "isnt" to "isn't"
-      .replace(/\barent\b/g, 'aren\'t') // Fix "arent" to "aren't"
-      .replace(/\bwasnt\b/g, 'wasn\'t') // Fix "wasnt" to "wasn't"
-      .replace(/\bwerent\b/g, 'weren\'t') // Fix "werent" to "weren't"
-      .replace(/\bhasnt\b/g, 'hasn\'t') // Fix "hasnt" to "hasn't"
-      .replace(/\bhavent\b/g, 'haven\'t') // Fix "havent" to "haven't"
-      .replace(/\bhadnt\b/g, 'hadn\'t') // Fix "hadnt" to "hadn't"
-      .replace(/\bwont\b/g, 'won\'t') // Fix "wont" to "won't"
-      .replace(/\bcouldnt\b/g, 'couldn\'t') // Fix "couldnt" to "couldn't"
-      .replace(/\bshouldnt\b/g, 'shouldn\'t') // Fix "shouldnt" to "shouldn't"
-      .replace(/\bwouldnt\b/g, 'wouldn\'t') // Fix "wouldnt" to "wouldn't"
-      .replace(/^./, c => c.toUpperCase()); // Capitalize first letter
+    // First, show instant grammar fixes immediately
+    let quickFixed = originalValue
+      .replace(/\s+/g, ' ')
+      .replace(/\bi\b/g, 'I')
+      .replace(/\bim\b/g, 'I\'m')
+      .replace(/\bdont\b/g, 'don\'t')
+      .replace(/\bcant\b/g, 'can\'t')
+      .replace(/^./, c => c.toUpperCase());
     
-    // Make it much longer and more detailed based on content
-    const lower = enhanced.toLowerCase();
+    setInputValue(quickFixed);
     
-    if (lower.includes('elon musk') || lower.includes('elon')) {
-      enhanced = `Tell me about Elon Musk's complete biography including his early life, birth details, childhood in South Africa, education at University of Pennsylvania, early ventures like Zip2 and PayPal, founding of SpaceX and Tesla, his vision for sustainable energy and space exploration, personal life, achievements, controversies, and current projects like Neuralink and The Boring Company. Include specific dates, milestones, and interesting facts about his journey from entrepreneur to one of the world's most influential innovators.`;
-    } else if (lower.includes('python') || lower.includes('programming') || lower.includes('code') || lower.includes('javascript') || lower.includes('react')) {
-      enhanced = `Provide a comprehensive explanation of ${enhanced} including detailed code examples, best practices, common use cases, step-by-step implementation guide, potential pitfalls to avoid, debugging techniques, performance considerations, and practical projects to practice the concepts. Include syntax explanations, real-world applications, and industry standards.`;
-    } else if (lower.includes('math') || lower.includes('mathematics') || lower.includes('calculate') || lower.includes('equation')) {
-      enhanced = `Explain ${enhanced} in detail with step-by-step examples, mathematical principles, formulas, visual representations, practical applications, real-world use cases, and provide practice problems with solutions. Include the theoretical background, computational methods, and historical context.`;
-    } else if (lower.includes('history') || lower.includes('historical') || lower.includes('ancient') || lower.includes('war')) {
-      enhanced = `Give a detailed historical account of ${enhanced} including timeline of events, key figures involved, causes and consequences, historical significance, impact on society, cultural context, and connections to modern times. Provide multiple perspectives, primary source references, and archaeological evidence.`;
-    } else if (lower.includes('science') || lower.includes('physics') || lower.includes('chemistry') || lower.includes('biology')) {
-      enhanced = `Provide a comprehensive scientific explanation of ${enhanced} including underlying principles, theories, mechanisms, experimental evidence, real-world applications, current research developments, and practical examples. Include diagrams, step-by-step processes, and future implications.`;
-    } else if (lower.includes('how to') || lower.includes('tutorial') || lower.includes('guide') || lower.includes('learn')) {
-      enhanced = `Create a comprehensive step-by-step guide for ${enhanced} including detailed instructions, required materials or prerequisites, common mistakes to avoid, troubleshooting tips, alternative approaches, and practical examples. Provide clear explanations for each step and expected outcomes.`;
-    } else if (lower.includes('explain') || lower.includes('what is') || lower.includes('define')) {
-      enhanced = `Provide a thorough explanation of ${enhanced} including definitions, key concepts, background information, practical examples, real-world applications, different perspectives, related topics, and actionable insights. Make it comprehensive and educational with clear examples.`;
-    } else {
-      // Generic enhancement for any other prompt
-      enhanced = `Provide a comprehensive and detailed explanation of ${enhanced} including background information, key concepts, practical examples, step-by-step breakdown, real-world applications, important considerations, different perspectives, related topics, and actionable insights. Make it thorough, educational, and easy to understand.`;
-    }
-    
-    // Ensure proper ending punctuation
-    if (!enhanced.match(/[.!?]$/)) {
-      enhanced += '.';
-    }
-    
-    setInputValue(enhanced);
+    // Then immediately fire AI request (but don't wait for it)
+    setTimeout(async () => {
+      try {
+        const response = await fetch('/api/enhance-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ originalPrompt: originalValue }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setInputValue(data.enhancedPrompt);
+        }
+      } catch (error) {
+        // If AI fails, keep the quick-fixed version
+        console.log('AI enhancement failed, using quick fix');
+      }
+    }, 10);
   };
 
   const handleStartSelfListen = async (data: any) => {
