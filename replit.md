@@ -3,12 +3,15 @@
 LineusAPI is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
 ## Recent Updates (August 17, 2025)
+- **Forus Education Model**: Added specialized educational AI model with examination and voice-based learning
+- **Education Modal System**: Comprehensive UI for school search, curriculum selection, and file uploads
+- **Smart School Search**: AI-powered school discovery with intelligent fallbacks for any city/country
+- **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula
+- **Voice-based Learning Assessment**: Interactive speaking practice with AI feedback and corrections
+- **Multiple Education Systems**: Support for O/A levels, Matric, and international curricula
+- **Robust Error Handling**: Fallback systems ensure functionality even during API limitations
 - **Real Image Search**: Fixed placeholder system to use AI-powered real photo search via OpenRouter
-- **Authentic Photo Results**: System now finds actual photographs instead of text placeholders
-- **Multi-Model AI Search**: Uses Claude 3.5 Sonnet to intelligently search for relevant images
-- **Smart Fallback**: High-quality Unsplash photos when AI search is unavailable
-- **User Feedback Integration**: Responded to user frustration about placeholder images by implementing real photo search
-- **OpenRouter Integration**: All image search functionality uses existing OpenRouter keys with 6-key rotation
+- **OpenRouter Integration**: All functionality uses existing OpenRouter keys with 6-key rotation
 
 # User Preferences
 

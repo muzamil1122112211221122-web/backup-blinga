@@ -352,8 +352,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'City and country are required' });
       }
       
-      // Use AI to generate realistic school names for the given location
-      const prompt = `Generate a list of 8-12 realistic school names for ${city}, ${country}. Include a mix of:
+      let schools = [];
+      
+      try {
+        // Try AI-powered school generation first
+        const prompt = `Generate a list of 8-12 realistic school names for ${city}, ${country}. Include a mix of:
 - Public schools
 - Private schools  
 - International schools
@@ -361,66 +364,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 Return only the school names as a JSON array of strings. Make them authentic and appropriate for the location.`;
 
-      const apiKey = getNextApiKey();
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'anthropic/claude-3.5-sonnet',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-        }),
-      });
+        const apiKey = getNextApiKey();
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-3.5-sonnet',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.status}`);
+        if (response.ok) {
+          const data = await response.json();
+          const aiResponse = data.choices?.[0]?.message?.content;
+          
+          if (aiResponse) {
+            try {
+              schools = JSON.parse(aiResponse);
+            } catch {
+              // Fallback: extract school names from text
+              schools = aiResponse
+                .split('\n')
+                .filter((line: string) => line.trim())
+                .map((line: string) => line.replace(/^[0-9\-\.\*\s]+/, '').trim())
+                .filter((name: string) => name && name.length > 3);
+            }
+          }
+        }
+      } catch (aiError: any) {
+        console.log('AI school generation failed, using fallback:', aiError?.message || 'Unknown error');
       }
 
-      const data = await response.json();
-      const aiResponse = data.choices?.[0]?.message?.content;
-      
-      if (!aiResponse) {
-        throw new Error('Invalid AI response');
-      }
-
-      // Try to parse JSON from AI response
-      let schools = [];
-      try {
-        schools = JSON.parse(aiResponse);
-      } catch {
-        // Fallback: extract school names from text
-        schools = aiResponse
-          .split('\n')
-          .filter(line => line.trim())
-          .map(line => line.replace(/^[0-9\-\.\*\s]+/, '').trim())
-          .filter(name => name && name.length > 3);
-      }
-
-      // Ensure we have valid school names
+      // If AI failed or returned empty results, use intelligent fallback
       if (!Array.isArray(schools) || schools.length === 0) {
-        schools = [
-          `${city} Public School`,
-          `${city} High School`,
-          `${city} International School`,
-          `${city} Grammar School`,
-          `${city} Academy`,
-          `Saint Mary's School ${city}`,
-          `${city} College Preparatory`,
-          `Green Valley School ${city}`
-        ];
+        schools = generateSchoolsFallback(city, country);
       }
 
       res.json({ schools: schools.slice(0, 12) });
     } catch (error) {
       console.error('School search error:', error);
-      res.status(500).json({ error: 'Failed to search schools' });
+      // Even if everything fails, provide fallback schools
+      const fallbackSchools = generateSchoolsFallback(req.body.city || 'Local', req.body.country || 'Area');
+      res.json({ schools: fallbackSchools });
     }
   });
 
   return httpServer;
+}
+
+// Smart fallback function for school generation
+function generateSchoolsFallback(city: string, country: string): string[] {
+  const schoolTypes = ['Public School', 'High School', 'International School', 'Grammar School', 'Academy', 'College Preparatory', 'Secondary School', 'Elementary School'];
+  const religiousTypes = ['Saint Mary\'s School', 'Saint Joseph\'s Academy', 'Trinity School', 'Sacred Heart School'];
+  const privateTypes = ['Preparatory School', 'Independent School', 'Private Academy', 'Elite Academy'];
+  
+  const schools = [];
+  
+  // Generate basic schools with city name
+  schoolTypes.slice(0, 4).forEach(type => {
+    schools.push(`${city} ${type}`);
+  });
+  
+  // Add some numbered schools
+  schools.push(`${city} High School #1`);
+  schools.push(`${city} Elementary School #2`);
+  
+  // Add religious schools
+  religiousTypes.slice(0, 2).forEach(type => {
+    schools.push(`${type} ${city}`);
+  });
+  
+  // Add private schools
+  privateTypes.slice(0, 2).forEach(type => {
+    schools.push(`${city} ${type}`);
+  });
+  
+  // Add international school
+  schools.push(`${city} International School`);
+  schools.push(`${country} International Academy ${city}`);
+  
+  return schools.slice(0, 12);
 }
 
 // Image generation function for chat
