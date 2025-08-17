@@ -423,36 +423,47 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Enhance this prompt by fixing grammar, spelling, spacing, and making it more detailed and effective while keeping the user's main request intact.
+      const enhancementPrompt = `Fix grammar, spelling, spacing issues in this prompt and make it 2-3x longer with more detail while keeping the core request:
 
-Original: "${originalPrompt}"
+"${originalPrompt}"
 
-Enhanced version:`;
+Enhanced:`;
 
       try {
         const apiKey = getNextApiKey();
+        console.log('Making API request to OpenRouter...');
+        
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://localhost:5000',
+            'X-Title': 'LineusAPI'
           },
           body: JSON.stringify({
             model: 'anthropic/claude-3.5-sonnet',
             messages: [{ role: 'user', content: enhancementPrompt }],
             temperature: 0.2,
-            max_tokens: 1000,
+            max_tokens: 300,
           }),
         });
 
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('API response received');
           const enhancedPrompt = data.choices?.[0]?.message?.content;
           
           if (enhancedPrompt) {
+            console.log('Successfully enhanced prompt');
             res.json({ enhancedPrompt: enhancedPrompt.trim() });
             return;
           }
+        } else {
+          const errorText = await response.text();
+          console.error('API request failed:', response.status, errorText);
         }
       } catch (aiError: any) {
         console.error('AI prompt enhancement failed:', aiError?.message || 'Unknown error');
@@ -753,7 +764,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
         { role: 'user', content: userMessage }
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 300,
     }),
   });
 
