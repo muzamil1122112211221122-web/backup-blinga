@@ -85,7 +85,7 @@ Respond in JSON format:
           return {
             success: true,
             url: imageData.imageUrl,
-            revisedPrompt: `${imageData.description} (Source: ${imageData.source})`,
+            revisedPrompt: imageData.description || prompt,
           };
         }
       } catch (e) {
@@ -95,24 +95,25 @@ Respond in JSON format:
     
     // Fallback: Search Unsplash for free high-quality images
     const searchTerm = imageData.searchTerms?.[0] || prompt;
-    const unsplashUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerm)}`;
+    // Use a more reliable Unsplash URL format
+    const unsplashUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerm)}&auto=format&fit=crop`;
     
     return {
       success: true,
       url: unsplashUrl,
-      revisedPrompt: `High-quality photo: ${searchTerm} (Source: Unsplash)`,
+      revisedPrompt: searchTerm,
     };
     
   } catch (error) {
     console.error("AI image search error:", error);
     
     // Final fallback: Use Unsplash with the original prompt
-    const fallbackUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(prompt)}`;
+    const fallbackUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(prompt)}&auto=format&fit=crop`;
     
     return {
       success: true,
       url: fallbackUrl,
-      revisedPrompt: `Stock photo: ${prompt} (Source: Unsplash)`,
+      revisedPrompt: prompt,
     };
   }
 }

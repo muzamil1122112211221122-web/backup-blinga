@@ -61,7 +61,7 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
       if (data.success && data.url) {
         const newImage: GeneratedImage = {
           url: data.url,
-          prompt: data.revisedPrompt || prompt.trim(),
+          prompt: prompt.trim(), // Use original prompt, not the revised one with source info
           timestamp: new Date(),
         };
         
@@ -97,45 +97,45 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
 
   const downloadImage = async (url: string, promptText: string) => {
     try {
-      // Try to fetch the image with proper CORS handling
-      const response = await fetch(url, {
-        mode: 'cors',
-        credentials: 'omit'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      // Create a download link that forces download instead of navigation
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       
       // Create a safe filename from the prompt
-      const safePrompt = promptText.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-      link.download = `${safePrompt}_${Date.now()}.jpg`;
+      const safePrompt = promptText.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 30);
+      link.download = `${safePrompt}_image.jpg`;
+      
+      // Add download attribute to force download
+      link.setAttribute('download', `${safePrompt}_image.jpg`);
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
       
       toast({
-        title: "Downloaded!",
-        description: "Image saved to your downloads.",
+        title: "Download Started",
+        description: "Image download initiated. Check your downloads folder.",
       });
     } catch (error) {
       console.error('Download error:', error);
       
-      // Fallback: open the image in a new tab for manual download
-      window.open(url, '_blank');
-      
-      toast({
-        title: "Download Alternative",
-        description: "Image opened in new tab. Right-click to save manually.",
-        variant: "default",
-      });
+      // Fallback: copy URL to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "URL Copied",
+          description: "Image URL copied to clipboard. Paste in browser to download.",
+        });
+      } catch (clipboardError) {
+        // Final fallback: open in new tab
+        window.open(url, '_blank');
+        toast({
+          title: "Image Opened",
+          description: "Right-click the image and select 'Save As' to download.",
+        });
+      }
     }
   };
 
@@ -230,24 +230,34 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {generatedImages.map((image, index) => (
                   <div key={index} className="space-y-3 bg-card p-4 rounded-lg border">
-                    <img
-                      src={image.url}
-                      alt={`Generated: ${image.prompt}`}
-                      className="w-full h-auto rounded-lg shadow-sm"
-                      data-testid={`generated-image-${index}`}
-                      crossOrigin="anonymous"
-                      onError={(e) => {
-                        console.error('Image load error:', e);
-                        // Fallback to a different Unsplash URL if the first one fails
-                        const target = e.target as HTMLImageElement;
-                        if (!target.src.includes('retry=1')) {
-                          target.src = `${image.url}&retry=1&sig=${Date.now()}`;
-                        }
-                      }}
-                      onLoad={() => {
-                        console.log('Image loaded successfully:', image.url);
-                      }}
-                    />
+                    <div className="relative">
+                      <img
+                        src={image.url}
+                        alt={`Found: ${image.prompt}`}
+                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover"
+                        data-testid={`generated-image-${index}`}
+                        onError={(e) => {
+                          console.error('Image load error:', e);
+                          const target = e.target as HTMLImageElement;
+                          if (!target.src.includes('retry=1')) {
+                            // Try a different variation of the search term
+                            const fallbackUrl = `https://source.unsplash.com/1024x1024/?nature,landscape&retry=1&sig=${Date.now()}`;
+                            target.src = fallbackUrl;
+                          } else if (!target.src.includes('retry=2')) {
+                            // Final fallback to a general nature image
+                            target.src = `https://picsum.photos/1024/1024?random=${Date.now()}`;
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', image.url);
+                        }}
+                      />
+                      {/* Loading placeholder while image loads */}
+                      <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+                           style={{ display: 'none' }}>
+                        <div className="text-gray-500 dark:text-gray-400">Loading image...</div>
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         "{image.prompt}"
