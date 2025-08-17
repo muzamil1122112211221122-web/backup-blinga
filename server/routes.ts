@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
 import { insertConversationSchema, insertMessageSchema, User } from "@shared/schema";
+import { generateImage } from "./openai-service";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
@@ -199,6 +200,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: 'Failed to get AI response', 
         details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Image generation endpoint
+  app.post('/api/generate-image', requireAuth, async (req, res) => {
+    try {
+      const { prompt, size = "1024x1024", quality = "standard" } = req.body;
+      
+      if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'A valid prompt is required for image generation' 
+        });
+      }
+
+      console.log('Generating image with prompt:', prompt.trim());
+      
+      const result = await generateImage(prompt.trim(), size, quality);
+      
+      res.json({
+        success: true,
+        url: result.url,
+        revisedPrompt: result.revisedPrompt,
+        originalPrompt: prompt.trim()
+      });
+    } catch (error) {
+      console.error('Image generation API error:', error);
+      
+      let errorMessage = 'Failed to generate image. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('rate limit') || error.message.includes('quota')) {
+          errorMessage = 'API rate limit reached. Please try again in a moment.';
+        } else if (error.message.includes('billing')) {
+          errorMessage = 'API billing issue. Please check your OpenAI account.';
+        } else if (error.message.includes('content')) {
+          errorMessage = 'Content policy violation. Please try a different description.';
+        }
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage,
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });

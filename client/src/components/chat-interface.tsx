@@ -29,6 +29,7 @@ function getVibrantColor(name: string, secondary = false): string {
   return secondary ? colorPair[1] : colorPair[0];
 }
 import { CustomizeModal } from "./customize-modal";
+import { ImageGenerationDialog } from "./image-generation-dialog";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
@@ -91,6 +92,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
+  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
 
   // Conversation starters
   const conversationStarters = [
@@ -459,18 +461,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   const handleCreateImageFromFunctionBar = () => {
     console.log('Create Images from function bar triggered');
-    
-    // Add a message to the chat indicating image generation request
-    const imageGenerationMessage: ChatMessage = {
-      id: Date.now().toString(),
-      conversationId: currentConversationId || '',
-      content: "I'd like to create an image. What would you like me to generate?",
-      role: "assistant",
-      createdAt: new Date()
-    };
-    
-    setMessages(prev => [...prev, imageGenerationMessage]);
-    showToast('AI image generation is ready! Describe what image you want to create in your next message.');
+    setIsImageGenerationDialogOpen(true);
   };
 
   const handleOpenCameraFromFunctionBar = () => {
@@ -1128,6 +1119,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         currentPreset={currentPreset}
         customInstructions={customInstructions}
         onSave={handleCustomizeSave}
+      />
+
+      {/* Image Generation Dialog */}
+      <ImageGenerationDialog
+        open={isImageGenerationDialogOpen}
+        onOpenChange={setIsImageGenerationDialogOpen}
       />
     </div>
   );
