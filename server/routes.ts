@@ -700,46 +700,20 @@ function generateSchoolsFallback(city: string, country: string): string[] {
 // Image generation function for chat
 async function generateImageForChat(prompt: string): Promise<{ path: string } | null> {
   try {
-    console.log('Generating image with prompt:', prompt);
+    console.log('Generating real AI image with prompt:', prompt);
     
-    // For demonstration, use the pre-generated red horse image
-    // In production, this would call an image generation API for each request
-    const availableImages = [
-      '/attached_assets/generated_images/Red_horse_galloping_3ca64007.png'
-    ];
+    // Use the real AI-powered image generation from OpenRouter
+    const result = await generateImage(prompt, "1024x1024", "standard");
     
-    // Check if prompt mentions horses and use the generated horse image
-    if (prompt.toLowerCase().includes('horse') || prompt.toLowerCase().includes('red horse')) {
-      return { path: availableImages[0] };
+    if (result && result.url) {
+      console.log('Successfully generated real AI image:', result.url);
+      return { path: result.url };
     }
     
-    // For other prompts, create a stylized placeholder indicating generation capability
-    return {
-      path: `data:image/svg+xml;base64,${Buffer.from(`
-        <svg width="512" height="300" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-              <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-            </linearGradient>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#bg)"/>
-          <circle cx="256" cy="120" r="40" fill="#ffffff" opacity="0.3"/>
-          <text x="256" y="170" text-anchor="middle" font-family="Arial" font-size="16" fill="white" font-weight="bold">
-            🎨 Image Generation Available
-          </text>
-          <text x="256" y="195" text-anchor="middle" font-family="Arial" font-size="12" fill="white">
-            "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"
-          </text>
-          <text x="256" y="220" text-anchor="middle" font-family="Arial" font-size="10" fill="white" opacity="0.8">
-            Try: "red horse", "blue cat", "sunset landscape"
-          </text>
-        </svg>
-      `).toString('base64')}`
-    };
-    
+    console.log('AI image generation failed, using fallback');
+    return null;
   } catch (error) {
-    console.error('Image generation error:', error);
+    console.error('Error generating AI image for chat:', error);
     return null;
   }
 }
