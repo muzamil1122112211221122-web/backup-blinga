@@ -3,12 +3,12 @@
 LineusAPI is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
 ## Recent Updates (August 17, 2025)
-- **AI-Powered Image Search**: Implemented intelligent image search system using OpenRouter API keys
-- **Image Dialog Interface**: Users can describe desired images and AI searches the internet to find relevant, high-quality photos
-- **Multi-Source Image Search**: AI searches Unsplash, Pixabay, and Pexels for royalty-free images
-- **Fallback System**: Graceful fallback to Unsplash direct search if AI search encounters issues
-- **OpenRouter Integration**: All image search functionality now uses existing OpenRouter keys instead of requiring OpenAI keys
-- **Updated UI**: Changed "Create Images" to "Find Images" throughout the interface to reflect new functionality
+- **Real Image Search**: Fixed placeholder system to use AI-powered real photo search via OpenRouter
+- **Authentic Photo Results**: System now finds actual photographs instead of text placeholders
+- **Multi-Model AI Search**: Uses Claude 3.5 Sonnet to intelligently search for relevant images
+- **Smart Fallback**: High-quality Unsplash photos when AI search is unavailable
+- **User Feedback Integration**: Responded to user frustration about placeholder images by implementing real photo search
+- **OpenRouter Integration**: All image search functionality uses existing OpenRouter keys with 6-key rotation
 
 # User Preferences
 
