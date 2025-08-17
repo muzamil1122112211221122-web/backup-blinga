@@ -16,6 +16,7 @@ interface GeneratedImage {
   url: string;
   prompt: string;
   timestamp: Date;
+  isLoading?: boolean;
 }
 
 export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDialogProps) {
@@ -24,6 +25,7 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
   const [quality, setQuality] = useState('standard');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
 
   const generateImage = async () => {
@@ -63,9 +65,11 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
           url: data.url,
           prompt: prompt.trim(), // Use original prompt, not the revised one with source info
           timestamp: new Date(),
+          isLoading: true,
         };
         
         setGeneratedImages(prev => [newImage, ...prev]);
+        setImageLoadingStates(prev => ({ ...prev, 0: true })); // New image is at index 0
         setPrompt('');
         
         toast({
@@ -276,8 +280,17 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
               <h3 className="text-lg font-semibold">Generated Images</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {generatedImages.map((image, index) => (
-                  <div key={index} className="space-y-3 bg-card p-4 rounded-lg border">
+                  <div key={`${image.timestamp.getTime()}-${index}`} className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="relative">
+                      {/* Loading placeholder */}
+                      {imageLoadingStates[index] && (
+                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center z-10">
+                          <div className="flex flex-col items-center space-y-2">
+                            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+                            <div className="text-sm text-gray-500 dark:text-gray-400">Loading image...</div>
+                          </div>
+                        </div>
+                      )}
                       <img
                         src={image.url}
                         alt={`Generated: ${image.prompt}`}
@@ -285,18 +298,18 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                         data-testid={`generated-image-${index}`}
                         onError={(e) => {
                           console.error('Image failed to load:', image.url);
+                          setImageLoadingStates(prev => ({ ...prev, [index]: false }));
                           const target = e.target as HTMLImageElement;
                           target.src = `https://via.placeholder.com/1024x1024/cccccc/000000?text=Image+Not+Available`;
                         }}
                         onLoad={() => {
                           console.log('Image loaded successfully:', image.url);
+                          setImageLoadingStates(prev => ({ ...prev, [index]: false }));
+                        }}
+                        style={{ 
+                          display: imageLoadingStates[index] ? 'none' : 'block'
                         }}
                       />
-                      {/* Loading placeholder while image loads */}
-                      <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center"
-                           style={{ display: 'none' }}>
-                        <div className="text-gray-500 dark:text-gray-400">Loading image...</div>
-                      </div>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">
