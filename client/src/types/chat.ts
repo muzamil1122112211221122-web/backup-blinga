@@ -16,7 +16,7 @@ export interface ChatConversation {
   userId: string;
   title: string;
   isPrivate: boolean;
-  preset: 'custom' | 'concise' | 'formal' | 'socratic';
+  preset: 'custom' | 'concise' | 'formal' | 'socratic' | 'forus-education';
   customInstructions?: string;
   model: string;
   createdAt: Date;
@@ -42,6 +42,7 @@ export interface WebSocketMessage {
 
 export const AVAILABLE_MODELS = [
   'forus-prime',        // Advanced reasoning & analysis
+  'forus-education',    // Educational features with examination & self-listen
   'forus-code',         // Programming & development
   'forus-flash',        // Fast responses & multimodal
   'forus-creative',     // Creative writing & storytelling
@@ -67,6 +68,10 @@ export const CHAT_PRESETS = {
   socratic: {
     name: "Socratic",
     description: "Responds in a way to help you learn.",
+  },
+  "forus-education": {
+    name: "Forus Education",
+    description: "Advanced educational assistant with examination and listening features.",
   },
 } as const;
 

@@ -30,6 +30,7 @@ function getVibrantColor(name: string, secondary = false): string {
 }
 import { CustomizeModal } from "./customize-modal";
 import { ImageGenerationDialog } from "./image-generation-dialog";
+import { EducationModal } from "./education-modal";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
@@ -64,7 +65,8 @@ import {
   Brain,
   Hammer,
   X,
-  Radio
+  Radio,
+  GraduationCap
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -93,6 +95,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
   const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
+  const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
+  const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
 
   // Conversation starters
   const conversationStarters = [
@@ -623,6 +627,81 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  // Education modal handlers
+  const handleStartExamination = async (data: any) => {
+    setIsEducationModalOpen(false);
+    setEducationMode("examination");
+    
+    // Create a new conversation for examination
+    const response = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: `Examination - ${data.class} (${data.school})`,
+        preset: 'forus-education',
+        model: 'forus-education',
+      }),
+    });
+    
+    if (response.ok) {
+      const newConversation = await response.json();
+      setCurrentConversationId(newConversation.id);
+      setSelectedModel('forus-education');
+      setCurrentPreset('forus-education');
+      
+      // Start examination process
+      const examMessage = `I want to take an examination. Here are my details:
+- Class: ${data.class}
+- School: ${data.school}
+- City: ${data.city}, ${data.country}
+- Education System: ${data.educationSystem}
+- Uploaded ${data.uploadedPages?.length || 0} pages for examination
+
+Please create a comprehensive test based on my school's examination style and the uploaded materials. After I complete the test, provide detailed feedback with marks and corrections.`;
+      
+      setInputValue(examMessage);
+      setTimeout(() => handleSendMessage(), 100);
+    }
+  };
+
+  const handleStartSelfListen = async (data: any) => {
+    setIsEducationModalOpen(false);
+    setEducationMode("self-listen");
+    
+    // Create a new conversation for self-listen
+    const response = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: `Self Listen - ${data.heading}`,
+        preset: 'forus-education',
+        model: 'forus-education',
+      }),
+    });
+    
+    if (response.ok) {
+      const newConversation = await response.json();
+      setCurrentConversationId(newConversation.id);
+      setSelectedModel('forus-education');
+      setCurrentPreset('forus-education');
+      
+      // Start self-listen session
+      const listenMessage = `I want to practice speaking about "${data.heading}". I have uploaded ${data.uploadedImages?.length || 0} related images. 
+
+Please:
+1. Ask me to explain the topic verbally
+2. Listen to my explanation through voice input
+3. Provide constructive feedback on my understanding
+4. Correct any mistakes and suggest improvements
+5. Help me learn better through interactive discussion
+
+Let's start the self-listen session!`;
+      
+      setInputValue(listenMessage);
+      setTimeout(() => handleSendMessage(), 100);
+    }
+  };
+
   const loadConversations = async () => {
     try {
       const response = await fetch('/api/conversations');
@@ -921,6 +1000,21 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="text-xs hidden sm:block">Adjust Forus</span>
           </Button>
+          
+          {/* Education Buttons - Only show when Forus Education model is selected */}
+          {selectedModel === 'forus-education' && (
+            <>
+              <Button
+                variant="ghost"
+                className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+                onClick={() => setIsEducationModalOpen(true)}
+                data-testid="button-forus-examination"
+              >
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs hidden sm:block">Forus Education</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
         
@@ -1125,6 +1219,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       <ImageGenerationDialog
         open={isImageGenerationDialogOpen}
         onOpenChange={setIsImageGenerationDialogOpen}
+      />
+
+      {/* Education Modal */}
+      <EducationModal
+        isOpen={isEducationModalOpen}
+        onClose={() => setIsEducationModalOpen(false)}
+        onStartExamination={handleStartExamination}
+        onStartSelfListen={handleStartSelfListen}
       />
     </div>
   );

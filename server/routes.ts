@@ -37,6 +37,7 @@ function getNextApiKey(): string {
 // Model mapping for different AI models
 const MODEL_MAPPING = {
   'forus-prime': 'anthropic/claude-3.5-sonnet',
+  'forus-education': 'anthropic/claude-3.5-sonnet',
   'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
   'gpt-4o': 'openai/gpt-4o',
   'gemini-pro': 'google/gemini-pro',
@@ -342,6 +343,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Education API endpoints
+  app.post('/api/education/search-schools', requireAuth, async (req, res) => {
+    try {
+      const { city, country } = req.body;
+      
+      if (!city || !country) {
+        return res.status(400).json({ error: 'City and country are required' });
+      }
+      
+      // Use AI to generate realistic school names for the given location
+      const prompt = `Generate a list of 8-12 realistic school names for ${city}, ${country}. Include a mix of:
+- Public schools
+- Private schools  
+- International schools
+- Religious schools (if applicable to the region)
+
+Return only the school names as a JSON array of strings. Make them authentic and appropriate for the location.`;
+
+      const apiKey = getNextApiKey();
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-sonnet',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content;
+      
+      if (!aiResponse) {
+        throw new Error('Invalid AI response');
+      }
+
+      // Try to parse JSON from AI response
+      let schools = [];
+      try {
+        schools = JSON.parse(aiResponse);
+      } catch {
+        // Fallback: extract school names from text
+        schools = aiResponse
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => line.replace(/^[0-9\-\.\*\s]+/, '').trim())
+          .filter(name => name && name.length > 3);
+      }
+
+      // Ensure we have valid school names
+      if (!Array.isArray(schools) || schools.length === 0) {
+        schools = [
+          `${city} Public School`,
+          `${city} High School`,
+          `${city} International School`,
+          `${city} Grammar School`,
+          `${city} Academy`,
+          `Saint Mary's School ${city}`,
+          `${city} College Preparatory`,
+          `Green Valley School ${city}`
+        ];
+      }
+
+      res.json({ schools: schools.slice(0, 12) });
+    } catch (error) {
+      console.error('School search error:', error);
+      res.status(500).json({ error: 'Failed to search schools' });
+    }
+  });
+
   return httpServer;
 }
 
@@ -582,6 +660,9 @@ function getSystemPrompt(conversation: any, user?: any): string {
       break;
     case 'socratic':
       systemPrompt += " Use the Socratic method to help the user learn. Ask guiding questions and encourage critical thinking rather than providing direct answers.";
+      break;
+    case 'forus-education':
+      systemPrompt += " You are Forus Education, an advanced AI educational assistant. You specialize in:\n1. **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula\n2. **Voice-based Learning Assessment**: Provide interactive speaking practice with constructive feedback\n3. **Educational Support**: Adapt to different education systems (O/A levels, Matric, etc.)\n\nWhen helping with examinations:\n- Generate questions that match the school's examination style\n- Provide detailed feedback with marks and explanations\n- Cover multiple question types (MCQ, short answer, essay)\n\nWhen conducting voice-based learning:\n- Encourage verbal explanations\n- Provide constructive feedback on understanding\n- Correct mistakes gently and suggest improvements\n- Use interactive discussion to enhance learning\n\nAlways be encouraging, educational, and adapt to the student's level.";
       break;
     case 'custom':
       if (conversation.customInstructions) {

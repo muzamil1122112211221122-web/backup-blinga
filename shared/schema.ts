@@ -82,6 +82,11 @@ export const chatPresets = {
     description: "Responds in a way to help you learn.",
     systemPrompt: "Use the Socratic method to help the user learn. Ask guiding questions and encourage critical thinking rather than providing direct answers.",
   },
+  "forus-education": {
+    name: "Forus Education",
+    description: "Advanced educational assistant with examination and listening features.",
+    systemPrompt: "You are Forus Education, an advanced AI tutor specializing in personalized learning experiences. You help students with examinations, provide educational assessments, and offer interactive learning through voice-based sessions. Always maintain an encouraging and educational tone while being thorough and accurate in your assessments.",
+  },
 } as const;
 
 export type ChatPreset = keyof typeof chatPresets;
