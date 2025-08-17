@@ -649,7 +649,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setSelectedModel('forus-education');
       setCurrentPreset('forus-education');
       
-      // Start examination process
+      // Start examination process - send message directly
       const examMessage = `I want to take an examination. Here are my details:
 - Class: ${data.class}
 - School: ${data.school}
@@ -659,12 +659,43 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
 Please create a comprehensive test based on my school's examination style and the uploaded materials. After I complete the test, provide detailed feedback with marks and corrections.`;
       
-      setInputValue(examMessage);
-      setTimeout(() => handleSendMessage(), 100);
+      await handleSendMessageDirect(examMessage);
     }
   };
 
-  // Prompt enhancement handler
+  // Direct message sending function
+  const handleSendMessageDirect = async (messageContent: string) => {
+    if (!messageContent.trim() || !currentConversationId) return;
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      conversationId: currentConversationId,
+      role: 'user',
+      content: messageContent.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    // Add user message immediately
+    setMessages(prev => [...prev, userMessage]);
+
+    // Send to server and get AI response
+    try {
+      const response = await fetch(`/api/conversations/${currentConversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: messageContent.trim() }),
+      });
+
+      if (response.ok) {
+        // Get AI response directly
+        handleSendMessage();
+      }
+    } catch (error) {
+      console.error('Error sending direct message:', error);
+    }
+  };
+
+  // Prompt enhancement handler - works silently
   const handleEnhancePrompt = async () => {
     if (!inputValue.trim()) return;
     
@@ -723,8 +754,7 @@ Please:
 
 Let's start the self-listen session!`;
       
-      setInputValue(listenMessage);
-      setTimeout(() => handleSendMessage(), 100);
+      await handleSendMessageDirect(listenMessage);
     }
   };
 
