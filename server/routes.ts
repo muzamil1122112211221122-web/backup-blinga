@@ -26,11 +26,13 @@ function getNextApiKey(): string {
   ].filter(Boolean);
   
   if (keys.length === 0) {
+    console.log('Available environment variables:', Object.keys(process.env).filter(k => k.includes('OPENROUTER')));
     throw new Error("No OpenRouter API keys configured");
   }
   
   const key = keys[currentKeyIndex % keys.length] as string;
   currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  console.log(`Using API key ${currentKeyIndex}/${keys.length}, key starts with: ${key.substring(0, 8)}...`);
   return key;
 }
 
@@ -422,21 +424,12 @@ Return only the school names as a JSON array of strings. Make them authentic and
         return res.status(400).json({ error: 'Original prompt is required' });
       }
       
-      // Use AI to enhance the prompt 1000x while keeping user's main priority
-      const enhancementPrompt = `You are an expert prompt engineer. Take this user prompt and enhance it 1000 times better while keeping the user's main demand and priority as the absolute focus.
+      // Use AI to enhance the prompt efficiently and quickly
+      const enhancementPrompt = `Enhance this prompt by fixing grammar, spelling, spacing, and making it more detailed and effective while keeping the user's main request intact.
 
-Original prompt: "${originalPrompt}"
+Original: "${originalPrompt}"
 
-Rules for enhancement:
-1. Keep the user's core request/demand as the main priority - never change what they actually want
-2. Add specific details, context, and clarity that make the prompt incredibly effective
-3. Include relevant technical details, examples, or constraints that would help get better results
-4. Make it comprehensive and detailed while staying focused on their main goal
-5. Use professional language but keep it natural
-6. Add formatting, structure, or specific instructions that would improve AI responses
-7. The enhanced prompt should be 3-5x longer and much more detailed
-
-Return only the enhanced prompt, no explanations or meta-commentary.`;
+Enhanced version:`;
 
       try {
         const apiKey = getNextApiKey();
@@ -449,7 +442,8 @@ Return only the enhanced prompt, no explanations or meta-commentary.`;
           body: JSON.stringify({
             model: 'anthropic/claude-3.5-sonnet',
             messages: [{ role: 'user', content: enhancementPrompt }],
-            temperature: 0.3,
+            temperature: 0.2,
+            max_tokens: 1000,
           }),
         });
 
