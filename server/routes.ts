@@ -413,41 +413,144 @@ Return only the school names as a JSON array of strings. Make them authentic and
     }
   });
 
+  // Prompt enhancement endpoint
+  app.post('/api/enhance-prompt', requireAuth, async (req, res) => {
+    try {
+      const { originalPrompt } = req.body;
+      
+      if (!originalPrompt) {
+        return res.status(400).json({ error: 'Original prompt is required' });
+      }
+      
+      // Use AI to enhance the prompt 1000x while keeping user's main priority
+      const enhancementPrompt = `You are an expert prompt engineer. Take this user prompt and enhance it 1000 times better while keeping the user's main demand and priority as the absolute focus.
+
+Original prompt: "${originalPrompt}"
+
+Rules for enhancement:
+1. Keep the user's core request/demand as the main priority - never change what they actually want
+2. Add specific details, context, and clarity that make the prompt incredibly effective
+3. Include relevant technical details, examples, or constraints that would help get better results
+4. Make it comprehensive and detailed while staying focused on their main goal
+5. Use professional language but keep it natural
+6. Add formatting, structure, or specific instructions that would improve AI responses
+7. The enhanced prompt should be 3-5x longer and much more detailed
+
+Return only the enhanced prompt, no explanations or meta-commentary.`;
+
+      try {
+        const apiKey = getNextApiKey();
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-3.5-sonnet',
+            messages: [{ role: 'user', content: enhancementPrompt }],
+            temperature: 0.3,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const enhancedPrompt = data.choices?.[0]?.message?.content;
+          
+          if (enhancedPrompt) {
+            res.json({ enhancedPrompt: enhancedPrompt.trim() });
+            return;
+          }
+        }
+      } catch (aiError: any) {
+        console.log('AI prompt enhancement failed, using fallback:', aiError?.message || 'Unknown error');
+      }
+
+      // Fallback enhancement if AI fails
+      const fallbackEnhanced = `${originalPrompt}
+
+Please provide:
+- Detailed explanation with step-by-step approach
+- Specific examples and use cases
+- Technical details and best practices
+- Clear formatting and structure
+- Any relevant context or considerations
+- Comprehensive coverage of the topic`;
+
+      res.json({ enhancedPrompt: fallbackEnhanced });
+    } catch (error) {
+      console.error('Prompt enhancement error:', error);
+      res.status(500).json({ error: 'Failed to enhance prompt' });
+    }
+  });
+
   return httpServer;
 }
 
-// Smart fallback function for school generation
+// Smart fallback function for school generation with real modern schools
 function generateSchoolsFallback(city: string, country: string): string[] {
-  const schoolTypes = ['Public School', 'High School', 'International School', 'Grammar School', 'Academy', 'College Preparatory', 'Secondary School', 'Elementary School'];
-  const religiousTypes = ['Saint Mary\'s School', 'Saint Joseph\'s Academy', 'Trinity School', 'Sacred Heart School'];
-  const privateTypes = ['Preparatory School', 'Independent School', 'Private Academy', 'Elite Academy'];
+  const cityLower = city.toLowerCase();
+  const countryLower = country.toLowerCase();
+  
+  // Real modern school chains and patterns by region
+  const modernSchoolChains = {
+    pakistan: ['Beaconhouse School System', 'Lahore Grammar School (LGS)', 'The City School', 'Roots School System', 'Aitchison College', 'Karachi Grammar School', 'The Educators', 'Allied Schools', 'Bloomfield Hall School'],
+    india: ['Delhi Public School (DPS)', 'Kendriya Vidyalaya', 'DAV Public School', 'Ryan International School', 'Amity International School', 'Modern School', 'The Heritage School', 'St. Xavier\'s School'],
+    uk: ['Eton College', 'Harrow School', 'Westminster School', 'St. Paul\'s School', 'King\'s College School', 'Dulwich College', 'City of London School', 'Merchant Taylors\' School'],
+    usa: ['Phillips Academy', 'Phillips Exeter Academy', 'Choate Rosemary Hall', 'The Lawrenceville School', 'Deerfield Academy', 'Groton School', 'Milton Academy'],
+    canada: ['Upper Canada College', 'St. Andrew\'s College', 'Ridley College', 'Appleby College', 'Trinity College School', 'Lakefield College School'],
+    australia: ['Sydney Grammar School', 'Melbourne Grammar School', 'Scotch College', 'Wesley College', 'Xavier College', 'Brisbane Grammar School'],
+    uae: ['GEMS World Academy', 'Dubai International Academy', 'American School of Dubai', 'British School Al Khubairat', 'Repton School Dubai'],
+    saudi: ['International Schools Group (ISG)', 'Dhahran Elementary Middle School', 'American International School Riyadh', 'British International School Riyadh']
+  };
   
   const schools = [];
   
-  // Generate basic schools with city name
-  schoolTypes.slice(0, 4).forEach(type => {
-    schools.push(`${city} ${type}`);
-  });
+  // Try to match country/region for appropriate schools
+  let relevantSchools = [];
+  if (countryLower.includes('pakistan') || cityLower.includes('karachi') || cityLower.includes('lahore') || cityLower.includes('islamabad') || cityLower.includes('sargodha')) {
+    relevantSchools = modernSchoolChains.pakistan;
+  } else if (countryLower.includes('india') || cityLower.includes('delhi') || cityLower.includes('mumbai') || cityLower.includes('bangalore')) {
+    relevantSchools = modernSchoolChains.india;
+  } else if (countryLower.includes('uk') || countryLower.includes('england') || countryLower.includes('britain') || cityLower.includes('london')) {
+    relevantSchools = modernSchoolChains.uk;
+  } else if (countryLower.includes('usa') || countryLower.includes('america') || countryLower.includes('united states')) {
+    relevantSchools = modernSchoolChains.usa;
+  } else if (countryLower.includes('canada')) {
+    relevantSchools = modernSchoolChains.canada;
+  } else if (countryLower.includes('australia')) {
+    relevantSchools = modernSchoolChains.australia;
+  } else if (countryLower.includes('uae') || cityLower.includes('dubai') || cityLower.includes('abu dhabi')) {
+    relevantSchools = modernSchoolChains.uae;
+  } else if (countryLower.includes('saudi') || cityLower.includes('riyadh') || cityLower.includes('jeddah')) {
+    relevantSchools = modernSchoolChains.saudi;
+  }
   
-  // Add some numbered schools
-  schools.push(`${city} High School #1`);
-  schools.push(`${city} Elementary School #2`);
+  // Add region-specific modern schools
+  if (relevantSchools.length > 0) {
+    relevantSchools.slice(0, 6).forEach(school => {
+      if (school.includes('(') || school.includes('System') || school.includes('College') || school.includes('Academy')) {
+        schools.push(school.replace(/\([^)]*\)/g, '').trim());
+      } else {
+        schools.push(`${school} ${city}`);
+      }
+    });
+  }
   
-  // Add religious schools
-  religiousTypes.slice(0, 2).forEach(type => {
-    schools.push(`${type} ${city}`);
-  });
+  // Add generic modern school types
+  const modernTypes = [
+    `${city} International School`,
+    `${city} Grammar School`,
+    `The ${city} School`,
+    `${city} Academy`,
+    `${city} College Preparatory`,
+    `Modern ${city} School`
+  ];
   
-  // Add private schools
-  privateTypes.slice(0, 2).forEach(type => {
-    schools.push(`${city} ${type}`);
-  });
+  modernTypes.forEach(type => schools.push(type));
   
-  // Add international school
-  schools.push(`${city} International School`);
-  schools.push(`${country} International Academy ${city}`);
-  
-  return schools.slice(0, 12);
+  // Remove duplicates and limit to 12
+  return [...new Set(schools)].slice(0, 12);
 }
 
 // Image generation function for chat

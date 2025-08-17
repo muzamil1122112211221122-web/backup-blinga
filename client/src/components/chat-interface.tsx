@@ -664,6 +664,32 @@ Please create a comprehensive test based on my school's examination style and th
     }
   };
 
+  // Prompt enhancement handler
+  const handleEnhancePrompt = async () => {
+    if (!inputValue.trim()) return;
+    
+    try {
+      const response = await fetch('/api/enhance-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          originalPrompt: inputValue.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setInputValue(data.enhancedPrompt);
+      } else {
+        console.error('Failed to enhance prompt');
+      }
+    } catch (error) {
+      console.error('Error enhancing prompt:', error);
+    }
+  };
+
   const handleStartSelfListen = async (data: any) => {
     setIsEducationModalOpen(false);
     setEducationMode("self-listen");
@@ -1149,6 +1175,17 @@ Let's start the self-listen session!`;
               data-testid="button-voice-input"
             >
               {isListening ? <MicOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Mic className="h-3 w-3 sm:h-4 sm:w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="macos-button text-muted-foreground hover:text-purple-500 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
+              onClick={handleEnhancePrompt}
+              disabled={!inputValue.trim()}
+              data-testid="button-enhance-prompt"
+              title="Enhance your prompt 1000x better"
+            >
+              <span className="text-lg font-bold">✦</span>
             </Button>
             <Button
               onClick={handleSendMessage}
