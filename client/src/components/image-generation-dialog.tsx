@@ -56,11 +56,12 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
       }
 
       const data = await response.json();
+      console.log('Image generation response:', data);
       
       if (data.success && data.url) {
         const newImage: GeneratedImage = {
           url: data.url,
-          prompt: prompt.trim(),
+          prompt: data.revisedPrompt || prompt.trim(),
           timestamp: new Date(),
         };
         
@@ -96,12 +97,25 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
 
   const downloadImage = async (url: string, promptText: string) => {
     try {
-      const response = await fetch(url);
+      // Try to fetch the image with proper CORS handling
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'omit'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `generated-image-${Date.now()}.png`;
+      
+      // Create a safe filename from the prompt
+      const safePrompt = promptText.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+      link.download = `${safePrompt}_${Date.now()}.jpg`;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -112,10 +126,15 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         description: "Image saved to your downloads.",
       });
     } catch (error) {
+      console.error('Download error:', error);
+      
+      // Fallback: open the image in a new tab for manual download
+      window.open(url, '_blank');
+      
       toast({
-        title: "Download Failed",
-        description: "Failed to download image. Please try again.",
-        variant: "destructive",
+        title: "Download Alternative",
+        description: "Image opened in new tab. Right-click to save manually.",
+        variant: "default",
       });
     }
   };
@@ -216,6 +235,18 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                       alt={`Generated: ${image.prompt}`}
                       className="w-full h-auto rounded-lg shadow-sm"
                       data-testid={`generated-image-${index}`}
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        console.error('Image load error:', e);
+                        // Fallback to a different Unsplash URL if the first one fails
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('retry=1')) {
+                          target.src = `${image.url}&retry=1&sig=${Date.now()}`;
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully:', image.url);
+                      }}
                     />
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">
