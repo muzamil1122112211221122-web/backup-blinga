@@ -13,6 +13,8 @@ import path from "path";
 
 let currentKeyIndex = 0;
 
+const failedKeys = new Set<string>();
+
 function getNextApiKey(): string {
   // Check if we have API keys configured - prioritize the numbered keys
   const keys = [
@@ -29,9 +31,24 @@ function getNextApiKey(): string {
     throw new Error("No valid OpenRouter API keys found");
   }
   
-  const key = keys[currentKeyIndex % keys.length] as string;
-  currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  // Filter out keys that recently failed with credit issues
+  const workingKeys = keys.filter(key => key && !failedKeys.has(key));
+  
+  // If all keys have failed, reset the failed set and try again
+  if (workingKeys.length === 0) {
+    failedKeys.clear();
+    console.log('All keys failed, resetting failed key list');
+  }
+  
+  const availableKeys = workingKeys.length > 0 ? workingKeys : keys;
+  const key = availableKeys[currentKeyIndex % availableKeys.length] as string;
+  currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
   return key;
+}
+
+function markKeyAsFailed(key: string): void {
+  failedKeys.add(key);
+  console.log(`Marked API key as failed: ${key.substring(0, 10)}...`);
 }
 
 // Model mapping for different AI models
@@ -198,13 +215,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Using conversation config:', conversation);
       
-      // Save user message to storage
+      // Save user message to storage only if conversation exists
       if (conversationId) {
-        await storage.createMessage({
-          conversationId,
-          role: 'user',
-          content: message,
-        });
+        const conversation = await storage.getConversation(conversationId);
+        if (conversation) {
+          await storage.createMessage({
+            conversationId,
+            role: 'user',
+            content: message,
+          });
+        }
       }
       
       // Call OpenRouter API directly with user context
@@ -764,13 +784,20 @@ Let me provide you with a detailed description instead, or you can try asking ag
         { role: 'user', content: userMessage }
       ],
       temperature: 0.7,
-      max_tokens: 300,
+      max_tokens: 100,
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(`OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`);
+    const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
+    
+    // Mark key as failed if it's a credit/billing issue
+    if (response.status === 402 && errorMessage.includes('credits')) {
+      markKeyAsFailed(apiKey);
+    }
+    
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
