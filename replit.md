@@ -9,6 +9,8 @@ LineusAPI is a real-time chat application built with React, Express.js, and WebS
 - **✓ New API Keys with Credits Added**: Updated rotation to prioritize new keys with sufficient credits
 - **✓ AI-Powered Image Generation Fixed**: Now uses AI to create custom search queries for accurate image matching
 - **✓ Enhanced Smart Fallback System**: Intelligent keyword extraction for better image results when AI is unavailable
+- **✓ Fixed Image Display Bug**: Chat interface now properly displays generated images instead of "Unsupported image"
+- **✓ Set NEW_2 API Key as Primary**: Prioritized 2nd new API key for optimal performance
 - **✓ Database Schema Deployed**: Successfully pushed Drizzle schema to PostgreSQL database
 - **✓ Application Successfully Running**: Server now running on port 5000 with full functionality
 - **Advanced Credit Management System**: Intelligent API key rotation with automatic failure detection and recovery

@@ -883,7 +883,19 @@ Let's start the self-listen session!`;
                         remarkPlugins={[remarkGfm]}
                         components={{
                           img: ({src, alt}) => (
-                            <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
+                            <img 
+                              src={src} 
+                              alt={alt || "Generated image"} 
+                              className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                              onError={(e) => {
+                                console.error('Image failed to load:', src);
+                                const target = e.target as HTMLImageElement;
+                                target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully in chat:', src);
+                              }}
+                            />
                           )
                         }}
                       >
@@ -900,7 +912,19 @@ Let's start the self-listen session!`;
                           remarkPlugins={[remarkGfm]}
                           components={{
                             img: ({src, alt}) => (
-                              <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-2" />
+                              <img 
+                                src={src} 
+                                alt={alt || "Generated image"} 
+                                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                                onError={(e) => {
+                                  console.error('Image failed to load:', src);
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
+                                }}
+                                onLoad={() => {
+                                  console.log('Image loaded successfully in chat:', src);
+                                }}
+                              />
                             )
                           }}
                         >

@@ -1,7 +1,7 @@
 // Array of OpenRouter API keys for load balancing
 const OPENROUTER_API_KEYS = [
-  process.env.OPENROUTER_API_KEY_NEW_1,
   process.env.OPENROUTER_API_KEY_NEW_2,
+  process.env.OPENROUTER_API_KEY_NEW_1,
   process.env.OPENROUTER_API_KEY_NEW_3,
   process.env.OPENROUTER_API_KEY_NEW_4,
   process.env.OPENROUTER_API_KEY_1,
