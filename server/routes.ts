@@ -423,11 +423,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Enhance this prompt with perfect grammar and make it 3x longer with more detail:
-
-"${originalPrompt}"
-
-Enhanced:`;
+      const enhancementPrompt = `Fix grammar and expand: ${originalPrompt}`;
 
       try {
         const apiKey = getNextApiKey();
@@ -442,10 +438,11 @@ Enhanced:`;
             'X-Title': 'LineusAPI'
           },
           body: JSON.stringify({
-            model: 'openai/gpt-4o-mini',
+            model: 'anthropic/claude-3-haiku',
             messages: [{ role: 'user', content: enhancementPrompt }],
-            temperature: 0.1,
-            max_tokens: 250,
+            temperature: 0,
+            max_tokens: 80,
+            stream: false,
           }),
         });
 

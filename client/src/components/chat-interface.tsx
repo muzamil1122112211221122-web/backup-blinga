@@ -676,13 +676,13 @@ Please create a comprehensive test based on my school's examination style and th
     }, 50);
   };
 
-  // Lightning-fast AI enhancement with instant display
+  // Super fast AI enhancement 
   const handleEnhancePrompt = async () => {
     if (!inputValue.trim()) return;
     
     const originalValue = inputValue.trim();
     
-    // First, show instant grammar fixes immediately
+    // Show instant grammar fixes first
     let quickFixed = originalValue
       .replace(/\s+/g, ' ')
       .replace(/\bi\b/g, 'I')
@@ -693,24 +693,15 @@ Please create a comprehensive test based on my school's examination style and th
     
     setInputValue(quickFixed);
     
-    // Then immediately fire AI request (but don't wait for it)
-    setTimeout(async () => {
-      try {
-        const response = await fetch('/api/enhance-prompt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ originalPrompt: originalValue }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setInputValue(data.enhancedPrompt);
-        }
-      } catch (error) {
-        // If AI fails, keep the quick-fixed version
-        console.log('AI enhancement failed, using quick fix');
-      }
-    }, 10);
+    // Fire AI enhancement without waiting (async)
+    fetch('/api/enhance-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ originalPrompt: originalValue }),
+    })
+    .then(response => response.ok ? response.json() : Promise.reject())
+    .then(data => setInputValue(data.enhancedPrompt))
+    .catch(() => console.log('Using quick fix'));
   };
 
   const handleStartSelfListen = async (data: any) => {
