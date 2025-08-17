@@ -30,7 +30,7 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
     if (!prompt.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a description for the image you want to create.",
+        description: "Please enter a description for the image you want to find.",
         variant: "destructive",
       });
       return;
@@ -69,16 +69,16 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         
         toast({
           title: "Success!",
-          description: "Your image has been generated successfully.",
+          description: "AI found a perfect image for you!",
         });
       } else {
-        throw new Error(data.message || 'Failed to generate image');
+        throw new Error(data.message || 'Failed to find image');
       }
     } catch (error) {
       console.error('Image generation error:', error);
       toast({
-        title: "Generation Failed",
-        description: error instanceof Error ? error.message : "Failed to generate image. Please try again.",
+        title: "Search Failed",
+        description: error instanceof Error ? error.message : "Failed to find image. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -132,10 +132,10 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
-            Create Images with AI
+            Find Images with AI
           </DialogTitle>
           <DialogDescription>
-            Describe what you want to create and AI will generate a high-quality image for you.
+            Describe what you're looking for and AI will search the internet to find the perfect image for you.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,10 +143,10 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
           {/* Image Generation Form */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="image-prompt">What do you want to create?</Label>
+              <Label htmlFor="image-prompt">What image are you looking for?</Label>
               <Textarea
                 id="image-prompt"
-                placeholder="Describe the image you want to generate... (e.g., 'A futuristic city at sunset with flying cars')"
+                placeholder="Describe the image you want to find... (e.g., 'A red horse galloping', 'Beautiful sunset over mountains')"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
@@ -193,12 +193,12 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Image...
+                  Searching for Image...
                 </>
               ) : (
                 <>
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Generate Image
+                  Find Image
                 </>
               )}
             </Button>
