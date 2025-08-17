@@ -9,25 +9,28 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 
-// Array of OpenRouter API keys for load balancing
-const OPENROUTER_API_KEYS = [
-  process.env.OPENAI_API_KEY_1,
-  process.env.OPENAI_API_KEY_2,
-  process.env.OPENAI_API_KEY_3,
-  process.env.OPENAI_API_KEY_4,
-  process.env.OPENAI_API_KEY_5,
-  process.env.OPENAI_API_KEY_6,
-].filter(Boolean) as string[];
+// Load balancing for OpenRouter API keys - will be dynamically loaded in getNextApiKey()
 
 let currentKeyIndex = 0;
 
 function getNextApiKey(): string {
-  if (OPENROUTER_API_KEYS.length === 0) {
+  // Check if we have API keys configured
+  const keys = [
+    process.env.OPENROUTER_API_KEY_1,
+    process.env.OPENROUTER_API_KEY_2,
+    process.env.OPENROUTER_API_KEY_3,
+    process.env.OPENROUTER_API_KEY_4,
+    process.env.OPENROUTER_API_KEY_5,
+    process.env.OPENROUTER_API_KEY_6,
+    process.env.OPENROUTER_API_KEY
+  ].filter(Boolean);
+  
+  if (keys.length === 0) {
     throw new Error("No OpenRouter API keys configured");
   }
   
-  const key = OPENROUTER_API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % OPENROUTER_API_KEYS.length;
+  const key = keys[currentKeyIndex % keys.length] as string;
+  currentKeyIndex = (currentKeyIndex + 1) % keys.length;
   return key;
 }
 
