@@ -423,7 +423,10 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Fix grammar and expand: ${originalPrompt}`;
+      const enhancementPrompt = `Transform this into a longer, better written prompt with perfect grammar. Don't answer it, just improve the prompt itself:
+
+Original: "${originalPrompt}"
+Improved prompt:`;
 
       try {
         const apiKey = getNextApiKey();
@@ -440,8 +443,8 @@ Return only the school names as a JSON array of strings. Make them authentic and
           body: JSON.stringify({
             model: 'anthropic/claude-3-haiku',
             messages: [{ role: 'user', content: enhancementPrompt }],
-            temperature: 0,
-            max_tokens: 80,
+            temperature: 0.1,
+            max_tokens: 150,
             stream: false,
           }),
         });
