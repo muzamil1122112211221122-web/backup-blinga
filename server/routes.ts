@@ -14,7 +14,7 @@ import path from "path";
 let currentKeyIndex = 0;
 
 function getNextApiKey(): string {
-  // Check if we have API keys configured
+  // Check if we have API keys configured - prioritize the numbered keys
   const keys = [
     process.env.OPENROUTER_API_KEY_1,
     process.env.OPENROUTER_API_KEY_2,
@@ -23,16 +23,14 @@ function getNextApiKey(): string {
     process.env.OPENROUTER_API_KEY_5,
     process.env.OPENROUTER_API_KEY_6,
     process.env.OPENROUTER_API_KEY
-  ].filter(Boolean);
+  ].filter(key => key && key.trim().length > 0);
   
   if (keys.length === 0) {
-    console.log('Available environment variables:', Object.keys(process.env).filter(k => k.includes('OPENROUTER')));
-    throw new Error("No OpenRouter API keys configured");
+    throw new Error("No valid OpenRouter API keys found");
   }
   
   const key = keys[currentKeyIndex % keys.length] as string;
   currentKeyIndex = (currentKeyIndex + 1) % keys.length;
-  console.log(`Using API key ${currentKeyIndex}/${keys.length}, key starts with: ${key.substring(0, 8)}...`);
   return key;
 }
 
@@ -457,7 +455,9 @@ Enhanced version:`;
           }
         }
       } catch (aiError: any) {
-        console.log('AI prompt enhancement failed, using fallback:', aiError?.message || 'Unknown error');
+        console.error('AI prompt enhancement failed:', aiError?.message || 'Unknown error');
+        // Return error instead of falling back to slow method
+        return res.status(500).json({ error: 'Enhancement service temporarily unavailable' });
       }
 
       // Fallback enhancement if AI fails - create a more detailed prompt
