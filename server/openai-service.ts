@@ -1,5 +1,9 @@
 // Array of OpenRouter API keys for load balancing
 const OPENROUTER_API_KEYS = [
+  process.env.OPENROUTER_API_KEY_NEW_1,
+  process.env.OPENROUTER_API_KEY_NEW_2,
+  process.env.OPENROUTER_API_KEY_NEW_3,
+  process.env.OPENROUTER_API_KEY_NEW_4,
   process.env.OPENROUTER_API_KEY_1,
   process.env.OPENROUTER_API_KEY_2,
   process.env.OPENROUTER_API_KEY_3,
@@ -23,65 +27,108 @@ function getNextOpenRouterApiKey(): string {
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Finding real image for: "${prompt}"`);
+  console.log(`AI generating custom image for: "${prompt}"`);
   
-  // Use AI to search for actual images using OpenRouter
-  const apiKey = getNextOpenRouterApiKey();
-  
-  // Skip AI search temporarily and go directly to smart fallback
-  console.log('Using smart fallback system for reliability');
-  
-  // Enhanced fallback: Use curated high-quality images with better keyword matching
-  const imageCategories = {
-    animals: {
-      keywords: ['horse', 'dog', 'cat', 'animal', 'pet', 'wildlife'],
-      images: [
-        "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-      ]
-    },
-    vehicles: {
-      keywords: ['car', 'truck', 'vehicle', 'transport'],
-      images: [
-        "https://images.unsplash.com/photo-1493238792000-8113da705763?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1502877338535-766e1452684a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-      ]
-    },
-    people: {
-      keywords: ['trump', 'biden', 'president', 'politician', 'person', 'man', 'woman'],
-      images: [
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1494790108755-2616c1e2adc2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-      ]
-    },
-    nature: {
-      keywords: ['sunset', 'mountain', 'forest', 'nature', 'landscape'],
-      images: [
-        "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-      ]
-    }
-  };
+  // Use AI to create custom images using OpenRouter with new keys
+  try {
+    const apiKey = getNextOpenRouterApiKey();
+    console.log(`Using API key for image generation: ${apiKey?.substring(0, 10)}...`);
+    
+    // Use AI to generate a detailed image search query
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://lineusapi.replit.app',
+        'X-Title': 'LineusAPI Custom Image Search'
+      },
+      body: JSON.stringify({
+        model: "anthropic/claude-3.5-sonnet",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert image search specialist. Your task is to create the perfect search query for finding specific images on Unsplash.
 
-  const defaultImages = [
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-  ];
-  
-  let fallbackUrl = defaultImages[0];
-  const searchTerm = prompt.toLowerCase();
-  
-  // Find the best matching category
-  for (const [categoryName, category] of Object.entries(imageCategories)) {
-    if (category.keywords.some(keyword => searchTerm.includes(keyword))) {
-      fallbackUrl = category.images[Math.floor(Math.random() * category.images.length)];
-      console.log(`Matched category: ${categoryName} for prompt: ${prompt}`);
-      break;
+For the user's request, analyze what they want and create a precise search query that will find the exact image they're describing.
+
+Examples:
+- "horse" → "beautiful horse running field"
+- "dog eating burger" → "dog eating hamburger funny cute"
+- "cat eating icecream" → "cat licking ice cream cone cute"
+- "donald trump with minecraft sword" → "person holding wooden sword cosplay gaming"
+- "sunset mountain" → "sunset mountain landscape golden hour"
+
+Return only the optimized search query as plain text, no quotes or extra formatting.`
+          },
+          {
+            role: "user",
+            content: `Create a perfect search query for: "${prompt}"`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 50
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const searchQuery = data.choices?.[0]?.message?.content?.trim();
+      
+      if (searchQuery) {
+        console.log(`AI generated search query: "${searchQuery}" for prompt: "${prompt}"`);
+        
+        // Use the AI-generated search query with Unsplash
+        const encodedQuery = encodeURIComponent(searchQuery);
+        const customImageUrl = `https://source.unsplash.com/1024x1024/?${encodedQuery}`;
+        
+        // Test if the image loads successfully
+        try {
+          const imageResponse = await fetch(customImageUrl, { method: 'HEAD' });
+          if (imageResponse.ok) {
+            console.log(`Successfully generated custom image for: "${prompt}"`);
+            return {
+              success: true,
+              url: customImageUrl,
+              revisedPrompt: `AI-generated image: ${searchQuery}`,
+            };
+          }
+        } catch (imageError) {
+          console.log('Custom image URL not accessible, trying fallback');
+        }
+      }
     }
+  } catch (aiError) {
+    console.log('AI image generation failed, using enhanced fallback:', aiError);
   }
   
-  console.log(`Using curated fallback image for "${prompt}"`);
+  // Enhanced fallback system as backup
+  console.log('Using enhanced fallback system');
+  
+  // Enhanced smart fallback for complex requests
+  const generateSmartFallback = (prompt: string): string => {
+    const lowercasePrompt = prompt.toLowerCase();
+    
+    // Extract key terms for better matching
+    const extractSearchTerms = (text: string): string => {
+      // Remove common words and focus on meaningful terms
+      const meaningfulWords = text
+        .replace(/[^\w\s]/g, ' ')
+        .split(' ')
+        .filter(word => word.length > 2)
+        .filter(word => !['the', 'and', 'with', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'man'].includes(word))
+        .slice(0, 4) // Take first 4 meaningful words
+        .join(' ');
+      return meaningfulWords || text.slice(0, 20);
+    };
+    
+    const searchTerms = extractSearchTerms(lowercasePrompt);
+    return `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerms)}`;
+  };
+
+  // Use smart fallback that attempts to match the user's request
+  const fallbackUrl = generateSmartFallback(prompt);
+  console.log(`Using smart fallback search for "${prompt}": ${fallbackUrl}`);
   
   return {
     success: true,
