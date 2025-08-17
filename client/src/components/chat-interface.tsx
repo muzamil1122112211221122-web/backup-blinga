@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "./logo";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
@@ -89,6 +90,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
 
   // Conversation starters
   const conversationStarters = [
@@ -408,77 +410,79 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  const showToast = (message: string) => {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 9999;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      max-width: 300px;
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('File selected:', file.name, file.type, file.size);
-      // TODO: Implement file upload functionality
-      // For now, just show a notification
-      const message = `File "${file.name}" selected. File upload functionality will be implemented soon.`;
-      
-      // Create a simple toast notification
-      const toast = document.createElement('div');
-      toast.textContent = message;
-      toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #333;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        z-index: 9999;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        max-width: 300px;
-      `;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 3000);
+      showToast(`File "${file.name}" selected. File upload functionality will be implemented soon.`);
     }
-    // Reset the input value so the same file can be selected again
     event.target.value = '';
+    setIsAttachmentDialogOpen(false);
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('Image selected:', file.name, file.type, file.size);
-      
-      // Check if it's an image
       if (file.type.startsWith('image/')) {
-        // TODO: Implement image upload and preview functionality
-        const message = `Image "${file.name}" selected. Image upload functionality will be implemented soon.`;
-        
-        // Create a simple toast notification
-        const toast = document.createElement('div');
-        toast.textContent = message;
-        toast.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #333;
-          color: white;
-          padding: 12px 20px;
-          border-radius: 8px;
-          z-index: 9999;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          max-width: 300px;
-        `;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 3000);
+        showToast(`Image "${file.name}" selected. Image upload functionality will be implemented soon.`);
       } else {
-        console.warn('Selected file is not an image:', file.type);
+        showToast('Please select an image file.');
       }
     }
-    // Reset the input value so the same file can be selected again
     event.target.value = '';
+    setIsAttachmentDialogOpen(false);
+  };
+
+  const handleCreateImage = () => {
+    console.log('Create Image functionality triggered');
+    showToast('Create Image functionality will be implemented soon. This will allow AI to generate images based on your prompts.');
+    setIsAttachmentDialogOpen(false);
+  };
+
+  const handleOpenCamera = () => {
+    console.log('Open Camera functionality triggered');
+    // Try to access camera
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          // Camera access granted
+          showToast('Camera access granted. Full camera functionality will be implemented soon.');
+          // Stop the stream for now
+          stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(error => {
+          console.error('Camera access error:', error);
+          showToast('Camera access denied or not available. Please check your browser permissions.');
+        });
+    } else {
+      // Fallback to file input with camera capture
+      imageInputRef.current?.click();
+    }
+    setIsAttachmentDialogOpen(false);
   };
 
   // Adjust Forus function - enhances AI responses with additional prompting
@@ -1007,19 +1011,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               variant="ghost"
               size="icon"
               className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => setIsAttachmentDialogOpen(true)}
               data-testid="button-attach-file"
             >
               <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-              onClick={() => imageInputRef.current?.click()}
-              data-testid="button-camera"
-            >
-              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -1056,6 +1051,56 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       </div>
       
 
+
+      {/* Attachment Dialog */}
+      <Dialog open={isAttachmentDialogOpen} onOpenChange={setIsAttachmentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Attachment</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="attachment-upload-file"
+            >
+              <FileText className="h-6 w-6" />
+              <span className="text-sm">Upload File</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => imageInputRef.current?.click()}
+              data-testid="attachment-upload-image"
+            >
+              <Image className="h-6 w-6" />
+              <span className="text-sm">Upload Image</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={handleCreateImage}
+              data-testid="attachment-create-image"
+            >
+              <Edit className="h-6 w-6" />
+              <span className="text-sm">Create Image</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={handleOpenCamera}
+              data-testid="attachment-open-camera"
+            >
+              <Camera className="h-6 w-6" />
+              <span className="text-sm">Open Camera</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Customize Modal */}
       <CustomizeModal
