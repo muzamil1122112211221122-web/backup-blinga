@@ -676,13 +676,11 @@ Please create a comprehensive test based on my school's examination style and th
     }, 50);
   };
 
-  // Fast AI prompt enhancement - uses AI but optimized for speed
+  // Ultra-fast AI prompt enhancement
   const handleEnhancePrompt = async () => {
     if (!inputValue.trim()) return;
     
-    // Show immediate feedback that enhancement is happening
     const originalValue = inputValue.trim();
-    setInputValue(originalValue + " ✨");
     
     try {
       const response = await fetch('/api/enhance-prompt', {
@@ -700,7 +698,6 @@ Please create a comprehensive test based on my school's examination style and th
         setInputValue(data.enhancedPrompt);
       } else {
         // Fallback to instant enhancement if API fails
-        console.log('API failed, using instant enhancement');
         let enhanced = originalValue;
         
         // Fix common grammar and spacing issues
@@ -724,7 +721,6 @@ Please create a comprehensive test based on my school's examination style and th
       }
     } catch (error) {
       console.error('Error enhancing prompt:', error);
-      // Remove the sparkle emoji if error
       setInputValue(originalValue);
     }
   };
