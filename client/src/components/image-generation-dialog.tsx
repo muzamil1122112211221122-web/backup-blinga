@@ -212,12 +212,12 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Searching for Image...
+                  Creating Image...
                 </>
               ) : (
                 <>
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  Find Image
+                  Create Image
                 </>
               )}
             </Button>

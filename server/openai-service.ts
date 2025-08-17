@@ -6,6 +6,8 @@ const OPENROUTER_API_KEYS = [
 let currentKeyIndex = 0;
 
 function getNextOpenRouterApiKey(): string {
+  console.log('Available OpenRouter keys:', OPENROUTER_API_KEYS.length);
+  console.log('OPENROUTER_API_KEY env var:', process.env.OPENROUTER_API_KEY ? 'exists' : 'missing');
   if (OPENROUTER_API_KEYS.length === 0) {
     throw new Error("No OpenRouter API keys configured");
   }
