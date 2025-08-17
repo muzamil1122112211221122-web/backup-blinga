@@ -14,9 +14,10 @@ import path from "path";
 let currentKeyIndex = 0;
 
 const failedKeys = new Set<string>();
+const keyFailureCount = new Map<string, number>();
+let lastSuccessfulKeyIndex = 0;
 
 function getNextApiKey(): string {
-  // Check if we have API keys configured - prioritize the numbered keys
   const keys = [
     process.env.OPENROUTER_API_KEY_1,
     process.env.OPENROUTER_API_KEY_2,
@@ -31,24 +32,52 @@ function getNextApiKey(): string {
     throw new Error("No valid OpenRouter API keys found");
   }
   
-  // Filter out keys that recently failed with credit issues
+  // Prioritize keys that haven't failed recently
   const workingKeys = keys.filter(key => key && !failedKeys.has(key));
   
-  // If all keys have failed, reset the failed set and try again
+  // If all keys have failed, reset and try with reduced token limits
   if (workingKeys.length === 0) {
+    console.log('All keys exhausted, resetting for fresh rotation with reduced limits');
     failedKeys.clear();
-    console.log('All keys failed, resetting failed key list');
+    // Reset failure counts but keep some history
+    for (const [key, count] of keyFailureCount.entries()) {
+      if (count > 3) {
+        keyFailureCount.set(key, Math.max(1, count - 2));
+      }
+    }
   }
   
   const availableKeys = workingKeys.length > 0 ? workingKeys : keys;
-  const key = availableKeys[currentKeyIndex % availableKeys.length] as string;
+  
+  // Smart selection - prefer keys with fewer failures
+  let selectedKey = availableKeys[currentKeyIndex % availableKeys.length] as string;
+  const failures = keyFailureCount.get(selectedKey) || 0;
+  
+  // If current key has many failures, try to find a better one
+  if (failures > 2) {
+    const betterKeys = availableKeys.filter(key => (keyFailureCount.get(key) || 0) < failures);
+    if (betterKeys.length > 0) {
+      selectedKey = betterKeys[0];
+    }
+  }
+  
   currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
-  return key;
+  return selectedKey;
 }
 
-function markKeyAsFailed(key: string): void {
+function markKeyAsFailed(key: string, reason?: string): void {
+  const failures = (keyFailureCount.get(key) || 0) + 1;
+  keyFailureCount.set(key, failures);
+  
+  // Mark as failed for immediate avoidance
   failedKeys.add(key);
-  console.log(`Marked API key as failed: ${key.substring(0, 10)}...`);
+  console.log(`API key failed (${failures}x): ${key.substring(0, 10)}... - ${reason || 'Credit/limit issue'}`);
+  
+  // Auto-recovery: re-enable key after timeout
+  setTimeout(() => {
+    failedKeys.delete(key);
+    console.log(`Re-enabling API key: ${key.substring(0, 10)}...`);
+  }, failures > 3 ? 60000 : 30000); // Longer timeout for frequent failures
 }
 
 // Model mapping for different AI models
@@ -443,53 +472,130 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Transform this into a longer, better written prompt with perfect grammar. Don't answer it, just improve the prompt itself:
+      const enhancementPrompt = `Transform this into a longer, better written prompt with perfect grammar. Don't answer it, just improve the prompt itself. Don't include any prefixes like "Improved prompt:" or "Here is" - just provide the enhanced version directly:
 
-Original: "${originalPrompt}"
-Improved prompt:`;
+"${originalPrompt}"`;
 
-      try {
-        const apiKey = getNextApiKey();
-        console.log('Making API request to OpenRouter...');
-        
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://localhost:5000',
-            'X-Title': 'LineusAPI'
-          },
-          body: JSON.stringify({
-            model: 'anthropic/claude-3-haiku',
-            messages: [{ role: 'user', content: enhancementPrompt }],
-            temperature: 0.1,
-            max_tokens: 150,
-            stream: false,
-          }),
-        });
+      // Smart retry with automatic key switching for prompt enhancement  
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+      let enhancedPrompt: string | null = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const apiKey = getNextApiKey();
+          console.log(`Prompt enhancement attempt ${attempt}/${maxRetries} using key: ${apiKey.substring(0, 10)}...`);
+          
+          // Use reduced token limits for faster processing
+          const maxTokens = attempt === 1 ? 150 : attempt === 2 ? 100 : 80;
+          
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+              'X-Title': 'LineusAPI'
+            },
+            body: JSON.stringify({
+              model: 'anthropic/claude-3-haiku',
+              messages: [{ role: 'user', content: enhancementPrompt }],
+              temperature: 0.1,
+              max_tokens: maxTokens,
+              stream: false,
+            }),
+          });
 
-        console.log('Response status:', response.status);
-        
-        if (response.ok) {
+          console.log(`Prompt enhancement response status: ${response.status}`);
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
+            
+            // Mark key as failed for credit/rate limit issues
+            if (response.status === 402 || response.status === 429) {
+              const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
+              markKeyAsFailed(apiKey, reason);
+              console.log(`Enhancement key failed with ${reason}, trying next key...`);
+              
+              lastError = new Error(errorMessage);
+              continue; // Try next key immediately
+            }
+            
+            throw new Error(errorMessage);
+          }
+          
           const data = await response.json();
-          console.log('API response received');
-          const enhancedPrompt = data.choices?.[0]?.message?.content;
+          console.log('Prompt enhancement API response received');
+          enhancedPrompt = data.choices?.[0]?.message?.content;
           
           if (enhancedPrompt) {
-            console.log('Successfully enhanced prompt');
-            res.json({ enhancedPrompt: enhancedPrompt.trim() });
-            return;
+            console.log(`Successful prompt enhancement from key: ${apiKey.substring(0, 10)}...`);
+            break; // Success, exit retry loop
+          } else {
+            throw new Error('No content in enhancement response');
           }
-        } else {
-          const errorText = await response.text();
-          console.error('API request failed:', response.status, errorText);
+          
+        } catch (error: any) {
+          console.log(`Enhancement attempt ${attempt} failed:`, error.message);
+          lastError = error;
+          
+          // Mark key as failed for credit/rate limit issues
+          if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
+            const apiKey = getNextApiKey();
+            markKeyAsFailed(apiKey, 'Credit or rate limit issue');
+          }
+          
+          // Wait before retry (but not for last attempt)
+          if (attempt < maxRetries) {
+            const waitTime = 500 * attempt;
+            console.log(`Waiting ${waitTime}ms before enhancement retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
         }
-      } catch (aiError: any) {
-        console.error('AI prompt enhancement failed:', aiError?.message || 'Unknown error');
-        // Return error instead of falling back to slow method
-        return res.status(500).json({ error: 'Enhancement service temporarily unavailable' });
       }
+      
+      if (enhancedPrompt) {
+        console.log('Successfully enhanced prompt');
+        // Clean up the response by removing common AI prefixes
+        let cleanedPrompt = enhancedPrompt.trim();
+        
+        // Remove common prefixes (case insensitive)
+        const prefixesToRemove = [
+          'Here is an improved version of the prompt with better grammar and more detail:',
+          'Here is an improved version of the prompt:',
+          'Here\'s an improved version of the prompt:',
+          'Here is a better version:',
+          'Improved prompt:',
+          'Improved Prompt:',
+          'Enhanced prompt:',
+          'Enhanced Prompt:'
+        ];
+        
+        for (const prefix of prefixesToRemove) {
+          if (cleanedPrompt.toLowerCase().startsWith(prefix.toLowerCase())) {
+            cleanedPrompt = cleanedPrompt.substring(prefix.length).trim();
+            break;
+          }
+        }
+        
+        // Remove any remaining newlines at the start
+        cleanedPrompt = cleanedPrompt.replace(/^\n+/, '').trim();
+        
+        // Remove any remaining pattern like "Improved Prompt:" with newlines
+        cleanedPrompt = cleanedPrompt.replace(/^(improved\s+prompt\s*:\s*\n*)/i, '').trim();
+        
+        // Also clean common patterns like quotes
+        if (cleanedPrompt.startsWith('"') && cleanedPrompt.endsWith('"')) {
+          cleanedPrompt = cleanedPrompt.slice(1, -1);
+        }
+        
+        res.json({ enhancedPrompt: cleanedPrompt });
+        return;
+      }
+      
+      // If all attempts failed, use fallback enhancement
+      console.log('All enhancement attempts failed, using fallback method');
 
       // Fallback enhancement if AI fails - create a more detailed prompt
       let fallbackEnhanced = originalPrompt.trim();
@@ -764,50 +870,102 @@ Let me provide you with a detailed description instead, or you can try asking ag
 
   const forusModel = conversation.model || 'forus-prime';
   const mappedModel = MODEL_MAPPING[forusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
-  
-  const apiKey = getNextApiKey();
-
   const systemPrompt = getSystemPrompt(conversation, user);
   
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-      'X-Title': 'Forus API',
-    },
-    body: JSON.stringify({
-      model: mappedModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.7,
-      max_tokens: 100,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
-    
-    // Mark key as failed if it's a credit/billing issue
-    if (response.status === 402 && errorMessage.includes('credits')) {
-      markKeyAsFailed(apiKey);
-    }
-    
-    throw new Error(errorMessage);
-  }
-
-  const data = await response.json();
+  // Retry logic with automatic key switching
+  const maxRetries = 4;
+  let lastError: Error | null = null;
   
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const apiKey = getNextApiKey();
+    console.log(`API attempt ${attempt}/${maxRetries} using key: ${apiKey.substring(0, 10)}...`);
+    
+    try {
+      // Adjust token limit based on attempt - reduce if previous attempts failed
+      const maxTokens = attempt === 1 ? 400 : attempt === 2 ? 300 : attempt === 3 ? 200 : 150;
+      
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+          'X-Title': 'Forus API',
+        },
+        body: JSON.stringify({
+          model: mappedModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          temperature: 0.7,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
+        
+        // Mark key as failed for credit/billing issues or rate limits
+        if (response.status === 402 || response.status === 429) {
+          const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
+          markKeyAsFailed(apiKey, reason);
+          console.log(`Key failed with ${reason}, trying next key...`);
+          
+          lastError = new Error(errorMessage);
+          continue; // Try next key immediately
+        }
+        
+        // For other errors, don't retry
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+      
+      if (content) {
+        console.log(`Successful response from key: ${apiKey.substring(0, 10)}... (${content.length} chars)`);
+        return {
+          content: content,
+          metadata: {
+            model: data.model,
+            usage: data.usage,
+            provider: 'OpenRouter',
+            attempt: attempt
+          }
+        };
+      } else {
+        throw new Error('No content in response');
+      }
+      
+    } catch (error: any) {
+      console.log(`Attempt ${attempt} failed:`, error.message);
+      lastError = error;
+      
+      // If it's a credit/rate limit issue, mark key as failed
+      if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
+        markKeyAsFailed(apiKey, 'Credit or rate limit issue');
+      }
+      
+      // Wait before retry (but not for the last attempt)
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(500 * attempt, 2000); // Progressive backoff
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+  
+  // If all attempts failed, return error response
+  console.error('All API attempts failed, returning error response');
   return {
-    content: data.choices[0]?.message?.content || 'I apologize, but I encountered an error generating a response.',
+    content: `I apologize, but I'm experiencing temporary difficulties with my AI service. This might be due to high demand or credit limitations. Please try again in a moment, or contact support if the issue persists.`,
     metadata: {
-      model: data.model,
-      usage: data.usage,
+      model: mappedModel,
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
       provider: 'OpenRouter',
+      error: lastError?.message || 'All retries failed'
     }
   };
 }

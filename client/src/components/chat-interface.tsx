@@ -97,6 +97,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   // Conversation starters
   const conversationStarters = [
@@ -678,9 +679,10 @@ Please create a comprehensive test based on my school's examination style and th
 
   // Super fast AI enhancement 
   const handleEnhancePrompt = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isEnhancing) return;
     
     const originalValue = inputValue.trim();
+    setIsEnhancing(true);
     
     // Show instant grammar fixes first
     let quickFixed = originalValue
@@ -694,14 +696,22 @@ Please create a comprehensive test based on my school's examination style and th
     setInputValue(quickFixed);
     
     // Fire AI enhancement without waiting (async)
-    fetch('/api/enhance-prompt', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ originalPrompt: originalValue }),
-    })
-    .then(response => response.ok ? response.json() : Promise.reject())
-    .then(data => setInputValue(data.enhancedPrompt))
-    .catch(() => console.log('Using quick fix'));
+    try {
+      const response = await fetch('/api/enhance-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ originalPrompt: originalValue }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setInputValue(data.enhancedPrompt);
+      }
+    } catch (error) {
+      console.log('Using quick fix fallback');
+    } finally {
+      setIsEnhancing(false);
+    }
   };
 
   const handleStartSelfListen = async (data: any) => {
@@ -1194,11 +1204,15 @@ Let's start the self-listen session!`;
               size="icon"
               className="macos-button text-muted-foreground hover:text-purple-500 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
               onClick={handleEnhancePrompt}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isEnhancing}
               data-testid="button-enhance-prompt"
-              title="Enhance your prompt 1000x better"
+              title={isEnhancing ? "AI is enhancing prompt..." : "Enhance your prompt 1000x better"}
             >
-              <span className="text-lg font-bold">✦</span>
+              {isEnhancing ? (
+                <div className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></div>
+              ) : (
+                <span className="text-lg font-bold">✦</span>
+              )}
             </Button>
             <Button
               onClick={handleSendMessage}

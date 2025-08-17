@@ -3,10 +3,22 @@
 LineusAPI is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
 ## Recent Updates (August 17, 2025)
+- **Advanced Credit Management System**: Intelligent API key rotation with automatic failure detection and recovery
+- **Smart Retry Logic**: 4-attempt system with progressive token reduction (400→300→200→150 tokens) for optimal success rates
+- **Automatic Key Switching**: Seamlessly switches between 6 OpenRouter keys when credits are exhausted or rate limits hit
+- **Failure Tracking & Recovery**: Failed keys automatically re-enabled after timeout periods (30-60 seconds based on failure frequency)
+- **Enhanced Error Handling**: Graceful degradation with informative error messages when all keys are exhausted
+- **Prompt Enhancement Optimization**: 3-retry system for prompt enhancement with reduced token limits (150→100→80)
+- **Real-time Key Status Monitoring**: Console logging shows which keys are working and failure reasons
+- **Progressive Backoff Strategy**: Intelligent wait times between retries to respect rate limits
+- **Clean Prompt Enhancement**: ✦ button removes unwanted prefix text like "Here is an improved version..."
+- **Enhancement Loading State**: Shows spinner and "AI is enhancing prompt..." message during processing
+- **Smart API Key Management**: 6 OpenRouter keys with automatic fallback when keys have insufficient credits  
+- **Permanent Database Integration**: PostgreSQL setup with proper schema and conversation storage
+- **AI Chat Functionality**: Full working AI responses through OpenRouter API with multiple model support
 - **Modern School Database**: Added real schools like Beaconhouse, LGS, The City School organized by cities/countries
 - **Smart School Fallback**: Intelligent system provides authentic school names even when AI is unavailable
 - **Regional School Recognition**: System recognizes Pakistan, India, UK, USA, Canada, Australia, UAE, Saudi schools
-- **Fixed AI Enhancement**: ✦ button now properly enhances prompts instead of answering them
 - **Ultra-Fast Claude Haiku**: Uses fastest AI model for 2-3 second enhancement responses
 - **Smart Prompt Improvement**: AI transforms short text into longer, better-written prompts with perfect grammar
 - **Forus Education Model**: Added specialized educational AI model with examination and voice-based learning
