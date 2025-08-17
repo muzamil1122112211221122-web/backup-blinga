@@ -4,10 +4,42 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
 import { insertConversationSchema, insertMessageSchema, User } from "@shared/schema";
-import { generateImage } from "./openai-service";
+import { generateImage, getAvailableKeyCount } from "./openai-service";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
+
+// Array of OpenRouter API keys for load balancing
+const OPENROUTER_API_KEYS = [
+  process.env.OPENAI_API_KEY_1,
+  process.env.OPENAI_API_KEY_2,
+  process.env.OPENAI_API_KEY_3,
+  process.env.OPENAI_API_KEY_4,
+  process.env.OPENAI_API_KEY_5,
+  process.env.OPENAI_API_KEY_6,
+].filter(Boolean) as string[];
+
+let currentKeyIndex = 0;
+
+function getNextApiKey(): string {
+  if (OPENROUTER_API_KEYS.length === 0) {
+    throw new Error("No OpenRouter API keys configured");
+  }
+  
+  const key = OPENROUTER_API_KEYS[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % OPENROUTER_API_KEYS.length;
+  return key;
+}
+
+// Model mapping for different AI models
+const MODEL_MAPPING = {
+  'forus-prime': 'anthropic/claude-3.5-sonnet',
+  'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
+  'gpt-4o': 'openai/gpt-4o',
+  'gemini-pro': 'google/gemini-pro',
+  'llama-3.1': 'meta-llama/llama-3.1-405b-instruct',
+  'auto': 'anthropic/claude-3.5-sonnet' // Default for auto-routing
+};
 
 interface ChatClient {
   ws: WebSocket;
@@ -423,38 +455,7 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
   });
 }
 
-// Use multiple OpenRouter API keys with rotation
-const OPENROUTER_API_KEYS = [
-  process.env.OPENAI_API_KEY_1,
-  process.env.OPENAI_API_KEY_2,
-  process.env.OPENAI_API_KEY_3,
-  process.env.OPENAI_API_KEY_4,
-  process.env.OPENAI_API_KEY_5,
-  process.env.OPENAI_API_KEY_6,
-].filter(Boolean) as string[];
 
-let currentKeyIndex = 0;
-
-function getNextApiKey(): string {
-  if (OPENROUTER_API_KEYS.length === 0) {
-    throw new Error('No OpenRouter API keys configured');
-  }
-  const key = OPENROUTER_API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % OPENROUTER_API_KEYS.length;
-  return key;
-}
-
-// Map Forus model names to actual OpenRouter models
-const MODEL_MAPPING = {
-  'forus-prime': 'anthropic/claude-3.5-sonnet',
-  'forus-code': 'openai/gpt-4o',
-  'forus-flash': 'google/gemini-2.0-flash-exp',
-  'forus-creative': 'meta-llama/llama-3.1-70b-instruct',
-  'forus-lite': 'openai/gpt-4o-mini',
-  'forus-speed': 'anthropic/claude-3-haiku',
-  'forus-context': 'google/gemini-pro-1.5',
-  'forus-auto': 'openrouter/auto',
-};
 
 async function callOpenRouterAPI(userMessage: string, conversation: any, user?: any): Promise<{ content: string; metadata: any }> {
   // Check if user is asking for image generation
