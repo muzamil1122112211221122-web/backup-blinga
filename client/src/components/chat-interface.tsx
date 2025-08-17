@@ -169,6 +169,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // WebSocket connection
   const { isConnected, sendMessage: sendWsMessage } = useWebSocket({
@@ -404,6 +406,79 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     } else {
       speak(content);
     }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log('File selected:', file.name, file.type, file.size);
+      // TODO: Implement file upload functionality
+      // For now, just show a notification
+      const message = `File "${file.name}" selected. File upload functionality will be implemented soon.`;
+      
+      // Create a simple toast notification
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 9999;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 300px;
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 3000);
+    }
+    // Reset the input value so the same file can be selected again
+    event.target.value = '';
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log('Image selected:', file.name, file.type, file.size);
+      
+      // Check if it's an image
+      if (file.type.startsWith('image/')) {
+        // TODO: Implement image upload and preview functionality
+        const message = `Image "${file.name}" selected. Image upload functionality will be implemented soon.`;
+        
+        // Create a simple toast notification
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #333;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          z-index: 9999;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          max-width: 300px;
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 3000);
+      } else {
+        console.warn('Selected file is not an image:', file.type);
+      }
+    }
+    // Reset the input value so the same file can be selected again
+    event.target.value = '';
   };
 
   // Adjust Forus function - enhances AI responses with additional prompting
@@ -913,13 +988,38 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           </div>
 
           <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-end space-x-1 sm:space-x-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+              className="hidden"
+            />
+            <input
+              type="file"
+              ref={imageInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+            />
             <Button
               variant="ghost"
               size="icon"
               className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+              onClick={() => fileInputRef.current?.click()}
               data-testid="button-attach-file"
             >
               <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+              onClick={() => imageInputRef.current?.click()}
+              data-testid="button-camera"
+            >
+              <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="ghost"
@@ -930,22 +1030,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               data-testid="button-voice-input"
             >
               {isListening ? <MicOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Mic className="h-3 w-3 sm:h-4 sm:w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
-              data-testid="button-undo"
-            >
-              <Undo className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl hidden sm:flex"
-              data-testid="button-ideas"
-            >
-              <Lightbulb className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               onClick={handleSendMessage}
