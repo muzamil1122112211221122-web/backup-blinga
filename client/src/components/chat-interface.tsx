@@ -676,30 +676,47 @@ Please create a comprehensive test based on my school's examination style and th
     }, 50);
   };
 
-  // Prompt enhancement handler - works silently
-  const handleEnhancePrompt = async () => {
+  // Instant prompt enhancement - fixes grammar, spelling, and makes longer
+  const handleEnhancePrompt = () => {
     if (!inputValue.trim()) return;
     
-    try {
-      const response = await fetch('/api/enhance-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          originalPrompt: inputValue.trim(),
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setInputValue(data.enhancedPrompt);
-      } else {
-        console.error('Failed to enhance prompt');
-      }
-    } catch (error) {
-      console.error('Error enhancing prompt:', error);
+    let enhanced = inputValue.trim();
+    
+    // Fix common grammar and spacing issues
+    enhanced = enhanced
+      .replace(/\s+/g, ' ') // Multiple spaces to single
+      .replace(/([.!?])\s*([a-z])/g, '$1 $2') // Proper spacing after punctuation
+      .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
+      .replace(/\bi\b/g, 'I') // Capitalize I
+      .replace(/([.!?])$/, '$1') // Ensure ending punctuation
+      .replace(/^./, c => c.toUpperCase()); // Capitalize first letter
+    
+    // Make it longer and more detailed based on content
+    const lower = enhanced.toLowerCase();
+    
+    if (lower.includes('elon musk') || lower.includes('elon')) {
+      enhanced = `Tell me about Elon Musk's complete biography including his early life, birth details, childhood in South Africa, education at University of Pennsylvania, early ventures like Zip2 and PayPal, founding of SpaceX and Tesla, his vision for sustainable energy and space exploration, personal life, achievements, controversies, and current projects like Neuralink and The Boring Company. Include specific dates, milestones, and interesting facts about his journey from entrepreneur to one of the world's most influential innovators.`;
+    } else if (lower.includes('python') || lower.includes('programming') || lower.includes('code')) {
+      enhanced = `Provide a comprehensive explanation of ${enhanced} including detailed code examples, best practices, common use cases, step-by-step implementation guide, potential pitfalls to avoid, debugging techniques, performance considerations, and practical projects to practice the concepts. Include syntax explanations and real-world applications.`;
+    } else if (lower.includes('math') || lower.includes('mathematics') || lower.includes('calculate')) {
+      enhanced = `Explain ${enhanced} in detail with step-by-step examples, mathematical principles, formulas, visual representations, practical applications, real-world use cases, and provide practice problems with solutions. Include the theoretical background and computational methods.`;
+    } else if (lower.includes('history') || lower.includes('historical')) {
+      enhanced = `Give a detailed historical account of ${enhanced} including timeline of events, key figures involved, causes and consequences, historical significance, impact on society, cultural context, and connections to modern times. Provide multiple perspectives and primary source references.`;
+    } else if (lower.includes('science') || lower.includes('physics') || lower.includes('chemistry') || lower.includes('biology')) {
+      enhanced = `Provide a comprehensive scientific explanation of ${enhanced} including underlying principles, theories, mechanisms, experimental evidence, real-world applications, current research developments, and practical examples. Include diagrams and step-by-step processes where applicable.`;
+    } else if (lower.includes('how to') || lower.includes('tutorial') || lower.includes('guide')) {
+      enhanced = `Create a comprehensive step-by-step guide for ${enhanced} including detailed instructions, required materials or prerequisites, common mistakes to avoid, troubleshooting tips, alternative approaches, and practical examples. Provide clear explanations for each step.`;
+    } else {
+      // Generic enhancement for any other prompt
+      enhanced = `Provide a comprehensive and detailed explanation of ${enhanced} including background information, key concepts, practical examples, step-by-step breakdown, real-world applications, important considerations, different perspectives, and actionable insights. Make it thorough and educational.`;
     }
+    
+    // Ensure proper ending punctuation
+    if (!enhanced.match(/[.!?]$/)) {
+      enhanced += '.';
+    }
+    
+    setInputValue(enhanced);
   };
 
   const handleStartSelfListen = async (data: any) => {

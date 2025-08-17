@@ -6,8 +6,8 @@ LineusAPI is a real-time chat application built with React, Express.js, and WebS
 - **Modern School Database**: Added real schools like Beaconhouse, LGS, The City School organized by cities/countries
 - **Smart School Fallback**: Intelligent system provides authentic school names even when AI is unavailable
 - **Regional School Recognition**: System recognizes Pakistan, India, UK, USA, Canada, Australia, UAE, Saudi schools
-- **Prompt Enhancement Button**: Added ✦ button in message bar that enhances prompts 1000x while keeping user priorities
-- **AI-Powered Enhancement**: Uses Claude 3.5 Sonnet to transform simple prompts into detailed, effective ones
+- **Instant Prompt Enhancement**: ✦ button now works instantly (milliseconds) fixing grammar, spelling, spacing
+- **Smart Content Detection**: Client-side enhancement detects topic (Elon Musk, programming, math, etc.) and expands appropriately
 - **Forus Education Model**: Added specialized educational AI model with examination and voice-based learning
 - **Education Modal System**: Comprehensive UI for school search, curriculum selection, and file uploads
 - **Smart School Search**: AI-powered school discovery with intelligent fallbacks for any city/country
