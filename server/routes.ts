@@ -859,8 +859,8 @@ Let me provide you with a detailed description instead, or you can try asking ag
     console.log(`API attempt ${attempt}/${maxRetries} using key: ${apiKey.substring(0, 10)}...`);
     
     try {
-      // Adjust token limit based on attempt - reduce if previous attempts failed
-      const maxTokens = attempt === 1 ? 400 : attempt === 2 ? 300 : attempt === 3 ? 200 : 150;
+      // Keep consistent high token limit for complete responses - don't truncate content
+      const maxTokens = 1500; // Fixed high limit to prevent response truncation
       
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
