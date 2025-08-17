@@ -97,45 +97,50 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
 
   const downloadImage = async (url: string, promptText: string) => {
     try {
-      // Create a download link that forces download instead of navigation
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      
-      // Create a safe filename from the prompt
-      const safePrompt = promptText.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 30);
-      link.download = `${safePrompt}_image.jpg`;
-      
-      // Add download attribute to force download
-      link.setAttribute('download', `${safePrompt}_image.jpg`);
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-        title: "Download Started",
-        description: "Image download initiated. Check your downloads folder.",
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      
-      // Fallback: copy URL to clipboard
-      try {
-        await navigator.clipboard.writeText(url);
+      // Method 1: Try to fetch the image and create a blob URL
+      const response = await fetch(url);
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        
+        // Create a safe filename from the prompt
+        const safePrompt = promptText.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 30);
+        link.download = `${safePrompt}_${Date.now()}.jpg`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        URL.revokeObjectURL(blobUrl);
+        
         toast({
-          title: "URL Copied",
-          description: "Image URL copied to clipboard. Paste in browser to download.",
+          title: "Download Started",
+          description: "Image download initiated. Check your downloads folder.",
         });
-      } catch (clipboardError) {
-        // Final fallback: open in new tab
-        window.open(url, '_blank');
-        toast({
-          title: "Image Opened",
-          description: "Right-click the image and select 'Save As' to download.",
-        });
+        return;
       }
+    } catch (error) {
+      console.error('Fetch download error:', error);
+    }
+    
+    // Fallback: copy URL to clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "URL Copied",
+        description: "Image URL copied to clipboard. Paste in browser to download.",
+      });
+    } catch (clipboardError) {
+      // Final fallback: open in new tab
+      window.open(url, '_blank');
+      toast({
+        title: "Image Opened",
+        description: "Right-click the image and select 'Save As' to download.",
+      });
     }
   };
 

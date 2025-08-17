@@ -95,10 +95,10 @@ Respond in JSON format:
       }
     }
     
-    // Fallback: Search Unsplash for free high-quality images
+    // Fallback: Search Unsplash for free high-quality images with specific search terms
     const searchTerm = imageData.searchTerms?.[0] || prompt;
-    // Use a more reliable Unsplash URL format
-    const unsplashUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerm)}&auto=format&fit=crop`;
+    // Use Unsplash API for more specific searches
+    const unsplashUrl = `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerm)}`;
     
     return {
       success: true,
@@ -109,13 +109,17 @@ Respond in JSON format:
   } catch (error) {
     console.error("AI image search error:", error);
     
-    // Final fallback: Use Unsplash with the original prompt
-    const fallbackUrl = `https://source.unsplash.com/1024x1024/?${encodeURIComponent(prompt)}&auto=format&fit=crop`;
+    // Enhanced fallback: Use more specific search terms for better matching
+    const enhancedPrompt = prompt.toLowerCase().trim();
+    const searchTerms = enhancedPrompt.split(' ').slice(0, 3).join('+'); // Take first 3 words
+    const fallbackUrl = `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerms)}`;
+    
+    console.log(`Using enhanced fallback search for "${prompt}" with terms: "${searchTerms}"`);
     
     return {
       success: true,
       url: fallbackUrl,
-      revisedPrompt: prompt,
+      revisedPrompt: `Enhanced search for: ${prompt}`,
     };
   }
 }
