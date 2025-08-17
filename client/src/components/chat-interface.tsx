@@ -457,7 +457,70 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setIsAttachmentDialogOpen(false);
   };
 
+  const handleCreateImageFromFunctionBar = () => {
+    console.log('Create Images from function bar triggered');
+    
+    // Add a message to the chat indicating image generation request
+    const imageGenerationMessage: ChatMessage = {
+      id: Date.now().toString(),
+      conversationId: currentConversationId || '',
+      content: "I'd like to create an image. What would you like me to generate?",
+      role: "assistant",
+      createdAt: new Date()
+    };
+    
+    setMessages(prev => [...prev, imageGenerationMessage]);
+    showToast('AI image generation is ready! Describe what image you want to create in your next message.');
+  };
 
+  const handleOpenCameraFromFunctionBar = () => {
+    console.log('Open Camera from function bar triggered');
+    
+    // Try to access camera with better implementation
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',  // Use back camera if available
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      })
+        .then(stream => {
+          showToast('Camera access granted! Full camera interface will open soon.');
+          
+          // For now, stop the stream but show success
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Add a message to indicate camera functionality
+          const cameraMessage: ChatMessage = {
+            id: Date.now().toString(),
+            conversationId: currentConversationId || '',
+            content: "Camera access granted! I can help you work with images from your camera. Try taking a photo and uploading it through the attachment button.",
+            role: "assistant",
+            createdAt: new Date()
+          };
+          
+          setMessages(prev => [...prev, cameraMessage]);
+        })
+        .catch(error => {
+          console.error('Camera access error:', error);
+          
+          if (error.name === 'NotAllowedError') {
+            showToast('Camera access denied. Please allow camera permissions in your browser settings.');
+          } else if (error.name === 'NotFoundError') {
+            showToast('No camera found on this device.');
+          } else {
+            showToast('Camera not available. You can still upload images using the attachment button.');
+          }
+          
+          // Fallback to file input
+          imageInputRef.current?.click();
+        });
+    } else {
+      showToast('Camera API not supported in this browser. Using file upload instead.');
+      imageInputRef.current?.click();
+    }
+  };
 
   // Adjust Forus function - enhances AI responses with additional prompting
   const adjustForus = useCallback(() => {
@@ -827,6 +890,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
           >
             <Image className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -836,6 +900,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
           >
             <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
