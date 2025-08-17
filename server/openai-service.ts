@@ -28,68 +28,8 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   // Use AI to search for actual images using OpenRouter
   const apiKey = getNextOpenRouterApiKey();
   
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.REPLIT_DOMAINS || 'http://localhost:5000',
-        'X-Title': 'LineusAPI Image Search',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [{
-          role: 'user',
-          content: `Find a high-quality, FREE and publicly accessible image URL for: "${prompt}".
-          
-          REQUIREMENTS:
-          - Must be from FREE sources: Unsplash, Pexels, Pixabay, or Wikipedia Commons
-          - NO Getty Images, Shutterstock, or paid stock photo sites
-          - Must be a direct image URL ending in .jpg, .png, or .webp
-          - Must be royalty-free and publicly accessible
-          - If the request is inappropriate or too specific, find a related appropriate alternative
-          
-          For "${prompt}", find the closest appropriate free image URL.
-          Return ONLY the direct image URL, nothing else.`
-        }],
-        max_tokens: 200,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content?.trim();
-    
-    console.log('AI image search response:', aiResponse);
-    
-    // Extract URL from AI response and validate it's from free sources
-    const urlMatch = aiResponse?.match(/https?:\/\/[^\s]+/);
-    if (urlMatch) {
-      const imageUrl = urlMatch[0];
-      const freeSources = ['unsplash.com', 'pexels.com', 'pixabay.com', 'wikimedia.org', 'wikipedia.org'];
-      
-      // Check if URL is from a free source
-      const isFreeSource = freeSources.some(source => imageUrl.includes(source));
-      
-      if (isFreeSource) {
-        console.log(`Found free image URL: ${imageUrl}`);
-        return {
-          success: true,
-          url: imageUrl,
-          revisedPrompt: `Free photo found for: ${prompt}`,
-        };
-      } else {
-        console.log(`AI returned paid source, using fallback for: ${prompt}`);
-      }
-    }
-  } catch (error) {
-    console.log('AI image search error:', error);
-  }
+  // Skip AI search temporarily and go directly to smart fallback
+  console.log('Using smart fallback system for reliability');
   
   // Enhanced fallback: Use curated high-quality images with better keyword matching
   const imageCategories = {
