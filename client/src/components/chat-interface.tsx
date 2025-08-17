@@ -885,7 +885,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             data-testid="button-create-images"
           >
             <Image className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Find Images</span>
+            <span className="text-xs hidden sm:block">Create Images</span>
           </Button>
           
           <Button

@@ -1,11 +1,6 @@
 // Array of OpenRouter API keys for load balancing
 const OPENROUTER_API_KEYS = [
-  process.env.OPENAI_API_KEY_1,
-  process.env.OPENAI_API_KEY_2,
-  process.env.OPENAI_API_KEY_3,
-  process.env.OPENAI_API_KEY_4,
-  process.env.OPENAI_API_KEY_5,
-  process.env.OPENAI_API_KEY_6,
+  process.env.OPENROUTER_API_KEY,
 ].filter(Boolean) as string[];
 
 let currentKeyIndex = 0;
@@ -21,11 +16,11 @@ function getNextOpenRouterApiKey(): string {
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  // Use AI to search for and find relevant images from the internet
+  // Use AI to create and generate relevant images from the internet
   const apiKey = getNextOpenRouterApiKey();
   
   try {
-    console.log(`AI searching for images related to: "${prompt}"`);
+    console.log(`AI creating images for: "${prompt}"`);
     
     // Use OpenRouter to find relevant image search terms and sources
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -41,15 +36,15 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
         messages: [
           {
             role: "system",
-            content: `You are an expert image researcher. Your task is to find high-quality, royalty-free images from the internet that match the user's request. 
+            content: `You are an expert image creator. Your task is to create high-quality, royalty-free images from the internet that match the user's request. 
 
-Search for images using these reliable sources:
+Generate images using these reliable sources:
 1. Unsplash API (unsplash.com) - Professional stock photos
 2. Pixabay API (pixabay.com) - Free images and photos
 3. Pexels API (pexels.com) - High-quality stock photos
 
 For the user's request, provide:
-1. 3-5 specific search terms that would find the best images
+1. 3-5 specific search terms that would create the best images
 2. The most relevant image URL from these free sources
 3. A description of what makes this image perfect for the request
 
@@ -63,7 +58,7 @@ Respond in JSON format:
           },
           {
             role: "user",
-            content: `Find a high-quality image for: "${prompt}"`
+            content: `Create a high-quality image for: "${prompt}"`
           }
         ],
         response_format: { type: "json_object" }

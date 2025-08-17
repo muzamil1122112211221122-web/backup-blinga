@@ -30,7 +30,7 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
     if (!prompt.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a description for the image you want to find.",
+        description: "Please enter a description for the image you want to create.",
         variant: "destructive",
       });
       return;
@@ -70,16 +70,16 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         
         toast({
           title: "Success!",
-          description: "AI found a perfect image for you!",
+          description: "AI created a perfect image for you!",
         });
       } else {
-        throw new Error(data.message || 'Failed to find image');
+        throw new Error(data.message || 'Failed to create image');
       }
     } catch (error) {
       console.error('Image generation error:', error);
       toast({
-        title: "Search Failed",
-        description: error instanceof Error ? error.message : "Failed to find image. Please try again.",
+        title: "Creation Failed",
+        description: error instanceof Error ? error.message : "Failed to create image. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -151,10 +151,10 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5" />
-            Find Images with AI
+            Create Images with AI
           </DialogTitle>
           <DialogDescription>
-            Describe what you're looking for and AI will search the internet to find the perfect image for you.
+            Describe what you want to create and AI will generate the perfect image for you.
           </DialogDescription>
         </DialogHeader>
 
@@ -162,10 +162,10 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
           {/* Image Generation Form */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="image-prompt">What image are you looking for?</Label>
+              <Label htmlFor="image-prompt">What image do you want to create?</Label>
               <Textarea
                 id="image-prompt"
-                placeholder="Describe the image you want to find... (e.g., 'A red horse galloping', 'Beautiful sunset over mountains')"
+                placeholder="Describe the image you want to create... (e.g., 'A red horse galloping', 'Beautiful sunset over mountains')"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
