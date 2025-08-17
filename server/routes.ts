@@ -19,6 +19,10 @@ let lastSuccessfulKeyIndex = 0;
 
 function getNextApiKey(): string {
   const keys = [
+    process.env.OPENROUTER_API_KEY_NEW_1,
+    process.env.OPENROUTER_API_KEY_NEW_2,
+    process.env.OPENROUTER_API_KEY_NEW_3,
+    process.env.OPENROUTER_API_KEY_NEW_4,
     process.env.OPENROUTER_API_KEY_1,
     process.env.OPENROUTER_API_KEY_2,
     process.env.OPENROUTER_API_KEY_3,
