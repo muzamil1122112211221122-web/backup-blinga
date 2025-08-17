@@ -65,11 +65,11 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
           url: data.url,
           prompt: prompt.trim(), // Use original prompt, not the revised one with source info
           timestamp: new Date(),
-          isLoading: true,
+          isLoading: false,
         };
         
         setGeneratedImages(prev => [newImage, ...prev]);
-        setImageLoadingStates(prev => ({ ...prev, 0: true })); // New image is at index 0
+        setImageLoadingStates(prev => ({ ...prev, 0: false })); // New image is at index 0
         setPrompt('');
         
         toast({
@@ -282,8 +282,8 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                 {generatedImages.map((image, index) => (
                   <div key={`${image.timestamp.getTime()}-${index}`} className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="relative">
-                      {/* Loading placeholder */}
-                      {imageLoadingStates[index] && (
+                      {/* Loading placeholder - only show while actually loading */}
+                      {imageLoadingStates[index] === true && (
                         <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center z-10">
                           <div className="flex flex-col items-center space-y-2">
                             <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
@@ -305,9 +305,6 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                         onLoad={() => {
                           console.log('Image loaded successfully:', image.url);
                           setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-                        }}
-                        style={{ 
-                          display: imageLoadingStates[index] ? 'none' : 'block'
                         }}
                       />
                     </div>
