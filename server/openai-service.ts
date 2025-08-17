@@ -41,10 +41,17 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
         model: 'anthropic/claude-3.5-sonnet',
         messages: [{
           role: 'user',
-          content: `Find a high-quality, publicly available image URL for: "${prompt}". 
-          Search for actual photos from sources like Unsplash, Pexels, or Pixabay.
-          Return ONLY a direct image URL that works, nothing else. The URL must be a real photo, not a placeholder.
-          Focus on finding: ${prompt}`
+          content: `Find a high-quality, FREE and publicly accessible image URL for: "${prompt}".
+          
+          REQUIREMENTS:
+          - Must be from FREE sources: Unsplash, Pexels, Pixabay, or Wikipedia Commons
+          - NO Getty Images, Shutterstock, or paid stock photo sites
+          - Must be a direct image URL ending in .jpg, .png, or .webp
+          - Must be royalty-free and publicly accessible
+          - If the request is inappropriate or too specific, find a related appropriate alternative
+          
+          For "${prompt}", find the closest appropriate free image URL.
+          Return ONLY the direct image URL, nothing else.`
         }],
         max_tokens: 200,
         temperature: 0.7,
@@ -60,42 +67,62 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
     
     console.log('AI image search response:', aiResponse);
     
-    // Extract URL from AI response
+    // Extract URL from AI response and validate it's from free sources
     const urlMatch = aiResponse?.match(/https?:\/\/[^\s]+/);
     if (urlMatch) {
       const imageUrl = urlMatch[0];
-      console.log(`Found image URL: ${imageUrl}`);
+      const freeSources = ['unsplash.com', 'pexels.com', 'pixabay.com', 'wikimedia.org', 'wikipedia.org'];
       
-      return {
-        success: true,
-        url: imageUrl,
-        revisedPrompt: `Real photo found for: ${prompt}`,
-      };
+      // Check if URL is from a free source
+      const isFreeSource = freeSources.some(source => imageUrl.includes(source));
+      
+      if (isFreeSource) {
+        console.log(`Found free image URL: ${imageUrl}`);
+        return {
+          success: true,
+          url: imageUrl,
+          revisedPrompt: `Free photo found for: ${prompt}`,
+        };
+      } else {
+        console.log(`AI returned paid source, using fallback for: ${prompt}`);
+      }
     }
   } catch (error) {
     console.log('AI image search error:', error);
   }
   
-  // Fallback: Use curated high-quality images based on common search terms
-  const horseImages = [
-    "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-    "https://images.unsplash.com/photo-1573168710865-80d3fe6c688c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-  ];
-  
-  const dogImages = [
-    "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-    "https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-  ];
-  
-  const carImages = [
-    "https://images.unsplash.com/photo-1493238792000-8113da705763?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-    "https://images.unsplash.com/photo-1502877338535-766e1452684a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-  ];
-  
-  const sunsetImages = [
-    "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
-  ];
+  // Enhanced fallback: Use curated high-quality images with better keyword matching
+  const imageCategories = {
+    animals: {
+      keywords: ['horse', 'dog', 'cat', 'animal', 'pet', 'wildlife'],
+      images: [
+        "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
+        "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
+        "https://images.unsplash.com/photo-1583512603805-3cc6b41f3edb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
+      ]
+    },
+    vehicles: {
+      keywords: ['car', 'truck', 'vehicle', 'transport'],
+      images: [
+        "https://images.unsplash.com/photo-1493238792000-8113da705763?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
+        "https://images.unsplash.com/photo-1502877338535-766e1452684a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
+      ]
+    },
+    people: {
+      keywords: ['trump', 'biden', 'president', 'politician', 'person', 'man', 'woman'],
+      images: [
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
+        "https://images.unsplash.com/photo-1494790108755-2616c1e2adc2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
+      ]
+    },
+    nature: {
+      keywords: ['sunset', 'mountain', 'forest', 'nature', 'landscape'],
+      images: [
+        "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
+        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80"
+      ]
+    }
+  };
 
   const defaultImages = [
     "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80",
@@ -105,14 +132,13 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   let fallbackUrl = defaultImages[0];
   const searchTerm = prompt.toLowerCase();
   
-  if (searchTerm.includes('horse')) {
-    fallbackUrl = horseImages[Math.floor(Math.random() * horseImages.length)];
-  } else if (searchTerm.includes('dog')) {
-    fallbackUrl = dogImages[Math.floor(Math.random() * dogImages.length)];
-  } else if (searchTerm.includes('car')) {
-    fallbackUrl = carImages[Math.floor(Math.random() * carImages.length)];
-  } else if (searchTerm.includes('sunset')) {
-    fallbackUrl = sunsetImages[Math.floor(Math.random() * sunsetImages.length)];
+  // Find the best matching category
+  for (const [categoryName, category] of Object.entries(imageCategories)) {
+    if (category.keywords.some(keyword => searchTerm.includes(keyword))) {
+      fallbackUrl = category.images[Math.floor(Math.random() * category.images.length)];
+      console.log(`Matched category: ${categoryName} for prompt: ${prompt}`);
+      break;
+    }
   }
   
   console.log(`Using curated fallback image for "${prompt}"`);
