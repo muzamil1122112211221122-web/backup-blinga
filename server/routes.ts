@@ -40,11 +40,11 @@ function getNextApiKey(): string {
     console.log('All keys exhausted, resetting for fresh rotation with reduced limits');
     failedKeys.clear();
     // Reset failure counts but keep some history
-    for (const [key, count] of keyFailureCount.entries()) {
+    Array.from(keyFailureCount.entries()).forEach(([key, count]) => {
       if (count > 3) {
         keyFailureCount.set(key, Math.max(1, count - 2));
       }
-    }
+    });
   }
   
   const availableKeys = workingKeys.length > 0 ? workingKeys : keys;
@@ -55,9 +55,9 @@ function getNextApiKey(): string {
   
   // If current key has many failures, try to find a better one
   if (failures > 2) {
-    const betterKeys = availableKeys.filter(key => (keyFailureCount.get(key) || 0) < failures);
+    const betterKeys = availableKeys.filter(key => key && (keyFailureCount.get(key) || 0) < failures);
     if (betterKeys.length > 0) {
-      selectedKey = betterKeys[0];
+      selectedKey = betterKeys[0]!;
     }
   }
   
