@@ -667,32 +667,13 @@ Please create a comprehensive test based on my school's examination style and th
   const handleSendMessageDirect = async (messageContent: string) => {
     if (!messageContent.trim() || !currentConversationId) return;
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      conversationId: currentConversationId,
-      role: 'user',
-      content: messageContent.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    // Add user message immediately
-    setMessages(prev => [...prev, userMessage]);
-
-    // Send to server and get AI response
-    try {
-      const response = await fetch(`/api/conversations/${currentConversationId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: messageContent.trim() }),
-      });
-
-      if (response.ok) {
-        // Get AI response directly
-        handleSendMessage();
-      }
-    } catch (error) {
-      console.error('Error sending direct message:', error);
-    }
+    // Set the input value and trigger the regular send message function
+    setInputValue(messageContent.trim());
+    
+    // Use setTimeout to ensure state is updated before sending
+    setTimeout(async () => {
+      await handleSendMessage();
+    }, 50);
   };
 
   // Prompt enhancement handler - works silently
