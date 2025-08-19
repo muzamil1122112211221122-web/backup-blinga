@@ -4,7 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
 import { insertConversationSchema, insertMessageSchema, User } from "@shared/schema";
-import { generateImage, getAvailableKeyCount } from "./openai-service";
+import { generateImage, getAvailableKeyCount, analyzeImage } from "./openai-service";
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
@@ -350,6 +350,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorMessage = 'API billing issue. Please check your OpenAI account.';
         } else if (error.message.includes('content')) {
           errorMessage = 'Content policy violation. Please try a different description.';
+        }
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: errorMessage,
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Image analysis endpoint (for ChatGPT/Gemini-like multimodal input)
+  app.post('/api/analyze-image', requireAuth, async (req, res) => {
+    try {
+      const { imageData, prompt = "Describe this image in detail" } = req.body;
+      
+      if (!imageData || typeof imageData !== 'string') {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Valid image data (base64) is required for image analysis' 
+        });
+      }
+
+      // Remove data URL prefix if present
+      const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
+      
+      console.log('Analyzing image with prompt:', prompt.trim());
+      
+      const result = await analyzeImage(base64Data, prompt.trim());
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          analysis: result.analysis,
+          originalPrompt: prompt.trim()
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: result.error || 'Image analysis failed'
+        });
+      }
+    } catch (error) {
+      console.error('Image analysis API error:', error);
+      
+      let errorMessage = 'Failed to analyze image. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('rate limit') || error.message.includes('quota')) {
+          errorMessage = 'API rate limit reached. Please try again in a moment.';
+        } else if (error.message.includes('billing')) {
+          errorMessage = 'API billing issue. Please check your account.';
+        } else if (error.message.includes('content')) {
+          errorMessage = 'Content policy violation. Please try a different image.';
         }
       }
       

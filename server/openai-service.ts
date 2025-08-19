@@ -478,3 +478,131 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
 export function getAvailableKeyCount(): number {
   return OPENROUTER_API_KEYS.length;
 }
+
+// Image analysis function using OpenAI Vision API or Gemini
+export async function analyzeImage(base64Image: string, prompt: string = "Describe this image in detail"): Promise<{
+  success: boolean;
+  analysis: string;
+  error?: string;
+}> {
+  console.log(`Analyzing image with prompt: "${prompt}"`);
+  
+  // First try: Use OpenAI Vision (GPT-4o)
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      console.log('Using OpenAI GPT-4o Vision for image analysis...');
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: prompt
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.3
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('OpenAI vision analysis successful');
+        
+        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+          return {
+            success: true,
+            analysis: data.choices[0].message.content
+          };
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('OpenAI vision analysis failed:', response.status, errorData);
+        throw new Error(`OpenAI Vision error: ${response.status}`);
+      }
+    } catch (error) {
+      console.log('OpenAI vision analysis failed, trying Gemini alternative:', error);
+    }
+  } else {
+    console.log('No OpenAI API key found, skipping OpenAI vision analysis');
+  }
+  
+  // Second try: Use Gemini Vision
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      console.log('Using Gemini Vision for image analysis...');
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: base64Image
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            maxOutputTokens: 1500,
+            temperature: 0.3
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Gemini vision analysis successful');
+        
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+          const textPart = data.candidates[0].content.parts.find((part: any) => part.text);
+          if (textPart && textPart.text) {
+            return {
+              success: true,
+              analysis: textPart.text
+            };
+          }
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Gemini vision analysis failed:', response.status, errorData);
+        throw new Error(`Gemini Vision error: ${response.status}`);
+      }
+    } catch (error) {
+      console.log('Gemini vision analysis failed:', error);
+    }
+  } else {
+    console.log('No Gemini API key found, skipping Gemini vision analysis');
+  }
+  
+  // Return error if both methods failed
+  return {
+    success: false,
+    analysis: '',
+    error: 'Image analysis failed - both OpenAI and Gemini vision services are unavailable. Please check your API keys and try again.'
+  };
+}

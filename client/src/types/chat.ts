@@ -8,6 +8,7 @@ export interface ChatMessage {
     usage?: any;
     provider?: string;
   };
+  imageUrl?: string; // For multimodal support (ChatGPT/Gemini-like image uploads)
   createdAt: Date;
 }
 

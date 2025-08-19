@@ -478,28 +478,101 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }, 3000);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('File selected:', file.name, file.type, file.size);
-      showToast(`File "${file.name}" selected. File upload functionality will be implemented soon.`);
+      
+      // Handle image files with AI analysis
+      if (file.type.startsWith('image/')) {
+        await handleImageAnalysis(file);
+      } else {
+        showToast(`File "${file.name}" selected. Non-image files will be supported soon.`);
+      }
     }
     event.target.value = '';
     setIsAttachmentDialogOpen(false);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('Image selected:', file.name, file.type, file.size);
       if (file.type.startsWith('image/')) {
-        showToast(`Image "${file.name}" selected. Image upload functionality will be implemented soon.`);
+        await handleImageAnalysis(file);
       } else {
         showToast('Please select an image file.');
       }
     }
     event.target.value = '';
     setIsAttachmentDialogOpen(false);
+  };
+
+  // New function to handle image analysis (ChatGPT/Gemini-like multimodal input)
+  const handleImageAnalysis = async (file: File) => {
+    try {
+      showToast(`Analyzing image "${file.name}"... Please wait.`);
+      
+      // Convert image to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      
+      // Create user message with image
+      const imageMessage: ChatMessage = {
+        id: Date.now().toString(),
+        conversationId: currentConversationId || '',
+        content: `[Image uploaded: ${file.name}]`,
+        role: "user",
+        createdAt: new Date(),
+        imageUrl: base64
+      };
+      
+      setMessages(prev => [...prev, imageMessage]);
+      
+      // Send to AI for analysis
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageData: base64,
+          prompt: "Describe this image in detail. What do you see?"
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.success) {
+          // Create AI response message
+          const aiMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            conversationId: currentConversationId || '',
+            content: result.analysis,
+            role: "assistant",
+            createdAt: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          showToast('Image analyzed successfully!');
+        } else {
+          showToast(`Image analysis failed: ${result.message}`);
+        }
+      } else {
+        showToast('Failed to analyze image. Please try again.');
+      }
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      showToast('Error analyzing image. Please try again.');
+    }
   };
 
   const handleCreateImageFromFunctionBar = () => {
