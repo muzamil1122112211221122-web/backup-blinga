@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Image as ImageIcon, Download, Copy } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Download, Copy, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageGenerationDialogProps {
@@ -95,6 +95,14 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
     toast({
       title: "Copied!",
       description: "Prompt copied to clipboard.",
+    });
+  };
+
+  const deleteImage = (index: number) => {
+    setGeneratedImages(prev => prev.filter((_, i) => i !== index));
+    toast({
+      title: "Deleted",
+      description: "Image removed successfully.",
     });
   };
 
@@ -324,6 +332,16 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Download
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteImage(index)}
+                          data-testid={`button-delete-${index}`}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
                         </Button>
                       </div>
                     </div>
