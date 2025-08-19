@@ -281,16 +281,26 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                 {generatedImages.map((image, index) => (
                   <div key={`${image.timestamp.getTime()}-${index}`} className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="relative">
-                      <img
-                        src={image.url}
-                        alt={`Generated: ${image.prompt}`}
-                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover"
-                        data-testid={`generated-image-${index}`}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = `https://via.placeholder.com/1024x1024/e2e8f0/64748b?text=Image+Not+Available`;
-                        }}
-                      />
+                      {image.isLoading ? (
+                        <div className="w-full h-96 rounded-lg bg-muted flex items-center justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : (
+                        <img
+                          src={image.url}
+                          alt={`Generated image for: ${image.prompt}`}
+                          className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover"
+                          data-testid={`generated-image-${index}`}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            const fallbackText = encodeURIComponent(image.prompt.slice(0, 15).replace(/\s+/g, '+'));
+                            target.src = `https://placehold.co/1024x1024/dc2626/white?text=${fallbackText}`;
+                          }}
+                          onLoad={() => {
+                            console.log('Image loaded successfully:', image.url);
+                          }}
+                        />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground line-clamp-2">

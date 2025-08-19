@@ -163,9 +163,10 @@ Examples:
   
   // If all external sources fail, return a reliable placeholder
   console.log('All external image sources failed, using placeholder');
+  const encodedText = encodeURIComponent(prompt.slice(0, 15).replace(/\s+/g, '+'));
   return {
     success: true,
-    url: `https://via.placeholder.com/1024x1024/4F46E5/FFFFFF?text=${encodeURIComponent(prompt.slice(0, 20))}`,
+    url: `https://placehold.co/1024x1024/6366f1/white?text=${encodedText}`,
     revisedPrompt: `Placeholder for: ${prompt}`,
   };
 
