@@ -27,9 +27,64 @@ function getNextOpenRouterApiKey(): string {
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Generating high-quality DALL-E 3 image for: "${prompt}"`);
+  console.log(`Generating photorealistic image for: "${prompt}"`);
   
-  // First try: Use OpenAI DALL-E 3 for photorealistic images
+  // First try: Use Gemini 2.0 Flash for high-quality image generation
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      console.log('Using Gemini 2.0 Flash for photorealistic image generation...');
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [{ text: prompt.trim() }]
+          }],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE']
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Gemini image generation response:', data);
+        
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+          const parts = data.candidates[0].content.parts;
+          
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              console.log(`Successfully generated Gemini image for: "${prompt}"`);
+              const imageData = part.inlineData.data;
+              const mimeType = part.inlineData.mimeType || 'image/jpeg';
+              const dataUrl = `data:${mimeType};base64,${imageData}`;
+              
+              return {
+                success: true,
+                url: dataUrl,
+                revisedPrompt: `Gemini-generated: ${prompt}`,
+              };
+            }
+          }
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('Gemini image generation failed:', response.status, errorData);
+        throw new Error(`Gemini error: ${response.status}`);
+      }
+    } catch (error) {
+      console.log('Gemini generation failed, trying OpenAI alternative:', error);
+    }
+  } else {
+    console.log('No Gemini API key found, skipping Gemini image generation');
+  }
+  
+  // Second try: Use OpenAI DALL-E 3 for photorealistic images
   if (process.env.OPENAI_API_KEY) {
     try {
       console.log('Using OpenAI DALL-E 3 for high-quality image generation...');
