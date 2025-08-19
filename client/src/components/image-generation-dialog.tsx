@@ -69,9 +69,14 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
           isLoading: false,
         };
         
+        // Clear all previous loading states first
+        setImageLoadingStates({});
+        setImageLoadErrors({});
+        
+        // Add the new image and set it as initially loading
         setGeneratedImages(prev => [newImage, ...prev]);
-        setImageLoadingStates(prev => ({ ...prev, 0: true })); // Start loading for new image
-        setImageLoadErrors(prev => ({ ...prev, 0: false })); // Reset error state
+        setImageLoadingStates(prev => ({ ...prev, 0: false })); // Image ready to show
+        setImageLoadErrors(prev => ({ ...prev, 0: false })); // No errors
         setPrompt('');
         
         toast({
@@ -284,35 +289,18 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                 {generatedImages.map((image, index) => (
                   <div key={`${image.timestamp.getTime()}-${index}`} className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="relative">
-                      {/* Smooth loading placeholder - only show while actually loading */}
-                      {imageLoadingStates[index] === true && !imageLoadErrors[index] && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg flex items-center justify-center z-10">
-                          <div className="flex flex-col items-center space-y-3">
-                            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium">Creating your image...</div>
-                          </div>
-                        </div>
-                      )}
                       <img
                         src={image.url}
                         alt={`Generated: ${image.prompt}`}
-                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover transition-all duration-500 ease-out"
-                        style={{ 
-                          opacity: imageLoadingStates[index] ? 0 : 1,
-                          transform: imageLoadingStates[index] ? 'scale(0.95)' : 'scale(1)'
-                        }}
+                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover transition-opacity duration-300 ease-in-out"
                         data-testid={`generated-image-${index}`}
                         onError={(e) => {
                           console.error('Image failed to load:', image.url);
-                          setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-                          setImageLoadErrors(prev => ({ ...prev, [index]: true }));
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://via.placeholder.com/1024x1024/e2e8f0/64748b?text=Image+Error`;
+                          target.src = `https://via.placeholder.com/1024x1024/e2e8f0/64748b?text=Image+Not+Available`;
                         }}
                         onLoad={() => {
                           console.log('Image loaded successfully:', image.url);
-                          setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-                          setImageLoadErrors(prev => ({ ...prev, [index]: false }));
                         }}
                       />
                     </div>
