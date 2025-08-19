@@ -26,6 +26,7 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
+  const [imageLoadErrors, setImageLoadErrors] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
 
   const generateImage = async () => {
@@ -69,7 +70,8 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
         };
         
         setGeneratedImages(prev => [newImage, ...prev]);
-        setImageLoadingStates(prev => ({ ...prev, 0: false })); // New image is at index 0
+        setImageLoadingStates(prev => ({ ...prev, 0: true })); // Start loading for new image
+        setImageLoadErrors(prev => ({ ...prev, 0: false })); // Reset error state
         setPrompt('');
         
         toast({
@@ -282,29 +284,35 @@ export function ImageGenerationDialog({ open, onOpenChange }: ImageGenerationDia
                 {generatedImages.map((image, index) => (
                   <div key={`${image.timestamp.getTime()}-${index}`} className="space-y-3 bg-card p-4 rounded-lg border">
                     <div className="relative">
-                      {/* Loading placeholder - only show while actually loading */}
-                      {imageLoadingStates[index] === true && (
-                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center z-10">
-                          <div className="flex flex-col items-center space-y-2">
-                            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-                            <div className="text-sm text-gray-500 dark:text-gray-400">Loading image...</div>
+                      {/* Smooth loading placeholder - only show while actually loading */}
+                      {imageLoadingStates[index] === true && !imageLoadErrors[index] && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-lg flex items-center justify-center z-10">
+                          <div className="flex flex-col items-center space-y-3">
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                            <div className="text-sm text-gray-600 dark:text-gray-300 font-medium">Creating your image...</div>
                           </div>
                         </div>
                       )}
                       <img
                         src={image.url}
                         alt={`Generated: ${image.prompt}`}
-                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover"
+                        className="w-full h-auto rounded-lg shadow-sm max-h-96 object-cover transition-all duration-500 ease-out"
+                        style={{ 
+                          opacity: imageLoadingStates[index] ? 0 : 1,
+                          transform: imageLoadingStates[index] ? 'scale(0.95)' : 'scale(1)'
+                        }}
                         data-testid={`generated-image-${index}`}
                         onError={(e) => {
                           console.error('Image failed to load:', image.url);
                           setImageLoadingStates(prev => ({ ...prev, [index]: false }));
+                          setImageLoadErrors(prev => ({ ...prev, [index]: true }));
                           const target = e.target as HTMLImageElement;
-                          target.src = `https://via.placeholder.com/1024x1024/cccccc/000000?text=Image+Not+Available`;
+                          target.src = `https://via.placeholder.com/1024x1024/e2e8f0/64748b?text=Image+Error`;
                         }}
                         onLoad={() => {
                           console.log('Image loaded successfully:', image.url);
                           setImageLoadingStates(prev => ({ ...prev, [index]: false }));
+                          setImageLoadErrors(prev => ({ ...prev, [index]: false }));
                         }}
                       />
                     </div>

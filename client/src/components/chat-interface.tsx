@@ -53,6 +53,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Volume2,
+  RotateCcw,
   MicOff,
   Zap,
   Code2 as Code,
@@ -93,6 +94,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
+  const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
   const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
@@ -414,6 +416,42 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       stopSpeaking();
     } else {
       speak(content);
+    }
+  };
+
+  const handleRetryMessage = async (messageId: string) => {
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) return;
+    
+    // Find the user message that preceded this AI response
+    let userMessage = null;
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userMessage = messages[i];
+        break;
+      }
+    }
+    
+    if (!userMessage || !currentConversationId) return;
+    
+    setRetryingMessageId(messageId);
+    
+    try {
+      console.log('Retrying AI response for:', userMessage.content);
+      
+      // Remove the failed AI message
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      setIsTyping(true);
+      
+      // Make new API call
+      await handleDirectApiCall(userMessage.content, currentConversationId);
+      
+    } catch (error) {
+      console.error('Retry failed:', error);
+      showToast('Failed to retry. Please try again.');
+    } finally {
+      setRetryingMessageId(null);
+      setIsTyping(false);
     }
   };
 
@@ -980,6 +1018,20 @@ Let's start the self-listen session!`;
                             data-testid={`button-speak-${message.id}`}
                           >
                             <Volume2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
+                              retryingMessageId === message.id
+                                ? 'text-blue-500 animate-spin'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            }`}
+                            onClick={() => handleRetryMessage(message.id)}
+                            disabled={retryingMessageId === message.id}
+                            data-testid={`button-retry-${message.id}`}
+                          >
+                            <RotateCcw className="h-3 w-3" />
                           </Button>
                         </div>
 

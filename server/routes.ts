@@ -516,22 +516,43 @@ Return only the school names as a JSON array of strings. Make them authentic and
           // Use reduced token limits for faster processing
           const maxTokens = attempt === 1 ? 150 : attempt === 2 ? 100 : 80;
           
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey.key}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-              'X-Title': 'LineusAPI'
-            },
-            body: JSON.stringify({
-              model: 'anthropic/claude-3-haiku',
-              messages: [{ role: 'user', content: enhancementPrompt }],
-              temperature: 0.1,
-              max_tokens: maxTokens,
-              stream: false,
-            }),
-          });
+          let response: Response;
+          
+          if (apiKey.provider === 'groq') {
+            // Use Groq API
+            response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey.key}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: enhancementPrompt }],
+                temperature: 0.1,
+                max_tokens: maxTokens,
+                stream: false,
+              }),
+            });
+          } else {
+            // Use OpenRouter API
+            response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey.key}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+                'X-Title': 'LineusAPI'
+              },
+              body: JSON.stringify({
+                model: 'anthropic/claude-3-haiku',
+                messages: [{ role: 'user', content: enhancementPrompt }],
+                temperature: 0.1,
+                max_tokens: maxTokens,
+                stream: false,
+              }),
+            });
+          }
 
           console.log(`Prompt enhancement response status: ${response.status}`);
           

@@ -29,22 +29,25 @@ function getNextOpenRouterApiKey(): string {
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Finding internet image for: "${prompt}"`);
   
-  // Use AI to find real internet images that match user's request
+  // Use Groq AI to find real internet images that match user's request
   try {
-    const apiKey = getNextOpenRouterApiKey();
-    console.log(`Using API key for internet image search: ${apiKey?.substring(0, 10)}...`);
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      console.log('Groq API key not available, using smart fallback...');
+      throw new Error('Groq API key not configured');
+    }
     
-    // Use AI to generate optimal search terms for real internet photos
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    console.log(`Using Groq API for internet image search: ${groqKey?.substring(0, 10)}...`);
+    
+    // Use Groq AI to generate optimal search terms for real internet photos
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://lineusapi.replit.app',
-        'X-Title': 'LineusAPI Internet Image Search'
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-haiku",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
