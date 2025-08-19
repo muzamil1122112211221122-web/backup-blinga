@@ -352,12 +352,17 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
   };
   
   const svgContent = createDetailedSVG(prompt);
-  const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
+  // Add timestamp and random number to ensure uniqueness and prevent caching
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(7);
+  const uniqueSvg = svgContent.replace('xmlns="http://www.w3.org/2000/svg">', `xmlns="http://www.w3.org/2000/svg" data-timestamp="${timestamp}" data-id="${randomId}">`);
+  const dataUrl = `data:image/svg+xml;base64,${Buffer.from(uniqueSvg).toString('base64')}`;
   
+  console.log(`Generated unique detailed visual for: "${prompt}" (${timestamp})`);
   return {
     success: true,
     url: dataUrl,
-    revisedPrompt: `Visual illustration: ${prompt}`,
+    revisedPrompt: `Detailed illustration: ${prompt}`,
   };
 
 }
