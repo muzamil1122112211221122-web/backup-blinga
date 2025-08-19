@@ -204,117 +204,123 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
     if (itemLower.includes('horse')) {
       return `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Sky gradient -->
-          <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
-            <stop offset="70%" style="stop-color:#E0F6FF;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#F0F8FF;stop-opacity:1" />
-          </linearGradient>
-          <!-- Horse body gradient -->
-          <radialGradient id="bodyGrad" cx="50%" cy="30%" r="70%">
-            <stop offset="0%" style="stop-color:#D2B48C;stop-opacity:1" />
-            <stop offset="60%" style="stop-color:#8B4513;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+          <radialGradient id="skyGrad" cx="50%" cy="20%" r="80%">
+            <stop offset="0%" style="stop-color:#FFE55C;stop-opacity:1" />
+            <stop offset="30%" style="stop-color:#FF9F40;stop-opacity:1" />
+            <stop offset="70%" style="stop-color:#FF6B6B;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#4ECDC4;stop-opacity:1" />
           </radialGradient>
-          <!-- Mane gradient -->
-          <linearGradient id="maneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#2F1B14;stop-opacity:1" />
-            <stop offset="50%" style="stop-color:#4A4A4A;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#1A1A1A;stop-opacity:1" />
+          <radialGradient id="horseBody" cx="40%" cy="30%" r="60%">
+            <stop offset="0%" style="stop-color:#F4E4BC;stop-opacity:1" />
+            <stop offset="40%" style="stop-color:#D2691E;stop-opacity:1" />
+            <stop offset="80%" style="stop-color:#A0522D;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#8B4513;stop-opacity:1" />
+          </radialGradient>
+          <linearGradient id="maneFlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2C1810;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#5D4037;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#3E2723;stop-opacity:1" />
           </linearGradient>
-          <!-- Ground gradient -->
-          <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:#32CD32;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#228B22;stop-opacity:1" />
-          </linearGradient>
-          <!-- Shadow filter -->
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="5" dy="5" stdDeviation="3" flood-color="#000000" flood-opacity="0.3"/>
+          <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+            <feOffset dx="3" dy="6" result="offset"/>
+            <feFlood flood-color="#000000" flood-opacity="0.3"/>
+            <feComposite in2="offset" operator="in"/>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
         
-        <!-- Sky background -->
+        <!-- Background with sunset sky -->
         <rect width="1024" height="1024" fill="url(#skyGrad)"/>
         
-        <!-- Hills in background -->
-        <path d="M 0 600 Q 200 500 400 550 Q 600 520 800 580 Q 900 600 1024 590 L 1024 1024 L 0 1024 Z" fill="#90EE90" opacity="0.7"/>
+        <!-- Distant mountains -->
+        <path d="M 0 650 Q 150 580 300 620 Q 450 560 600 600 Q 750 540 900 580 Q 950 600 1024 590 L 1024 1024 L 0 1024 Z" fill="#8E44AD" opacity="0.6"/>
+        <path d="M 0 700 Q 200 640 400 680 Q 600 620 800 660 Q 900 680 1024 670 L 1024 1024 L 0 1024 Z" fill="#9B59B6" opacity="0.4"/>
         
-        <!-- Ground -->
-        <ellipse cx="512" cy="850" rx="400" ry="150" fill="url(#groundGrad)"/>
-        <ellipse cx="350" cy="880" rx="180" ry="80" fill="#228B22"/>
-        <ellipse cx="700" cy="870" rx="200" ry="90" fill="#32CD32"/>
+        <!-- Ground with texture -->
+        <ellipse cx="512" cy="920" rx="512" ry="104" fill="#2E7D32"/>
+        <ellipse cx="400" cy="900" rx="200" ry="50" fill="#4CAF50" opacity="0.8"/>
+        <ellipse cx="700" cy="910" rx="180" ry="45" fill="#66BB6A" opacity="0.7"/>
         
-        <!-- Horse shadow -->
-        <ellipse cx="520" cy="860" rx="180" ry="40" fill="#000000" opacity="0.2"/>
+        <!-- Horse realistic body using complex paths -->
+        <!-- Main body -->
+        <path d="M 400 600 Q 380 580 420 560 Q 480 540 560 560 Q 620 580 640 620 Q 630 680 600 700 Q 550 720 500 710 Q 450 700 420 670 Q 390 640 400 600 Z" fill="url(#horseBody)" filter="url(#softShadow)"/>
         
-        <!-- Horse body (main torso) -->
-        <ellipse cx="500" cy="650" rx="140" ry="100" fill="url(#bodyGrad)" filter="url(#shadow)"/>
+        <!-- Chest/shoulder -->
+        <path d="M 350 580 Q 320 560 340 530 Q 380 520 420 540 Q 440 560 430 590 Q 410 610 380 610 Q 350 600 350 580 Z" fill="url(#horseBody)"/>
         
-        <!-- Horse chest -->
-        <ellipse cx="380" cy="620" rx="80" ry="110" fill="url(#bodyGrad)"/>
+        <!-- Neck with curve -->
+        <path d="M 340 530 Q 310 480 290 430 Q 280 400 300 380 Q 330 370 360 390 Q 380 420 370 450 Q 360 480 350 510 Q 345 520 340 530 Z" fill="url(#horseBody)"/>
         
-        <!-- Horse neck -->
-        <ellipse cx="320" cy="520" rx="45" ry="120" fill="url(#bodyGrad)" transform="rotate(-15 320 520)"/>
+        <!-- Head with realistic shape -->
+        <path d="M 290 430 Q 260 410 240 380 Q 220 350 230 320 Q 250 300 280 310 Q 310 320 330 350 Q 340 380 330 410 Q 320 430 300 440 Q 295 435 290 430 Z" fill="url(#horseBody)"/>
         
-        <!-- Horse head -->
-        <ellipse cx="280" cy="420" rx="55" ry="75" fill="url(#bodyGrad)" transform="rotate(-10 280 420)"/>
+        <!-- Snout/muzzle -->
+        <path d="M 240 380 Q 210 370 190 385 Q 170 400 180 420 Q 200 440 230 430 Q 250 420 255 400 Q 250 390 240 380 Z" fill="#E6B880"/>
         
-        <!-- Horse snout -->
-        <ellipse cx="250" cy="465" rx="25" ry="35" fill="#D2B48C"/>
+        <!-- Ears -->
+        <path d="M 280 320 Q 275 300 285 290 Q 295 285 305 295 Q 310 310 300 325 Q 290 330 280 320 Z" fill="url(#horseBody)"/>
+        <path d="M 310 315 Q 305 295 315 285 Q 325 280 335 290 Q 340 305 330 320 Q 320 325 310 315 Z" fill="url(#horseBody)"/>
         
-        <!-- Horse ears -->
-        <ellipse cx="270" cy="375" rx="8" ry="25" fill="url(#bodyGrad)" transform="rotate(-20 270 375)"/>
-        <ellipse cx="290" cy="370" rx="8" ry="25" fill="url(#bodyGrad)" transform="rotate(10 290 370)"/>
+        <!-- Realistic legs with joints -->
+        <!-- Front left leg -->
+        <path d="M 380 700 Q 375 740 370 780 Q 365 820 370 860 L 385 860 Q 390 820 395 780 Q 400 740 395 700 Q 387 700 380 700 Z" fill="url(#horseBody)"/>
+        <!-- Front right leg -->
+        <path d="M 420 710 Q 415 750 410 790 Q 405 830 410 870 L 425 870 Q 430 830 435 790 Q 440 750 435 710 Q 427 710 420 710 Z" fill="url(#horseBody)"/>
+        <!-- Back left leg -->
+        <path d="M 560 720 Q 555 760 550 800 Q 545 840 550 880 L 565 880 Q 570 840 575 800 Q 580 760 575 720 Q 567 720 560 720 Z" fill="url(#horseBody)"/>
+        <!-- Back right leg -->
+        <path d="M 600 715 Q 595 755 590 795 Q 585 835 590 875 L 605 875 Q 610 835 615 795 Q 620 755 615 715 Q 607 715 600 715 Z" fill="url(#horseBody)"/>
         
-        <!-- Horse legs (front) -->
-        <ellipse cx="380" cy="720" rx="18" ry="80" fill="url(#bodyGrad)"/>
-        <ellipse cx="420" cy="730" rx="18" ry="85" fill="url(#bodyGrad)"/>
+        <!-- Hooves -->
+        <ellipse cx="377" cy="865" rx="12" ry="8" fill="#2C2C2C"/>
+        <ellipse cx="417" cy="875" rx="12" ry="8" fill="#2C2C2C"/>
+        <ellipse cx="557" cy="885" rx="13" ry="8" fill="#2C2C2C"/>
+        <ellipse cx="597" cy="880" rx="13" ry="8" fill="#2C2C2C"/>
         
-        <!-- Horse legs (back) -->
-        <ellipse cx="540" cy="740" rx="20" ry="90" fill="url(#bodyGrad)"/>
-        <ellipse cx="580" cy="735" rx="20" ry="88" fill="url(#bodyGrad)"/>
+        <!-- Flowing mane with individual strands -->
+        <path d="M 300 380 Q 280 340 260 300 Q 270 320 285 350 Q 295 370 300 380" fill="url(#maneFlow)"/>
+        <path d="M 310 390 Q 290 350 270 310 Q 280 330 295 360 Q 305 380 310 390" fill="url(#maneFlow)"/>
+        <path d="M 320 400 Q 300 360 280 320 Q 290 340 305 370 Q 315 390 320 400" fill="url(#maneFlow)"/>
+        <path d="M 330 410 Q 310 370 290 330 Q 300 350 315 380 Q 325 400 330 410" fill="url(#maneFlow)"/>
+        <path d="M 340 420 Q 320 380 300 340 Q 310 360 325 390 Q 335 410 340 420" fill="url(#maneFlow)"/>
         
-        <!-- Horse hooves -->
-        <ellipse cx="380" cy="800" rx="22" ry="12" fill="#2F2F2F"/>
-        <ellipse cx="420" cy="815" rx="22" ry="12" fill="#2F2F2F"/>
-        <ellipse cx="540" cy="830" rx="24" ry="12" fill="#2F2F2F"/>
-        <ellipse cx="580" cy="823" rx="24" ry="12" fill="#2F2F2F"/>
+        <!-- Realistic tail -->
+        <path d="M 640 620 Q 680 610 720 640 Q 740 670 720 700 Q 700 730 670 720 Q 650 700 645 670 Q 642 645 640 620" fill="url(#maneFlow)"/>
+        <path d="M 645 630 Q 685 620 725 650 Q 745 680 725 710 Q 705 740 675 730 Q 655 710 650 680 Q 647 655 645 630" fill="url(#maneFlow)" opacity="0.7"/>
         
-        <!-- Horse mane (detailed strands) -->
-        <path d="M 310 390 Q 290 350 275 320 Q 285 340 295 370 Q 305 380 315 400" fill="url(#maneGrad)"/>
-        <path d="M 320 400 Q 300 360 285 330 Q 295 350 305 380 Q 315 390 325 410" fill="url(#maneGrad)"/>
-        <path d="M 330 410 Q 310 370 295 340 Q 305 360 315 390 Q 325 400 335 420" fill="url(#maneGrad)"/>
-        <path d="M 340 420 Q 320 380 305 350 Q 315 370 325 400 Q 335 410 345 430" fill="url(#maneGrad)"/>
+        <!-- Detailed eye -->
+        <ellipse cx="270" cy="360" rx="15" ry="10" fill="#FFFFFF"/>
+        <circle cx="272" cy="360" r="10" fill="#1A1A1A"/>
+        <circle cx="275" cy="356" r="4" fill="#FFFFFF"/>
+        <ellipse cx="277" cy="354" rx="2" ry="1" fill="#FFFFFF"/>
         
-        <!-- Horse tail (flowing) -->
-        <path d="M 640 630 Q 680 600 720 640 Q 740 680 700 720 Q 680 740 660 700 Q 650 660 640 630" fill="url(#maneGrad)"/>
-        <path d="M 635 640 Q 675 610 715 650 Q 735 690 695 730 Q 675 750 655 710 Q 645 670 635 640" fill="url(#maneGrad)" opacity="0.8"/>
+        <!-- Nostril -->
+        <ellipse cx="195" cy="400" rx="4" ry="8" fill="#000000"/>
         
-        <!-- Horse eye (detailed) -->
-        <ellipse cx="270" cy="410" rx="12" ry="8" fill="#FFFFFF"/>
-        <circle cx="272" cy="410" r="8" fill="#000000"/>
-        <circle cx="274" cy="407" r="3" fill="#FFFFFF"/>
-        <path d="M 258 405 Q 270 400 282 405" stroke="#654321" stroke-width="2" fill="none"/>
+        <!-- Mouth detail -->
+        <path d="M 180 425 Q 190 430 200 425" stroke="#8B4513" stroke-width="2" fill="none"/>
         
-        <!-- Horse nostril -->
-        <ellipse cx="245" cy="470" rx="3" ry="6" fill="#000000"/>
-        
-        <!-- Horse mouth line -->
-        <path d="M 235 480 Q 245 485 255 480" stroke="#654321" stroke-width="2" fill="none"/>
-        
+        <!-- Atmospheric elements -->
         <!-- Clouds -->
-        <ellipse cx="150" cy="150" rx="40" ry="25" fill="#FFFFFF" opacity="0.8"/>
-        <ellipse cx="180" cy="140" rx="35" ry="20" fill="#FFFFFF" opacity="0.8"/>
-        <ellipse cx="170" cy="160" rx="30" ry="18" fill="#FFFFFF" opacity="0.8"/>
-        
-        <ellipse cx="750" cy="120" rx="45" ry="28" fill="#FFFFFF" opacity="0.9"/>
-        <ellipse cx="780" cy="110" rx="38" ry="22" fill="#FFFFFF" opacity="0.9"/>
-        <ellipse cx="770" cy="135" rx="32" ry="20" fill="#FFFFFF" opacity="0.9"/>
+        <g opacity="0.8">
+          <ellipse cx="150" cy="100" rx="50" ry="30" fill="#FFFFFF"/>
+          <ellipse cx="180" cy="90" rx="40" ry="25" fill="#FFFFFF"/>
+          <ellipse cx="170" cy="110" rx="35" ry="20" fill="#FFFFFF"/>
+        </g>
         
         <!-- Sun -->
-        <circle cx="850" cy="180" r="60" fill="#FFD700" opacity="0.9"/>
-        <path d="M 850 80 L 850 120 M 850 240 L 850 280 M 750 180 L 790 180 M 910 180 L 950 180" stroke="#FFD700" stroke-width="6" opacity="0.7"/>
-        <path d="M 785 115 L 815 145 M 885 145 L 915 115 M 785 245 L 815 215 M 885 215 L 915 245" stroke="#FFD700" stroke-width="4" opacity="0.7"/>
+        <circle cx="900" cy="150" r="80" fill="#FFD700" opacity="0.9"/>
+        <g stroke="#FFD700" stroke-width="8" opacity="0.6">
+          <line x1="900" y1="30" x2="900" y2="90"/>
+          <line x1="900" y1="210" x2="900" y2="270"/>
+          <line x1="780" y1="150" x2="840" y2="150"/>
+          <line x1="960" y1="150" x2="1020" y2="150"/>
+          <line x1="820" y1="70" x2="860" y2="110"/>
+          <line x1="940" y1="190" x2="980" y2="230"/>
+          <line x1="820" y1="230" x2="860" y2="190"/>
+          <line x1="940" y1="110" x2="980" y2="70"/>
+        </g>
       </svg>`;
     }
     
