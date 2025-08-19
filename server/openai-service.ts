@@ -27,12 +27,57 @@ function getNextOpenRouterApiKey(): string {
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Creating AI-generated image for: "${prompt}"`);
+  console.log(`Generating high-quality DALL-E 3 image for: "${prompt}"`);
   
-  // Create a detailed, high-quality SVG illustration using AI
+  // First try: Use OpenAI DALL-E 3 for photorealistic images
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      console.log('Using OpenAI DALL-E 3 for high-quality image generation...');
+      
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          prompt: prompt.trim(),
+          n: 1,
+          size: size,
+          quality: quality,
+          response_format: 'url'
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('OpenAI DALL-E 3 response:', data);
+        
+        if (data.data && data.data[0] && data.data[0].url) {
+          console.log(`Successfully generated DALL-E 3 image for: "${prompt}"`);
+          return {
+            success: true,
+            url: data.data[0].url,
+            revisedPrompt: data.data[0].revised_prompt || prompt,
+          };
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log('OpenAI DALL-E 3 failed:', response.status, errorData);
+        throw new Error(`OpenAI DALL-E 3 error: ${response.status}`);
+      }
+    } catch (error) {
+      console.log('DALL-E 3 generation failed, trying OpenRouter alternative:', error);
+    }
+  } else {
+    console.log('No OpenAI API key found, skipping DALL-E 3');
+  }
+  
+  // Second try: Use OpenRouter for AI-generated SVG illustrations
   try {
     const apiKey = getNextOpenRouterApiKey();
-    console.log(`Using AI to create detailed illustration: ${apiKey.substring(0, 10)}...`);
+    console.log(`Using OpenRouter AI to create detailed illustration: ${apiKey.substring(0, 10)}...`);
     
     // Use AI to create a detailed SVG image
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -77,7 +122,7 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
         // Convert SVG to data URL
         const dataUrl = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
         
-        console.log(`Successfully created AI-generated illustration for: "${prompt}"`);
+        console.log(`Successfully created OpenRouter AI illustration for: "${prompt}"`);
         return {
           success: true,
           url: dataUrl,
@@ -86,11 +131,11 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
       }
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.log('AI illustration creation failed:', response.status, errorData);
-      throw new Error(`AI illustration error: ${response.status}`);
+      console.log('OpenRouter AI illustration creation failed:', response.status, errorData);
+      throw new Error(`OpenRouter AI illustration error: ${response.status}`);
     }
   } catch (error) {
-    console.log('AI illustration creation failed, trying simplified approach:', error);
+    console.log('OpenRouter AI illustration creation failed, trying simplified approach:', error);
   }
   
   // Fallback: Create a simpler but still visual SVG
