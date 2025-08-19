@@ -27,250 +27,114 @@ function getNextOpenRouterApiKey(): string {
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Finding internet image for: "${prompt}"`);
+  console.log(`Generating AI image for: "${prompt}"`);
   
-  // Use Groq AI to find real internet images that match user's request
+  // Try to generate a real AI image using OpenRouter
   try {
-    const groqKey = process.env.GROQ_API_KEY;
-    if (!groqKey) {
-      console.log('Groq API key not available, using smart fallback...');
-      throw new Error('Groq API key not configured');
-    }
+    const apiKey = getNextOpenRouterApiKey();
+    console.log(`Using OpenRouter for AI image generation: ${apiKey.substring(0, 10)}...`);
     
-    console.log(`Using Groq API for internet image search: ${groqKey?.substring(0, 10)}...`);
-    
-    // Use Groq AI to generate optimal search terms for real internet photos
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Use OpenRouter's image generation endpoint (compatible with OpenAI DALL-E)
+    const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${groqKey}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+        'X-Title': 'LineusAPI Image Generation'
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert at finding real photos on the internet. Create search terms that will find the best matching real photos from sources like Unsplash.
-
-Focus on photography keywords that real photographers use. Return only the search terms, nothing else.
-
-Examples:
-- "horse" → "horse galloping field photography"
-- "red car" → "red sports car automotive photography"  
-- "sunset" → "sunset landscape nature photography"
-- "cat playing" → "cat playing cute pet photography"`
-          },
-          {
-            role: "user",
-            content: `Find real internet photo for: "${prompt}"`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 30
+        model: 'openai/dall-e-3',
+        prompt: prompt.trim(),
+        n: 1,
+        size: size,
+        quality: quality,
+        response_format: 'url'
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      const searchTerms = data.choices?.[0]?.message?.content?.trim();
+      console.log('OpenRouter image generation response:', data);
       
-      if (searchTerms) {
-        console.log(`AI generated internet search terms: "${searchTerms}" for prompt: "${prompt}"`);
-        
-        // Try multiple reliable internet photo sources
-        const photoSources = [
-          `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerms)}`,
-          `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerms)}`,
-          `https://picsum.photos/1024/1024?random=${Date.now()}` // Guaranteed fallback
-        ];
-        
-        // Test each source until we find a working one
-        for (const imageUrl of photoSources) {
-          try {
-            const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
-            if (imageResponse.ok) {
-              console.log(`Successfully found internet photo for: "${prompt}"`);
-              return {
-                success: true,
-                url: imageUrl,
-                revisedPrompt: `Internet photo: ${prompt}`,
-              };
-            }
-          } catch (e) {
-            console.log(`Photo source failed, trying next...`);
-            continue;
-          }
-        }
-      }
-    }
-  } catch (aiError) {
-    console.log('AI internet search failed, using direct fallback:', aiError);
-  }
-  
-  // Direct internet image search - reliable and fast
-  console.log('Using direct internet image search');
-  
-  // Smart internet search for real photos
-  const generateInternetSearch = (prompt: string): string[] => {
-    const lowercasePrompt = prompt.toLowerCase();
-    
-    // Extract meaningful search terms for internet photos
-    const extractPhotoTerms = (text: string): string => {
-      // Focus on visual, concrete terms that photographers use
-      const visualWords = text
-        .replace(/[^\w\s]/g, ' ')
-        .split(' ')
-        .filter(word => word.length > 2)
-        .filter(word => !['the', 'and', 'with', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'man', 'very', 'such', 'even', 'also', 'like', 'just', 'will', 'make', 'time', 'said', 'than', 'from', 'have', 'they', 'been', 'this', 'that', 'what', 'when', 'where', 'would', 'there', 'their', 'these', 'those', 'some', 'more', 'much', 'many', 'most'].includes(word))
-        .slice(0, 3) // Take first 3 visual terms
-        .join(' ');
-      return visualWords || text.slice(0, 20);
-    };
-    
-    const searchTerms = extractPhotoTerms(lowercasePrompt);
-    
-    // Return multiple high-quality internet photo sources
-    return [
-      `https://source.unsplash.com/1024x1024/?${encodeURIComponent(searchTerms)}`,
-      `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerms)}`,
-      `https://picsum.photos/1024/1024?random=${Date.now()}`, // Guaranteed fallback
-      `https://source.unsplash.com/1024x1024/?${encodeURIComponent(prompt.split(' ')[0])}` // Single word fallback
-    ];
-  };
-
-  // Try multiple internet photo sources for reliability
-  const photoSources = generateInternetSearch(prompt);
-  console.log(`Searching internet photos for "${prompt}" using ${photoSources.length} sources`);
-  
-  // Test each source to find a working one
-  for (const imageUrl of photoSources) {
-    try {
-      const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
-      if (imageResponse.ok) {
-        console.log(`Successfully found internet photo: ${imageUrl}`);
+      if (data.data && data.data[0] && data.data[0].url) {
+        console.log(`Successfully generated AI image for: "${prompt}"`);
         return {
           success: true,
-          url: imageUrl,
-          revisedPrompt: `Internet photo: ${prompt}`,
+          url: data.data[0].url,
+          revisedPrompt: data.data[0].revised_prompt || prompt,
         };
       }
-    } catch (e) {
-      console.log(`Photo source ${imageUrl} failed, trying next...`);
-      continue;
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.log('OpenRouter image generation failed:', response.status, errorData);
+      throw new Error(`OpenRouter error: ${response.status}`);
     }
+  } catch (error) {
+    console.log('AI image generation failed, trying alternative approach:', error);
   }
   
-  // If all external sources fail, return a reliable placeholder
-  console.log('All external image sources failed, using placeholder');
-  const encodedText = encodeURIComponent(prompt.slice(0, 15).replace(/\s+/g, '+'));
-  return {
-    success: true,
-    url: `https://placehold.co/1024x1024/6366f1/white?text=${encodedText}`,
-    revisedPrompt: `Placeholder for: ${prompt}`,
-  };
-
-  /*
-  // OpenRouter integration (disabled due to billing issues)
-  const apiKey = getNextOpenRouterApiKey();
-  
+  // Fallback: Try to create image using text-to-image via AI description
   try {
-    console.log(`AI creating images for: "${prompt}"`);
+    const apiKey = getNextOpenRouterApiKey();
+    console.log('Trying alternative AI image creation approach...');
     
-    // Use OpenRouter to find relevant image search terms and sources
+    // Use AI to create a detailed image description and then a data URL
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://lineusapi.replit.app',
-        'X-Title': 'LineusAPI Image Search'
+        'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+        'X-Title': 'LineusAPI'
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3.5-sonnet",
+        model: 'anthropic/claude-3.5-sonnet',
         messages: [
           {
-            role: "system",
-            content: `You are an expert image creator. Your task is to create high-quality, royalty-free images from the internet that match the user's request. 
-
-Generate images using these reliable sources:
-1. Unsplash API (unsplash.com) - Professional stock photos
-2. Pixabay API (pixabay.com) - Free images and photos
-3. Pexels API (pexels.com) - High-quality stock photos
-
-For the user's request, provide:
-1. 3-5 specific search terms that would create the best images
-2. The most relevant image URL from these free sources
-3. A description of what makes this image perfect for the request
-
-Respond in JSON format:
-{
-  "searchTerms": ["term1", "term2", "term3"],
-  "imageUrl": "direct_image_url",
-  "description": "why this image matches the request",
-  "source": "platform_name"
-}`
+            role: 'system',
+            content: 'You are an expert at creating SVG images. Create a simple, clean SVG image based on the user\'s request. Return only the SVG code, nothing else.'
           },
           {
-            role: "user",
-            content: `Create a high-quality image for: "${prompt}"`
+            role: 'user',
+            content: `Create a simple SVG image of: ${prompt}`
           }
         ],
-        response_format: { type: "json_object" }
+        max_tokens: 1000,
+        temperature: 0.3
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`);
-    }
-
-    const aiResult = await response.json();
-    const imageData = JSON.parse(aiResult.choices[0].message.content);
-    
-    // If AI found a specific image URL, validate it
-    if (imageData.imageUrl && imageData.imageUrl.startsWith('http')) {
-      try {
-        const imageResponse = await fetch(imageData.imageUrl, { method: 'HEAD' });
-        if (imageResponse.ok) {
-          return {
-            success: true,
-            url: imageData.imageUrl,
-            revisedPrompt: imageData.description || prompt,
-          };
-        }
-      } catch (e) {
-        console.log("Direct image URL not accessible, falling back to search");
+    if (response.ok) {
+      const data = await response.json();
+      const svgContent = data.choices?.[0]?.message?.content;
+      
+      if (svgContent && svgContent.includes('<svg')) {
+        // Convert SVG to data URL
+        const cleanSvg = svgContent.trim();
+        const dataUrl = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
+        
+        console.log(`Successfully created AI-generated SVG for: "${prompt}"`);
+        return {
+          success: true,
+          url: dataUrl,
+          revisedPrompt: `AI-generated illustration: ${prompt}`,
+        };
       }
     }
-    
-    // Fallback: Search Unsplash for free high-quality images with specific search terms
-    const searchTerm = imageData.searchTerms?.[0] || prompt;
-    // Use Unsplash API for more specific searches
-    const unsplashUrl = `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerm)}`;
-    
-    return {
-      success: true,
-      url: unsplashUrl,
-      revisedPrompt: searchTerm,
-    };
-    
   } catch (error) {
-    console.error("AI image search error:", error);
-    
-    // Enhanced fallback: Use more specific search terms for better matching
-    const enhancedPrompt = prompt.toLowerCase().trim();
-    const searchTerms = enhancedPrompt.split(' ').slice(0, 3).join('+'); // Take first 3 words
-    const fallbackUrl = `https://source.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerms)}`;
-    
-    console.log(`Using enhanced fallback search for "${prompt}" with terms: "${searchTerms}"`);
-    
-    return {
-      success: true,
-      url: fallbackUrl,
-      revisedPrompt: `Enhanced search for: ${prompt}`,
-    };
+    console.log('Alternative AI image creation failed:', error);
   }
-  */
+  
+  // Final fallback: Create a custom placeholder with the prompt
+  console.log('All AI image generation failed, creating custom placeholder');
+  const encodedText = encodeURIComponent(prompt.slice(0, 20));
+  return {
+    success: true,
+    url: `https://placehold.co/1024x1024/6366f1/white?text=${encodedText}`,
+    revisedPrompt: `Generated placeholder: ${prompt}`,
+  };
+
 }
 
 
