@@ -17,32 +17,41 @@ const failedKeys = new Set<string>();
 const keyFailureCount = new Map<string, number>();
 let lastSuccessfulKeyIndex = 0;
 
-function getNextApiKey(): string {
-  const keys = [
-    process.env.OPENROUTER_API_KEY_NEW_2,
-    process.env.OPENROUTER_API_KEY_NEW_1,
-    process.env.OPENROUTER_API_KEY_NEW_3,
-    process.env.OPENROUTER_API_KEY_NEW_4,
+function getNextApiKey(preferGroq: boolean = true): { key: string; provider: 'groq' | 'openrouter' } {
+  // Primary: Groq API key
+  const groqKey = process.env.GROQ_API_KEY;
+  
+  // Secondary: OpenRouter API keys
+  const openRouterKeys = [
     process.env.OPENROUTER_API_KEY_1,
     process.env.OPENROUTER_API_KEY_2,
     process.env.OPENROUTER_API_KEY_3,
     process.env.OPENROUTER_API_KEY_4,
     process.env.OPENROUTER_API_KEY_5,
     process.env.OPENROUTER_API_KEY_6,
-    process.env.OPENROUTER_API_KEY
+    process.env.OPENROUTER_API_KEY_7,
+    process.env.OPENROUTER_API_KEY_8,
+    process.env.OPENROUTER_API_KEY_9,
+    process.env.OPENROUTER_API_KEY_10
   ].filter(key => key && key.trim().length > 0);
   
-  if (keys.length === 0) {
-    throw new Error("No valid OpenRouter API keys found");
+  // Try Groq first if available, not failed, and preferred
+  if (preferGroq && groqKey && groqKey.trim().length > 0 && !failedKeys.has(groqKey)) {
+    return { key: groqKey, provider: 'groq' };
   }
   
-  // Prioritize keys that haven't failed recently
-  const workingKeys = keys.filter(key => key && !failedKeys.has(key));
+  // Fall back to OpenRouter keys
+  if (openRouterKeys.length === 0) {
+    throw new Error("No valid API keys found (Groq or OpenRouter)");
+  }
   
-  // If all keys have failed, reset and try with reduced token limits
+  // Prioritize OpenRouter keys that haven't failed recently
+  const workingKeys = openRouterKeys.filter(key => key && !failedKeys.has(key));
+  
+  // If all OpenRouter keys have failed, reset and try with reduced token limits
   if (workingKeys.length === 0) {
-    console.log('All keys exhausted, resetting for fresh rotation with reduced limits');
-    failedKeys.clear();
+    console.log('All OpenRouter keys exhausted, resetting for fresh rotation');
+    openRouterKeys.forEach(key => key && failedKeys.delete(key));
     // Reset failure counts but keep some history
     Array.from(keyFailureCount.entries()).forEach(([key, count]) => {
       if (count > 3) {
@@ -51,7 +60,7 @@ function getNextApiKey(): string {
     });
   }
   
-  const availableKeys = workingKeys.length > 0 ? workingKeys : keys;
+  const availableKeys = workingKeys.length > 0 ? workingKeys : openRouterKeys;
   
   // Smart selection - prefer keys with fewer failures
   let selectedKey = availableKeys[currentKeyIndex % availableKeys.length] as string;
@@ -66,7 +75,7 @@ function getNextApiKey(): string {
   }
   
   currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
-  return selectedKey;
+  return { key: selectedKey, provider: 'openrouter' };
 }
 
 function markKeyAsFailed(key: string, reason?: string): void {
@@ -94,6 +103,20 @@ const MODEL_MAPPING = {
   'llama-3.1': 'meta-llama/llama-3.1-405b-instruct',
   'auto': 'anthropic/claude-3.5-sonnet' // Default for auto-routing
 };
+
+// Groq model mapping
+function mapToGroqModel(forusModel: string): string {
+  const groqModels: Record<string, string> = {
+    'forus-prime': 'llama-3.3-70b-versatile',
+    'forus-education': 'llama-3.3-70b-versatile',
+    'claude-3.5-sonnet': 'llama-3.3-70b-versatile',
+    'gpt-4o': 'llama-3.3-70b-versatile',
+    'gemini-pro': 'llama-3.3-70b-versatile',
+    'llama-3.1': 'llama-3.1-70b-versatile',
+    'auto': 'llama-3.3-70b-versatile'
+  };
+  return groqModels[forusModel] || 'llama-3.3-70b-versatile';
+}
 
 interface ChatClient {
   ws: WebSocket;
@@ -261,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Call OpenRouter API directly with user context
-      const openRouterResponse = await callOpenRouterAPI(message, conversation, user);
+      const openRouterResponse = await callAIService(message, conversation, user);
       console.log('AI response received:', openRouterResponse.content.substring(0, 100));
       
       // Save AI response to storage
@@ -488,7 +511,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           const apiKey = getNextApiKey();
-          console.log(`Prompt enhancement attempt ${attempt}/${maxRetries} using key: ${apiKey.substring(0, 10)}...`);
+          console.log(`Prompt enhancement attempt ${attempt}/${maxRetries} using ${apiKey.provider} key: ${apiKey.key.substring(0, 10)}...`);
           
           // Use reduced token limits for faster processing
           const maxTokens = attempt === 1 ? 150 : attempt === 2 ? 100 : 80;
@@ -496,7 +519,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
           const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              'Authorization': `Bearer ${apiKey.key}`,
               'Content-Type': 'application/json',
               'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
               'X-Title': 'LineusAPI'
@@ -519,7 +542,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
             // Mark key as failed for credit/rate limit issues
             if (response.status === 402 || response.status === 429) {
               const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
-              markKeyAsFailed(apiKey, reason);
+              markKeyAsFailed(apiKey.key, reason);
               console.log(`Enhancement key failed with ${reason}, trying next key...`);
               
               lastError = new Error(errorMessage);
@@ -534,7 +557,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
           enhancedPrompt = data.choices?.[0]?.message?.content;
           
           if (enhancedPrompt) {
-            console.log(`Successful prompt enhancement from key: ${apiKey.substring(0, 10)}...`);
+            console.log(`Successful prompt enhancement from ${apiKey.provider} key: ${apiKey.key.substring(0, 10)}...`);
             break; // Success, exit retry loop
           } else {
             throw new Error('No content in enhancement response');
@@ -546,8 +569,8 @@ Return only the school names as a JSON array of strings. Make them authentic and
           
           // Mark key as failed for credit/rate limit issues
           if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
-            const apiKey = getNextApiKey();
-            markKeyAsFailed(apiKey, 'Credit or rate limit issue');
+            const apiKeyToFail = getNextApiKey();
+            markKeyAsFailed(apiKeyToFail.key, 'Credit or rate limit issue');
           }
           
           // Wait before retry (but not for last attempt)
@@ -740,7 +763,7 @@ async function handleChatMessage(message: any, client: ChatClient, clients: Map<
 
     // Call OpenRouter API
     console.log('Calling OpenRouter API with:', { content: message.content, model: conversation.model });
-    const openRouterResponse = await callOpenRouterAPI(message.content, conversation);
+    const openRouterResponse = await callAIService(message.content, conversation);
     console.log('OpenRouter response received:', { 
       content: openRouterResponse.content.substring(0, 100) + '...', 
       model: openRouterResponse.metadata?.model 
@@ -786,7 +809,7 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
 
 
 
-async function callOpenRouterAPI(userMessage: string, conversation: any, user?: any): Promise<{ content: string; metadata: any }> {
+async function callAIService(userMessage: string, conversation: any, user?: any): Promise<{ content: string; metadata: any }> {
   // Check if user is asking for image generation
   const imageRequestKeywords = ['generate image', 'create image', 'make image', 'draw', 'picture of', 'image of', 'show me', 'give me image'];
   const isImageRequest = imageRequestKeywords.some(keyword => 
@@ -851,45 +874,80 @@ Let me provide you with a detailed description instead, or you can try asking ag
   const systemPrompt = getSystemPrompt(conversation, user);
   
   // Retry logic with automatic key switching
-  const maxRetries = 4;
+  const maxRetries = 6; // Increased to accommodate Groq + OpenRouter retries
   let lastError: Error | null = null;
+  let triedGroq = false;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const apiKey = getNextApiKey();
-    console.log(`API attempt ${attempt}/${maxRetries} using key: ${apiKey.substring(0, 10)}...`);
+    // Prefer Groq on first attempt, then try OpenRouter, then fallback to Groq if OpenRouter fails
+    const preferGroq = attempt === 1 || (!triedGroq && attempt > 2);
+    const { key: apiKey, provider } = getNextApiKey(preferGroq);
+    
+    if (provider === 'groq') triedGroq = true;
+    
+    console.log(`API attempt ${attempt}/${maxRetries} using ${provider} key: ${apiKey.substring(0, 10)}...`);
     
     try {
       // Keep consistent high token limit for complete responses - don't truncate content
       const maxTokens = 1500; // Fixed high limit to prevent response truncation
       
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-          'X-Title': 'Forus API',
-        },
-        body: JSON.stringify({
-          model: mappedModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          temperature: 0.7,
-          max_tokens: maxTokens,
-        }),
-      });
+      let response: Response;
+      
+      if (provider === 'groq') {
+        // Groq API call - map models to Groq-compatible ones
+        const groqModel = mapToGroqModel(forusModel);
+        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: groqModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            temperature: 0.7,
+            max_tokens: maxTokens,
+          }),
+        });
+      } else {
+        // OpenRouter API call
+        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+            'X-Title': 'Forus API',
+          },
+          body: JSON.stringify({
+            model: mappedModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            temperature: 0.7,
+            max_tokens: maxTokens,
+          }),
+        });
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
+        const errorMessage = `${provider.toUpperCase()} API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
         
         // Mark key as failed for credit/billing issues or rate limits
         if (response.status === 402 || response.status === 429) {
           const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
           markKeyAsFailed(apiKey, reason);
-          console.log(`Key failed with ${reason}, trying next key...`);
+          console.log(`${provider} key failed with ${reason}, trying next key...`);
+          
+          // If OpenRouter failed with credits and we haven't tried Groq yet, try it next
+          if (provider === 'openrouter' && !triedGroq && reason === 'Insufficient credits') {
+            console.log('OpenRouter credits exhausted, switching to Groq...');
+          }
           
           lastError = new Error(errorMessage);
           continue; // Try next key immediately
@@ -903,13 +961,13 @@ Let me provide you with a detailed description instead, or you can try asking ag
       const content = data.choices[0]?.message?.content;
       
       if (content) {
-        console.log(`Successful response from key: ${apiKey.substring(0, 10)}... (${content.length} chars)`);
+        console.log(`Successful response from ${provider} key: ${apiKey.substring(0, 10)}... (${content.length} chars)`);
         return {
           content: content,
           metadata: {
             model: data.model,
             usage: data.usage,
-            provider: 'OpenRouter',
+            provider: provider.charAt(0).toUpperCase() + provider.slice(1),
             attempt: attempt
           }
         };
@@ -924,6 +982,10 @@ Let me provide you with a detailed description instead, or you can try asking ag
       // If it's a credit/rate limit issue, mark key as failed
       if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
         markKeyAsFailed(apiKey, 'Credit or rate limit issue');
+        // If OpenRouter failed with credits and we haven't tried Groq yet, prioritize it
+        if (provider === 'openrouter' && !triedGroq) {
+          console.log('OpenRouter failed with credits, will try Groq next...');
+        }
       }
       
       // Wait before retry (but not for the last attempt)
@@ -942,7 +1004,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
     metadata: {
       model: mappedModel,
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-      provider: 'OpenRouter',
+      provider: 'Multiple (Groq + OpenRouter)',
       error: lastError?.message || 'All retries failed'
     }
   };
