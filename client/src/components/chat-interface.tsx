@@ -53,7 +53,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Volume2,
-  RotateCcw,
+  RefreshCw,
   MicOff,
   Zap,
   Code2 as Code,
@@ -1031,7 +1031,7 @@ Let's start the self-listen session!`;
                             disabled={retryingMessageId === message.id}
                             data-testid={`button-retry-${message.id}`}
                           >
-                            <RotateCcw className="h-3 w-3" />
+                            <RefreshCw className="h-3 w-3" />
                           </Button>
                         </div>
 

@@ -1032,7 +1032,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
 }
 
 function getSystemPrompt(conversation: any, user?: any): string {
-  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and dedicated to providing excellent assistance to users with any question or task.";
+  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and dedicated to providing excellent assistance to users with any question or task.\n\nWhen users ask to generate, create, or make images/photos/pictures, tell them to use the 🖼️ Create Images button in the toolbar below the chat to access the built-in AI image generation feature. Do not say you cannot generate images - instead guide them to the proper tool.";
   
   // Add personalized greeting if user has display name
   if (user && user.displayName) {
