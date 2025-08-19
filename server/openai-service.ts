@@ -143,11 +143,30 @@ Examples:
   const photoSources = generateInternetSearch(prompt);
   console.log(`Searching internet photos for "${prompt}" using ${photoSources.length} sources`);
   
-  // Return the first source - browsers will handle fallbacks automatically
+  // Test each source to find a working one
+  for (const imageUrl of photoSources) {
+    try {
+      const imageResponse = await fetch(imageUrl, { method: 'HEAD' });
+      if (imageResponse.ok) {
+        console.log(`Successfully found internet photo: ${imageUrl}`);
+        return {
+          success: true,
+          url: imageUrl,
+          revisedPrompt: `Internet photo: ${prompt}`,
+        };
+      }
+    } catch (e) {
+      console.log(`Photo source ${imageUrl} failed, trying next...`);
+      continue;
+    }
+  }
+  
+  // If all external sources fail, return a reliable placeholder
+  console.log('All external image sources failed, using placeholder');
   return {
     success: true,
-    url: photoSources[0],
-    revisedPrompt: `Internet photo: ${prompt}`,
+    url: `https://via.placeholder.com/1024x1024/4F46E5/FFFFFF?text=${encodeURIComponent(prompt.slice(0, 20))}`,
+    revisedPrompt: `Placeholder for: ${prompt}`,
   };
 
   /*
