@@ -40,15 +40,15 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
-  conversations: Array<{
+  projects: Array<{
     id: string;
     title: string;
     createdAt: Date;
   }>;
-  currentConversationId?: string;
-  onConversationSelect: (id: string) => void;
-  onNewConversation: () => void;
-  onDeleteConversation: (id: string) => void;
+  currentProjectId?: string;
+  onProjectSelect: (id: string) => void;
+  onNewProject: () => void;
+  onDeleteProject: (id: string) => void;
   user?: {
     email: string;
     username: string;
@@ -59,14 +59,14 @@ export function Sidebar({
   isOpen,
   onClose,
   onLogout,
-  conversations,
-  currentConversationId,
-  onConversationSelect,
-  onNewConversation,
-  onDeleteConversation,
+  projects,
+  currentProjectId,
+  onProjectSelect,
+  onNewProject,
+  onDeleteProject,
   user
 }: SidebarProps) {
-  const [hoveredConversation, setHoveredConversation] = useState<string | null>(null);
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -99,57 +99,57 @@ export function Sidebar({
         {/* New Conversation */}
         <div className="p-4 border-b border-[var(--border)]">
           <Button
-            onClick={onNewConversation}
+            onClick={onNewProject}
             className="w-full bg-[var(--text-primary)] text-[var(--dark-primary)] hover:bg-[var(--text-secondary)]"
             data-testid="button-new-chat"
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Conversation
+            New Project
           </Button>
         </div>
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
-            {conversations.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="text-center text-[var(--text-secondary)] py-8">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No conversations yet</p>
+                <p>No projects yet</p>
                 <p className="text-xs">Start a new chat to begin</p>
               </div>
             ) : (
-              conversations.map((conversation) => (
+              projects.map((project) => (
                 <div
-                  key={conversation.id}
+                  key={project.id}
                   className={`group relative p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                    currentConversationId === conversation.id
+                    currentProjectId === project.id
                       ? 'bg-[var(--dark-accent)] text-[var(--text-primary)] border-[var(--text-primary)] border-opacity-30'
                       : 'hover:bg-[var(--dark-accent)] text-[var(--foreground)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
                   }`}
-                  onClick={() => onConversationSelect(conversation.id)}
-                  onMouseEnter={() => setHoveredConversation(conversation.id)}
-                  onMouseLeave={() => setHoveredConversation(null)}
-                  data-testid={`conversation-${conversation.id}`}
+                  onClick={() => onProjectSelect(project.id)}
+                  onMouseEnter={() => setHoveredProject(project.id)}
+                  onMouseLeave={() => setHoveredProject(null)}
+                  data-testid={`project-${project.id}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium truncate text-current">
-                        {conversation.title || 'New Conversation'}
+                        {project.title || 'New Project'}
                       </h3>
                       <p className="text-xs mt-1 opacity-70 text-current">
-                        {new Date(conversation.createdAt).toLocaleDateString()}
+                        {new Date(project.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    {hoveredConversation === conversation.id && (
+                    {hoveredProject === project.id && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-red-400"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onDeleteConversation(conversation.id);
+                          onDeleteProject(project.id);
                         }}
-                        data-testid={`delete-conversation-${conversation.id}`}
+                        data-testid={`delete-project-${project.id}`}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

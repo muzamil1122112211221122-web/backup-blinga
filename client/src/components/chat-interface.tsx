@@ -78,7 +78,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>("forus-prime");
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
@@ -86,7 +86,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [conversations, setConversations] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
+  const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [input, setInput] = useState("");
   const [forusIntegrationMode, setForusIntegrationMode] = useState(false);
@@ -161,14 +161,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           const userData = await userResponse.json();
           setUser(userData);
           
-          // Load conversations after user is loaded
-          await loadConversations();
+          // Load projects after user is loaded
+          await loadProjects();
           
-          // Restore last conversation if any exist
-          const savedConversationId = localStorage.getItem('currentConversationId');
-          if (savedConversationId) {
-            setCurrentConversationId(savedConversationId);
-            await loadConversationMessages(savedConversationId);
+          // Restore last project if any exist
+          const savedProjectId = localStorage.getItem('currentProjectId');
+          if (savedProjectId) {
+            setCurrentProjectId(savedProjectId);
+            await loadProjectMessages(savedProjectId);
           }
         }
       } catch (error) {
@@ -254,17 +254,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   }, [inputValue]);
 
-  const createNewConversation = async (firstMessage?: string) => {
+  const createNewProject = async (firstMessage?: string) => {
     try {
-      const conversationTitle = firstMessage 
+      const projectTitle = firstMessage 
         ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
-        : 'New Conversation';
+        : 'New Project';
         
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: conversationTitle,
+          title: projectTitle,
           isPrivate: isPrivateMode,
           preset: currentPreset,
           customInstructions,
@@ -273,15 +273,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       });
 
       if (response.ok) {
-        const conversation = await response.json();
-        setCurrentConversationId(conversation.id);
-        localStorage.setItem('currentConversationId', conversation.id);
-        // Refresh conversations list
-        loadConversations();
-        return conversation.id;
+        const project = await response.json();
+        setCurrentProjectId(project.id);
+        localStorage.setItem('currentProjectId', project.id);
+        // Refresh projects list
+        loadProjects();
+        return project.id;
       }
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      console.error('Failed to create project:', error);
     }
     return null;
   };
@@ -675,7 +675,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // TODO: Save to conversation settings
   };
 
-  const handleNewConversation = async () => {
+  const handleNewProject = async () => {
     try {
       const response = await fetch('/api/conversations', {
         method: 'POST',
@@ -683,49 +683,49 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: 'New Conversation',
+          title: 'New Project',
           preset: currentPreset,
           model: selectedModel,
         }),
       });
 
       if (response.ok) {
-        const newConversation = await response.json();
-        setCurrentConversationId(newConversation.id);
-        localStorage.setItem('currentConversationId', newConversation.id);
+        const newProject = await response.json();
+        setCurrentProjectId(newProject.id);
+        localStorage.setItem('currentProjectId', newProject.id);
         setMessages([]);
-        setConversations(prev => [newConversation, ...prev]);
+        setProjects(prev => [newProject, ...prev]);
         setIsSidebarOpen(false);
       }
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      console.error('Failed to create project:', error);
     }
   };
 
-  const handleConversationSelect = async (id: string) => {
-    setCurrentConversationId(id);
-    localStorage.setItem('currentConversationId', id);
-    // Load messages for this conversation
-    await loadConversationMessages(id);
+  const handleProjectSelect = async (id: string) => {
+    setCurrentProjectId(id);
+    localStorage.setItem('currentProjectId', id);
+    // Load messages for this project
+    await loadProjectMessages(id);
     setIsSidebarOpen(false);
   };
 
-  const handleDeleteConversation = async (id: string) => {
+  const handleDeleteProject = async (id: string) => {
     try {
       const response = await fetch(`/api/conversations/${id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
-        setConversations(prev => prev.filter(conv => conv.id !== id));
-        if (currentConversationId === id) {
-          setCurrentConversationId(null);
-          localStorage.removeItem('currentConversationId');
+        setProjects(prev => prev.filter(project => project.id !== id));
+        if (currentProjectId === id) {
+          setCurrentProjectId(null);
+          localStorage.removeItem('currentProjectId');
           setMessages([]);
         }
       }
     } catch (error) {
-      console.error('Failed to delete conversation:', error);
+      console.error('Failed to delete project:', error);
     }
   };
 
@@ -862,25 +862,25 @@ Let's start the self-listen session!`;
     }
   };
 
-  const loadConversations = async () => {
+  const loadProjects = async () => {
     try {
       const response = await fetch('/api/conversations');
       if (response.ok) {
-        const conversationsData = await response.json();
-        const conversationsWithDates = conversationsData.map((conv: any) => ({
-          ...conv,
-          createdAt: new Date(conv.createdAt)
+        const projectsData = await response.json();
+        const projectsWithDates = projectsData.map((project: any) => ({
+          ...project,
+          createdAt: new Date(project.createdAt)
         }));
-        setConversations(conversationsWithDates);
+        setProjects(projectsWithDates);
       }
     } catch (error) {
-      console.error('Failed to load conversations:', error);
+      console.error('Failed to load projects:', error);
     }
   };
 
-  const loadConversationMessages = async (conversationId: string) => {
+  const loadProjectMessages = async (projectId: string) => {
     try {
-      const response = await fetch(`/api/conversations/${conversationId}/messages`);
+      const response = await fetch(`/api/conversations/${projectId}/messages`);
       if (response.ok) {
         const messagesData = await response.json();
         const messagesWithDates = messagesData.map((msg: any) => ({
@@ -890,7 +890,7 @@ Let's start the self-listen session!`;
         setMessages(messagesWithDates);
       }
     } catch (error) {
-      console.error('Failed to load conversation messages:', error);
+      console.error('Failed to load project messages:', error);
       setMessages([]);
     }
   };
@@ -903,11 +903,11 @@ Let's start the self-listen session!`;
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onLogout={handleLogout}
-        conversations={conversations}
-        currentConversationId={currentConversationId || undefined}
-        onConversationSelect={handleConversationSelect}
-        onNewConversation={handleNewConversation}
-        onDeleteConversation={handleDeleteConversation}
+        projects={projects}
+        currentProjectId={currentProjectId || undefined}
+        onProjectSelect={handleProjectSelect}
+        onNewProject={handleNewProject}
+        onDeleteProject={handleDeleteProject}
         user={user || undefined}
       />
       {/* Header */}
@@ -989,6 +989,24 @@ Let's start the self-listen session!`;
               >
                 {message.role === 'user' ? (
                   <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
+                    {/* Display uploaded image if present */}
+                    {message.imageUrl && (
+                      <div className="mb-3">
+                        <img 
+                          src={message.imageUrl} 
+                          alt="Uploaded image" 
+                          className="max-w-full h-auto rounded-lg shadow-sm border border-border" 
+                          onError={(e) => {
+                            console.error('Uploaded image failed to load:', message.imageUrl);
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
+                          }}
+                          onLoad={() => {
+                            console.log('Uploaded image loaded successfully:', message.imageUrl);
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
@@ -1049,7 +1067,7 @@ Let's start the self-listen session!`;
                             size="icon"
                             className={`h-6 w-6 rounded-xl transition-all duration-150 ${
                               copiedMessageId === message.id 
-                                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950' 
+                                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
                                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                             }`}
                             onClick={() => handleCopyMessage(message.content, message.id)}
