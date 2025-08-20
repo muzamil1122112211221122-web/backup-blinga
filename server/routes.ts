@@ -553,7 +553,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Transform this into a longer, better written prompt with perfect grammar. Don't answer it, just improve the prompt itself. Don't include any prefixes like "Improved prompt:" or "Here is" - just provide the enhanced version directly:
+      const enhancementPrompt = `Take this brief text and expand it into a comprehensive, detailed, and well-structured explanation or question. Add context, background information, specific examples, and elaborate on all aspects while maintaining perfect grammar and professional tone. Make it thorough and complete without any prefixes or introductory phrases:
 
 "${originalPrompt}"`;
 

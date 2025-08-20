@@ -189,10 +189,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     onConnect: () => {
       console.log('Connected to chat server');
       // Join conversation if we have one
-      if (currentConversationId && user) {
+      if (currentProjectId && user) {
         sendWsMessage({
           type: 'join_conversation',
-          conversationId: currentConversationId,
+          conversationId: currentProjectId,
           userId: user.email, // Use email as user identifier since that's what we have
         });
       }
@@ -228,7 +228,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         // Show error to user
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
-          conversationId: currentConversationId || '',
+          conversationId: currentProjectId || '',
           role: 'assistant',
           content: 'Sorry, I encountered an error processing your message. Please try again.',
           createdAt: new Date(),
@@ -291,9 +291,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     if (!content) return;
 
     // Create conversation if needed
-    let conversationId = currentConversationId;
+    let conversationId = currentProjectId;
     if (!conversationId) {
-      conversationId = await createNewConversation(content);
+      conversationId = await createNewProject(content);
       if (!conversationId) return;
     }
 
@@ -432,7 +432,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       }
     }
     
-    if (!userMessage || !currentConversationId) return;
+    if (!userMessage || !currentProjectId) return;
     
     setRetryingMessageId(messageId);
     
@@ -444,7 +444,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setIsTyping(true);
       
       // Make new API call
-      await handleDirectApiCall(userMessage.content, currentConversationId);
+      await handleDirectApiCall(userMessage.content, currentProjectId);
       
     } catch (error) {
       console.error('Retry failed:', error);
@@ -527,7 +527,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       // Create user message with image
       const imageMessage: ChatMessage = {
         id: Date.now().toString(),
-        conversationId: currentConversationId || '',
+        conversationId: currentProjectId || '',
         content: `[Image uploaded: ${file.name}]`,
         role: "user",
         createdAt: new Date(),
@@ -555,7 +555,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           // Create AI response message
           const aiMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),
-            conversationId: currentConversationId || '',
+            conversationId: currentProjectId || '',
             content: result.analysis,
             role: "assistant",
             createdAt: new Date()
@@ -601,7 +601,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           // Add a message to indicate camera functionality
           const cameraMessage: ChatMessage = {
             id: Date.now().toString(),
-            conversationId: currentConversationId || '',
+            conversationId: currentProjectId || '',
             content: "Camera access granted! I can help you work with images from your camera. Try taking a photo and uploading it through the attachment button.",
             role: "assistant",
             createdAt: new Date()
@@ -729,6 +729,26 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  const handleEditProject = async (id: string, newTitle: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      
+      if (response.ok) {
+        setProjects(prev => prev.map(project => 
+          project.id === id ? { ...project, title: newTitle } : project
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to edit project:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -757,7 +777,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     
     if (response.ok) {
       const newConversation = await response.json();
-      setCurrentConversationId(newConversation.id);
+      setCurrentProjectId(newConversation.id);
       setSelectedModel('forus-education');
       setCurrentPreset('forus-education');
       
@@ -777,7 +797,7 @@ Please create a comprehensive test based on my school's examination style and th
 
   // Direct message sending function
   const handleSendMessageDirect = async (messageContent: string) => {
-    if (!messageContent.trim() || !currentConversationId) return;
+    if (!messageContent.trim() || !currentProjectId) return;
 
     // Set the input value and trigger the regular send message function
     setInputValue(messageContent.trim());
@@ -842,7 +862,7 @@ Please create a comprehensive test based on my school's examination style and th
     
     if (response.ok) {
       const newConversation = await response.json();
-      setCurrentConversationId(newConversation.id);
+      setCurrentProjectId(newConversation.id);
       setSelectedModel('forus-education');
       setCurrentPreset('forus-education');
       
@@ -908,6 +928,7 @@ Let's start the self-listen session!`;
         onProjectSelect={handleProjectSelect}
         onNewProject={handleNewProject}
         onDeleteProject={handleDeleteProject}
+        onEditProject={handleEditProject}
         user={user || undefined}
       />
       {/* Header */}
@@ -1290,11 +1311,13 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-lg text-foreground placeholder-muted-foreground resize-none focus:outline-none border-0"
-            data-testid="input-message"
+            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none border-0"
             style={{
-              paddingRight: '64px'
+              paddingRight: '64px',
+              fontSize: '18px',
+              lineHeight: '27px'
             }}
+            data-testid="input-message"
           />
           
           {/* Custom Placeholder */}

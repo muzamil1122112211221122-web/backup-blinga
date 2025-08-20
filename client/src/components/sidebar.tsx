@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Home, 
   MessageSquare, 
@@ -8,7 +10,10 @@ import {
   LogOut, 
   Plus,
   Trash2,
-  X
+  X,
+  Edit3,
+  Check,
+  User
 } from "lucide-react";
 import { Logo } from "./logo";
 
@@ -49,6 +54,7 @@ interface SidebarProps {
   onProjectSelect: (id: string) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
+  onEditProject?: (id: string, newTitle: string) => void;
   user?: {
     email: string;
     username: string;
@@ -64,9 +70,13 @@ export function Sidebar({
   onProjectSelect,
   onNewProject,
   onDeleteProject,
+  onEditProject,
   user
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState<string>('');
+  const [aiRole, setAiRole] = useState<string>('You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
 
   if (!isOpen) return null;
 
@@ -121,43 +131,117 @@ export function Sidebar({
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className={`group relative p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+                  className={`group relative p-3 rounded-lg transition-all duration-200 border ${
                     currentProjectId === project.id
                       ? 'bg-[var(--dark-accent)] text-[var(--text-primary)] border-[var(--text-primary)] border-opacity-30'
                       : 'hover:bg-[var(--dark-accent)] text-[var(--foreground)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
                   }`}
-                  onClick={() => onProjectSelect(project.id)}
                   onMouseEnter={() => setHoveredProject(project.id)}
                   onMouseLeave={() => setHoveredProject(null)}
                   data-testid={`project-${project.id}`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium truncate text-current">
-                        {project.title || 'New Project'}
-                      </h3>
-                      <p className="text-xs mt-1 opacity-70 text-current">
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </p>
+                    <div className="flex-1 min-w-0" onClick={() => editingProject !== project.id && onProjectSelect(project.id)} style={{ cursor: editingProject === project.id ? 'default' : 'pointer' }}>
+                      {editingProject === project.id ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="text-sm h-8"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                onEditProject?.(project.id, editTitle);
+                                setEditingProject(null);
+                              } else if (e.key === 'Escape') {
+                                setEditingProject(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => {
+                                onEditProject?.(project.id, editTitle);
+                                setEditingProject(null);
+                              }}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => setEditingProject(null)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="text-sm font-medium truncate text-current">
+                            {project.title || 'New Project'}
+                          </h3>
+                          <p className="text-xs mt-1 opacity-70 text-current">
+                            {new Date(project.createdAt).toLocaleDateString()}
+                          </p>
+                        </>
+                      )}
                     </div>
-                    {hoveredProject === project.id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-red-400"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteProject(project.id);
-                        }}
-                        data-testid={`delete-project-${project.id}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    {hoveredProject === project.id && editingProject !== project.id && (
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-blue-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditTitle(project.title);
+                            setEditingProject(project.id);
+                          }}
+                          data-testid={`edit-project-${project.id}`}
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-red-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteProject(project.id);
+                          }}
+                          data-testid={`delete-project-${project.id}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
               ))
             )}
+          </div>
+        </div>
+
+        {/* AI Role & Requirements */}
+        <div className="p-4 border-t border-[var(--border)]">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 text-[var(--text-primary)]" />
+              <h4 className="text-sm font-medium text-[var(--text-primary)]">AI Role & Requirements</h4>
+            </div>
+            <Textarea
+              value={aiRole}
+              onChange={(e) => setAiRole(e.target.value)}
+              placeholder="Define how the AI should behave and respond to your requirements..."
+              className="text-xs min-h-[80px] resize-none"
+            />
+            <p className="text-xs text-[var(--text-secondary)] opacity-70">
+              This helps the AI understand its role and how it should respond to your specific needs.
+            </p>
           </div>
         </div>
 
