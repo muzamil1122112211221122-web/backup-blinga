@@ -9,106 +9,7 @@ import { z } from "zod";
 import fs from "fs";
 import path from "path";
 
-// Load balancing for OpenRouter API keys - will be dynamically loaded in getNextApiKey()
-
-let currentKeyIndex = 0;
-
-const failedKeys = new Set<string>();
-const keyFailureCount = new Map<string, number>();
-let lastSuccessfulKeyIndex = 0;
-
-function getNextApiKey(preferGroq: boolean = true, forceOpenAI: boolean = false): { key: string; provider: 'groq' | 'openrouter' | 'openai' } {
-  // Primary: Groq API key
-  const groqKey = process.env.GROQ_API_KEY;
-  
-  // Secondary: OpenRouter API keys
-  const openRouterKeys = [
-    process.env.OPENROUTER_API_KEY_1,
-    process.env.OPENROUTER_API_KEY_2,
-    process.env.OPENROUTER_API_KEY_3,
-    process.env.OPENROUTER_API_KEY_4,
-    process.env.OPENROUTER_API_KEY_5,
-    process.env.OPENROUTER_API_KEY_6,
-    process.env.OPENROUTER_API_KEY_7,
-    process.env.OPENROUTER_API_KEY_8,
-    process.env.OPENROUTER_API_KEY_9,
-    process.env.OPENROUTER_API_KEY_10
-  ].filter(key => key && key.trim().length > 0);
-  
-  // Tertiary: OpenAI API key
-  const openaiKey = process.env.OPENAI_API_KEY;
-  
-  // Force OpenAI if requested (for final fallback)
-  if (forceOpenAI && openaiKey && openaiKey.trim().length > 0 && !failedKeys.has(openaiKey)) {
-    return { key: openaiKey, provider: 'openai' };
-  }
-  
-  // Try Groq first if available, not failed, and preferred
-  if (preferGroq && groqKey && groqKey.trim().length > 0 && !failedKeys.has(groqKey)) {
-    return { key: groqKey, provider: 'groq' };
-  }
-  
-  // Fall back to OpenRouter keys
-  if (openRouterKeys.length === 0 && !openaiKey) {
-    throw new Error("No valid API keys found (Groq, OpenRouter, or OpenAI)");
-  }
-  
-  // Prioritize OpenRouter keys that haven't failed recently
-  const workingKeys = openRouterKeys.filter(key => key && !failedKeys.has(key));
-  
-  // If all OpenRouter keys have failed, reset and try with reduced token limits
-  if (workingKeys.length === 0) {
-    console.log('All OpenRouter keys exhausted, resetting for fresh rotation');
-    openRouterKeys.forEach(key => key && failedKeys.delete(key));
-    // Reset failure counts but keep some history
-    Array.from(keyFailureCount.entries()).forEach(([key, count]) => {
-      if (count > 3) {
-        keyFailureCount.set(key, Math.max(1, count - 2));
-      }
-    });
-  }
-  
-  const availableKeys = workingKeys.length > 0 ? workingKeys : openRouterKeys;
-  
-  if (availableKeys.length > 0) {
-    // Smart selection - prefer keys with fewer failures
-    let selectedKey = availableKeys[currentKeyIndex % availableKeys.length] as string;
-    const failures = keyFailureCount.get(selectedKey) || 0;
-    
-    // If current key has many failures, try to find a better one
-    if (failures > 2) {
-      const betterKeys = availableKeys.filter(key => key && (keyFailureCount.get(key) || 0) < failures);
-      if (betterKeys.length > 0) {
-        selectedKey = betterKeys[0]!;
-      }
-    }
-    
-    currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
-    return { key: selectedKey, provider: 'openrouter' };
-  }
-  
-  // Final fallback to OpenAI if available
-  if (openaiKey && openaiKey.trim().length > 0 && !failedKeys.has(openaiKey)) {
-    return { key: openaiKey, provider: 'openai' };
-  }
-  
-  throw new Error("No valid API keys found (all Groq, OpenRouter, and OpenAI keys failed or unavailable)");
-}
-
-function markKeyAsFailed(key: string, reason?: string): void {
-  const failures = (keyFailureCount.get(key) || 0) + 1;
-  keyFailureCount.set(key, failures);
-  
-  // Mark as failed for immediate avoidance
-  failedKeys.add(key);
-  console.log(`API key failed (${failures}x): ${key.substring(0, 10)}... - ${reason || 'Credit/limit issue'}`);
-  
-  // Auto-recovery: re-enable key after timeout
-  setTimeout(() => {
-    failedKeys.delete(key);
-    console.log(`Re-enabling API key: ${key.substring(0, 10)}...`);
-  }, failures > 3 ? 60000 : 30000); // Longer timeout for frequent failures
-}
+import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-manager';
 
 // Model mapping for different AI models
 const MODEL_MAPPING = {
@@ -511,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 Return only the school names as a JSON array of strings. Make them authentic and appropriate for the location.`;
 
-        const apiKey = getNextApiKey();
+        const apiKey = getAPIKey();
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -581,7 +482,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          const apiKey = getNextApiKey();
+          const apiKey = getAPIKey();
           console.log(`Prompt enhancement attempt ${attempt}/${maxRetries} using ${apiKey.provider} key: ${apiKey.key.substring(0, 10)}...`);
           
           // Use reduced token limits for faster processing
@@ -634,7 +535,7 @@ Return only the school names as a JSON array of strings. Make them authentic and
             // Mark key as failed for credit/rate limit issues
             if (response.status === 402 || response.status === 429) {
               const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
-              markKeyAsFailed(apiKey.key, reason);
+              markKeyFailed(apiKey.key, reason);
               console.log(`Enhancement key failed with ${reason}, trying next key...`);
               
               lastError = new Error(errorMessage);
@@ -661,8 +562,8 @@ Return only the school names as a JSON array of strings. Make them authentic and
           
           // Mark key as failed for credit/rate limit issues
           if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
-            const apiKeyToFail = getNextApiKey();
-            markKeyAsFailed(apiKeyToFail.key, 'Credit or rate limit issue');
+            const apiKeyToFail = getAPIKey();
+            markKeyFailed(apiKeyToFail.key, 'Credit or rate limit issue');
           }
           
           // Wait before retry (but not for last attempt)
@@ -740,6 +641,64 @@ Return only the school names as a JSON array of strings. Make them authentic and
     } catch (error) {
       console.error('Prompt enhancement error:', error);
       res.status(500).json({ error: 'Failed to enhance prompt' });
+    }
+  });
+
+  // API Testing endpoint - comprehensive testing for all integrated APIs
+  app.post('/api/test-all-apis', requireAuth, async (req, res) => {
+    try {
+      console.log('Starting comprehensive API testing...');
+      const { testAllAPIs } = await import('./test-apis');
+      const results = await testAllAPIs();
+      
+      console.log('API testing completed:', results.summary);
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        ...results
+      });
+    } catch (error) {
+      console.error('API testing error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to test APIs',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // API Status endpoint - quick overview
+  app.get('/api/status', requireAuth, async (req, res) => {
+    try {
+      const stats = apiManager.getAPIStats();
+      const availableCounts = {
+        groq: apiManager.getAvailableCount('groq'),
+        openrouter: apiManager.getAvailableCount('openrouter'),
+        openai: apiManager.getAvailableCount('openai'),
+        gemini: apiManager.getAvailableCount('gemini'),
+        total: apiManager.getAvailableCount()
+      };
+
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        available: availableCounts,
+        details: stats.map(api => ({
+          provider: api.provider,
+          isWorking: api.isWorking,
+          failureCount: api.failureCount,
+          requestCount: api.requestCount,
+          lastUsed: api.lastUsed,
+          hasRecentFailure: api.lastFailure && (Date.now() - api.lastFailure.getTime()) < 300000 // 5 minutes
+        }))
+      });
+    } catch (error) {
+      console.error('API status error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get API status',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -975,7 +934,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
     // Prefer Groq on first attempt, then try OpenRouter, then fallback to OpenAI as final option
     const preferGroq = attempt === 1 || (!triedGroq && attempt > 2);
     const forceOpenAI = attempt > 6 && !triedOpenAI; // Force OpenAI on final attempts
-    const { key: apiKey, provider } = getNextApiKey(preferGroq, forceOpenAI);
+    const { key: apiKey, provider } = getAPIKey(preferGroq);
     
     if (provider === 'groq') triedGroq = true;
     if (provider === 'openai') triedOpenAI = true;
@@ -1054,7 +1013,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
         // Mark key as failed for credit/billing issues or rate limits
         if (response.status === 402 || response.status === 429) {
           const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
-          markKeyAsFailed(apiKey, reason);
+          markKeyFailed(apiKey, reason);
           console.log(`${provider} key failed with ${reason}, trying next key...`);
           
           // If OpenRouter failed with credits and we haven't tried Groq yet, try it next
@@ -1094,7 +1053,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
       
       // If it's a credit/rate limit issue, mark key as failed
       if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
-        markKeyAsFailed(apiKey, 'Credit or rate limit issue');
+        markKeyFailed(apiKey, 'Credit or rate limit issue');
         // If OpenRouter failed with credits and we haven't tried Groq yet, prioritize it
         if (provider === 'openrouter' && !triedGroq) {
           console.log('OpenRouter failed with credits, will try Groq next...');

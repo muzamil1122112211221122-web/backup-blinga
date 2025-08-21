@@ -1,30 +1,4 @@
-// Array of OpenRouter API keys for load balancing
-const OPENROUTER_API_KEYS = [
-  process.env.OPENROUTER_API_KEY_1,
-  process.env.OPENROUTER_API_KEY_2,
-  process.env.OPENROUTER_API_KEY_3,
-  process.env.OPENROUTER_API_KEY_4,
-  process.env.OPENROUTER_API_KEY_5,
-  process.env.OPENROUTER_API_KEY_6,
-  process.env.OPENROUTER_API_KEY_7,
-  process.env.OPENROUTER_API_KEY_8,
-  process.env.OPENROUTER_API_KEY_9,
-  process.env.OPENROUTER_API_KEY_10,
-].filter(Boolean) as string[];
-
-let currentKeyIndex = 0;
-
-function getNextOpenRouterApiKey(): string {
-  console.log('Available OpenRouter keys:', OPENROUTER_API_KEYS.length);
-  console.log('OPENROUTER_API_KEY env var:', process.env.OPENROUTER_API_KEY ? 'exists' : 'missing');
-  if (OPENROUTER_API_KEYS.length === 0) {
-    throw new Error("No OpenRouter API keys configured");
-  }
-  
-  const key = OPENROUTER_API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % OPENROUTER_API_KEYS.length;
-  return key;
-}
+import { apiManager } from './api-manager';
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Generating photorealistic image for: "${prompt}"`);
@@ -131,7 +105,11 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   
   // Second try: Use OpenRouter for AI-generated SVG illustrations
   try {
-    const apiKey = getNextOpenRouterApiKey();
+    const openRouterAPI = apiManager.getBestChatAPI();
+    if (!openRouterAPI) {
+      throw new Error('No OpenRouter API available');
+    }
+    const apiKey = openRouterAPI.key;
     console.log(`Using OpenRouter AI to create detailed illustration: ${apiKey.substring(0, 10)}...`);
     
     // Use AI to create a detailed SVG image
@@ -195,7 +173,11 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
   
   // Fallback: Create a simpler but still visual SVG
   try {
-    const apiKey = getNextOpenRouterApiKey();
+    const openRouterAPI = apiManager.getBestChatAPI();
+    if (!openRouterAPI) {
+      throw new Error('No OpenRouter API available');
+    }
+    const apiKey = openRouterAPI.key;
     console.log('Creating simplified AI illustration...');
     
     // Create a simpler SVG image
@@ -476,7 +458,7 @@ Make it colorful, artistic, and visually appealing. Use gradients, proper propor
 
 
 export function getAvailableKeyCount(): number {
-  return OPENROUTER_API_KEYS.length;
+  return apiManager.getAvailableCount();
 }
 
 // Image analysis function using OpenAI Vision API or Gemini
