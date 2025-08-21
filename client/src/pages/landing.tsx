@@ -44,8 +44,12 @@ export default function Landing() {
       
       if (response.ok) {
         console.log('Login successful');
-        // Redirect to chat after successful login
-        window.location.href = '/chat';
+        setShowUserInfoDialog(false);
+        setIsLoading(false);
+        // Show success message and then redirect after a short delay
+        setTimeout(() => {
+          window.location.href = '/chat';
+        }, 1000);
       } else {
         console.error('Login failed:', response.status);
         setIsLoading(false);
