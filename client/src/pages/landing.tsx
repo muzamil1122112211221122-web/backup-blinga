@@ -4,8 +4,8 @@ import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
 
 export default function Landing() {
   const handleGetStarted = () => {
-    // For demo authentication, redirect to a simple demo login
-    window.location.href = '/api/auth/demo?redirect=/chat';
+    // Redirect to chat page which will show the user info dialog
+    window.location.href = '/chat';
   };
 
   const features = [
