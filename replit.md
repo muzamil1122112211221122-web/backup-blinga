@@ -11,6 +11,8 @@ Forus Heavy API is a real-time chat application built with React, Express.js, an
 - **✓ Space-Themed Landing Page**: Complete landing page with twinkling stars, gradient backgrounds, and professional layout
 - **✓ Multiple Login Options**: Users can now choose between Google OAuth or demo login
 - **✓ App's Own Model Examples**: Added Forus-Intelligence Pro and Forus-Intelligence Lite as exclusive AI models
+- **✓ Changed Default Theme to White**: Switched from dark theme to light theme as the default across all pages
+- **✓ Fixed Google OAuth Connection**: Updated callback URL to use relative path for better compatibility
 
 ## Previous Updates (August 17, 2025)
 - **✓ Fixed Database Connection Issues**: Resolved DATABASE_URL environment variable problems and successfully provisioned PostgreSQL database
@@ -60,6 +62,8 @@ Forus Heavy API is a real-time chat application built with React, Express.js, an
 Preferred communication style: Simple, everyday language.
 Animation preferences: Grid-based moving effects, no floating particles/bubbles.
 UI preferences: macOS-style design elements, light gray borders (not black), ultra-smooth butter-like transitions using cubic-bezier(0.23, 1, 0.32, 1), dramatic hover scaling effects (35% scale increase) for buttons, normalize-then-scale animation behavior (all buttons reset to same size before applying hover effect), San Francisco system font, authentic macOS app opening animation (line appears, grows, then window appears).
+Theme preference: White theme as default (not dark theme).
+Color scheme: Black hole animation uses pure black and white gradients only (no gray colors).
 
 # System Architecture
 

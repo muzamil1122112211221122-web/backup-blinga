@@ -5,42 +5,6 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 6%, 10%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(0, 0%, 98%);
-  --primary-foreground: hsl(240, 10%, 3.9%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 1.25rem;
-
-  /* Custom LineusAPI colors */
-  --dark-primary: hsl(240, 10%, 3.9%);
-  --dark-secondary: hsl(240, 6%, 10%);
-  --dark-accent: hsl(240, 4%, 16%);
-  --text-primary: hsl(0, 0%, 98%);
-  --text-secondary: hsl(240, 5%, 64.9%);
-  
-  /* macOS-style colors */
-  --macos-gray: hsl(220, 9%, 46%);
-  --macos-gray-light: hsl(220, 14%, 96%);
-  --macos-gray-dark: hsl(220, 13%, 18%);
-  --macos-border-light: hsl(220, 8%, 75%);
-}
-
-.light {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(240, 10%, 3.9%);
   --muted: hsl(240, 4.8%, 95.9%);
@@ -60,6 +24,42 @@
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 5%, 64.9%);
+  --radius: 1.25rem;
+
+  /* Custom Forus colors */
+  --light-primary: hsl(0, 0%, 100%);
+  --light-secondary: hsl(240, 4.8%, 95.9%);
+  --light-accent: hsl(240, 4.8%, 95.9%);
+  --text-primary: hsl(240, 10%, 3.9%);
+  --text-secondary: hsl(240, 3.8%, 46.1%);
+  
+  /* macOS-style colors */
+  --macos-gray: hsl(220, 9%, 46%);
+  --macos-gray-light: hsl(220, 14%, 96%);
+  --macos-gray-dark: hsl(220, 13%, 18%);
+  --macos-border-light: hsl(220, 8%, 75%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 6%, 10%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(0, 0%, 98%);
+  --primary-foreground: hsl(240, 10%, 3.9%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
 }
 
 @layer base {
