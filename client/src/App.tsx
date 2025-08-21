@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import Landing from "@/pages/landing";
 import Chat from "@/pages/chat";
 import UserInfo from "@/pages/user-info";
 import NotFound from "@/pages/not-found";
@@ -21,12 +22,13 @@ function Router() {
 
   useEffect(() => {
     if (!isLoading) {
-      // If user is authenticated and on root path, redirect to chat
-      if (user && location === "/") {
-        navigate("/chat", { replace: true });
+      // If user is authenticated and on protected routes, allow access
+      if (user && location === "/chat") {
+        // User can access chat
+        return;
       }
-      // If user is not authenticated and on protected routes, redirect to start page
-      else if (!user && location !== "/" && location !== "/start") {
+      // If user is not authenticated and trying to access protected routes, redirect to start page
+      else if (!user && location === "/chat") {
         navigate("/start", { replace: true });
       }
     }
@@ -34,7 +36,7 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Chat} />
+      <Route path="/" component={Landing} />
       <Route path="/chat" component={Chat} />
       <Route path="/start" component={UserInfo} />
       <Route component={NotFound} />
