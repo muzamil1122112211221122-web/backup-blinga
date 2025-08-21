@@ -5,7 +5,7 @@ import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
 export default function Landing() {
   const handleGetStarted = () => {
     // For demo authentication, redirect to a simple demo login
-    window.location.href = '/api/auth/demo';
+    window.location.href = '/api/auth/demo?redirect=/chat';
   };
 
   const features = [
@@ -32,16 +32,47 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen relative overflow-hidden bg-black">
+      {/* Animated Black Hole Background */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {/* Outer event horizon rings */}
+        <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-radial from-transparent via-gray-900/20 to-transparent animate-spin-slow"></div>
+        <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-radial from-transparent via-gray-700/30 to-transparent animate-spin-reverse"></div>
+        
+        {/* Main black hole */}
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-gradient-radial from-gray-900 via-black to-transparent shadow-[0_0_200px_rgba(255,255,255,0.1)]">
+          {/* Accretion disk */}
+          <div className="absolute inset-0 rounded-full bg-gradient-conic from-white/20 via-gray-400/30 to-transparent animate-spin opacity-60"></div>
+          <div className="absolute inset-4 rounded-full bg-gradient-conic from-gray-300/15 via-white/20 to-transparent animate-spin-slow opacity-40"></div>
+          
+          {/* Event horizon */}
+          <div className="absolute inset-16 rounded-full bg-black shadow-inner"></div>
+          
+          {/* Gravitational lensing effect */}
+          <div className="absolute inset-8 rounded-full bg-gradient-radial from-transparent via-white/5 to-transparent animate-pulse"></div>
+        </div>
+        
+        {/* Distant stars */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-40 right-32 w-0.5 h-0.5 bg-gray-300 rounded-full animate-twinkle-delay"></div>
+          <div className="absolute bottom-32 left-40 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-1/3 right-20 w-1 h-1 bg-gray-400 rounded-full animate-twinkle-delay"></div>
+          <div className="absolute bottom-20 right-20 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+        </div>
+      </div>
+      
+      {/* Content overlay */}
+      <div className="relative z-10 min-h-screen bg-black/40">
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-white/20">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LineusAPI</h1>
+              <h1 className="text-2xl font-bold text-white">LineusAPI</h1>
             </div>
             <Button 
               onClick={handleGetStarted}
@@ -57,12 +88,12 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center max-w-4xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Chat with the
             <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"> Future </span>
             of AI
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+          <p className="text-xl text-gray-300 mb-8 leading-relaxed">
             Experience next-generation AI conversations with multiple models, voice integration,
             and real-time chat capabilities all in one beautiful interface.
           </p>
@@ -90,10 +121,10 @@ export default function Landing() {
       {/* Features Section */}
       <section className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h3 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-4xl font-bold text-white mb-4">
             Why Choose LineusAPI?
           </h3>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Powerful features designed to enhance your AI conversation experience
           </p>
         </div>
@@ -102,19 +133,19 @@ export default function Landing() {
           {features.map((feature, index) => (
             <Card 
               key={index}
-              className="group hover:shadow-xl transition-all duration-300 hover:scale-105 border-gray-200 dark:border-gray-700"
+              className="group hover:shadow-xl transition-all duration-300 hover:scale-105 border-white/20 bg-black/60 backdrop-blur-sm"
               data-testid={`card-feature-${index}`}
             >
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl group-hover:bg-white dark:group-hover:bg-gray-700 transition-colors">
+                <div className="mx-auto mb-4 p-3 bg-white/10 rounded-xl group-hover:bg-white/20 transition-colors">
                   {feature.icon}
                 </div>
-                <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h4 className="text-xl font-semibold text-white">
                   {feature.title}
                 </h4>
               </CardHeader>
               <CardContent className="text-center">
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-gray-300 leading-relaxed">
                   {feature.description}
                 </p>
               </CardContent>
@@ -162,6 +193,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
