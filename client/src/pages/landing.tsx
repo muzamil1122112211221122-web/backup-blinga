@@ -81,7 +81,7 @@ export default function Landing() {
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>Start Chat Now</span>
+                <span>Begin Experience</span>
               </Button>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function Landing() {
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
-              <span>Start Chat Now</span>
+              <span>Begin Experience</span>
             </Button>
           </div>
           <div className="text-center mt-6 text-gray-300">
