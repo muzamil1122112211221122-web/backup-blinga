@@ -35,7 +35,7 @@ import { EducationModal } from "./education-modal";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
-import { ChatMessage, ChatPreset, AVAILABLE_MODELS, AvailableModel, WebSocketMessage } from "../types/chat";
+import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableModel, WebSocketMessage } from "../types/chat";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -71,7 +71,7 @@ import {
   GraduationCap,
   Moon,
   Sun,
-  Toggle
+  ToggleLeft
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -1076,10 +1076,16 @@ Let's start the self-listen session!`;
             variant="ghost" 
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
             data-testid="button-theme-toggle"
           >
-            {theme === 'dark' ? <Sun className="h-3 w-3 sm:h-4 sm:w-4" /> : <Moon className="h-3 w-3 sm:h-4 sm:w-4" />}
+            <div className="relative">
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-600" />
+              )}
+            </div>
           </Button>
           <Button 
             variant="ghost" 
@@ -1307,38 +1313,45 @@ Let's start the self-listen session!`;
                 Lumin - Multi-AI Paradise (Coders & Content Creator Heaven)
               </h2>
               
-              {/* AI Model Toggles */}
-              <div className="flex flex-wrap gap-3 mb-6">
+              {/* Premium AI Model Toggles */}
+              <div className="flex flex-wrap gap-4 mb-8">
                 {Object.entries({
-                  'gpt-4o': 'ChatGPT 4o',
-                  'claude-3.5-sonnet': 'Claude 3.5 Sonnet', 
-                  'gemini-pro': 'Gemini Pro',
-                  'grok-beta': 'Grok Beta',
-                  'perplexity': 'Perplexity',
-                  'llama-3.3-70b': 'Llama 3.3 70B'
-                }).map(([model, name]) => (
-                  <div key={model} className="flex items-center space-x-2 bg-card border border-border rounded-xl p-3">
-                    <button
-                      onClick={() => {
-                        const newActive = new Set(activeAIModels);
-                        if (newActive.has(model)) {
-                          newActive.delete(model);
-                        } else {
-                          newActive.add(model);
-                        }
-                        setActiveAIModels(newActive);
-                      }}
-                      className={`w-10 h-6 rounded-full transition-all duration-200 ${
-                        activeAIModels.has(model) 
-                          ? 'bg-green-500' 
-                          : 'bg-gray-300 dark:bg-gray-600'
-                      } relative`}
-                    >
-                      <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 absolute top-1 ${
-                        activeAIModels.has(model) ? 'translate-x-5' : 'translate-x-1'
-                      }`} />
-                    </button>
-                    <span className="text-sm font-medium text-foreground">{name}</span>
+                  'gpt-4o': { name: 'GPT-4o', icon: '🧠', gradient: 'from-green-400 to-blue-500' },
+                  'claude-3.5-sonnet': { name: 'Claude 3.5 Sonnet', icon: '⚡', gradient: 'from-orange-400 to-pink-500' }, 
+                  'gemini-pro': { name: 'Gemini Pro', icon: '💎', gradient: 'from-blue-400 to-purple-500' },
+                  'llama-3.3-70b-versatile': { name: 'Llama 3.3 70B', icon: '🦙', gradient: 'from-purple-400 to-pink-500' }
+                }).map(([model, config]) => (
+                  <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
+                    activeAIModels.has(model) ? 'shadow-lg scale-105' : 'hover:scale-102'
+                  }`}>
+                    <div className="bg-background dark:bg-background/95 backdrop-blur-sm rounded-2xl p-4 flex items-center space-x-3">
+                      <button
+                        onClick={() => {
+                          const newActive = new Set(activeAIModels);
+                          if (newActive.has(model)) {
+                            newActive.delete(model);
+                          } else {
+                            newActive.add(model);
+                          }
+                          setActiveAIModels(newActive);
+                        }}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          activeAIModels.has(model) 
+                            ? `bg-gradient-to-r ${config.gradient} shadow-md` 
+                            : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 absolute top-0.5 flex items-center justify-center ${
+                          activeAIModels.has(model) ? 'translate-x-6' : 'translate-x-0.5'
+                        }`}>
+                          {activeAIModels.has(model) && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+                        </div>
+                      </button>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{config.icon}</span>
+                        <span className="text-sm font-semibold text-foreground">{config.name}</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1398,10 +1411,19 @@ Let's start the self-listen session!`;
                   <p className="text-muted-foreground mb-6">
                     Select AI models above and start chatting to see responses from multiple AIs simultaneously
                   </p>
-                  <div className="text-sm text-muted-foreground">
-                    ✨ Perfect for comparing different AI perspectives<br/>
-                    🚀 Ideal for coders and content creators<br/>
-                    🎯 All models unlocked and ready to use
+                  <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full">
+                      <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
+                      Perfect for comparing different AI perspectives
+                    </span>
+                    <span className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/20 dark:to-green-900/20 rounded-full">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full animate-pulse"></div>
+                      Ideal for coders and content creators
+                    </span>
+                    <span className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-green-100 to-yellow-100 dark:from-green-900/20 dark:to-yellow-900/20 rounded-full">
+                      <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-yellow-500 rounded-full animate-pulse"></div>
+                      All premium models unlocked and ready to use
+                    </span>
                   </div>
                 </div>
               )}
@@ -1598,13 +1620,22 @@ Let's start the self-listen session!`;
           {/* Model Switcher - Bottom Left */}
           <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-32 h-8 text-xs border border-gray-300 dark:border-gray-600 bg-background rounded-lg shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-colors focus:ring-0 focus:ring-offset-0">
+              <SelectTrigger className="w-36 h-8 text-xs border-0 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm hover:bg-background/90 transition-all focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="Model" />
               </SelectTrigger>
-              <SelectContent className="border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
-                {AVAILABLE_MODELS.map((model) => (
-                  <SelectItem key={model} value={model} className="text-xs hover:bg-gray-100 dark:hover:bg-gray-800">
-                    {model.replace('forus-', '').replace('-', ' ').toUpperCase()}
+              <SelectContent className="border border-border rounded-lg shadow-lg backdrop-blur-sm">
+                {MODEL_OPTIONS.map((modelOption) => (
+                  <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-accent">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        modelOption.provider === 'openai' ? 'bg-green-500' :
+                        modelOption.provider === 'anthropic' ? 'bg-orange-500' :
+                        modelOption.provider === 'google' ? 'bg-blue-500' :
+                        modelOption.provider === 'meta' ? 'bg-purple-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      {modelOption.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

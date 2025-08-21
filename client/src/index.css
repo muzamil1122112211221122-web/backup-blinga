@@ -49,8 +49,8 @@
   --popover-foreground: hsl(0, 0%, 98%);
   --card: hsl(240, 6%, 10%);
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
+  --border: hsl(240, 10%, 3.9%);
+  --input: hsl(240, 10%, 3.9%);
   --primary: hsl(0, 0%, 98%);
   --primary-foreground: hsl(240, 10%, 3.9%);
   --secondary: hsl(240, 3.7%, 15.9%);
@@ -80,6 +80,53 @@
 
   .logo-container:hover {
     animation: logoSpin 0.8s ease-in-out;
+  }
+
+  /* Message input styling for dark theme - remove borders */
+  .dark .message-input-area {
+    border: none !important;
+    background: hsl(240, 10%, 3.9%);
+  }
+  
+  .dark .message-input-area textarea {
+    border: none !important;
+    background: transparent;
+  }
+  
+  .dark .border-border {
+    border-color: transparent !important;
+  }
+
+  /* Fix Forus settings text color in dark theme */
+  .dark .sidebar-settings {
+    color: hsl(0, 0%, 98%) !important;
+  }
+
+  /* Improve theme toggle styling */
+  .theme-toggle-premium {
+    background: linear-gradient(135deg, #fbbf24, #3b82f6);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+  }
+
+  .theme-toggle-premium:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  /* Premium gradient toggles */
+  .premium-toggle-active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
+  }
+
+  .premium-toggle-inactive {
+    background: #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .dark .premium-toggle-inactive {
+    background: #374151;
   }
 
   .moving-grid {

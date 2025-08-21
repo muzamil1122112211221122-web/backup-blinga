@@ -41,14 +41,64 @@ export interface WebSocketMessage {
   error?: string;
 }
 
+export const MODEL_OPTIONS = [
+  { 
+    id: 'forus-prime', 
+    name: 'Forus Prime', 
+    description: 'Our most advanced general AI', 
+    provider: 'forus',
+    speed: 'fast',
+    intelligence: 'high'
+  },
+  { 
+    id: 'gpt-4o', 
+    name: 'GPT-4o', 
+    description: 'OpenAI\'s most capable multimodal model', 
+    provider: 'openai',
+    speed: 'fast',
+    intelligence: 'highest'
+  },
+  { 
+    id: 'claude-3.5-sonnet', 
+    name: 'Claude 3.5 Sonnet', 
+    description: 'Anthropic\'s most intelligent model', 
+    provider: 'anthropic',
+    speed: 'fast',
+    intelligence: 'highest'
+  },
+  { 
+    id: 'gemini-pro', 
+    name: 'Gemini Pro', 
+    description: 'Google\'s advanced reasoning model', 
+    provider: 'google',
+    speed: 'fast',
+    intelligence: 'high'
+  },
+  { 
+    id: 'llama-3.3-70b-versatile', 
+    name: 'Llama 3.3 70B', 
+    description: 'Meta\'s powerful open-source model', 
+    provider: 'meta',
+    speed: 'fastest',
+    intelligence: 'high'
+  },
+  { 
+    id: 'forus-education', 
+    name: 'Forus Education', 
+    description: 'Specialized for learning and teaching', 
+    provider: 'forus',
+    speed: 'fast',
+    intelligence: 'high'
+  }
+] as const;
+
 export const AVAILABLE_MODELS = [
-  'forus-prime',        // Advanced reasoning & analysis
-  'forus-education',    // Educational features with examination & self-listen
-  'forus-code',         // Programming & development
-  'forus-flash',        // Fast responses & multimodal
-  'forus-creative',     // Creative writing & storytelling
-  'forus-lite',         // Quick tasks & efficiency
-  'forus-auto',         // Intelligent model selection
+  'forus-prime',        
+  'gpt-4o',
+  'claude-3.5-sonnet',
+  'gemini-pro',
+  'llama-3.3-70b-versatile',
+  'forus-education',
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];

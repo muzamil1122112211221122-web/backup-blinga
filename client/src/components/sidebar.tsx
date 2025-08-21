@@ -13,6 +13,7 @@ import {
   Trash2,
   X,
   Edit3,
+  PenTool,
   Check,
   User,
   Moon,
@@ -266,7 +267,7 @@ export function Sidebar({
                           data-testid={`edit-project-${project.id}`}
                           title="Edit project name"
                         >
-                          <Edit3 className="h-3 w-3" />
+                          <PenTool className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
