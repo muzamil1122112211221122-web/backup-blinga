@@ -483,17 +483,48 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // Send requests to all active AI models with proper error handling
     const promises = Array.from(activeAIModels).map(async (model) => {
       try {
-        const response = await fetch('/api/test-ai', {
+        // Use model-specific endpoints for authentic responses
+        let endpoint = '/api/test-ai';
+        let requestBody: any = {
+          message: content,
+          model: model,
+          conversationId: currentProjectId || 'lumin-session'
+        };
+        
+        // Route to specific AI services for authentic responses
+        switch(model) {
+          case 'gpt-4o':
+            // Use OpenAI directly for ChatGPT
+            requestBody.provider = 'openai';
+            requestBody.model = 'gpt-4o';
+            break;
+          case 'claude-3.5-sonnet':
+            // Use Anthropic via OpenRouter for Claude
+            requestBody.provider = 'openrouter';
+            requestBody.model = 'anthropic/claude-3.5-sonnet';
+            break;
+          case 'gemini-pro':
+            // Use Google Gemini directly
+            requestBody.provider = 'gemini';
+            requestBody.model = 'gemini-pro';
+            break;
+          case 'perplexity':
+            // Use Perplexity via OpenRouter
+            requestBody.provider = 'openrouter';
+            requestBody.model = 'perplexity/llama-3.1-sonar-large-128k-online';
+            break;
+          default:
+            // Fallback to Groq
+            requestBody.provider = 'groq';
+        }
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({
-            message: content,
-            model: model,
-            conversationId: currentProjectId || 'lumin-session'
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (response.ok) {
@@ -1441,7 +1472,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center p-1">
                         <img 
-                          src="/attached_assets/icons8-chatgpt-50_1755802050159.png" 
+                          src="attached_assets/icons8-chatgpt-50_1755802050159.png" 
                           alt="ChatGPT" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1454,7 +1485,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-600 flex items-center justify-center p-1">
                         <img 
-                          src="/attached_assets/icons8-claude-50_1755802050159.png" 
+                          src="attached_assets/icons8-claude-50_1755802050159.png" 
                           alt="Claude" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1467,7 +1498,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center p-1">
                         <img 
-                          src="/attached_assets/icons8-gemini-ai-48_1755802050160.png" 
+                          src="attached_assets/icons8-gemini-ai-48_1755802050160.png" 
                           alt="Gemini" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1480,7 +1511,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center p-1">
                         <img 
-                          src="/attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
+                          src="attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
                           alt="Perplexity" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1534,7 +1565,7 @@ Let's start the self-listen session!`;
                           {model === 'gpt-4o' && (
                             <div className="w-6 h-6 rounded-lg bg-black flex items-center justify-center p-1">
                               <img 
-                                src="/attached_assets/icons8-chatgpt-50_1755802050159.png" 
+                                src="attached_assets/icons8-chatgpt-50_1755802050159.png" 
                                 alt="ChatGPT" 
                                 className="w-full h-full object-contain filter invert"
                               />
@@ -1543,7 +1574,7 @@ Let's start the self-listen session!`;
                           {model === 'claude-3.5-sonnet' && (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-400 to-red-600 flex items-center justify-center p-1">
                               <img 
-                                src="/attached_assets/icons8-claude-50_1755802050159.png" 
+                                src="attached_assets/icons8-claude-50_1755802050159.png" 
                                 alt="Claude" 
                                 className="w-full h-full object-contain filter invert"
                               />
@@ -1552,7 +1583,7 @@ Let's start the self-listen session!`;
                           {model === 'gemini-pro' && (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center p-1">
                               <img 
-                                src="/attached_assets/icons8-gemini-ai-48_1755802050160.png" 
+                                src="attached_assets/icons8-gemini-ai-48_1755802050160.png" 
                                 alt="Gemini" 
                                 className="w-full h-full object-contain filter invert"
                               />
@@ -1561,7 +1592,7 @@ Let's start the self-listen session!`;
                           {model === 'perplexity' && (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center p-1">
                               <img 
-                                src="/attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
+                                src="attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
                                 alt="Perplexity" 
                                 className="w-full h-full object-contain filter invert"
                               />

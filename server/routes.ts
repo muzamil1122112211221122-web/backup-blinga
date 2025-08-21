@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, conversationId } = req.body;
+      const { message, conversationId, model, provider } = req.body;
       const user = req.user;
       
       if (!message) {
@@ -185,6 +185,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let conversation = conversationId ? await storage.getConversation(conversationId) : null;
       if (!conversation) {
         conversation = { model: 'forus-prime', preset: 'custom' } as any;
+      }
+
+      // Override conversation model with Lumin model if specified
+      if (model && provider) {
+        conversation = { 
+          ...conversation,
+          model: model,
+          provider: provider,
+          preset: 'custom'
+        };
       }
 
       console.log('Using conversation config:', conversation);
@@ -201,17 +211,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Call OpenRouter API directly with user context
-      const openRouterResponse = await callAIService(message, conversation, user);
-      console.log('AI response received:', openRouterResponse.content.substring(0, 100));
+      // Call AI service with model-specific routing
+      const aiResponse = await callModelSpecificAPI(message, model || conversation.model, provider, user);
+      console.log('AI response received:', aiResponse.content.substring(0, 100));
       
       // Save AI response to storage
       if (conversationId) {
         await storage.createMessage({
           conversationId,
           role: 'assistant',
-          content: openRouterResponse.content,
-          metadata: openRouterResponse.metadata,
+          content: aiResponse.content,
+          metadata: aiResponse.metadata,
         });
         
         // Update conversation timestamp
@@ -222,8 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ 
         success: true, 
-        response: openRouterResponse.content,
-        metadata: openRouterResponse.metadata 
+        response: aiResponse.content,
+        metadata: aiResponse.metadata 
       });
     } catch (error) {
       console.error('Test AI error:', error);
@@ -859,6 +869,127 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
 }
 
 
+
+// Model-specific API caller for authentic responses
+async function callModelSpecificAPI(userMessage: string, model: string, provider: string, user?: any): Promise<{ content: string; metadata: any }> {
+  // Create model-specific system prompts for authentic behavior
+  const getModelPersonality = (model: string) => {
+    switch(model) {
+      case 'gpt-4o':
+        return "You are ChatGPT, developed by OpenAI. Be helpful, harmless, and honest. Use clear, conversational language and provide practical, actionable advice. Start responses in a friendly, professional tone.";
+      case 'claude-3.5-sonnet':
+        return "You are Claude, created by Anthropic. Be thoughtful, nuanced, and analytical. Provide detailed explanations with clear reasoning. You're known for being particularly good at analysis, writing, and careful reasoning.";
+      case 'gemini-pro':
+        return "You are Gemini, Google's AI assistant. Be informative, creative, and comprehensive. Excel at providing detailed information, creative solutions, and multi-step problem solving. Use structured, organized responses.";
+      case 'perplexity':
+        return "You are Perplexity AI, an answer engine that provides accurate, up-to-date information with citations. Focus on being factual, research-oriented, and provide well-sourced information. Be concise but thorough.";
+      default:
+        return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
+    }
+  };
+
+  const systemPrompt = getModelPersonality(model);
+  const userName = (user as any)?.displayName || (user as any)?.username || 'there';
+  const personalizedMessage = `${systemPrompt}\n\nUser's name is ${userName}. ${userMessage}`;
+
+  // Route to specific providers based on model
+  switch(provider) {
+    case 'openai':
+      return await callOpenAIDirectly(personalizedMessage, model);
+    case 'gemini':
+      return await callGeminiDirectly(personalizedMessage);
+    case 'openrouter':
+      return await callOpenRouterDirectly(personalizedMessage, model);
+    default:
+      // Fallback to existing AI service
+      const conversation = { model: model, preset: 'custom' };
+      return await callAIService(personalizedMessage, conversation, user);
+  }
+}
+
+async function callOpenAIDirectly(message: string, model: string): Promise<{ content: string; metadata: any }> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: 'user', content: message }],
+        temperature: 0.7,
+        max_tokens: 400
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      metadata: { model, provider: 'openai', usage: data.usage }
+    };
+  } catch (error) {
+    console.error('OpenAI direct call failed:', error);
+    throw error;
+  }
+}
+
+async function callGeminiDirectly(message: string): Promise<{ content: string; metadata: any }> {
+  try {
+    const { GoogleGenAI } = require('@google/genai');
+    const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    
+    const result = await model.generateContent(message);
+    const response = await result.response;
+    
+    return {
+      content: response.text(),
+      metadata: { model: 'gemini-pro', provider: 'gemini' }
+    };
+  } catch (error) {
+    console.error('Gemini direct call failed:', error);
+    throw error;
+  }
+}
+
+async function callOpenRouterDirectly(message: string, model: string): Promise<{ content: string; metadata: any }> {
+  try {
+    const apiKey = getAPIKey();
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+        'X-Title': 'Forus Heavy API'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: 'user', content: message }],
+        temperature: 0.7,
+        max_tokens: 400
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      metadata: { model, provider: 'openrouter', usage: data.usage }
+    };
+  } catch (error) {
+    console.error('OpenRouter direct call failed:', error);
+    throw error;
+  }
+}
 
 async function callAIService(userMessage: string, conversation: any, user?: any): Promise<{ content: string; metadata: any }> {
   // Check if user is asking for image generation
