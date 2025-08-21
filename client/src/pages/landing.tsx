@@ -106,7 +106,7 @@ export default function Landing() {
         <div className="text-center max-w-4xl mx-auto">
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Chat with the
-            <span className="bg-gradient-to-r from-white via-black to-white bg-clip-text text-transparent"> Future </span>
+            <span className="bg-gradient-to-r from-gray-300 via-gray-600 to-gray-300 bg-clip-text text-transparent"> Future </span>
             of AI
           </h2>
           <p className="text-xl text-gray-300 mb-8 leading-relaxed">
@@ -189,7 +189,7 @@ export default function Landing() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-white/20 bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/20 to-gray-400/30 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Claude 3.5 Sonnet</h4>
               <p className="text-gray-200">Anthropic's most advanced model</p>
@@ -199,7 +199,7 @@ export default function Landing() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-black/40 to-white/10 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-gray-400/30 to-white/20 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">GPT-4o</h4>
               <p className="text-gray-200">OpenAI's flagship model</p>
@@ -209,7 +209,7 @@ export default function Landing() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-white/20 to-black/30 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/30 to-gray-300/40 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Gemini Pro</h4>
               <p className="text-gray-200">Google's most capable AI</p>
@@ -219,7 +219,7 @@ export default function Landing() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-black/30 to-white/20 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-gray-300/40 to-white/30 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Llama 3</h4>
               <p className="text-gray-200">Meta's open-source powerhouse</p>
@@ -229,7 +229,7 @@ export default function Landing() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-white/30 to-black/20 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/40 to-gray-200/50 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Forus-Intelligence Pro</h4>
               <p className="text-gray-200">Our exclusive AI model</p>
@@ -239,7 +239,7 @@ export default function Landing() {
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-black/20 to-white/30 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-gray-200/50 to-white/40 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Forus-Intelligence Lite</h4>
               <p className="text-gray-200">Fast & efficient AI</p>
@@ -252,7 +252,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-white via-black to-white py-20">
+      <section className="bg-gradient-to-r from-gray-200 via-gray-400 to-gray-200 py-20">
         <div className="container mx-auto px-6 text-center">
           <h3 className="text-4xl font-bold text-white mb-4">
             Ready to Get Started?
