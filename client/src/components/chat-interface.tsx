@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "./logo";
+import { useTheme } from "./theme-provider";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 function getVibrantColor(name: string, secondary = false): string {
@@ -67,7 +68,10 @@ import {
   Hammer,
   X,
   Radio,
-  GraduationCap
+  GraduationCap,
+  Moon,
+  Sun,
+  Toggle
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -75,6 +79,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
+  const { theme, setTheme } = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -84,7 +89,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'lumin'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
@@ -101,6 +106,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImage, setAttachedImage] = useState<{file: File, preview: string} | null>(null);
+  // Multi-AI states for Lumin tab
+  const [luminMessages, setLuminMessages] = useState<{[model: string]: ChatMessage[]}>({});
+  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
+  const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
 
   // Conversation starters
   const conversationStarters = [
@@ -823,6 +832,27 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  const handleUpdateAiRole = async (id: string, aiRole: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ aiRole }),
+      });
+      
+      if (response.ok) {
+        setProjects(prev => prev.map(project => 
+          project.id === id ? { ...project, aiRole } : project
+        ));
+        console.log('AI role updated successfully for project:', id);
+      }
+    } catch (error) {
+      console.error('Failed to update AI role:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -1003,6 +1033,7 @@ Let's start the self-listen session!`;
         onNewProject={handleNewProject}
         onDeleteProject={handleDeleteProject}
         onEditProject={handleEditProject}
+        onUpdateAiRole={handleUpdateAiRole}
         user={user || undefined}
       />
       {/* Header */}
@@ -1031,6 +1062,25 @@ Let's start the self-listen session!`;
           >
             Ask
           </Button>
+          <Button
+            variant={activeTab === 'lumin' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('lumin')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
+            data-testid="tab-lumin"
+          >
+            <Brain className="h-3 w-3 mr-1" />
+            Lumin(Coders & Content Creator Heaven)
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            data-testid="button-theme-toggle"
+          >
+            {theme === 'dark' ? <Sun className="h-3 w-3 sm:h-4 sm:w-4" /> : <Moon className="h-3 w-3 sm:h-4 sm:w-4" />}
+          </Button>
           <Button 
             variant="ghost" 
             size="icon"
@@ -1044,7 +1094,8 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="flex-1 overflow-y-auto p-4" data-testid="chat-messages">
-        {messages.length === 0 ? (
+        {activeTab === 'ask' ? (
+          messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="xl" className="mb-6" />
             <h2 className="text-3xl font-bold mb-3 text-foreground">
@@ -1245,6 +1296,116 @@ Let's start the self-listen session!`;
             )}
             
             <div ref={messagesEndRef} />
+          </div>
+        )
+        ) : (
+          // Lumin Tab - Multi-AI Interface
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
+                <Brain className="h-6 w-6 mr-2" />
+                Lumin - Multi-AI Paradise (Coders & Content Creator Heaven)
+              </h2>
+              
+              {/* AI Model Toggles */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                {Object.entries({
+                  'gpt-4o': 'ChatGPT 4o',
+                  'claude-3.5-sonnet': 'Claude 3.5 Sonnet', 
+                  'gemini-pro': 'Gemini Pro',
+                  'grok-beta': 'Grok Beta',
+                  'perplexity': 'Perplexity',
+                  'llama-3.3-70b': 'Llama 3.3 70B'
+                }).map(([model, name]) => (
+                  <div key={model} className="flex items-center space-x-2 bg-card border border-border rounded-xl p-3">
+                    <button
+                      onClick={() => {
+                        const newActive = new Set(activeAIModels);
+                        if (newActive.has(model)) {
+                          newActive.delete(model);
+                        } else {
+                          newActive.add(model);
+                        }
+                        setActiveAIModels(newActive);
+                      }}
+                      className={`w-10 h-6 rounded-full transition-all duration-200 ${
+                        activeAIModels.has(model) 
+                          ? 'bg-green-500' 
+                          : 'bg-gray-300 dark:bg-gray-600'
+                      } relative`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 absolute top-1 ${
+                        activeAIModels.has(model) ? 'translate-x-5' : 'translate-x-1'
+                      }`} />
+                    </button>
+                    <span className="text-sm font-medium text-foreground">{name}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Multi-AI Responses Grid */}
+              {Object.keys(luminMessages).length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {Array.from(activeAIModels).map(model => (
+                    <div key={model} className="bg-card border border-border rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-foreground">
+                          {model === 'gpt-4o' ? 'ChatGPT 4o' :
+                           model === 'claude-3.5-sonnet' ? 'Claude 3.5 Sonnet' :
+                           model === 'gemini-pro' ? 'Gemini Pro' :
+                           model === 'grok-beta' ? 'Grok Beta' :
+                           model === 'perplexity' ? 'Perplexity' :
+                           'Llama 3.3 70B'}
+                        </h3>
+                        <div className={`w-2 h-2 rounded-full ${
+                          luminIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
+                        }`} />
+                      </div>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {(luminMessages[model] || []).map(message => (
+                          <div key={message.id} className={`p-3 rounded-lg ${
+                            message.role === 'user' 
+                              ? 'bg-secondary text-secondary-foreground ml-4' 
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            <div className="text-sm">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        ))}
+                        {luminIsTyping[model] && (
+                          <div className="flex space-x-1 p-3">
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Empty State for Lumin */}
+              {Object.keys(luminMessages).length === 0 && (
+                <div className="text-center py-12">
+                  <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    Multi-AI Paradise Awaits
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Select AI models above and start chatting to see responses from multiple AIs simultaneously
+                  </p>
+                  <div className="text-sm text-muted-foreground">
+                    ✨ Perfect for comparing different AI perspectives<br/>
+                    🚀 Ideal for coders and content creators<br/>
+                    🎯 All models unlocked and ready to use
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

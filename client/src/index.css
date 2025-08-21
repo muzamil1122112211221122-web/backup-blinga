@@ -341,11 +341,13 @@
   }
 
   .dark .message-input {
-    border-color: var(--macos-border-light) !important;
+    border: none !important;
+    border-color: transparent !important;
   }
 
   .dark .message-input:focus {
-    border-color: var(--macos-gray) !important;
+    border: none !important;
+    border-color: transparent !important;
     box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.3);
   }
 
