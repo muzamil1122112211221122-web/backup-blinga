@@ -17,7 +17,7 @@ const failedKeys = new Set<string>();
 const keyFailureCount = new Map<string, number>();
 let lastSuccessfulKeyIndex = 0;
 
-function getNextApiKey(preferGroq: boolean = true): { key: string; provider: 'groq' | 'openrouter' } {
+function getNextApiKey(preferGroq: boolean = true, forceOpenAI: boolean = false): { key: string; provider: 'groq' | 'openrouter' | 'openai' } {
   // Primary: Groq API key
   const groqKey = process.env.GROQ_API_KEY;
   
@@ -35,14 +35,22 @@ function getNextApiKey(preferGroq: boolean = true): { key: string; provider: 'gr
     process.env.OPENROUTER_API_KEY_10
   ].filter(key => key && key.trim().length > 0);
   
+  // Tertiary: OpenAI API key
+  const openaiKey = process.env.OPENAI_API_KEY;
+  
+  // Force OpenAI if requested (for final fallback)
+  if (forceOpenAI && openaiKey && openaiKey.trim().length > 0 && !failedKeys.has(openaiKey)) {
+    return { key: openaiKey, provider: 'openai' };
+  }
+  
   // Try Groq first if available, not failed, and preferred
   if (preferGroq && groqKey && groqKey.trim().length > 0 && !failedKeys.has(groqKey)) {
     return { key: groqKey, provider: 'groq' };
   }
   
   // Fall back to OpenRouter keys
-  if (openRouterKeys.length === 0) {
-    throw new Error("No valid API keys found (Groq or OpenRouter)");
+  if (openRouterKeys.length === 0 && !openaiKey) {
+    throw new Error("No valid API keys found (Groq, OpenRouter, or OpenAI)");
   }
   
   // Prioritize OpenRouter keys that haven't failed recently
@@ -62,20 +70,29 @@ function getNextApiKey(preferGroq: boolean = true): { key: string; provider: 'gr
   
   const availableKeys = workingKeys.length > 0 ? workingKeys : openRouterKeys;
   
-  // Smart selection - prefer keys with fewer failures
-  let selectedKey = availableKeys[currentKeyIndex % availableKeys.length] as string;
-  const failures = keyFailureCount.get(selectedKey) || 0;
-  
-  // If current key has many failures, try to find a better one
-  if (failures > 2) {
-    const betterKeys = availableKeys.filter(key => key && (keyFailureCount.get(key) || 0) < failures);
-    if (betterKeys.length > 0) {
-      selectedKey = betterKeys[0]!;
+  if (availableKeys.length > 0) {
+    // Smart selection - prefer keys with fewer failures
+    let selectedKey = availableKeys[currentKeyIndex % availableKeys.length] as string;
+    const failures = keyFailureCount.get(selectedKey) || 0;
+    
+    // If current key has many failures, try to find a better one
+    if (failures > 2) {
+      const betterKeys = availableKeys.filter(key => key && (keyFailureCount.get(key) || 0) < failures);
+      if (betterKeys.length > 0) {
+        selectedKey = betterKeys[0]!;
+      }
     }
+    
+    currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
+    return { key: selectedKey, provider: 'openrouter' };
   }
   
-  currentKeyIndex = (currentKeyIndex + 1) % availableKeys.length;
-  return { key: selectedKey, provider: 'openrouter' };
+  // Final fallback to OpenAI if available
+  if (openaiKey && openaiKey.trim().length > 0 && !failedKeys.has(openaiKey)) {
+    return { key: openaiKey, provider: 'openai' };
+  }
+  
+  throw new Error("No valid API keys found (all Groq, OpenRouter, and OpenAI keys failed or unavailable)");
 }
 
 function markKeyAsFailed(key: string, reason?: string): void {
@@ -949,16 +966,19 @@ Let me provide you with a detailed description instead, or you can try asking ag
   const systemPrompt = getSystemPrompt(conversation, user);
   
   // Retry logic with automatic key switching
-  const maxRetries = 6; // Increased to accommodate Groq + OpenRouter retries
+  const maxRetries = 8; // Increased to accommodate Groq + OpenRouter + OpenAI retries
   let lastError: Error | null = null;
   let triedGroq = false;
+  let triedOpenAI = false;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    // Prefer Groq on first attempt, then try OpenRouter, then fallback to Groq if OpenRouter fails
+    // Prefer Groq on first attempt, then try OpenRouter, then fallback to OpenAI as final option
     const preferGroq = attempt === 1 || (!triedGroq && attempt > 2);
-    const { key: apiKey, provider } = getNextApiKey(preferGroq);
+    const forceOpenAI = attempt > 6 && !triedOpenAI; // Force OpenAI on final attempts
+    const { key: apiKey, provider } = getNextApiKey(preferGroq, forceOpenAI);
     
     if (provider === 'groq') triedGroq = true;
+    if (provider === 'openai') triedOpenAI = true;
     
     console.log(`API attempt ${attempt}/${maxRetries} using ${provider} key: ${apiKey.substring(0, 10)}...`);
     
@@ -979,6 +999,24 @@ Let me provide you with a detailed description instead, or you can try asking ag
           },
           body: JSON.stringify({
             model: groqModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            temperature: 0.7,
+            max_tokens: maxTokens,
+          }),
+        });
+      } else if (provider === 'openai') {
+        // OpenAI API call
+        response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userMessage }
@@ -1079,7 +1117,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
     metadata: {
       model: mappedModel,
       usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-      provider: 'Multiple (Groq + OpenRouter)',
+      provider: 'Multiple (Groq + OpenRouter + OpenAI)',
       error: lastError?.message || 'All retries failed'
     }
   };
