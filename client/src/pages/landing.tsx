@@ -36,14 +36,14 @@ export default function Landing() {
       {/* Animated Black Hole Background */}
       <div className="absolute inset-0 flex items-center justify-center">
         {/* Outer event horizon rings */}
-        <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-radial from-transparent via-gray-900/20 to-transparent animate-spin-slow"></div>
-        <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-radial from-transparent via-gray-700/30 to-transparent animate-spin-reverse"></div>
+        <div className="absolute w-[800px] h-[800px] rounded-full bg-gradient-radial from-transparent via-white/10 to-transparent animate-spin-slow"></div>
+        <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-radial from-transparent via-white/15 to-transparent animate-spin-reverse"></div>
         
         {/* Main black hole */}
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-gradient-radial from-gray-900 via-black to-transparent shadow-[0_0_200px_rgba(255,255,255,0.1)]">
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-gradient-radial from-black via-black to-transparent shadow-[0_0_200px_rgba(255,255,255,0.1)]">
           {/* Accretion disk */}
-          <div className="absolute inset-0 rounded-full bg-gradient-conic from-white/20 via-gray-400/30 to-transparent animate-spin opacity-60"></div>
-          <div className="absolute inset-4 rounded-full bg-gradient-conic from-gray-300/15 via-white/20 to-transparent animate-spin-slow opacity-40"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-conic from-white/20 via-white/10 to-transparent animate-spin opacity-60"></div>
+          <div className="absolute inset-4 rounded-full bg-gradient-conic from-white/15 via-white/20 to-transparent animate-spin-slow opacity-40"></div>
           
           {/* Event horizon */}
           <div className="absolute inset-16 rounded-full bg-black shadow-inner"></div>
@@ -55,9 +55,9 @@ export default function Landing() {
         {/* Distant stars */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
-          <div className="absolute top-40 right-32 w-0.5 h-0.5 bg-gray-300 rounded-full animate-twinkle-delay"></div>
+          <div className="absolute top-40 right-32 w-0.5 h-0.5 bg-white rounded-full animate-twinkle-delay"></div>
           <div className="absolute bottom-32 left-40 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
-          <div className="absolute top-1/3 right-20 w-1 h-1 bg-gray-400 rounded-full animate-twinkle-delay"></div>
+          <div className="absolute top-1/3 right-20 w-1 h-1 bg-white rounded-full animate-twinkle-delay"></div>
           <div className="absolute bottom-20 right-20 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
         </div>
       </div>
