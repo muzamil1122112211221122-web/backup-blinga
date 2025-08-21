@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
-import { UserInfoDialog } from "@/components/user-info-dialog";
 
 export default function Landing() {
-  const [showUserInfoDialog, setShowUserInfoDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGetStarted = async () => {
@@ -21,43 +19,9 @@ export default function Landing() {
       console.log('Logout error (ignored):', error);
     }
     
-    // Show the user info dialog instead of redirecting
+    // Redirect to the new user info page
     setIsLoading(false);
-    setShowUserInfoDialog(true);
-  };
-
-  const handleUserInfoComplete = async (userInfo: { name: string; birthDate: string }) => {
-    setIsLoading(true);
-    try {
-      // Create/login the user with their info
-      const response = await fetch('/api/auth/demo', { 
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          displayName: userInfo.name,
-          birthDate: userInfo.birthDate,
-        })
-      });
-      
-      if (response.ok) {
-        console.log('Login successful');
-        setShowUserInfoDialog(false);
-        setIsLoading(false);
-        // Show success message and then redirect after a short delay
-        setTimeout(() => {
-          window.location.href = '/chat';
-        }, 1000);
-      } else {
-        console.error('Login failed:', response.status);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      setIsLoading(false);
-    }
+    window.location.href = '/start';
   };
 
   const features = [
@@ -305,13 +269,6 @@ export default function Landing() {
         </div>
       </footer>
       </div>
-
-      {/* User Info Dialog */}
-      <UserInfoDialog 
-        open={showUserInfoDialog}
-        onOpenChange={setShowUserInfoDialog}
-        onComplete={handleUserInfoComplete}
-      />
     </div>
   );
 }
