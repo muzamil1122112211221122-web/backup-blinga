@@ -29,8 +29,8 @@ export function setupAuth(app: Express) {
 
   // Google OAuth Strategy - only configure if credentials are available
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    // Use a unique callback path to avoid Google's duplicate URL restriction
-    const callbackURL = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.repl.co/api/auth/google/callback/auth`;
+    // Use a completely unique callback path to avoid Google's duplicate URL restriction
+    const callbackURL = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.repl.co/api/oauth2/google/return`;
     
     console.log('Google OAuth Callback URL:', callbackURL);
     console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...');
@@ -96,7 +96,7 @@ export function setupAuth(app: Express) {
       passport.authenticate("google", { scope: ["profile", "email"] })
     );
 
-    app.get("/api/auth/google/callback/auth",
+    app.get("/api/oauth2/google/return",
       passport.authenticate("google", { failureRedirect: "/?error=google_auth_failed" }),
       (req, res) => {
         res.redirect("/chat");
