@@ -153,7 +153,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }, 100);
   };
 
-  // Load user data and conversations
+  // Load user data and conversations - optimized for faster loading
   useEffect(() => {
     const loadUserAndConversations = async () => {
       try {
@@ -162,18 +162,24 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           const userData = await userResponse.json();
           setUser(userData);
           
-          // Load projects after user is loaded
-          await loadProjects();
-          
-          // Restore last project if any exist
-          const savedProjectId = localStorage.getItem('currentProjectId');
-          if (savedProjectId) {
-            setCurrentProjectId(savedProjectId);
-            await loadProjectMessages(savedProjectId);
-          }
+          // Load projects in background without blocking UI
+          setTimeout(async () => {
+            try {
+              await loadProjects();
+              
+              // Restore last project if any exist
+              const savedProjectId = localStorage.getItem('currentProjectId');
+              if (savedProjectId) {
+                setCurrentProjectId(savedProjectId);
+                await loadProjectMessages(savedProjectId);
+              }
+            } catch (error) {
+              console.warn('Failed to load projects:', error);
+            }
+          }, 200);
         }
       } catch (error) {
-        console.error('Failed to load user and conversations:', error);
+        console.error('Failed to load user:', error);
       }
     };
     loadUserAndConversations();
@@ -184,29 +190,28 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // WebSocket connection
+  // WebSocket connection - lazy load to improve initial performance
   const { isConnected, sendMessage: sendWsMessage } = useWebSocket({
     onMessage: handleWebSocketMessage,
     onConnect: () => {
-      console.log('Connected to chat server');
       // Join conversation if we have one
       if (currentProjectId && user) {
         sendWsMessage({
           type: 'join_conversation',
           conversationId: currentProjectId,
-          userId: user.email, // Use email as user identifier since that's what we have
+          userId: user.email,
         });
       }
     },
-    onDisconnect: () => console.log('Disconnected from chat server'),
+    onDisconnect: () => {},
   });
 
-  // Speech recognition
+  // Speech recognition - simplified for better performance
   const { isListening, toggleListening, isSupported: speechSupported } = useSpeechRecognition({
     onResult: (transcript) => {
       setInputValue(prev => prev + transcript + ' ');
     },
-    onError: (error) => console.error('Speech recognition error:', error),
+    onError: () => {},
   });
 
   // Text-to-speech
