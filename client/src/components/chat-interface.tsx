@@ -100,6 +100,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<{file: File, preview: string} | null>(null);
 
   // Conversation starters
   const conversationStarters = [
@@ -288,7 +289,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   const handleSendMessage = async () => {
     const content = inputValue.trim();
-    if (!content) return;
+    if (!content && !attachedImage) return;
 
     // Create conversation if needed
     let conversationId = currentProjectId;
@@ -297,18 +298,77 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       if (!conversationId) return;
     }
 
-    // Add user message immediately
+    // Add user message immediately (with image if attached)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       conversationId,
       role: 'user',
-      content,
+      content: content || (attachedImage ? "What's in this image?" : ""),
       createdAt: new Date(),
+      imageUrl: attachedImage?.preview
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
+
+    // If there's an attached image, handle it with Gemini analysis
+    if (attachedImage) {
+      try {
+        const response = await fetch('/api/analyze-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageData: attachedImage.preview,
+            prompt: content || "Analyze this image in detail. What do you see?"
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const aiMessage: ChatMessage = {
+              id: (Date.now() + 1).toString(),
+              conversationId,
+              content: result.analysis,
+              role: "assistant",
+              createdAt: new Date()
+            };
+            setMessages(prev => [...prev, aiMessage]);
+          } else {
+            setMessages(prev => [...prev, {
+              id: Date.now().toString(),
+              conversationId,
+              role: 'assistant',
+              content: `Sorry, I couldn't analyze the image: ${result.message || 'Unknown error'}`,
+              createdAt: new Date(),
+            }]);
+          }
+        } else {
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            conversationId,
+            role: 'assistant',
+            content: 'Sorry, I encountered an error analyzing the image. Please try again.',
+            createdAt: new Date(),
+          }]);
+        }
+      } catch (error) {
+        console.error('Image analysis error:', error);
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          conversationId,
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your image. Please try again.',
+          createdAt: new Date(),
+        }]);
+      }
+      
+      // Clear attached image and typing indicator
+      setAttachedImage(null);
+      setIsTyping(false);
+      return;
+    }
 
     // Modify content if Forus Integration mode is enabled
     const enhancedContent = forusIntegrationMode 
@@ -351,7 +411,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         setMessages(prev => [...prev, aiMessage]);
         
         // Refresh conversations list to show updated conversation
-        loadConversations();
+        loadProjects();
       } else {
         console.error('API call failed:', response.statusText);
         const error = await response.json();
@@ -499,7 +559,16 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     if (file) {
       console.log('Image selected:', file.name, file.type, file.size);
       if (file.type.startsWith('image/')) {
-        await handleImageAnalysis(file);
+        // Create preview like ChatGPT
+        const preview = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        
+        setAttachedImage({ file, preview });
+        showToast(`Image "${file.name}" ready to send with your message`);
       } else {
         showToast('Please select an image file.');
       }
@@ -1321,7 +1390,7 @@ Let's start the self-listen session!`;
           />
           
           {/* Custom Placeholder */}
-          {!inputValue && (
+          {!inputValue && !attachedImage && (
             <div 
               className="absolute font-medium text-muted-foreground pointer-events-none"
               style={{
@@ -1335,6 +1404,28 @@ Let's start the self-listen session!`;
               }}
             >
               Ask Anything
+            </div>
+          )}
+
+          {/* Image Preview */}
+          {attachedImage && (
+            <div className="absolute top-2 left-2 flex items-center space-x-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600">
+              <img 
+                src={attachedImage.preview} 
+                alt="Attached image" 
+                className="w-12 h-12 object-cover rounded"
+              />
+              <span className="text-xs text-gray-600 dark:text-gray-300 max-w-[120px] truncate">
+                {attachedImage.file.name}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-4 h-4 text-gray-400 hover:text-red-500"
+                onClick={() => setAttachedImage(null)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
             </div>
           )}
           
@@ -1406,7 +1497,7 @@ Let's start the self-listen session!`;
             </Button>
             <Button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() && !attachedImage}
               className="macos-button bg-black hover:bg-gray-800 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >

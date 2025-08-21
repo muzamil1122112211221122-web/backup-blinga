@@ -487,67 +487,13 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
 }> {
   console.log(`Analyzing image with prompt: "${prompt}"`);
   
-  // First try: Use OpenAI Vision (GPT-4o)
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      console.log('Using OpenAI GPT-4o Vision for image analysis...');
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: prompt
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: base64Image.startsWith('data:') ? base64Image : `data:image/jpeg;base64,${base64Image}`
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 1500,
-          temperature: 0.3
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('OpenAI vision analysis successful');
-        
-        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-          return {
-            success: true,
-            analysis: data.choices[0].message.content
-          };
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.log('OpenAI vision analysis failed:', response.status, errorData);
-        throw new Error(`OpenAI Vision error: ${response.status}`);
-      }
-    } catch (error) {
-      console.log('OpenAI vision analysis failed, trying Gemini alternative:', error);
-    }
-  } else {
-    console.log('No OpenAI API key found, skipping OpenAI vision analysis');
-  }
-  
-  // Second try: Use Gemini Vision
+  // Use Gemini Vision as primary method
   if (process.env.GEMINI_API_KEY) {
     try {
       console.log('Using Gemini Vision for image analysis...');
+      
+      // Ensure the base64 data doesn't have data URL prefix
+      const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
       
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
         method: 'POST',
@@ -562,7 +508,7 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
               {
                 inlineData: {
                   mimeType: 'image/jpeg',
-                  data: base64Image
+                  data: cleanBase64
                 }
               }
             ]
