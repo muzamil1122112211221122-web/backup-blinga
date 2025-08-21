@@ -513,6 +513,16 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             requestBody.provider = 'openrouter';
             requestBody.model = 'perplexity/llama-3.1-sonar-large-128k-online';
             break;
+          case 'grok-4':
+            // Use xAI Grok via OpenRouter
+            requestBody.provider = 'openrouter';
+            requestBody.model = 'x-ai/grok-2-1212';
+            break;
+          case 'deepseek-r1':
+            // Use DeepSeek R1 via OpenRouter
+            requestBody.provider = 'openrouter';
+            requestBody.model = 'deepseek/deepseek-r1';
+            break;
           default:
             // Fallback to Groq
             requestBody.provider = 'groq';
@@ -1472,7 +1482,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center p-1">
                         <img 
-                          src="attached_assets/icons8-chatgpt-50_1755802050159.png" 
+                          src="attached_assets/icons8-chatgpt-50_1755803693828.png" 
                           alt="ChatGPT" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1485,7 +1495,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-red-600 flex items-center justify-center p-1">
                         <img 
-                          src="attached_assets/icons8-claude-50_1755802050159.png" 
+                          src="attached_assets/icons8-claude-50_1755803693828.png" 
                           alt="Claude" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1498,7 +1508,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center p-1">
                         <img 
-                          src="attached_assets/icons8-gemini-ai-48_1755802050160.png" 
+                          src="attached_assets/icons8-gemini-ai-48_1755803693828.png" 
                           alt="Gemini" 
                           className="w-full h-full object-contain filter invert"
                         />
@@ -1511,13 +1521,39 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center p-1">
                         <img 
-                          src="attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
+                          src="attached_assets/icons8-perplexity-ai-50_1755803693827.png" 
                           alt="Perplexity" 
                           className="w-full h-full object-contain filter invert"
                         />
                       </div>
                     ), 
                     gradient: 'from-purple-400 to-indigo-500' 
+                  },
+                  'grok-4': { 
+                    name: 'Grok 4', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center p-1">
+                        <img 
+                          src="attached_assets/grok_1755803693829.png" 
+                          alt="Grok" 
+                          className="w-full h-full object-contain filter invert"
+                        />
+                      </div>
+                    ), 
+                    gradient: 'from-gray-400 to-black' 
+                  },
+                  'deepseek-r1': { 
+                    name: 'DeepSeek R1', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center p-1">
+                        <img 
+                          src="attached_assets/deepseek-icon_1755803713167.png" 
+                          alt="DeepSeek" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ), 
+                    gradient: 'from-blue-400 to-cyan-500' 
                   }
                 }).map(([model, config]) => (
                   <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
@@ -1555,84 +1591,84 @@ Let's start the self-listen session!`;
                 ))}
               </div>
               
-              {/* Multi-AI Responses Grid */}
+              {/* Multi-AI Responses - Horizontal Scrolling */}
               {Object.keys(luminMessages).length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                  {Array.from(activeAIModels).map(model => (
-                    <div key={model} className="bg-card border border-border rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          {model === 'gpt-4o' && (
+                <div className="mb-6">
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style={{scrollbarWidth: 'thin'}}>
+                    {Array.from(activeAIModels).map(model => {
+                      const getModelConfig = (model: string) => {
+                        switch(model) {
+                          case 'gpt-4o': return { name: 'ChatGPT', logo: (
                             <div className="w-6 h-6 rounded-lg bg-black flex items-center justify-center p-1">
-                              <img 
-                                src="attached_assets/icons8-chatgpt-50_1755802050159.png" 
-                                alt="ChatGPT" 
-                                className="w-full h-full object-contain filter invert"
-                              />
+                              <img src="attached_assets/icons8-chatgpt-50_1755803693828.png" alt="ChatGPT" className="w-full h-full object-contain filter invert" />
                             </div>
-                          )}
-                          {model === 'claude-3.5-sonnet' && (
+                          )};
+                          case 'claude-3.5-sonnet': return { name: 'Claude', logo: (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-400 to-red-600 flex items-center justify-center p-1">
-                              <img 
-                                src="attached_assets/icons8-claude-50_1755802050159.png" 
-                                alt="Claude" 
-                                className="w-full h-full object-contain filter invert"
-                              />
+                              <img src="attached_assets/icons8-claude-50_1755803693828.png" alt="Claude" className="w-full h-full object-contain filter invert" />
                             </div>
-                          )}
-                          {model === 'gemini-pro' && (
+                          )};
+                          case 'gemini-pro': return { name: 'Gemini', logo: (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center p-1">
-                              <img 
-                                src="attached_assets/icons8-gemini-ai-48_1755802050160.png" 
-                                alt="Gemini" 
-                                className="w-full h-full object-contain filter invert"
-                              />
+                              <img src="attached_assets/icons8-gemini-ai-48_1755803693828.png" alt="Gemini" className="w-full h-full object-contain filter invert" />
                             </div>
-                          )}
-                          {model === 'perplexity' && (
+                          )};
+                          case 'perplexity': return { name: 'Perplexity', logo: (
                             <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center p-1">
-                              <img 
-                                src="attached_assets/icons8-perplexity-ai-50_1755802050159.png" 
-                                alt="Perplexity" 
-                                className="w-full h-full object-contain filter invert"
-                              />
+                              <img src="attached_assets/icons8-perplexity-ai-50_1755803693827.png" alt="Perplexity" className="w-full h-full object-contain filter invert" />
                             </div>
-                          )}
-                          <h3 className="font-semibold text-foreground">
-                            {model === 'gpt-4o' ? 'ChatGPT' :
-                             model === 'claude-3.5-sonnet' ? 'Claude' :
-                             model === 'gemini-pro' ? 'Gemini' :
-                             'Perplexity'}
-                          </h3>
+                          )};
+                          case 'grok-4': return { name: 'Grok 4', logo: (
+                            <div className="w-6 h-6 rounded-lg bg-black flex items-center justify-center p-1">
+                              <img src="attached_assets/grok_1755803693829.png" alt="Grok" className="w-full h-full object-contain filter invert" />
+                            </div>
+                          )};
+                          case 'deepseek-r1': return { name: 'DeepSeek R1', logo: (
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center p-1">
+                              <img src="attached_assets/deepseek-icon_1755803713167.png" alt="DeepSeek" className="w-full h-full object-contain" />
+                            </div>
+                          )};
+                          default: return { name: model, logo: <div className="w-6 h-6 rounded-lg bg-gray-500"></div> };
+                        }
+                      };
+                      const config = getModelConfig(model);
+                      return (
+                        <div key={model} className="bg-card border border-border rounded-xl p-4 min-w-80 max-w-96 flex-shrink-0 snap-start">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              {config.logo}
+                              <h3 className="font-semibold text-foreground">{config.name}</h3>
+                            </div>
+                            <div className={`w-2 h-2 rounded-full ${
+                              luminIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
+                            }`} />
+                          </div>
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {(luminMessages[model] || []).map(message => (
+                              <div key={message.id} className={`p-3 rounded-lg ${
+                                message.role === 'user' 
+                                  ? 'bg-secondary text-secondary-foreground ml-4' 
+                                  : 'bg-muted text-muted-foreground'
+                              }`}>
+                                <div className="text-sm">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {message.content}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            ))}
+                            {luminIsTyping[model] && (
+                              <div className="flex space-x-1 p-3">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className={`w-2 h-2 rounded-full ${
-                          luminIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
-                        }`} />
-                      </div>
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {(luminMessages[model] || []).map(message => (
-                          <div key={message.id} className={`p-3 rounded-lg ${
-                            message.role === 'user' 
-                              ? 'bg-secondary text-secondary-foreground ml-4' 
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                            <div className="text-sm">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                        ))}
-                        {luminIsTyping[model] && (
-                          <div className="flex space-x-1 p-3">
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               
