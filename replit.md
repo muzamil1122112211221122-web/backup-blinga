@@ -12,7 +12,8 @@ Forus Heavy API is a real-time chat application built with React, Express.js, an
 - **✓ Multiple Login Options**: Users can now choose between Google OAuth or demo login
 - **✓ App's Own Model Examples**: Added Forus-Intelligence Pro and Forus-Intelligence Lite as exclusive AI models
 - **✓ Changed Default Theme to White**: Switched from dark theme to light theme as the default across all pages
-- **✓ Fixed Google OAuth Connection**: Updated callback URL to use relative path for better compatibility
+- **✓ Fixed AI Model Card Backgrounds**: Changed to darker gray gradients (gray-800/700/600) for better contrast
+- **✓ Google OAuth Callback URL Updated**: Final callback URL set to `/auth/google/callback` for compatibility
 
 ## Previous Updates (August 17, 2025)
 - **✓ Fixed Database Connection Issues**: Resolved DATABASE_URL environment variable problems and successfully provisioned PostgreSQL database
