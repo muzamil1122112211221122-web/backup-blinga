@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useTheme } from "@/components/theme-provider";
 import { 
   Home, 
   MessageSquare, 
@@ -13,7 +14,9 @@ import {
   X,
   Edit3,
   Check,
-  User
+  User,
+  Moon,
+  Sun
 } from "lucide-react";
 import { Logo } from "./logo";
 
@@ -49,12 +52,14 @@ interface SidebarProps {
     id: string;
     title: string;
     createdAt: Date;
+    aiRole?: string;
   }>;
   currentProjectId?: string;
   onProjectSelect: (id: string) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
   onEditProject?: (id: string, newTitle: string) => void;
+  onUpdateAiRole?: (id: string, newAiRole: string) => void;
   user?: {
     email: string;
     username: string;
@@ -71,12 +76,15 @@ export function Sidebar({
   onNewProject,
   onDeleteProject,
   onEditProject,
+  onUpdateAiRole,
   user
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
-  const [aiRole, setAiRole] = useState<string>('You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
+  const [editingAiRole, setEditingAiRole] = useState<string | null>(null);
+  const [aiRoleText, setAiRoleText] = useState<string>('');
+  const { theme, setTheme } = useTheme();
 
   if (!isOpen) return null;
 
@@ -96,21 +104,32 @@ export function Sidebar({
             <Logo size="sm" />
             <span className="font-semibold text-foreground">Forus Heavy API</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground rounded-2xl"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="text-muted-foreground hover:text-foreground rounded-2xl"
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground rounded-2xl"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* New Conversation */}
-        <div className="p-4 border-b border-[var(--border)]">
+        <div className="p-4 border-b border-border">
           <Button
             onClick={onNewProject}
-            className="w-full bg-[var(--text-primary)] text-[var(--dark-primary)] hover:bg-[var(--text-secondary)]"
+            className="w-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
             data-testid="button-new-chat"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -122,7 +141,7 @@ export function Sidebar({
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
             {projects.length === 0 ? (
-              <div className="text-center text-[var(--text-secondary)] py-8">
+              <div className="text-center text-muted-foreground py-8">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No projects yet</p>
                 <p className="text-xs">Start a new chat to begin</p>
@@ -133,8 +152,8 @@ export function Sidebar({
                   key={project.id}
                   className={`group relative p-3 rounded-lg transition-all duration-200 border ${
                     currentProjectId === project.id
-                      ? 'bg-[var(--dark-accent)] text-[var(--text-primary)] border-[var(--text-primary)] border-opacity-30'
-                      : 'hover:bg-[var(--dark-accent)] text-[var(--foreground)] hover:border-[var(--text-primary)] hover:border-opacity-20 border-[var(--border)] border-opacity-50'
+                      ? 'bg-accent text-foreground border-foreground border-opacity-30'
+                      : 'hover:bg-accent text-foreground hover:border-foreground hover:border-opacity-20 border-border border-opacity-50'
                   }`}
                   onMouseEnter={() => setHoveredProject(project.id)}
                   onMouseLeave={() => setHoveredProject(null)}
@@ -179,6 +198,44 @@ export function Sidebar({
                             </Button>
                           </div>
                         </div>
+                      ) : editingAiRole === project.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={aiRoleText}
+                            onChange={(e) => setAiRoleText(e.target.value)}
+                            className="text-xs min-h-[60px] resize-none"
+                            placeholder="Define how the AI should behave for this project..."
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && e.ctrlKey) {
+                                onUpdateAiRole?.(project.id, aiRoleText);
+                                setEditingAiRole(null);
+                              } else if (e.key === 'Escape') {
+                                setEditingAiRole(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => {
+                                onUpdateAiRole?.(project.id, aiRoleText);
+                                setEditingAiRole(null);
+                              }}
+                            >
+                              <Check className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => setEditingAiRole(null)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
                         <>
                           <h3 className="text-sm font-medium truncate text-current">
@@ -187,28 +244,48 @@ export function Sidebar({
                           <p className="text-xs mt-1 opacity-70 text-current">
                             {new Date(project.createdAt).toLocaleDateString()}
                           </p>
+                          {project.aiRole && (
+                            <p className="text-xs mt-1 opacity-60 text-current truncate">
+                              AI: {project.aiRole.substring(0, 50)}...
+                            </p>
+                          )}
                         </>
                       )}
                     </div>
-                    {hoveredProject === project.id && editingProject !== project.id && (
+                    {hoveredProject === project.id && editingProject !== project.id && editingAiRole !== project.id && (
                       <div className="flex space-x-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-blue-400"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-blue-400"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditTitle(project.title);
                             setEditingProject(project.id);
                           }}
                           data-testid={`edit-project-${project.id}`}
+                          title="Edit project name"
                         >
                           <Edit3 className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-[var(--text-secondary)] hover:text-red-400"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-green-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAiRoleText(project.aiRole || 'You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
+                            setEditingAiRole(project.id);
+                          }}
+                          data-testid={`edit-ai-role-${project.id}`}
+                          title="Edit AI role for this project"
+                        >
+                          <User className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDeleteProject(project.id);
@@ -226,27 +303,9 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* AI Role & Requirements */}
-        <div className="p-4 border-t border-[var(--border)]">
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-[var(--text-primary)]" />
-              <h4 className="text-sm font-medium text-[var(--text-primary)]">AI Role & Requirements</h4>
-            </div>
-            <Textarea
-              value={aiRole}
-              onChange={(e) => setAiRole(e.target.value)}
-              placeholder="Define how the AI should behave and respond to your requirements..."
-              className="text-xs min-h-[80px] resize-none"
-            />
-            <p className="text-xs text-[var(--text-secondary)] opacity-70">
-              This helps the AI understand its role and how it should respond to your specific needs.
-            </p>
-          </div>
-        </div>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-[var(--border)]">
+        <div className="p-4 border-t border-border">
           {user && (
             <div className="flex items-center space-x-3">
               <div 
@@ -258,10 +317,10 @@ export function Sidebar({
                 {((user as any).displayName || user.username || user.email).charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {(user as any).displayName || user.username || user.email}
                 </p>
-                <p className="text-xs text-[var(--text-secondary)] truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {(user as any).displayName ? user.username || user.email : user.email}
                 </p>
               </div>

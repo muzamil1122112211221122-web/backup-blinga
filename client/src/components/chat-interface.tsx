@@ -1160,7 +1160,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
                               copiedMessageId === message.id 
                                 ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
                                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -1173,9 +1173,9 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
                               likedMessages.has(message.id)
-                                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950'
+                                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                             }`}
                             onClick={() => handleLikeMessage(message.id)}
@@ -1186,7 +1186,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
+                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
                               dislikedMessages.has(message.id)
                                 ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -1488,7 +1488,7 @@ Let's start the self-listen session!`;
             <Button
               variant="ghost"
               size="icon"
-              className="macos-button text-muted-foreground hover:text-purple-500 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
+              className="macos-button text-muted-foreground hover:text-gray-900 dark:hover:text-gray-100 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
               onClick={handleEnhancePrompt}
               disabled={!inputValue.trim() || isEnhancing}
               data-testid="button-enhance-prompt"
