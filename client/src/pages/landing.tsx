@@ -69,7 +69,7 @@ export default function Landing() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-white to-black rounded-lg flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-white">Forus Heavy API</h1>
@@ -106,7 +106,7 @@ export default function Landing() {
         <div className="text-center max-w-4xl mx-auto">
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Chat with the
-            <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"> Future </span>
+            <span className="bg-gradient-to-r from-white via-black to-white bg-clip-text text-transparent"> Future </span>
             of AI
           </h2>
           <p className="text-xl text-gray-300 mb-8 leading-relaxed">
@@ -189,60 +189,60 @@ export default function Landing() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-white/20 bg-gradient-to-br from-blue-900/40 to-purple-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/10 to-black/40 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Claude 3.5 Sonnet</h4>
-              <p className="text-blue-200">Anthropic's most advanced model</p>
+              <p className="text-gray-200">Anthropic's most advanced model</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">Superior reasoning, coding, and creative writing capabilities</p>
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-green-900/40 to-teal-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-black/40 to-white/10 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">GPT-4o</h4>
-              <p className="text-green-200">OpenAI's flagship model</p>
+              <p className="text-gray-200">OpenAI's flagship model</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">Multimodal AI with vision, reasoning, and code generation</p>
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-orange-900/40 to-red-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/20 to-black/30 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Gemini Pro</h4>
-              <p className="text-orange-200">Google's most capable AI</p>
+              <p className="text-gray-200">Google's most capable AI</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">Advanced reasoning and multimodal understanding</p>
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-purple-900/40 to-pink-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-black/30 to-white/20 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Llama 3</h4>
-              <p className="text-purple-200">Meta's open-source powerhouse</p>
+              <p className="text-gray-200">Meta's open-source powerhouse</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">High-performance open-source model for all tasks</p>
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-yellow-900/40 to-orange-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-white/30 to-black/20 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Forus-Intelligence Pro</h4>
-              <p className="text-yellow-200">Our exclusive AI model</p>
+              <p className="text-gray-200">Our exclusive AI model</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">Custom-trained for optimal performance and specialized tasks</p>
             </CardContent>
           </Card>
           
-          <Card className="border-white/20 bg-gradient-to-br from-cyan-900/40 to-blue-900/40 backdrop-blur-sm">
+          <Card className="border-white/20 bg-gradient-to-br from-black/20 to-white/30 backdrop-blur-sm">
             <CardHeader>
               <h4 className="text-xl font-semibold text-white">Forus-Intelligence Lite</h4>
-              <p className="text-cyan-200">Fast & efficient AI</p>
+              <p className="text-gray-200">Fast & efficient AI</p>
             </CardHeader>
             <CardContent>
               <p className="text-gray-300">Optimized for quick responses and everyday conversations</p>
@@ -252,18 +252,18 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 py-20">
+      <section className="bg-gradient-to-r from-white via-black to-white py-20">
         <div className="container mx-auto px-6 text-center">
           <h3 className="text-4xl font-bold text-white mb-4">
             Ready to Get Started?
           </h3>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
             Join thousands of users already experiencing the future of AI conversations
           </p>
           <Button 
             onClick={handleGetStarted}
             size="lg"
-            className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+            className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
             data-testid="button-cta-start"
           >
             Start Your Journey
@@ -276,7 +276,7 @@ export default function Landing() {
         <div className="container mx-auto px-6">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-white to-black rounded-lg flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
               <h4 className="text-2xl font-bold">Forus Heavy API</h4>
