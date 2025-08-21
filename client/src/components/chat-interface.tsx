@@ -305,6 +305,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const content = inputValue.trim();
     if (!content && !attachedImage) return;
 
+    // Handle Lumin multi-AI mode
+    if (activeTab === 'lumin' && activeAIModels.size > 0) {
+      return await handleLuminSendMessage(content);
+    }
+
     // Create conversation if needed
     let conversationId = currentProjectId;
     if (!conversationId) {
@@ -443,6 +448,98 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Handle Lumin multi-AI message sending
+  const handleLuminSendMessage = async (content: string) => {
+    if (!content || activeAIModels.size === 0) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user' as const,
+      content,
+      createdAt: new Date()
+    };
+
+    // Add user message to all active AI models
+    const newLuminMessages = { ...luminMessages };
+    Array.from(activeAIModels).forEach(model => {
+      if (!newLuminMessages[model]) {
+        newLuminMessages[model] = [];
+      }
+      newLuminMessages[model].push(userMessage);
+    });
+    setLuminMessages(newLuminMessages);
+    setInputValue("");
+
+    // Set all active models as typing
+    const newTypingState = { ...luminIsTyping };
+    Array.from(activeAIModels).forEach(model => {
+      newTypingState[model] = true;
+    });
+    setLuminIsTyping(newTypingState);
+
+    // Send requests to all active AI models
+    const promises = Array.from(activeAIModels).map(async (model) => {
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: content,
+            model: model,
+            conversationHistory: luminMessages[model] || []
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const aiMessage = {
+            id: Date.now().toString() + '-' + model,
+            role: 'assistant' as const,
+            content: data.message || data.response || 'No response received',
+            createdAt: new Date()
+          };
+
+          setLuminMessages(prev => ({
+            ...prev,
+            [model]: [...(prev[model] || []), aiMessage]
+          }));
+        } else {
+          const errorMessage = {
+            id: Date.now().toString() + '-' + model + '-error',
+            role: 'assistant' as const,
+            content: 'Sorry, I encountered an error. Please try again.',
+            createdAt: new Date()
+          };
+
+          setLuminMessages(prev => ({
+            ...prev,
+            [model]: [...(prev[model] || []), errorMessage]
+          }));
+        }
+      } catch (error) {
+        console.error(`Error with ${model}:`, error);
+        const errorMessage = {
+          id: Date.now().toString() + '-' + model + '-error',
+          role: 'assistant' as const,
+          content: 'Connection error. Please try again.',
+          createdAt: new Date()
+        };
+
+        setLuminMessages(prev => ({
+          ...prev,
+          [model]: [...(prev[model] || []), errorMessage]
+        }));
+      } finally {
+        setLuminIsTyping(prev => ({
+          ...prev,
+          [model]: false
+        }));
+      }
+    });
+
+    await Promise.all(promises);
   };
 
   const handleCopyMessage = (content: string, messageId: string) => {
@@ -1313,13 +1410,45 @@ Let's start the self-listen session!`;
                 Lumin - Multi-AI Paradise (Coders & Content Creator Heaven)
               </h2>
               
-              {/* Premium AI Model Toggles */}
+              {/* Premium AI Model Toggles with Original Logos */}
               <div className="flex flex-wrap gap-4 mb-8">
                 {Object.entries({
-                  'gpt-4o': { name: 'GPT-4o', icon: '🧠', gradient: 'from-green-400 to-blue-500' },
-                  'claude-3.5-sonnet': { name: 'Claude 3.5 Sonnet', icon: '⚡', gradient: 'from-orange-400 to-pink-500' }, 
-                  'gemini-pro': { name: 'Gemini Pro', icon: '💎', gradient: 'from-blue-400 to-purple-500' },
-                  'llama-3.3-70b-versatile': { name: 'Llama 3.3 70B', icon: '🦙', gradient: 'from-purple-400 to-pink-500' }
+                  'gpt-4o': { 
+                    name: 'ChatGPT 4o', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-green-500 font-bold text-xs">G</div>
+                      </div>
+                    ), 
+                    gradient: 'from-green-400 to-blue-500' 
+                  },
+                  'claude-3.5-sonnet': { 
+                    name: 'Claude 3.5 Sonnet', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+                        <div className="w-5 h-5 rounded bg-white flex items-center justify-center text-orange-500 font-bold text-xs">C</div>
+                      </div>
+                    ), 
+                    gradient: 'from-orange-400 to-pink-500' 
+                  }, 
+                  'gemini-pro': { 
+                    name: 'Gemini Pro', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                        <div className="w-4 h-4 rounded-full bg-white"></div>
+                      </div>
+                    ), 
+                    gradient: 'from-blue-400 to-purple-500' 
+                  },
+                  'llama-3.3-70b-versatile': { 
+                    name: 'Llama 3.3 70B', 
+                    logo: (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
+                        <div className="text-white font-bold text-sm">🦙</div>
+                      </div>
+                    ), 
+                    gradient: 'from-purple-400 to-pink-500' 
+                  }
                 }).map(([model, config]) => (
                   <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
                     activeAIModels.has(model) ? 'shadow-lg scale-105' : 'hover:scale-102'
@@ -1347,8 +1476,8 @@ Let's start the self-listen session!`;
                           {activeAIModels.has(model) && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
                         </div>
                       </button>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{config.icon}</span>
+                      <div className="flex items-center space-x-3">
+                        {config.logo}
                         <span className="text-sm font-semibold text-foreground">{config.name}</span>
                       </div>
                     </div>
@@ -1560,7 +1689,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-card p-3 sm:p-4">
+      <div className="bg-card p-3 sm:p-4 message-input-container">
         <div className="relative">
           <Textarea
             ref={textareaRef}

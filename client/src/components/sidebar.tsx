@@ -258,7 +258,7 @@ export function Sidebar({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-blue-400"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-blue-400 transition-all duration-300"
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditTitle(project.title);
@@ -267,7 +267,10 @@ export function Sidebar({
                           data-testid={`edit-project-${project.id}`}
                           title="Edit project name"
                         >
-                          <PenTool className="h-3 w-3" />
+                          <div className="relative">
+                            <PenTool className="h-3 w-3" />
+                            <div className="absolute -inset-1 bg-blue-400/20 rounded-full scale-0 group-hover:scale-110 transition-transform duration-300"></div>
+                          </div>
                         </Button>
                         <Button
                           variant="ghost"

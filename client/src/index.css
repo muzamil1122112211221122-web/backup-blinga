@@ -93,8 +93,33 @@
     background: transparent;
   }
   
-  .dark .border-border {
-    border-color: transparent !important;
+  /* Remove gray borders around message bar in dark theme */
+  .dark .message-input-container {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Fix model switcher borders in dark theme */
+  .dark [role="combobox"] {
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    background: hsl(240, 10%, 3.9%) !important;
+  }
+  
+  .dark [role="listbox"] {
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    background: hsl(240, 10%, 3.9%) !important;
+  }
+
+  /* Premium model selector styling */
+  .dark .premium-model-selector {
+    background: hsl(240, 10%, 3.9%) !important;
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+  }
+
+  /* Fix select dropdown visibility in dark theme */
+  .dark [data-radix-select-content] {
+    background: hsl(240, 10%, 3.9%) !important;
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
   /* Fix Forus settings text color in dark theme */
