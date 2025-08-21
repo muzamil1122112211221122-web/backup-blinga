@@ -29,12 +29,18 @@ export function setupAuth(app: Express) {
 
   // Google OAuth Strategy - only configure if credentials are available
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    // For Replit, we need to use the full domain URL
+    const callbackURL = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`;
+    
+    console.log('Google OAuth Callback URL:', callbackURL);
+    console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...');
+    
     passport.use(
       new GoogleStrategy(
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: "/api/auth/google/callback",
+          callbackURL: callbackURL,
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
