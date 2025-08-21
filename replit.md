@@ -1,8 +1,18 @@
 # Overview
 
-LineusAPI is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
+Forus Heavy API is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
-## Recent Updates (August 17, 2025)
+## Recent Updates (August 21, 2025)
+- **✓ Updated App Name to "Forus Heavy API"**: Changed all references from LineusAPI to Forus Heavy API throughout the application
+- **✓ Enhanced Black Hole Animation**: Original animated background using pure black and white gradients for copyright-free design
+- **✓ Added Multiple AI Model Showcase**: Featured Claude 3.5 Sonnet, GPT-4o, Gemini Pro, Llama 3, plus exclusive Forus-Intelligence models
+- **✓ Implemented Google OAuth Integration**: Added Google Sign-in functionality with proper authentication flow
+- **✓ Fixed Demo Authentication**: Resolved 404 Page Not Found error with proper GET route handling
+- **✓ Space-Themed Landing Page**: Complete landing page with twinkling stars, gradient backgrounds, and professional layout
+- **✓ Multiple Login Options**: Users can now choose between Google OAuth or demo login
+- **✓ App's Own Model Examples**: Added Forus-Intelligence Pro and Forus-Intelligence Lite as exclusive AI models
+
+## Previous Updates (August 17, 2025)
 - **✓ Fixed Database Connection Issues**: Resolved DATABASE_URL environment variable problems and successfully provisioned PostgreSQL database
 - **✓ Fixed TypeScript Compilation Errors**: Corrected array iteration and type safety issues in routes.ts
 - **✓ 10 OpenRouter API Keys Integrated**: All 10 API keys now properly loaded and available for load balancing

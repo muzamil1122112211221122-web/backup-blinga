@@ -34,7 +34,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: "/api/auth/google/callback",
+          callbackURL: `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/auth/google/callback`,
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
@@ -93,7 +93,7 @@ export function setupAuth(app: Express) {
     app.get("/api/auth/google/callback",
       passport.authenticate("google", { failureRedirect: "/?error=google_auth_failed" }),
       (req, res) => {
-        res.redirect("/");
+        res.redirect("/chat");
       }
     );
   } else {
@@ -104,6 +104,46 @@ export function setupAuth(app: Express) {
   }
 
   // Demo authentication route for testing
+  app.get("/api/auth/demo", async (req, res) => {
+    const redirect = typeof req.query.redirect === 'string' ? req.query.redirect : '/chat';
+    
+    // Auto-login with demo user
+    try {
+      const sessionId = req.session.id || require('crypto').randomUUID();
+      const uniqueEmail = `demo-${sessionId}@forus.com`;
+      const uniqueProviderId = `demo-${sessionId}`;
+      
+      let user = await storage.getUserByProviderId(uniqueProviderId);
+      
+      if (!user) {
+        user = await storage.getUserByEmail(uniqueEmail);
+      }
+      
+      if (!user) {
+        user = await storage.createUser({
+          username: 'Demo User',
+          email: uniqueEmail,
+          password: '',
+          provider: 'demo',
+          providerId: uniqueProviderId,
+          displayName: 'Demo User',
+          birthDate: null,
+        });
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Demo login error:', err);
+          return res.redirect('/?error=demo_login_failed');
+        }
+        res.redirect(redirect);
+      });
+    } catch (error) {
+      console.error('Demo login error:', error);
+      res.redirect('/?error=demo_login_failed');
+    }
+  });
+
   app.post("/api/auth/demo", async (req, res) => {
     try {
       const { displayName, birthDate } = req.body;
