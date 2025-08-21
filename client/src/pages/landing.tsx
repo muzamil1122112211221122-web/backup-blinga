@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
+import { UserInfoDialog } from "@/components/user-info-dialog";
 
 export default function Landing() {
+  const [showUserInfoDialog, setShowUserInfoDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleGetStarted = async () => {
     try {
+      setIsLoading(true);
       // First logout any existing session to ensure clean start
       await fetch('/api/auth/logout', { 
         method: 'POST', 
@@ -15,10 +21,39 @@ export default function Landing() {
       console.log('Logout error (ignored):', error);
     }
     
-    // Small delay to ensure logout is processed, then redirect
-    setTimeout(() => {
-      window.location.href = '/chat';
-    }, 100);
+    // Show the user info dialog instead of redirecting
+    setIsLoading(false);
+    setShowUserInfoDialog(true);
+  };
+
+  const handleUserInfoComplete = async (userInfo: { name: string; birthDate: string }) => {
+    setIsLoading(true);
+    try {
+      // Create/login the user with their info
+      const response = await fetch('/api/auth/demo', { 
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          displayName: userInfo.name,
+          birthDate: userInfo.birthDate,
+        })
+      });
+      
+      if (response.ok) {
+        console.log('Login successful');
+        // Redirect to chat after successful login
+        window.location.href = '/chat';
+      } else {
+        console.error('Login failed:', response.status);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      setIsLoading(false);
+    }
   };
 
   const features = [
@@ -73,11 +108,12 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <Button 
                 onClick={handleGetStarted}
-                className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
+                disabled={isLoading}
+                className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg disabled:opacity-50"
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>Begin Experience</span>
+                <span>{isLoading ? 'Starting...' : 'Begin Experience'}</span>
               </Button>
             </div>
           </div>
@@ -99,12 +135,13 @@ export default function Landing() {
           <div className="flex justify-center">
             <Button 
               onClick={handleGetStarted}
+              disabled={isLoading}
               size="lg"
-              className="bg-white hover:bg-gray-100 text-gray-800 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4 disabled:opacity-50"
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
-              <span>Begin Experience</span>
+              <span>{isLoading ? 'Starting...' : 'Begin Experience'}</span>
             </Button>
           </div>
           <div className="text-center mt-6 text-gray-300">
@@ -234,11 +271,12 @@ export default function Landing() {
           </p>
           <Button 
             onClick={handleGetStarted}
+            disabled={isLoading}
             size="lg"
-            className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+            className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50"
             data-testid="button-cta-start"
           >
-            Start Your Journey
+            {isLoading ? 'Starting...' : 'Start Your Journey'}
           </Button>
         </div>
       </section>
@@ -263,6 +301,13 @@ export default function Landing() {
         </div>
       </footer>
       </div>
+
+      {/* User Info Dialog */}
+      <UserInfoDialog 
+        open={showUserInfoDialog}
+        onOpenChange={setShowUserInfoDialog}
+        onComplete={handleUserInfoComplete}
+      />
     </div>
   );
 }
