@@ -3,9 +3,22 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
 
 export default function Landing() {
-  const handleGetStarted = () => {
-    // Redirect to chat page which will show the user info dialog
-    window.location.href = '/chat';
+  const handleGetStarted = async () => {
+    try {
+      // First logout any existing session to ensure clean start
+      await fetch('/api/auth/logout', { 
+        method: 'POST', 
+        credentials: 'include' 
+      });
+    } catch (error) {
+      // Ignore logout errors, just proceed
+      console.log('Logout error (ignored):', error);
+    }
+    
+    // Small delay to ensure logout is processed, then redirect
+    setTimeout(() => {
+      window.location.href = '/chat';
+    }, 100);
   };
 
   const features = [

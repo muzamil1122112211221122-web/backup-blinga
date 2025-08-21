@@ -127,12 +127,12 @@ export function setupAuth(app: Express) {
       
       if (!user) {
         user = await storage.createUser({
-          username: 'Demo User',
+          username: 'Guest User',
           email: uniqueEmail,
           password: '',
           provider: 'demo',
           providerId: uniqueProviderId,
-          displayName: 'Demo User',
+          displayName: 'Guest User',
           birthDate: null,
         });
       }
@@ -171,10 +171,10 @@ export function setupAuth(app: Express) {
       if (!user) {
         // Create a new unique user for this session
         user = await storage.createUser({
-          username: displayName || 'demo-user',
+          username: displayName || 'User',
           email: uniqueEmail,
           password: '',
-          provider: 'demo',
+          provider: 'user',
           providerId: uniqueProviderId,
           displayName: displayName || null,
           birthDate: birthDate || null,
