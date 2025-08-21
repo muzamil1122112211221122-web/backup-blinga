@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import Chat from "@/pages/chat";
+import UserInfo from "@/pages/user-info";
 import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -24,9 +25,9 @@ function Router() {
       if (user && location === "/") {
         navigate("/chat", { replace: true });
       }
-      // If user is not authenticated and on protected routes, redirect to chat (which will show auth)
-      else if (!user && location !== "/") {
-        navigate("/chat", { replace: true });
+      // If user is not authenticated and on protected routes, redirect to start page
+      else if (!user && location !== "/" && location !== "/start") {
+        navigate("/start", { replace: true });
       }
     }
   }, [user, isLoading, location, navigate]);
@@ -35,6 +36,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Chat} />
       <Route path="/chat" component={Chat} />
+      <Route path="/start" component={UserInfo} />
       <Route component={NotFound} />
     </Switch>
   );

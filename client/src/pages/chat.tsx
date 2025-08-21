@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AuthScreen } from "../components/auth-screen";
+import { useLocation } from "wouter";
 import { ChatInterface } from "../components/chat-interface";
 
 export default function Chat() {
-  const [showAuth, setShowAuth] = useState(false);
+  const [, navigate] = useLocation();
 
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -13,11 +13,9 @@ export default function Chat() {
 
   useEffect(() => {
     if (!isLoading && (error || !user)) {
-      setShowAuth(true);
-    } else if (user) {
-      setShowAuth(false);
+      navigate("/start", { replace: true });
     }
-  }, [user, isLoading, error]);
+  }, [user, isLoading, error, navigate]);
 
   if (isLoading) {
     return (
@@ -27,13 +25,13 @@ export default function Chat() {
     );
   }
 
+  if (!user) {
+    return null; // Will redirect to /start in useEffect
+  }
+
   return (
     <div className="min-h-screen">
-      {showAuth ? (
-        <AuthScreen onAuthSuccess={() => setShowAuth(false)} />
-      ) : (
-        <ChatInterface onShowAuth={() => setShowAuth(true)} />
-      )}
+      <ChatInterface onShowAuth={() => navigate("/start")} />
     </div>
   );
 }
