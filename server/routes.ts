@@ -865,6 +865,94 @@ Enhanced version:`;
     }
   });
 
+  // Chat message handling functions (moved inside for scope access)
+  async function handleChatMessage(message: any, client: ChatClient, clients: Map<string, ChatClient>) {
+    try {
+      console.log('Handling chat message:', message);
+      // Validate and save user message
+      const userMessage = await storage.createMessage({
+        conversationId: message.conversationId,
+        role: 'user',
+        content: message.content,
+      });
+
+      // Broadcast user message to other clients in the conversation
+      broadcastToConversation(message.conversationId, {
+        type: 'message',
+        message: userMessage,
+      }, '', clients);
+
+      // Get conversation for context
+      const conversation = await storage.getConversation(message.conversationId);
+      if (!conversation) return;
+
+      // Call OpenRouter API
+      console.log('Calling OpenRouter API with:', { content: message.content, model: conversation.model });
+      const openRouterResponse = await callAIService(message.content, conversation);
+      console.log('OpenRouter response received:', { 
+        content: openRouterResponse.content.substring(0, 100) + '...', 
+        model: openRouterResponse.metadata?.model 
+      });
+      
+      // Check for duplicate AI responses (prevent repetition)
+      const responseHash = require('crypto').createHash('md5').update(openRouterResponse.content.trim()).digest('hex');
+      const conversationResponses = recentResponses.get(message.conversationId) || new Set();
+      
+      if (conversationResponses.has(responseHash)) {
+        console.log('Duplicate AI response detected, skipping...');
+        return; // Skip this duplicate response
+      }
+      
+      // Track this response to prevent future duplicates
+      conversationResponses.add(responseHash);
+      recentResponses.set(message.conversationId, conversationResponses);
+      
+      // Keep only last 5 responses per conversation to prevent memory issues
+      if (conversationResponses.size > 5) {
+        const oldest = conversationResponses.values().next().value;
+        if (oldest) {
+          conversationResponses.delete(oldest);
+        }
+      }
+
+      // Save AI response
+      const aiMessage = await storage.createMessage({
+        conversationId: message.conversationId,
+        role: 'assistant',
+        content: openRouterResponse.content,
+        metadata: openRouterResponse.metadata,
+      });
+
+      // Broadcast AI response
+      broadcastToConversation(message.conversationId, {
+        type: 'message',
+        message: aiMessage,
+      }, '', clients);
+
+      // Update conversation timestamp
+      await storage.updateConversation(message.conversationId, {
+        updatedAt: new Date(),
+      });
+
+    } catch (error) {
+      console.error('Chat message handling error:', error);
+      client.ws.send(JSON.stringify({
+        type: 'error',
+        message: 'Failed to process message'
+      }));
+    }
+  }
+
+  function broadcastToConversation(conversationId: string, message: any, excludeClientId: string, clients: Map<string, ChatClient>) {
+    clients.forEach((client, clientId) => {
+      if (clientId !== excludeClientId && 
+          client.conversationId === conversationId && 
+          client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(JSON.stringify(message));
+      }
+    });
+  }
+
   return httpServer;
 }
 
@@ -955,90 +1043,6 @@ async function generateImageForChat(prompt: string): Promise<{ path: string } | 
   }
 }
 
-async function handleChatMessage(message: any, client: ChatClient, clients: Map<string, ChatClient>) {
-  try {
-    console.log('Handling chat message:', message);
-    // Validate and save user message
-    const userMessage = await storage.createMessage({
-      conversationId: message.conversationId,
-      role: 'user',
-      content: message.content,
-    });
-
-    // Broadcast user message to other clients in the conversation
-    broadcastToConversation(message.conversationId, {
-      type: 'message',
-      message: userMessage,
-    }, '', clients);
-
-    // Get conversation for context
-    const conversation = await storage.getConversation(message.conversationId);
-    if (!conversation) return;
-
-    // Call OpenRouter API
-    console.log('Calling OpenRouter API with:', { content: message.content, model: conversation.model });
-    const openRouterResponse = await callAIService(message.content, conversation);
-    console.log('OpenRouter response received:', { 
-      content: openRouterResponse.content.substring(0, 100) + '...', 
-      model: openRouterResponse.metadata?.model 
-    });
-    
-    // Check for duplicate AI responses (prevent repetition)
-    const responseHash = require('crypto').createHash('md5').update(openRouterResponse.content.trim()).digest('hex');
-    const conversationResponses = recentResponses.get(message.conversationId) || new Set();
-    
-    if (conversationResponses.has(responseHash)) {
-      console.log('Duplicate AI response detected, skipping...');
-      return; // Skip this duplicate response
-    }
-    
-    // Track this response to prevent future duplicates
-    conversationResponses.add(responseHash);
-    recentResponses.set(message.conversationId, conversationResponses);
-    
-    // Keep only last 5 responses per conversation to prevent memory issues
-    if (conversationResponses.size > 5) {
-      const oldest = conversationResponses.values().next().value;
-      conversationResponses.delete(oldest);
-    }
-
-    // Save AI response
-    const aiMessage = await storage.createMessage({
-      conversationId: message.conversationId,
-      role: 'assistant',
-      content: openRouterResponse.content,
-      metadata: openRouterResponse.metadata,
-    });
-
-    // Broadcast AI response
-    broadcastToConversation(message.conversationId, {
-      type: 'message',
-      message: aiMessage,
-    }, '', clients);
-
-    // Update conversation timestamp
-    await storage.updateConversation(message.conversationId, {
-      updatedAt: new Date(),
-    });
-
-  } catch (error) {
-    console.error('Chat message handling error:', error);
-    client.ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Failed to process message'
-    }));
-  }
-}
-
-function broadcastToConversation(conversationId: string, message: any, excludeClientId: string, clients: Map<string, ChatClient>) {
-  clients.forEach((client, clientId) => {
-    if (clientId !== excludeClientId && 
-        client.conversationId === conversationId && 
-        client.ws.readyState === WebSocket.OPEN) {
-      client.ws.send(JSON.stringify(message));
-    }
-  });
-}
 
 
 
