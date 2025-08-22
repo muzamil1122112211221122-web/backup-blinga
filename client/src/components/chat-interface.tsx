@@ -1484,7 +1484,7 @@ Let's start the self-listen session!`;
                         <img 
                           src="/chatgpt-logo.png" 
                           alt="ChatGPT" 
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain filter invert"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </div>
@@ -1606,7 +1606,7 @@ Let's start the self-listen session!`;
                         switch(model) {
                           case 'gpt-4o': return { name: 'ChatGPT', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/chatgpt-logo.png" alt="ChatGPT" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/chatgpt-logo.png" alt="ChatGPT" className="w-full h-full object-contain filter invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'claude-3.5-sonnet': return { name: 'Claude', logo: (
