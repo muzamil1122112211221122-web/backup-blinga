@@ -155,12 +155,17 @@ export function setupAuth(app: Express) {
     try {
       const { displayName, birthDate } = req.body;
       
-      // Use a stable session-based identifier that doesn't change
-      const sessionId = req.sessionID; // Use express-session's sessionID instead of req.session.id
-      const uniqueEmail = `demo-${sessionId}@forus.com`;
-      const uniqueProviderId = `demo-${sessionId}`;
+      if (!displayName || !birthDate) {
+        return res.status(400).json({ message: 'Name and birth date are required' });
+      }
       
-      console.log(`Demo login attempt with sessionId: ${sessionId}`);
+      // Create a unique identifier based on the person's name and birthdate
+      // This ensures each real person gets only one account
+      const userIdentifier = `${displayName.toLowerCase().replace(/\s+/g, '')}-${birthDate}`;
+      const uniqueEmail = `demo-${userIdentifier}@forus.com`;
+      const uniqueProviderId = `demo-${userIdentifier}`;
+      
+      console.log(`Demo login attempt for: ${displayName} (${birthDate})`);
       
       // Try to find existing user by unique provider ID first
       let user = await storage.getUserByProviderId(uniqueProviderId);
@@ -171,28 +176,19 @@ export function setupAuth(app: Express) {
       }
       
       if (!user) {
-        // Create a new unique user for this session
+        // Create a new unique user for this person
         user = await storage.createUser({
-          username: displayName || 'User',
+          username: displayName,
           email: uniqueEmail,
           password: '',
           provider: 'demo',
           providerId: uniqueProviderId,
-          displayName: displayName || null,
-          birthDate: birthDate || null,
+          displayName: displayName,
+          birthDate: birthDate,
         });
-        console.log(`Created new demo user: ${user.id} with sessionId: ${sessionId}`);
+        console.log(`Created new demo user: ${user.id} for ${displayName}`);
       } else {
-        // Update existing user with new info
-        const updatedUser = await storage.updateUser(user.id, {
-          username: displayName || user.username,
-          displayName: displayName || user.displayName,
-          birthDate: birthDate || user.birthDate,
-        });
-        if (updatedUser) {
-          user = updatedUser;
-        }
-        console.log(`Updated existing demo user: ${user.id} with sessionId: ${sessionId}`);
+        console.log(`Found existing user: ${user.id} for ${displayName}`);
       }
 
       req.login(user, (err) => {
