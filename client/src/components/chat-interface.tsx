@@ -1729,7 +1729,7 @@ Let's start the self-listen session!`;
                         <img 
                           src="/grok-logo.png" 
                           alt="Grok" 
-                          className="w-full h-full object-contain dark:filter dark:invert"
+                          className="w-full h-full object-contain filter brightness-0 dark:filter dark:brightness-0 dark:invert"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </div>
@@ -2113,7 +2113,7 @@ Let's start the self-listen session!`;
           {/* Model Switcher - Bottom Left */}
           <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-36 h-8 text-xs border-0 bg-background/80 backdrop-blur-sm rounded-lg shadow-sm hover:bg-background/90 transition-all focus:ring-0 focus:ring-offset-0">
+              <SelectTrigger className="w-36 h-8 text-xs border border-border bg-background/80 backdrop-blur-sm rounded-lg shadow-sm hover:bg-background/90 transition-all focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="Model" />
               </SelectTrigger>
               <SelectContent className="border border-border rounded-lg shadow-lg backdrop-blur-sm">
