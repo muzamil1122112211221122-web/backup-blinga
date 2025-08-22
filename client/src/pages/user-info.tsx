@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,9 @@ export default function UserInfo() {
   const [birthDate, setBirthDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [authStep, setAuthStep] = useState<"register" | "login">(
+    localStorage.getItem("authStep") === "login" ? "login" : "register"
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,36 +27,93 @@ export default function UserInfo() {
     setIsLoading(true);
     setError("");
     
-    try {
-      const response = await fetch('/api/auth/demo', { 
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          displayName: name.trim(),
-          birthDate: birthDate,
-        })
-      });
-      
-      if (response.ok) {
-        console.log('Login successful');
-        setLocation('/chat');
-      } else {
+    if (authStep === "register") {
+      // First step - Register the user
+      try {
+        const response = await fetch('/api/auth/demo', { 
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            displayName: name.trim(),
+            birthDate: birthDate,
+          })
+        });
+        
+        if (response.ok) {
+          // Registration successful, move to login step
+          localStorage.setItem("authStep", "login");
+          localStorage.setItem("registeredName", name.trim());
+          localStorage.setItem("registeredBirthDate", birthDate);
+          setAuthStep("login");
+          setIsLoading(false);
+          setError("");
+        } else {
+          setError('Registration failed. Please try again.');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Registration failed:', error);
         setError('Registration failed. Please try again.');
         setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Registration failed:', error);
-      setError('Registration failed. Please try again.');
-      setIsLoading(false);
+    } else {
+      // Second step - Login the user
+      try {
+        const response = await fetch('/api/auth/demo', { 
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            displayName: name.trim(),
+            birthDate: birthDate,
+          })
+        });
+        
+        if (response.ok) {
+          console.log('Login successful');
+          // Clear the auth step from localStorage
+          localStorage.removeItem("authStep");
+          localStorage.removeItem("registeredName");
+          localStorage.removeItem("registeredBirthDate");
+          setLocation('/chat');
+        } else {
+          setError('Login failed. Please try again.');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Login failed:', error);
+        setError('Login failed. Please try again.');
+        setIsLoading(false);
+      }
     }
   };
 
   const handleBack = () => {
-    setLocation('/');
+    if (authStep === "login") {
+      // If on login step, go back to register
+      setAuthStep("register");
+      localStorage.setItem("authStep", "register");
+      setError("");
+    } else {
+      // If on register step, go back to landing page
+      setLocation('/');
+    }
   };
+
+  // Load saved data if returning to login step
+  useEffect(() => {
+    if (authStep === "login") {
+      const savedName = localStorage.getItem("registeredName");
+      const savedBirthDate = localStorage.getItem("registeredBirthDate");
+      if (savedName) setName(savedName);
+      if (savedBirthDate) setBirthDate(savedBirthDate);
+    }
+  }, [authStep]);
 
   return (
     <div className="min-h-screen relative bg-gradient-to-br from-black via-gray-900 to-black">
@@ -96,13 +156,16 @@ export default function UserInfo() {
               </div>
               
               <h1 className="text-3xl font-bold text-white mb-2">
-                Welcome to Forus Heavy API
+                {authStep === "register" ? "Welcome to Forus Heavy API" : "Login your account"}
               </h1>
               <p className="text-gray-300 text-lg">
-                Let's personalize your experience
+                {authStep === "register" ? "Please Register" : "Login your account"}
               </p>
               <p className="text-gray-400 text-sm mt-2">
-                Please tell us a bit about yourself to get started
+                {authStep === "register" 
+                  ? "Please tell us a bit about yourself to get started"
+                  : "Confirm your details to access your account"
+                }
               </p>
             </CardHeader>
 
@@ -148,6 +211,13 @@ export default function UserInfo() {
                   </div>
                 )}
 
+                {/* Success message for registration */}
+                {authStep === "login" && !error && (
+                  <div className="text-green-400 text-sm text-center bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                    Registration successful! Please confirm your details to login.
+                  </div>
+                )}
+
                 {/* Submit button */}
                 <Button
                   type="submit"
@@ -155,7 +225,10 @@ export default function UserInfo() {
                   className="w-full h-12 bg-white hover:bg-gray-100 text-black font-semibold text-base rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-continue"
                 >
-                  {isLoading ? 'Creating your profile...' : 'Continue to Chat'}
+                  {isLoading 
+                    ? (authStep === "register" ? 'Registering...' : 'Logging in...')
+                    : (authStep === "register" ? 'Register' : 'Login to Chat')
+                  }
                 </Button>
               </form>
 
