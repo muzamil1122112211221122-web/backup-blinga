@@ -1562,7 +1562,7 @@ Let's start the self-listen session!`;
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
-                    <div className="bg-transparent rounded-3xl px-4 py-3 flex-1 chat-bubble">
+                    <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
                       <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
@@ -1642,7 +1642,7 @@ Let's start the self-listen session!`;
               <div className="flex justify-start" data-testid="typing-indicator">
                 <div className="flex space-x-3">
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
-                  <div className="bg-transparent rounded-3xl px-4 py-3">
+                  <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex justify-center items-center">
                       <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
                     </div>
