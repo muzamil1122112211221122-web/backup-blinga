@@ -1452,10 +1452,8 @@ Let's start the self-listen session!`;
                 <div className="flex space-x-3">
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
                   <div className="bg-card rounded-3xl px-4 py-3 border border-border">
-                    <div className="flex space-x-1">
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse"></div>
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                      <div className="w-3 h-3 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+                    <div className="flex justify-center items-center">
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
                     </div>
                   </div>
                 </div>
@@ -1484,7 +1482,7 @@ Let's start the self-listen session!`;
                         <img 
                           src="/chatgpt-logo.png" 
                           alt="ChatGPT" 
-                          className="w-full h-full object-contain filter invert"
+                          className="w-full h-full object-contain dark:filter dark:invert"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </div>
@@ -1540,7 +1538,7 @@ Let's start the self-listen session!`;
                         <img 
                           src="/grok-logo.png" 
                           alt="Grok" 
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain dark:filter dark:invert"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       </div>
