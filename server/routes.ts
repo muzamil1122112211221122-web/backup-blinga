@@ -189,12 +189,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Override conversation model with Lumin model if specified
       if (model && provider) {
-        conversation = { 
+        // Create a temporary config object for AI processing, not a full Conversation
+        const conversationConfig = { 
           ...conversation,
           model: model,
-          provider: provider,
           preset: 'custom'
         };
+        conversation = conversationConfig as any;
       }
 
       console.log('Using conversation config:', conversation);
@@ -212,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Call AI service with model-specific routing
-      const aiResponse = await callModelSpecificAPI(message, model || conversation.model, provider, user);
+      const aiResponse = await callModelSpecificAPI(message, model || (conversation?.model ?? 'forus-prime'), provider, user);
       console.log('AI response received:', aiResponse.content.substring(0, 100));
       
       // Save AI response to storage
