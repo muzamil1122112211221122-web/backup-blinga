@@ -82,44 +82,64 @@
     animation: logoSpin 0.8s ease-in-out;
   }
 
-  /* Message input styling for dark theme - remove borders */
-  .dark .message-input-area {
-    border: none !important;
-    background: hsl(240, 10%, 3.9%);
-  }
-  
-  .dark .message-input-area textarea {
-    border: none !important;
-    background: transparent;
-  }
-  
-  /* Keep gray background around message bar - user wants to keep it */
+  /* Message input styling for dark theme - match white theme style but in black */
   .dark .message-input-container {
-    background: hsl(240, 5%, 6%) !important;
+    background: hsl(240, 6%, 10%) !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
     border-radius: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   }
   
-  /* Fix model switcher borders in dark theme */
+  .dark .message-input {
+    background: hsl(240, 6%, 10%) !important;
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    color: hsl(0, 0%, 98%) !important;
+  }
+  
+  .dark .message-input:focus {
+    border-color: hsl(240, 5%, 25%) !important;
+    box-shadow: 0 0 0 2px hsl(240, 5%, 20%) !important;
+  }
+  
+  /* Fix all borders and elements in dark theme to match white theme visibility */
   .dark [role="combobox"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: hsl(240, 10%, 3.9%) !important;
+    background: hsl(240, 6%, 10%) !important;
   }
   
   .dark [role="listbox"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: hsl(240, 10%, 3.9%) !important;
+    background: hsl(240, 6%, 10%) !important;
   }
 
-  /* Premium model selector styling */
-  .dark .premium-model-selector {
-    background: hsl(240, 10%, 3.9%) !important;
+  .dark [data-radix-select-content] {
+    background: hsl(240, 6%, 10%) !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
-  /* Fix select dropdown visibility in dark theme */
-  .dark [data-radix-select-content] {
-    background: hsl(240, 10%, 3.9%) !important;
+  /* Fix dialog and modal borders in dark theme */
+  .dark [role="dialog"] {
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    background: hsl(240, 6%, 10%) !important;
+  }
+
+  /* Fix button borders in dark theme */
+  .dark .border {
+    border-color: hsl(240, 3.7%, 15.9%) !important;
+  }
+
+  /* Fix card borders in dark theme */
+  .dark .bg-card {
+    border: 1px solid hsl(240, 3.7%, 15.9%);
+  }
+
+  /* Fix input borders in dark theme */
+  .dark input {
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+  }
+
+  /* Fix textarea borders in dark theme */
+  .dark textarea {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
@@ -168,6 +188,12 @@
     background-size: 40px 40px;
     animation: gridMoveInfinite 20s linear infinite;
     z-index: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Hide background during AI thinking */
+  .ai-thinking .moving-grid {
+    opacity: 0 !important;
   }
 
   .dark .moving-grid {
@@ -175,6 +201,7 @@
       linear-gradient(hsl(0, 0%, 100%) 1px, transparent 1px),
       linear-gradient(90deg, hsl(0, 0%, 100%) 1px, transparent 1px);
     opacity: 0.12;
+    transition: opacity 0.3s ease;
   }
 
   .floating-particles {
@@ -193,6 +220,12 @@
     border-radius: 50%;
     opacity: 0.1;
     animation: float 15s infinite linear;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Hide particles during AI thinking */
+  .ai-thinking .particle {
+    opacity: 0 !important;
   }
 
   .dark .particle {

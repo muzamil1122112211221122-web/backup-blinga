@@ -96,6 +96,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [forusIntegrationMode, setForusIntegrationMode] = useState(false);
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
+  const [isVoiceToVoiceMode, setIsVoiceToVoiceMode] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
@@ -226,12 +227,99 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
+  // Typing animation hook
+  const useTypingAnimation = (text: string, speed: number = 20) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+    useEffect(() => {
+      if (!text) {
+        setDisplayedText('');
+        setIsTypingComplete(true);
+        return;
+      }
+
+      setIsTypingComplete(false);
+      const words = text.split(' ');
+      let currentIndex = 0;
+
+      const typeWords = () => {
+        if (currentIndex < words.length) {
+          const currentWords = words.slice(0, currentIndex + 1);
+          setDisplayedText(currentWords.join(' '));
+          currentIndex++;
+          setTimeout(typeWords, speed);
+        } else {
+          setIsTypingComplete(true);
+        }
+      };
+
+      // Start typing after a short delay
+      const timeout = setTimeout(typeWords, 50);
+      return () => clearTimeout(timeout);
+    }, [text, speed]);
+
+    return { displayedText, isTypingComplete };
+  };
+
+  // Typing Text Component for AI responses
+  const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
+    const { displayedText, isTypingComplete } = useTypingAnimation(text, 15);
+
+    return (
+      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm]}
+          components={{
+            img: ({src, alt}) => (
+              <img 
+                src={src} 
+                alt={alt || "Generated image"} 
+                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                onError={(e) => {
+                  console.error('Image failed to load:', src);
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully in chat:', src);
+                }}
+              />
+            )
+          }}
+        >
+          {displayedText}
+        </ReactMarkdown>
+        {!isTypingComplete && <span className="inline-block animate-pulse text-foreground">|</span>}
+      </div>
+    );
+  };
+
   function handleWebSocketMessage(message: WebSocketMessage) {
     switch (message.type) {
       case 'message':
         if (message.message) {
           setMessages(prev => [...prev, message.message!]);
           setIsTyping(false);
+          
+          // Auto-speak AI responses in voice-to-voice mode
+          if (isVoiceToVoiceMode && message.message.role === 'assistant') {
+            // Clean the content for speech by removing markdown and special characters
+            const cleanedContent = message.message.content
+              .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+              .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+              .replace(/`(.*?)`/g, '$1') // Remove code blocks
+              .replace(/#{1,6}\s/g, '') // Remove headers
+              .replace(/!\[.*?\]\(.*?\)/g, '') // Remove image links
+              .replace(/\[.*?\]\(.*?\)/g, '$1') // Remove links but keep text
+              .replace(/\n/g, ' ') // Replace newlines with spaces
+              .replace(/\s+/g, ' ') // Normalize spaces
+              .trim();
+            
+            if (cleanedContent) {
+              speak(cleanedContent);
+            }
+          }
         }
         break;
       case 'typing':
@@ -268,6 +356,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
     }
   }, [inputValue]);
+
+  // Hide/show background animation during AI thinking
+  useEffect(() => {
+    if (isTyping) {
+      document.body.classList.add('ai-thinking');
+    } else {
+      document.body.classList.remove('ai-thinking');
+    }
+    
+    // Cleanup on component unmount
+    return () => {
+      document.body.classList.remove('ai-thinking');
+    };
+  }, [isTyping]);
 
   const createNewProject = async (firstMessage?: string) => {
     try {
@@ -429,6 +531,25 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
         setMessages(prev => [...prev, aiMessage]);
         
+        // Auto-speak AI responses in voice-to-voice mode
+        if (isVoiceToVoiceMode) {
+          // Clean the content for speech by removing markdown and special characters
+          const cleanedContent = result.response
+            .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+            .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+            .replace(/`(.*?)`/g, '$1') // Remove code blocks
+            .replace(/#{1,6}\s/g, '') // Remove headers
+            .replace(/!\[.*?\]\(.*?\)/g, '') // Remove image links
+            .replace(/\[.*?\]\(.*?\)/g, '$1') // Remove links but keep text
+            .replace(/\n/g, ' ') // Replace newlines with spaces
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .trim();
+          
+          if (cleanedContent) {
+            speak(cleanedContent);
+          }
+        }
+        
         // Refresh conversations list to show updated conversation
         loadProjects();
       } else {
@@ -480,9 +601,59 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     });
     setLuminIsTyping(newTypingState);
 
+    // Check for image generation requests for ChatGPT and Gemini models
+    const imageKeywords = ['generate image', 'create image', 'make image', 'draw', 'generate picture', 'create picture', 'make picture', 'image of', 'picture of', 'show me', 'create a visual', 'generate visual', 'illustrate'];
+    const isImageRequest = imageKeywords.some(keyword => content.toLowerCase().includes(keyword.toLowerCase()));
+    
+    const imageCapableModels = Array.from(activeAIModels).filter(model => 
+      model === 'gpt-4o' || model === 'gemini-pro'
+    );
+
     // Send requests to all active AI models with proper error handling
     const promises = Array.from(activeAIModels).map(async (model) => {
       try {
+        // Handle image generation for ChatGPT and Gemini
+        if (isImageRequest && imageCapableModels.includes(model)) {
+          try {
+            console.log(`${model === 'gpt-4o' ? 'ChatGPT' : 'Gemini'} generating image for: "${content}"`);
+            const imageResponse = await fetch('/api/generate-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: content,
+                size: "1024x1024",
+                quality: "standard"
+              }),
+            });
+
+            if (imageResponse.ok) {
+              const imageData = await imageResponse.json();
+              if (imageData.success && imageData.url) {
+                const imageMessage: ChatMessage = {
+                  id: Date.now().toString() + '-' + model + '-image',
+                  conversationId: currentProjectId || 'lumin-session',
+                  role: 'assistant' as const,
+                  content: `I've generated an image for you:\n\n![Generated Image](${imageData.url})\n\n*Generated using ${model === 'gpt-4o' ? 'ChatGPT' : 'Gemini'} + ${imageData.revisedPrompt ? 'Gemini Vision API' : 'OpenAI DALL-E'}*`,
+                  createdAt: new Date()
+                };
+
+                setLuminMessages(prev => ({
+                  ...prev,
+                  [model]: [...(prev[model] || []), imageMessage]
+                }));
+
+                setLuminIsTyping(prev => ({
+                  ...prev,
+                  [model]: false
+                }));
+                return;
+              }
+            }
+          } catch (imageError) {
+            console.error(`Image generation failed for ${model}:`, imageError);
+          }
+        }
+
         // Use model-specific endpoints for authentic responses
         let endpoint = '/api/test-ai';
         let requestBody: any = {
@@ -1182,8 +1353,11 @@ Let's start the self-listen session!`;
 
 
 
+  // Check if any Lumin model is typing for thinking animation
+  const isAnyLuminModelTyping = Object.values(luminIsTyping).some(typing => typing);
+
   return (
-    <div className="min-h-screen flex flex-col bg-background relative">
+    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyLuminModelTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -1349,30 +1523,7 @@ Let's start the self-listen session!`;
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
                     <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
-                      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            img: ({src, alt}) => (
-                              <img 
-                                src={src} 
-                                alt={alt || "Generated image"} 
-                                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                                onError={(e) => {
-                                  console.error('Image failed to load:', src);
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
-                                }}
-                                onLoad={() => {
-                                  console.log('Image loaded successfully in chat:', src);
-                                }}
-                              />
-                            )
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
                           <Button
@@ -1501,7 +1652,7 @@ Let's start the self-listen session!`;
                         />
                       </div>
                     ), 
-                    gradient: 'from-orange-400 to-pink-500' 
+                    gradient: 'from-orange-400 to-orange-600' 
                   }, 
                   'gemini-pro': { 
                     name: 'Gemini', 
@@ -1515,7 +1666,7 @@ Let's start the self-listen session!`;
                         />
                       </div>
                     ), 
-                    gradient: 'from-blue-400 to-purple-500' 
+                    gradient: 'from-teal-400 to-emerald-500' 
                   },
                   'perplexity': { 
                     name: 'Perplexity', 
@@ -1529,7 +1680,7 @@ Let's start the self-listen session!`;
                         />
                       </div>
                     ), 
-                    gradient: 'from-purple-400 to-indigo-500' 
+                    gradient: 'from-sky-300 to-blue-400' 
                   },
                   'grok-4': { 
                     name: 'Grok 4', 
@@ -1807,9 +1958,31 @@ Let's start the self-listen session!`;
             </div>
             
             <h3 className="text-xl font-semibold mb-2">Voice Mode</h3>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-muted-foreground mb-4">
               {isListening ? "I'm listening..." : "Click to start speaking"}
             </p>
+            
+            {/* Voice-to-Voice Toggle */}
+            <div className="flex items-center justify-center mb-6 space-x-3">
+              <span className={`text-sm ${!isVoiceToVoiceMode ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                Voice Input Only
+              </span>
+              <button
+                onClick={() => setIsVoiceToVoiceMode(!isVoiceToVoiceMode)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  isVoiceToVoiceMode ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isVoiceToVoiceMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm ${isVoiceToVoiceMode ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                Voice-to-Voice
+              </span>
+            </div>
             
             <div className="flex gap-4 justify-center">
               <Button
@@ -1870,24 +2043,29 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          {/* Image Preview */}
+          {/* Image Preview - Fixed height for better visibility */}
           {attachedImage && (
-            <div className="absolute top-2 left-2 flex items-center space-x-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600">
+            <div className="absolute top-2 left-2 flex items-center space-x-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600 max-w-[300px]">
               <img 
                 src={attachedImage.preview} 
                 alt="Attached image" 
-                className="w-12 h-12 object-cover rounded"
+                className="w-20 h-20 object-cover rounded" /* Increased from w-12 h-12 to w-20 h-20 */
               />
-              <span className="text-xs text-gray-600 dark:text-gray-300 max-w-[120px] truncate">
-                {attachedImage.file.name}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate font-medium">
+                  {attachedImage.file.name}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Image attached - Ready to analyze
+                </span>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-4 h-4 text-gray-400 hover:text-red-500"
+                className="w-5 h-5 text-gray-400 hover:text-red-500 ml-2"
                 onClick={() => setAttachedImage(null)}
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
           )}

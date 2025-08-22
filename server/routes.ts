@@ -1306,6 +1306,27 @@ Let me provide you with a detailed description instead, or you can try asking ag
   const mappedModel = MODEL_MAPPING[forusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
   const systemPrompt = getSystemPrompt(conversation, user);
   
+  // Get conversation history for AI memory - CRITICAL FIX
+  let conversationHistory: any[] = [];
+  try {
+    const dbMessages = await storage.getConversationMessages(conversation.id);
+    // Get last 15 messages for context (avoid token limits)
+    conversationHistory = dbMessages.slice(-15).map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+    console.log(`Retrieved ${conversationHistory.length} messages for AI context`);
+  } catch (error) {
+    console.error('Failed to get conversation history:', error);
+  }
+  
+  // Build messages array with system prompt, history, and current message
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory,
+    { role: 'user', content: userMessage }
+  ];
+  
   // Retry logic with automatic key switching
   const maxRetries = 8; // Increased to accommodate Groq + OpenRouter + OpenAI retries
   let lastError: Error | null = null;
@@ -1344,10 +1365,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
           },
           body: JSON.stringify({
             model: groqModel,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userMessage }
-            ],
+            messages: messages, // Use full conversation history
             temperature: 0.7,
             max_tokens: maxTokens,
           }),
@@ -1362,10 +1380,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
           },
           body: JSON.stringify({
             model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userMessage }
-            ],
+            messages: messages, // Use full conversation history
             temperature: 0.7,
             max_tokens: maxTokens,
           }),
@@ -1382,10 +1397,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
           },
           body: JSON.stringify({
             model: mappedModel,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userMessage }
-            ],
+            messages: messages, // Use full conversation history
             temperature: 0.7,
             max_tokens: maxTokens,
           }),

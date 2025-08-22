@@ -168,15 +168,15 @@ export function Sidebar({
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
                             className="text-sm h-8"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                onEditProject?.(project.id, editTitle);
-                                setEditingProject(null);
-                              } else if (e.key === 'Escape') {
-                                setEditingProject(null);
-                              }
-                            }}
+                            placeholder="Project title"
                             autoFocus
+                          />
+                          <Textarea
+                            value={aiRoleText}
+                            onChange={(e) => setAiRoleText(e.target.value)}
+                            className="text-sm min-h-[60px] resize-none"
+                            placeholder="Define AI role and behavior (optional)"
+                            rows={3}
                           />
                           <div className="flex space-x-1">
                             <Button
@@ -184,6 +184,7 @@ export function Sidebar({
                               className="h-6 px-2 text-xs"
                               onClick={() => {
                                 onEditProject?.(project.id, editTitle);
+                                onUpdateAiRole?.(project.id, aiRoleText);
                                 setEditingProject(null);
                               }}
                             >
@@ -194,44 +195,6 @@ export function Sidebar({
                               variant="outline"
                               className="h-6 px-2 text-xs"
                               onClick={() => setEditingProject(null)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : editingAiRole === project.id ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={aiRoleText}
-                            onChange={(e) => setAiRoleText(e.target.value)}
-                            className="text-xs min-h-[60px] resize-none"
-                            placeholder="Define how the AI should behave for this project..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && e.ctrlKey) {
-                                onUpdateAiRole?.(project.id, aiRoleText);
-                                setEditingAiRole(null);
-                              } else if (e.key === 'Escape') {
-                                setEditingAiRole(null);
-                              }
-                            }}
-                            autoFocus
-                          />
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => {
-                                onUpdateAiRole?.(project.id, aiRoleText);
-                                setEditingAiRole(null);
-                              }}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => setEditingAiRole(null)}
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -253,7 +216,7 @@ export function Sidebar({
                         </>
                       )}
                     </div>
-                    {hoveredProject === project.id && editingProject !== project.id && editingAiRole !== project.id && (
+                    {hoveredProject === project.id && editingProject !== project.id && (
                       <div className="flex space-x-1">
                         <Button
                           variant="ghost"
@@ -262,29 +225,16 @@ export function Sidebar({
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditTitle(project.title);
+                            setAiRoleText(project.aiRole || 'You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
                             setEditingProject(project.id);
                           }}
                           data-testid={`edit-project-${project.id}`}
-                          title="Edit project name"
+                          title="Edit project name and AI role"
                         >
                           <div className="relative">
                             <PenTool className="h-3 w-3" />
                             <div className="absolute -inset-1 bg-blue-400/20 rounded-full scale-0 group-hover:scale-110 transition-transform duration-300"></div>
                           </div>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-green-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAiRoleText(project.aiRole || 'You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
-                            setEditingAiRole(project.id);
-                          }}
-                          data-testid={`edit-ai-role-${project.id}`}
-                          title="Edit AI role for this project"
-                        >
-                          <User className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
