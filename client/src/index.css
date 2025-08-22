@@ -448,14 +448,15 @@
 
   .dark .message-input {
     background: hsl(240, 6%, 10%) !important;
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    border: none !important;
     color: hsl(0, 0%, 98%) !important;
+    box-shadow: 0 0 0 1px hsl(240, 3.7%, 15.9%) !important;
   }
 
   .dark .message-input:focus {
-    border-color: hsl(240, 5%, 25%) !important;
+    border: none !important;
     background: hsl(240, 6%, 10%) !important;
-    box-shadow: 0 0 0 2px hsl(240, 5%, 20%) !important;
+    box-shadow: 0 0 0 2px hsl(240, 5%, 25%) !important;
   }
 
   .macos-function-bar {

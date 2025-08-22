@@ -248,14 +248,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         return;
       }
 
-      // Prevent concurrent typing animations
-      if (isTypingRef.current) return;
-      isTypingRef.current = true;
-
       setIsTypingComplete(false);
       setDisplayedText(''); // Reset display text
-      const words = text.split(' ');
+      
+      // Split by words but ensure we don't have empty strings
+      const words = text.split(' ').filter(word => word.trim());
       let currentIndex = 0;
+      
+      // Prevent concurrent typing animations
+      isTypingRef.current = true;
 
       const typeWords = () => {
         // Check if animation was cancelled
@@ -289,7 +290,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   // Typing Text Component for AI responses
   const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
-    const { displayedText, isTypingComplete } = useTypingAnimation(text, 15);
+    // Use messageId as a key to prevent animation conflicts
+    const { displayedText, isTypingComplete } = useTypingAnimation(text, 10);
 
     return (
       <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">
