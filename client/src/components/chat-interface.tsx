@@ -227,28 +227,38 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
-  // Typing animation hook - Fixed to prevent repeating animations
+  // Typing animation hook - PERMANENTLY fixed to prevent repeating animations
   const useTypingAnimation = (text: string, speed: number = 20) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isTypingComplete, setIsTypingComplete] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const isTypingRef = useRef(false);
-    const textRef = useRef<string>('');
+    const completedTextsRef = useRef<Set<string>>(new Set());
+    const currentTextRef = useRef<string>('');
+    const animationRunningRef = useRef(false);
 
     useEffect(() => {
-      // Only start animation if text actually changed
-      if (textRef.current === text) {
+      // If text hasn't changed, don't restart animation
+      if (currentTextRef.current === text) {
         return;
       }
-      
-      textRef.current = text;
-      
-      // Clear any existing timeout and reset state
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
+
+      // If this exact text was already completed, show it immediately
+      if (completedTextsRef.current.has(text)) {
+        setDisplayedText(text);
+        setIsTypingComplete(true);
+        return;
       }
-      isTypingRef.current = false;
+
+      // If animation is currently running for different text, stop it
+      if (animationRunningRef.current) {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        animationRunningRef.current = false;
+      }
+
+      currentTextRef.current = text;
 
       if (!text) {
         setDisplayedText('');
@@ -256,19 +266,19 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         return;
       }
 
+      // Start new animation
       setIsTypingComplete(false);
-      setDisplayedText(''); // Reset display text
+      setDisplayedText('');
+      animationRunningRef.current = true;
       
-      // Split by words but ensure we don't have empty strings
       const words = text.split(' ').filter(word => word.trim());
       let currentIndex = 0;
-      
-      // Prevent concurrent typing animations
-      isTypingRef.current = true;
 
       const typeWords = () => {
-        // Check if animation was cancelled or text changed
-        if (!isTypingRef.current || textRef.current !== text) return;
+        // Double check we should continue
+        if (!animationRunningRef.current || currentTextRef.current !== text) {
+          return;
+        }
         
         if (currentIndex < words.length) {
           const currentWords = words.slice(0, currentIndex + 1);
@@ -276,12 +286,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           currentIndex++;
           timeoutRef.current = setTimeout(typeWords, speed);
         } else {
+          // Animation completed - mark this text as done
           setIsTypingComplete(true);
-          isTypingRef.current = false;
+          animationRunningRef.current = false;
+          completedTextsRef.current.add(text);
         }
       };
 
-      // Start typing after a short delay
+      // Start typing
       timeoutRef.current = setTimeout(typeWords, 50);
       
       return () => {
@@ -289,9 +301,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-        isTypingRef.current = false;
+        animationRunningRef.current = false;
       };
-    }, [text, speed]);
+    }, [text]); // Removed speed from dependencies to prevent unnecessary re-runs
 
     return { displayedText, isTypingComplete };
   };
