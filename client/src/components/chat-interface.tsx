@@ -227,14 +227,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
-  // Typing animation hook
+  // Typing animation hook - Fixed to prevent repeating animations
   const useTypingAnimation = (text: string, speed: number = 20) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isTypingComplete, setIsTypingComplete] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isTypingRef = useRef(false);
+    const textRef = useRef<string>('');
 
     useEffect(() => {
+      // Only start animation if text actually changed
+      if (textRef.current === text) {
+        return;
+      }
+      
+      textRef.current = text;
+      
       // Clear any existing timeout and reset state
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -259,8 +267,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       isTypingRef.current = true;
 
       const typeWords = () => {
-        // Check if animation was cancelled
-        if (!isTypingRef.current) return;
+        // Check if animation was cancelled or text changed
+        if (!isTypingRef.current || textRef.current !== text) return;
         
         if (currentIndex < words.length) {
           const currentWords = words.slice(0, currentIndex + 1);
@@ -807,16 +815,19 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const handleCopyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
     setCopiedMessageId(messageId);
-    setTimeout(() => setCopiedMessageId(null), 2000);
+    // Clear the copied state more quickly to prevent stuck colors
+    setTimeout(() => setCopiedMessageId(null), 1500);
   };
 
   const handleLikeMessage = (messageId: string) => {
+    // Prevent rapid clicks by debouncing
     setLikedMessages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
         newSet.delete(messageId);
       } else {
         newSet.add(messageId);
+        // Clear dislike immediately for this message
         setDislikedMessages(current => {
           const newDisliked = new Set(current);
           newDisliked.delete(messageId);
@@ -828,12 +839,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   };
 
   const handleDislikeMessage = (messageId: string) => {
+    // Prevent rapid clicks by debouncing
     setDislikedMessages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
         newSet.delete(messageId);
       } else {
         newSet.add(messageId);
+        // Clear like immediately for this message
         setLikedMessages(current => {
           const newLiked = new Set(current);
           newLiked.delete(messageId);
@@ -1549,7 +1562,7 @@ Let's start the self-listen session!`;
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
-                    <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
+                    <div className="bg-transparent rounded-3xl px-4 py-3 flex-1 chat-bubble">
                       <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
@@ -1629,7 +1642,7 @@ Let's start the self-listen session!`;
               <div className="flex justify-start" data-testid="typing-indicator">
                 <div className="flex space-x-3">
                   <Logo size="sm" className="flex-shrink-0 mt-1" />
-                  <div className="bg-card rounded-3xl px-4 py-3 border border-border">
+                  <div className="bg-transparent rounded-3xl px-4 py-3">
                     <div className="flex justify-center items-center">
                       <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
                     </div>
@@ -1886,7 +1899,7 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-card macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 shadow-sm" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+      <div className="bg-transparent macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4">
           <Button
             variant="ghost"
@@ -2035,7 +2048,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-card p-3 sm:p-4 message-input-container">
+      <div className="bg-transparent p-3 sm:p-4 message-input-container">
         <div className="relative">
           <Textarea
             ref={textareaRef}
