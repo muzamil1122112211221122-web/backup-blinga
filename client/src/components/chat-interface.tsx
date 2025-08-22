@@ -71,7 +71,8 @@ import {
   GraduationCap,
   Moon,
   Sun,
-  ToggleLeft
+  ToggleLeft,
+  Square
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -827,12 +828,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const handleCopyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
     setCopiedMessageId(messageId);
-    // Clear the copied state more quickly to prevent stuck colors
-    setTimeout(() => setCopiedMessageId(null), 1500);
+    // Auto-clear the copied state
+    setTimeout(() => setCopiedMessageId(null), 1200);
   };
 
   const handleLikeMessage = (messageId: string) => {
-    // Prevent rapid clicks by debouncing
     setLikedMessages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
@@ -845,13 +845,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           newDisliked.delete(messageId);
           return newDisliked;
         });
+        // Auto-clear like after 3 seconds to prevent stuck colors
+        setTimeout(() => {
+          setLikedMessages(current => {
+            const updated = new Set(current);
+            updated.delete(messageId);
+            return updated;
+          });
+        }, 3000);
       }
       return newSet;
     });
   };
 
   const handleDislikeMessage = (messageId: string) => {
-    // Prevent rapid clicks by debouncing
     setDislikedMessages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(messageId)) {
@@ -864,6 +871,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           newLiked.delete(messageId);
           return newLiked;
         });
+        // Auto-clear dislike after 3 seconds to prevent stuck colors
+        setTimeout(() => {
+          setDislikedMessages(current => {
+            const updated = new Set(current);
+            updated.delete(messageId);
+            return updated;
+          });
+        }, 3000);
       }
       return newSet;
     });
@@ -1620,11 +1635,13 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-xl"
+                            className={`h-6 w-6 rounded-xl transition-all duration-200 ${
+                              isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'
+                            }`}
                             onClick={() => handleSpeakMessage(message.content)}
                             data-testid={`button-speak-${message.id}`}
                           >
-                            <Volume2 className="h-3 w-3" />
+                            {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
                           </Button>
                           <Button
                             variant="ghost"
@@ -2095,9 +2112,9 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          {/* Image Preview - Fixed height for better visibility */}
+          {/* Image Preview - Positioned above input area for better visibility */}
           {attachedImage && (
-            <div className="absolute top-2 left-2 flex items-center space-x-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600 max-w-[300px]">
+            <div className="absolute -top-16 left-2 flex items-center space-x-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600 max-w-[300px] shadow-lg z-10">
               <img 
                 src={attachedImage.preview} 
                 alt="Attached image" 

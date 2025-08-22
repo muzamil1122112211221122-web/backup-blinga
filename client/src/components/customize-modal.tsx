@@ -35,15 +35,15 @@ export function CustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="macos-dialog-content bg-white border-gray-300 max-w-md shadow-2xl rounded-2xl [&>button]:hidden">
+      <DialogContent className="macos-dialog-content bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 max-w-md shadow-2xl rounded-2xl [&>button]:hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between text-xl font-semibold text-gray-900">
+          <DialogTitle className="flex items-center justify-between text-xl font-semibold text-gray-900 dark:text-gray-100">
             Customize Forus
             <Button 
               variant="ghost" 
               size="icon"
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-900 h-8 w-8 rounded-full"
+              className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 h-8 w-8 rounded-full"
               data-testid="button-close-customize"
             >
               <X className="h-4 w-4" />
@@ -54,8 +54,8 @@ export function CustomizeModal({
         {/* Enable Customization Toggle */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <Settings className="h-4 w-4 text-gray-500" />
-            <span className="text-gray-900">Enable Customization</span>
+            <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <span className="text-gray-900 dark:text-gray-100">Enable Customization</span>
           </div>
           <Switch
             checked={isEnabled}
@@ -66,24 +66,24 @@ export function CustomizeModal({
         
         {/* Presets */}
         <div className="mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-500">Presets</h4>
+          <h4 className="text-sm font-medium mb-3 text-gray-500 dark:text-gray-400">Presets</h4>
           <div className="grid grid-cols-2 gap-3">
             {Object.entries(CHAT_PRESETS).map(([key, preset]) => (
               <Card
                 key={key}
                 className={`cursor-pointer transition-colors border ${
                   selectedPreset === key
-                    ? 'border-gray-900 bg-gray-50'
-                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                    ? 'border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
                 onClick={() => setSelectedPreset(key as ChatPreset)}
                 data-testid={`preset-${key}`}
               >
                 <CardContent className="p-3">
-                  <div className="font-medium text-sm text-gray-900">
+                  <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
                     {preset.name}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {preset.description}
                   </div>
                 </CardContent>
@@ -94,7 +94,7 @@ export function CustomizeModal({
         
         {/* Model Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-500">
+          <label className="block text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">
             AI Model
           </label>
           <Select
@@ -118,7 +118,7 @@ export function CustomizeModal({
 
         {/* Custom Instructions */}
         <div className="mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-500">
+          <label className="block text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">
             Custom Instructions
           </label>
           <Textarea
