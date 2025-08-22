@@ -227,72 +227,74 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
-  // Typing animation hook - PERMANENTLY fixed to prevent repeating animations
-  const useTypingAnimation = (text: string, speed: number = 20) => {
-    const [displayedText, setDisplayedText] = useState('');
-    const [isTypingComplete, setIsTypingComplete] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const completedTextsRef = useRef<Set<string>>(new Set());
-    const currentTextRef = useRef<string>('');
-    const animationRunningRef = useRef(false);
-
-    useEffect(() => {
-      // If text hasn't changed, don't restart animation
-      if (currentTextRef.current === text) {
-        return;
+  // Global completed texts cache - shared across all components
+  const globalCompletedTexts = useRef<Map<string, string>>(new Map());
+  
+  // Typing animation hook - BULLETPROOF against re-renders
+  const useTypingAnimation = (text: string, messageId: string, speed: number = 20) => {
+    // Create a unique key for this specific message
+    const cacheKey = `${messageId}-${text}`;
+    
+    // Initialize state only once based on cache
+    const [state] = useState(() => {
+      const cached = globalCompletedTexts.current.get(cacheKey);
+      if (cached) {
+        return {
+          displayedText: text,
+          isTypingComplete: true
+        };
       }
-
-      // If this exact text was already completed, show it immediately
-      if (completedTextsRef.current.has(text)) {
+      return {
+        displayedText: '',
+        isTypingComplete: false
+      };
+    });
+    
+    const [displayedText, setDisplayedText] = useState(state.displayedText);
+    const [isTypingComplete, setIsTypingComplete] = useState(state.isTypingComplete);
+    const hasInitialized = useRef(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    
+    useEffect(() => {
+      // If already completed, don't animate
+      if (globalCompletedTexts.current.has(cacheKey)) {
         setDisplayedText(text);
         setIsTypingComplete(true);
         return;
       }
-
-      // If animation is currently running for different text, stop it
-      if (animationRunningRef.current) {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-        animationRunningRef.current = false;
+      
+      // Only run animation once per unique message
+      if (hasInitialized.current) {
+        return;
       }
-
-      currentTextRef.current = text;
-
+      hasInitialized.current = true;
+      
       if (!text) {
         setDisplayedText('');
         setIsTypingComplete(true);
         return;
       }
-
-      // Start new animation
+      
+      // Start animation
       setIsTypingComplete(false);
       setDisplayedText('');
-      animationRunningRef.current = true;
       
       const words = text.split(' ').filter(word => word.trim());
       let currentIndex = 0;
-
+      
       const typeWords = () => {
-        // Double check we should continue
-        if (!animationRunningRef.current || currentTextRef.current !== text) {
-          return;
-        }
-        
         if (currentIndex < words.length) {
           const currentWords = words.slice(0, currentIndex + 1);
           setDisplayedText(currentWords.join(' '));
           currentIndex++;
           timeoutRef.current = setTimeout(typeWords, speed);
         } else {
-          // Animation completed - mark this text as done
+          // Animation completed - cache it forever
           setIsTypingComplete(true);
-          animationRunningRef.current = false;
-          completedTextsRef.current.add(text);
+          globalCompletedTexts.current.set(cacheKey, text);
         }
       };
-
+      
       // Start typing
       timeoutRef.current = setTimeout(typeWords, 50);
       
@@ -301,16 +303,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-        animationRunningRef.current = false;
       };
-    }, [text]); // Removed speed from dependencies to prevent unnecessary re-runs
-
+    }, []); // Empty dependency array - never re-run
+    
     return { displayedText, isTypingComplete };
   };
 
-  // Typing Text Component for AI responses - Memoized to prevent re-renders
-  const TypingText = React.memo(({ text, messageId }: { text: string; messageId: string }) => {
-    const { displayedText, isTypingComplete } = useTypingAnimation(text, 10);
+  // Typing Text Component - Completely isolated from parent re-renders
+  const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
+    const { displayedText, isTypingComplete } = useTypingAnimation(text, messageId, 10);
 
     return (
       <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">
@@ -339,13 +340,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         {!isTypingComplete && <span className="inline-block animate-pulse text-foreground">|</span>}
       </div>
     );
-  }, (prevProps, nextProps) => {
-    // Only re-render if text or messageId actually changed
-    return prevProps.text === nextProps.text && prevProps.messageId === nextProps.messageId;
-  });
-
-  // Display name for React DevTools
-  TypingText.displayName = 'TypingText';
+  };
 
   function handleWebSocketMessage(message: WebSocketMessage) {
     switch (message.type) {
