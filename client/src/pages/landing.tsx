@@ -9,19 +9,28 @@ export default function Landing() {
   const handleGetStarted = async () => {
     try {
       setIsLoading(true);
-      // First logout any existing session to ensure clean start
-      await fetch('/api/auth/logout', { 
-        method: 'POST', 
+      
+      // Check if user is already authenticated
+      const authResponse = await fetch('/api/auth/user', { 
+        method: 'GET', 
         credentials: 'include' 
       });
+      
+      if (authResponse.ok) {
+        // User is already logged in, go directly to chat
+        window.location.href = '/chat';
+        return;
+      }
+      
+      // User not logged in, proceed to registration
+      setIsLoading(false);
+      window.location.href = '/start';
     } catch (error) {
-      // Ignore logout errors, just proceed
-      console.log('Logout error (ignored):', error);
+      // If auth check fails, proceed to registration
+      console.log('Auth check error (proceeding to registration):', error);
+      setIsLoading(false);
+      window.location.href = '/start';
     }
-    
-    // Redirect to the new user info page
-    setIsLoading(false);
-    window.location.href = '/start';
   };
 
   const features = [
