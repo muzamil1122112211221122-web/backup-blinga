@@ -2043,7 +2043,7 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none border-0"
+            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none"
             style={{
               paddingRight: '64px',
               fontSize: '18px',
