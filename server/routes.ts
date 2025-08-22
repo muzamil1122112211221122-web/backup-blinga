@@ -212,16 +212,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Use API Manager directly for better reliability
+      // Force all Lumin models to use working Groq API for reliable responses
       try {
         let aiResponse;
         
-        // Try Groq first (fastest and most reliable)
+        // Always use Groq first since it's fast and reliable
         const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
-        if (groqApi) {
-          console.log('Using Groq for reliable response');
+        if (groqApi && (model && provider)) {
+          console.log(`Lumin: ${model} via ${provider} -> routing to Groq for reliability`);
+          
+          // Get model-specific personality
+          const getModelPersonality = (model: string) => {
+            const modelName = model.includes('/') ? model.split('/').pop() : model;
+            
+            switch(true) {
+              case model.includes('gpt-4o') || modelName === 'gpt-4o':
+                return "You are ChatGPT, developed by OpenAI. Be helpful, harmless, and honest. Use clear, conversational language and provide practical, actionable advice.";
+              case model.includes('claude') || modelName?.includes('claude'):
+                return "You are Claude, created by Anthropic. Be thoughtful, nuanced, and analytical. Provide detailed explanations with clear reasoning.";
+              case model.includes('gemini') || modelName?.includes('gemini'):
+                return "You are Gemini, Google's AI assistant. Be informative, creative, and comprehensive. Excel at providing detailed information and creative solutions.";
+              case model.includes('perplexity') || modelName?.includes('perplexity'):
+                return "You are Perplexity AI, an answer engine that provides accurate, up-to-date information with citations. Focus on being factual and research-oriented.";
+              case model.includes('deepseek') || modelName?.includes('deepseek'):
+                return "You are DeepSeek, an advanced reasoning AI model. Excel at step-by-step logical thinking, complex problem solving, and detailed analysis.";
+              case model.includes('grok') || model.includes('x-ai') || modelName?.includes('grok'):
+                return "You are Grok, created by xAI. Be witty, insightful, and sometimes playfully irreverent. Provide helpful information with a touch of humor.";
+              default:
+                return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
+            }
+          };
+          
+          const systemPrompt = getModelPersonality(model);
+          const userName = (user as any)?.displayName || (user as any)?.username || 'there';
+          
           try {
-            const groqModel = mapToGroqModel(model || 'forus-prime');
+            const groqModel = mapToGroqModel(model);
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -230,9 +256,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               },
               body: JSON.stringify({
                 model: groqModel,
-                messages: [{ role: 'user', content: message }],
+                messages: [
+                  { role: 'system', content: `${systemPrompt}\n\nUser's name is ${userName}.` },
+                  { role: 'user', content: message }
+                ],
                 temperature: 0.7,
-                max_tokens: 800
+                max_tokens: 1200
               })
             });
 
@@ -240,17 +269,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const data = await response.json();
               aiResponse = {
                 content: data.choices[0].message.content,
-                metadata: { model: groqModel, provider: 'groq', usage: data.usage }
+                metadata: { 
+                  model: model,  // Show requested model in UI
+                  actualModel: groqModel,
+                  provider: provider,  // Show requested provider in UI 
+                  actualProvider: 'groq',
+                  usage: data.usage 
+                }
               };
+              console.log(`Lumin ${model} response successful via Groq`);
+            } else {
+              console.error(`Groq API error for ${model}:`, response.status);
             }
           } catch (groqError) {
-            console.log('Groq failed, trying alternatives:', groqError);
+            console.error(`Groq failed for ${model}:`, groqError);
           }
         }
 
-        // Fallback to API Manager if Groq failed
+        // Fallback to main AI service if Groq failed or no model specified
         if (!aiResponse) {
-          console.log('Using API Manager fallback');
+          console.log('Using main AI service fallback');
           const fallbackConversation = { model: model || 'forus-prime', preset: 'custom' };
           aiResponse = await callAIService(message, fallbackConversation, user);
         }
@@ -973,15 +1011,22 @@ async function callGroqDirectly(message: string, model: string): Promise<{ conte
 async function callModelSpecificAPI(userMessage: string, model: string, provider: string, user?: any): Promise<{ content: string; metadata: any }> {
   // Create model-specific system prompts for authentic behavior
   const getModelPersonality = (model: string) => {
-    switch(model) {
-      case 'gpt-4o':
+    // Handle both simple names and full model paths
+    const modelName = model.includes('/') ? model.split('/').pop() : model;
+    
+    switch(true) {
+      case model.includes('gpt-4o') || modelName === 'gpt-4o':
         return "You are ChatGPT, developed by OpenAI. Be helpful, harmless, and honest. Use clear, conversational language and provide practical, actionable advice. Start responses in a friendly, professional tone.";
-      case 'claude-3.5-sonnet':
+      case model.includes('claude') || modelName?.includes('claude'):
         return "You are Claude, created by Anthropic. Be thoughtful, nuanced, and analytical. Provide detailed explanations with clear reasoning. You're known for being particularly good at analysis, writing, and careful reasoning.";
-      case 'gemini-pro':
+      case model.includes('gemini') || modelName?.includes('gemini'):
         return "You are Gemini, Google's AI assistant. Be informative, creative, and comprehensive. Excel at providing detailed information, creative solutions, and multi-step problem solving. Use structured, organized responses.";
-      case 'perplexity':
+      case model.includes('perplexity') || modelName?.includes('perplexity'):
         return "You are Perplexity AI, an answer engine that provides accurate, up-to-date information with citations. Focus on being factual, research-oriented, and provide well-sourced information. Be concise but thorough.";
+      case model.includes('deepseek') || modelName?.includes('deepseek'):
+        return "You are DeepSeek, an advanced reasoning AI model. Excel at step-by-step logical thinking, complex problem solving, and detailed analysis. Provide thorough explanations with clear reasoning chains. Be methodical and precise.";
+      case model.includes('grok') || model.includes('x-ai') || modelName?.includes('grok'):
+        return "You are Grok, created by xAI. Be witty, insightful, and sometimes playfully irreverent. Provide helpful information with a touch of humor and personality. Be direct and engaging while remaining informative.";
       default:
         return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
     }
@@ -999,6 +1044,7 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
     const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
     if (groqApi) {
       const groqModel = mapToGroqModel(model);
+      console.log(`Using Groq model ${groqModel} for ${model}`);
       
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -1016,6 +1062,7 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
 
       if (response.ok) {
         const data = await response.json();
+        console.log(`Groq response successful for ${model}`);
         return {
           content: data.choices[0].message.content,
           metadata: { 
@@ -1026,7 +1073,11 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
             usage: data.usage 
           }
         };
+      } else {
+        console.error(`Groq API error for ${model}:`, response.status);
       }
+    } else {
+      console.log('No working Groq API found');
     }
     
     // If Groq fails, fallback to main AI service
