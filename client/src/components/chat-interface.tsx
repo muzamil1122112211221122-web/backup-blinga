@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -308,9 +308,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return { displayedText, isTypingComplete };
   };
 
-  // Typing Text Component for AI responses
-  const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
-    // Use messageId as a key to prevent animation conflicts
+  // Typing Text Component for AI responses - Memoized to prevent re-renders
+  const TypingText = React.memo(({ text, messageId }: { text: string; messageId: string }) => {
     const { displayedText, isTypingComplete } = useTypingAnimation(text, 10);
 
     return (
@@ -340,7 +339,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         {!isTypingComplete && <span className="inline-block animate-pulse text-foreground">|</span>}
       </div>
     );
-  };
+  }, (prevProps, nextProps) => {
+    // Only re-render if text or messageId actually changed
+    return prevProps.text === nextProps.text && prevProps.messageId === nextProps.messageId;
+  });
+
+  // Display name for React DevTools
+  TypingText.displayName = 'TypingText';
 
   function handleWebSocketMessage(message: WebSocketMessage) {
     switch (message.type) {
@@ -660,7 +665,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const promises = Array.from(activeAIModels).map(async (model) => {
       try {
         // Handle image generation for ChatGPT and Gemini
-        if (isImageRequest && imageCapableModels.includes(model)) {
+        if (isImageRequest && imageCapableModels.includes(model as 'gpt-4o' | 'gemini-pro')) {
           try {
             console.log(`${model === 'gpt-4o' ? 'ChatGPT' : 'Gemini'} generating image for: "${content}"`);
             const imageResponse = await fetch('/api/generate-image', {
