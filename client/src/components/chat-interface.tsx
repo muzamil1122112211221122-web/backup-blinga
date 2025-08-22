@@ -231,32 +231,57 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const useTypingAnimation = (text: string, speed: number = 20) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isTypingComplete, setIsTypingComplete] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isTypingRef = useRef(false);
 
     useEffect(() => {
+      // Clear any existing timeout and reset state
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      isTypingRef.current = false;
+
       if (!text) {
         setDisplayedText('');
         setIsTypingComplete(true);
         return;
       }
 
+      // Prevent concurrent typing animations
+      if (isTypingRef.current) return;
+      isTypingRef.current = true;
+
       setIsTypingComplete(false);
+      setDisplayedText(''); // Reset display text
       const words = text.split(' ');
       let currentIndex = 0;
 
       const typeWords = () => {
+        // Check if animation was cancelled
+        if (!isTypingRef.current) return;
+        
         if (currentIndex < words.length) {
           const currentWords = words.slice(0, currentIndex + 1);
           setDisplayedText(currentWords.join(' '));
           currentIndex++;
-          setTimeout(typeWords, speed);
+          timeoutRef.current = setTimeout(typeWords, speed);
         } else {
           setIsTypingComplete(true);
+          isTypingRef.current = false;
         }
       };
 
       // Start typing after a short delay
-      const timeout = setTimeout(typeWords, 50);
-      return () => clearTimeout(timeout);
+      timeoutRef.current = setTimeout(typeWords, 50);
+      
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        isTypingRef.current = false;
+      };
     }, [text, speed]);
 
     return { displayedText, isTypingComplete };
