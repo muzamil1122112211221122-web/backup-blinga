@@ -51,6 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket server for real-time chat
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const clients = new Map<string, ChatClient>();
+  
+  // Deduplication cache for AI responses - prevents repetition
+  const recentResponses = new Map<string, Set<string>>(); // conversationId -> Set of response hashes
 
   // User routes
   app.get('/api/user', requireAuth, async (req, res) => {
@@ -622,9 +625,18 @@ Return only the school names as a JSON array of strings. Make them authentic and
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `Improve this text by fixing grammar, making it clearer, and adding relevant details. Keep it concise but well-written. Do not expand it too much - just make it better and more professional. Return only the improved version without any prefixes:
+      const enhancementPrompt = `You are a prompt enhancement assistant. Your job is ONLY to improve the way the user's prompt is written - fix grammar, make it clearer, and enhance the structure. 
 
-"${originalPrompt}"`;
+IMPORTANT RULES:
+- DO NOT answer the question or provide solutions
+- DO NOT give explanations or add content beyond the original intent
+- ONLY improve the way the prompt is written
+- Return ONLY the enhanced version of the prompt, nothing else
+- Keep the same intent but make it more clear and well-written
+
+Original prompt to enhance: "${originalPrompt}"
+
+Enhanced version:`;
 
       // Smart retry with automatic key switching for prompt enhancement  
       const maxRetries = 3;
@@ -971,6 +983,25 @@ async function handleChatMessage(message: any, client: ChatClient, clients: Map<
       model: openRouterResponse.metadata?.model 
     });
     
+    // Check for duplicate AI responses (prevent repetition)
+    const responseHash = require('crypto').createHash('md5').update(openRouterResponse.content.trim()).digest('hex');
+    const conversationResponses = recentResponses.get(message.conversationId) || new Set();
+    
+    if (conversationResponses.has(responseHash)) {
+      console.log('Duplicate AI response detected, skipping...');
+      return; // Skip this duplicate response
+    }
+    
+    // Track this response to prevent future duplicates
+    conversationResponses.add(responseHash);
+    recentResponses.set(message.conversationId, conversationResponses);
+    
+    // Keep only last 5 responses per conversation to prevent memory issues
+    if (conversationResponses.size > 5) {
+      const oldest = conversationResponses.values().next().value;
+      conversationResponses.delete(oldest);
+    }
+
     // Save AI response
     const aiMessage = await storage.createMessage({
       conversationId: message.conversationId,

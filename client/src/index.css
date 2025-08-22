@@ -447,16 +447,15 @@
   }
 
   .dark .message-input {
-    border: none !important;
-    border-color: transparent !important;
-    background: transparent !important;
+    background: hsl(240, 6%, 10%) !important;
+    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    color: hsl(0, 0%, 98%) !important;
   }
 
   .dark .message-input:focus {
-    border: none !important;
-    border-color: transparent !important;
-    background: transparent !important;
-    box-shadow: none !important;
+    border-color: hsl(240, 5%, 25%) !important;
+    background: hsl(240, 6%, 10%) !important;
+    box-shadow: 0 0 0 2px hsl(240, 5%, 20%) !important;
   }
 
   .macos-function-bar {

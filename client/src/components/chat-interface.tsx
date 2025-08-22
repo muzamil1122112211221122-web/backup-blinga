@@ -2049,7 +2049,7 @@ Let's start the self-listen session!`;
               <img 
                 src={attachedImage.preview} 
                 alt="Attached image" 
-                className="w-20 h-20 object-cover rounded" /* Increased from w-12 h-12 to w-20 h-20 */
+                className="w-12 h-12 object-cover rounded"
               />
               <div className="flex flex-col">
                 <span className="text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate font-medium">
