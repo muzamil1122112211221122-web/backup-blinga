@@ -35,8 +35,10 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       
       if (response.ok) {
         console.log('Demo login successful');
-        // Force a complete page reload to ensure session is properly established
-        window.location.href = window.location.href;
+        setShowUserInfoDialog(false);
+        setIsLoading(false);
+        // Call the onAuthSuccess callback to let the parent handle navigation
+        onAuthSuccess();
       } else {
         console.error('Login failed:', response.status);
         setIsLoading(false);
