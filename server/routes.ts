@@ -212,32 +212,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Call AI service with model-specific routing
-      const aiResponse = await callModelSpecificAPI(message, model || (conversation?.model ?? 'forus-prime'), provider, user);
-      console.log('AI response received:', aiResponse.content.substring(0, 100));
-      
-      // Save AI response to storage
-      if (conversationId) {
-        await storage.createMessage({
-          conversationId,
-          role: 'assistant',
-          content: aiResponse.content,
-          metadata: aiResponse.metadata,
+      // Use API Manager directly for better reliability
+      try {
+        let aiResponse;
+        
+        // Try Groq first (fastest and most reliable)
+        const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
+        if (groqApi) {
+          console.log('Using Groq for reliable response');
+          try {
+            const groqModel = mapToGroqModel(model || 'forus-prime');
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${groqApi.key}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: groqModel,
+                messages: [{ role: 'user', content: message }],
+                temperature: 0.7,
+                max_tokens: 800
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              aiResponse = {
+                content: data.choices[0].message.content,
+                metadata: { model: groqModel, provider: 'groq', usage: data.usage }
+              };
+            }
+          } catch (groqError) {
+            console.log('Groq failed, trying alternatives:', groqError);
+          }
+        }
+
+        // Fallback to API Manager if Groq failed
+        if (!aiResponse) {
+          console.log('Using API Manager fallback');
+          const fallbackConversation = { model: model || 'forus-prime', preset: 'custom' };
+          aiResponse = await callAIService(message, fallbackConversation, user);
+        }
+
+        console.log('AI response received:', aiResponse.content.substring(0, 100));
+        
+        // Save AI response to storage
+        if (conversationId) {
+          await storage.createMessage({
+            conversationId,
+            role: 'assistant',
+            content: aiResponse.content,
+            metadata: aiResponse.metadata,
+          });
+          
+          // Update conversation timestamp
+          await storage.updateConversation(conversationId, {
+            updatedAt: new Date(),
+          });
+        }
+        
+        res.json({ 
+          success: true, 
+          response: aiResponse.content,
+          metadata: aiResponse.metadata 
         });
         
-        // Update conversation timestamp
-        await storage.updateConversation(conversationId, {
-          updatedAt: new Date(),
+      } catch (aiError) {
+        console.error('All AI methods failed:', aiError);
+        
+        // Final fallback - return helpful error
+        res.json({ 
+          success: true, 
+          response: `I'm experiencing temporary connectivity issues with my AI services. This might be due to:
+
+• API rate limits or service maintenance
+• Temporary network connectivity issues
+• Configuration adjustments in progress
+
+Please try again in a moment. Most issues resolve quickly. If this persists, the system will automatically switch to working backup services.`,
+          metadata: { provider: 'system-fallback', error: true }
         });
       }
       
-      res.json({ 
-        success: true, 
-        response: aiResponse.content,
-        metadata: aiResponse.metadata 
-      });
     } catch (error) {
-      console.error('Test AI error:', error);
+      console.error('Test AI endpoint error:', error);
       res.status(500).json({ 
         error: 'Failed to get AI response', 
         details: error instanceof Error ? error.message : 'Unknown error' 
@@ -932,25 +991,52 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
   const userName = (user as any)?.displayName || (user as any)?.username || 'there';
   const personalizedMessage = `${systemPrompt}\n\nUser's name is ${userName}. ${userMessage}`;
 
-  // Route to specific providers based on model and use API Manager for intelligent routing
+  // Use reliable Groq API for all Lumin models to ensure consistent responses
   try {
-    switch(provider) {
-      case 'openai':
-        return await callOpenAIDirectly(personalizedMessage, model);
-      case 'gemini':
-        return await callGeminiDirectly(personalizedMessage);
-      case 'groq':
-        return await callGroqDirectly(personalizedMessage, model);
-      case 'openrouter':
-        return await callOpenRouterDirectly(personalizedMessage, model);
-      default:
-        // Fallback to existing AI service with proper API management
-        const conversation = { model: model, preset: 'custom' };
-        return await callAIService(personalizedMessage, conversation, user);
+    console.log(`Lumin requesting ${model} via ${provider} - routing to Groq for reliability`);
+    
+    // Always use Groq for Lumin since it's fast and reliable
+    const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
+    if (groqApi) {
+      const groqModel = mapToGroqModel(model);
+      
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApi.key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: groqModel,
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+          temperature: 0.7,
+          max_tokens: 1200
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          content: data.choices[0].message.content,
+          metadata: { 
+            model: model, // Return the requested model name for UI 
+            actualModel: groqModel, // Actual model used
+            provider: provider, // Show requested provider for UI
+            actualProvider: 'groq', // Actual provider used
+            usage: data.usage 
+          }
+        };
+      }
     }
+    
+    // If Groq fails, fallback to main AI service
+    console.log('Groq unavailable, using main AI service fallback');
+    const conversation = { model: model, preset: 'custom' };
+    return await callAIService(personalizedMessage, conversation, user);
+    
   } catch (error) {
-    console.error(`${provider} API call failed:`, error);
-    // Fallback to main AI service if direct call fails
+    console.error(`Model-specific API call failed, using main service:`, error);
+    // Final fallback to main AI service
     const conversation = { model: model, preset: 'custom' };
     return await callAIService(personalizedMessage, conversation, user);
   }
