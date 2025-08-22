@@ -872,6 +872,45 @@ function broadcastToConversation(conversationId: string, message: any, excludeCl
 
 
 // Model-specific API caller for authentic responses
+async function callGroqDirectly(message: string, model: string): Promise<{ content: string; metadata: any }> {
+  try {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('Groq API key not configured');
+    }
+
+    // Map to Groq-compatible models
+    const groqModel = mapToGroqModel(model);
+    
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        messages: [{ role: 'user', content: message }],
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return {
+      content: data.choices[0].message.content,
+      metadata: { model: groqModel, provider: 'groq', usage: data.usage }
+    };
+  } catch (error) {
+    console.error('Groq direct call failed:', error);
+    throw error;
+  }
+}
+
 async function callModelSpecificAPI(userMessage: string, model: string, provider: string, user?: any): Promise<{ content: string; metadata: any }> {
   // Create model-specific system prompts for authentic behavior
   const getModelPersonality = (model: string) => {
@@ -893,23 +932,39 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
   const userName = (user as any)?.displayName || (user as any)?.username || 'there';
   const personalizedMessage = `${systemPrompt}\n\nUser's name is ${userName}. ${userMessage}`;
 
-  // Route to specific providers based on model
-  switch(provider) {
-    case 'openai':
-      return await callOpenAIDirectly(personalizedMessage, model);
-    case 'gemini':
-      return await callGeminiDirectly(personalizedMessage);
-    case 'openrouter':
-      return await callOpenRouterDirectly(personalizedMessage, model);
-    default:
-      // Fallback to existing AI service
-      const conversation = { model: model, preset: 'custom' };
-      return await callAIService(personalizedMessage, conversation, user);
+  // Route to specific providers based on model and use API Manager for intelligent routing
+  try {
+    switch(provider) {
+      case 'openai':
+        return await callOpenAIDirectly(personalizedMessage, model);
+      case 'gemini':
+        return await callGeminiDirectly(personalizedMessage);
+      case 'groq':
+        return await callGroqDirectly(personalizedMessage, model);
+      case 'openrouter':
+        return await callOpenRouterDirectly(personalizedMessage, model);
+      default:
+        // Fallback to existing AI service with proper API management
+        const conversation = { model: model, preset: 'custom' };
+        return await callAIService(personalizedMessage, conversation, user);
+    }
+  } catch (error) {
+    console.error(`${provider} API call failed:`, error);
+    // Fallback to main AI service if direct call fails
+    const conversation = { model: model, preset: 'custom' };
+    return await callAIService(personalizedMessage, conversation, user);
   }
 }
 
 async function callOpenAIDirectly(message: string, model: string): Promise<{ content: string; metadata: any }> {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    // Use proper OpenAI model names
+    const openaiModel = model === 'gpt-4o' ? 'gpt-4o' : 'gpt-4o';
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -917,21 +972,22 @@ async function callOpenAIDirectly(message: string, model: string): Promise<{ con
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: model,
+        model: openaiModel,
         messages: [{ role: 'user', content: message }],
         temperature: 0.7,
-        max_tokens: 400
+        max_tokens: 800
       })
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     return {
       content: data.choices[0].message.content,
-      metadata: { model, provider: 'openai', usage: data.usage }
+      metadata: { model: openaiModel, provider: 'openai', usage: data.usage }
     };
   } catch (error) {
     console.error('OpenAI direct call failed:', error);
@@ -941,16 +997,20 @@ async function callOpenAIDirectly(message: string, model: string): Promise<{ con
 
 async function callGeminiDirectly(message: string): Promise<{ content: string; metadata: any }> {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('Gemini API key not configured');
+    }
+
     const { GoogleGenAI } = require('@google/genai');
     const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
     const result = await model.generateContent(message);
     const response = await result.response;
     
     return {
       content: response.text(),
-      metadata: { model: 'gemini-pro', provider: 'gemini' }
+      metadata: { model: 'gemini-2.5-flash', provider: 'gemini' }
     };
   } catch (error) {
     console.error('Gemini direct call failed:', error);
@@ -960,31 +1020,41 @@ async function callGeminiDirectly(message: string): Promise<{ content: string; m
 
 async function callOpenRouterDirectly(message: string, model: string): Promise<{ content: string; metadata: any }> {
   try {
-    const apiKey = getAPIKey();
+    const api = apiManager.getBestChatAPI();
+    if (!api) {
+      throw new Error('No OpenRouter APIs available');
+    }
+    
+    // Map model to OpenRouter format if needed
+    const openRouterModel = MODEL_MAPPING[model as keyof typeof MODEL_MAPPING] || model;
+    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey.key}`,
+        'Authorization': `Bearer ${api.key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
         'X-Title': 'Forus Heavy API'
       },
       body: JSON.stringify({
-        model: model,
+        model: openRouterModel,
         messages: [{ role: 'user', content: message }],
         temperature: 0.7,
-        max_tokens: 400
+        max_tokens: 800
       })
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = `OpenRouter API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`;
+      apiManager.markAPIFailed(api, errorMsg);
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
     return {
       content: data.choices[0].message.content,
-      metadata: { model, provider: 'openrouter', usage: data.usage }
+      metadata: { model: openRouterModel, provider: 'openrouter', usage: data.usage }
     };
   } catch (error) {
     console.error('OpenRouter direct call failed:', error);
@@ -1063,10 +1133,14 @@ Let me provide you with a detailed description instead, or you can try asking ag
   let triedOpenAI = false;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    // Prefer Groq on first attempt, then try OpenRouter, then fallback to OpenAI as final option
-    const preferGroq = attempt === 1 || (!triedGroq && attempt > 2);
-    const forceOpenAI = attempt > 6 && !triedOpenAI; // Force OpenAI on final attempts
-    const { key: apiKey, provider } = getAPIKey(preferGroq);
+    // Use API Manager to get best available API
+    const api = apiManager.getBestChatAPI();
+    if (!api) {
+      console.error('No working APIs available for chat');
+      throw new Error('All AI services are currently unavailable');
+    }
+    
+    const { key: apiKey, provider } = api;
     
     if (provider === 'groq') triedGroq = true;
     if (provider === 'openai') triedOpenAI = true;
@@ -1143,9 +1217,10 @@ Let me provide you with a detailed description instead, or you can try asking ag
         const errorMessage = `${provider.toUpperCase()} API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
         
         // Mark key as failed for credit/billing issues or rate limits
-        if (response.status === 402 || response.status === 429) {
-          const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
-          markKeyFailed(apiKey, reason);
+        if (response.status === 402 || response.status === 429 || response.status === 401) {
+          const reason = response.status === 402 ? 'Insufficient credits' : 
+                        response.status === 429 ? 'Rate limited' : 'Unauthorized';
+          apiManager.markAPIFailed(api, reason);
           console.log(`${provider} key failed with ${reason}, trying next key...`);
           
           // If OpenRouter failed with credits and we haven't tried Groq yet, try it next
@@ -1184,8 +1259,8 @@ Let me provide you with a detailed description instead, or you can try asking ag
       lastError = error;
       
       // If it's a credit/rate limit issue, mark key as failed
-      if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429')) {
-        markKeyFailed(apiKey, 'Credit or rate limit issue');
+      if (error.message.includes('credits') || error.message.includes('402') || error.message.includes('429') || error.message.includes('401')) {
+        apiManager.markAPIFailed(api, 'Credit, rate limit, or auth issue');
         // If OpenRouter failed with credits and we haven't tried Groq yet, prioritize it
         if (provider === 'openrouter' && !triedGroq) {
           console.log('OpenRouter failed with credits, will try Groq next...');
