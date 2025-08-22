@@ -85,7 +85,7 @@
   /* Message input styling for dark theme - transparent backgrounds */
   .dark .message-input-container {
     background: transparent !important;
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    border: none !important;
     border-radius: 1.5rem;
     box-shadow: none !important;
   }
@@ -471,12 +471,12 @@
   }
 
   .macos-function-bar {
-    border: 1px solid var(--macos-border-light) !important;
+    border: none !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .dark .macos-function-bar {
-    border-color: var(--macos-border-light) !important;
+    border: none !important;
     background: transparent !important;
   }
 
