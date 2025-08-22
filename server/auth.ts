@@ -113,28 +113,28 @@ export function setupAuth(app: Express) {
   app.get("/api/auth/demo", async (req, res) => {
     const redirect = typeof req.query.redirect === 'string' ? req.query.redirect : '/chat';
     
-    // Auto-login with demo user
+    // Auto-login with shared demo user
     try {
-      const sessionId = req.session.id || require('crypto').randomUUID();
-      const uniqueEmail = `demo-${sessionId}@forus.com`;
-      const uniqueProviderId = `demo-${sessionId}`;
+      const demoEmail = 'demo-user@forus.com';
+      const demoProviderId = 'demo-shared-user';
       
-      let user = await storage.getUserByProviderId(uniqueProviderId);
+      let user = await storage.getUserByProviderId(demoProviderId);
       
       if (!user) {
-        user = await storage.getUserByEmail(uniqueEmail);
+        user = await storage.getUserByEmail(demoEmail);
       }
       
       if (!user) {
         user = await storage.createUser({
-          username: 'Guest User',
-          email: uniqueEmail,
+          username: 'Demo User',
+          email: demoEmail,
           password: '',
           provider: 'demo',
-          providerId: uniqueProviderId,
-          displayName: 'Guest User',
+          providerId: demoProviderId,
+          displayName: 'Demo User',
           birthDate: null,
         });
+        console.log(`Created shared demo user: ${user.id}`);
       }
 
       req.login(user, (err) => {
@@ -154,34 +154,32 @@ export function setupAuth(app: Express) {
     try {
       const { displayName, birthDate } = req.body;
       
-      // Create a unique identifier for each demo session
-      // This ensures each user gets their own separate account
-      const sessionId = req.session.id || require('crypto').randomUUID();
-      const uniqueEmail = `demo-${sessionId}@forus.com`;
-      const uniqueProviderId = `demo-${sessionId}`;
+      // Use a fixed demo user that gets reused (no duplication)
+      const demoEmail = 'demo-user@forus.com';
+      const demoProviderId = 'demo-shared-user';
       
-      // Try to find existing user by unique provider ID first
-      let user = await storage.getUserByProviderId(uniqueProviderId);
+      // Try to find existing shared demo user
+      let user = await storage.getUserByProviderId(demoProviderId);
       
-      // If not found by provider ID, check by email as fallback
       if (!user) {
-        user = await storage.getUserByEmail(uniqueEmail);
+        // Check by email as fallback
+        user = await storage.getUserByEmail(demoEmail);
       }
       
       if (!user) {
-        // Create a new unique user for this session
+        // Create the shared demo user
         user = await storage.createUser({
-          username: displayName || 'User',
-          email: uniqueEmail,
+          username: displayName || 'Demo User',
+          email: demoEmail,
           password: '',
-          provider: 'user',
-          providerId: uniqueProviderId,
-          displayName: displayName || null,
+          provider: 'demo',
+          providerId: demoProviderId,
+          displayName: displayName || 'Demo User',
           birthDate: birthDate || null,
         });
-        console.log(`Created new demo user: ${user.id} with email: ${uniqueEmail}`);
+        console.log(`Created shared demo user: ${user.id}`);
       } else {
-        // Update existing user with new info
+        // Update existing user with latest info
         const updatedUser = await storage.updateUser(user.id, {
           username: displayName || user.username,
           displayName: displayName || user.displayName,
@@ -190,7 +188,7 @@ export function setupAuth(app: Express) {
         if (updatedUser) {
           user = updatedUser;
         }
-        console.log(`Updated existing demo user: ${user.id}`);
+        console.log(`Updated shared demo user: ${user.id}`);
       }
 
       req.login(user, (err) => {
