@@ -1482,7 +1482,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/icons8-chatgpt-50_1755803693828.png" 
+                          src="/chatgpt-logo.png" 
                           alt="ChatGPT" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1496,7 +1496,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/icons8-claude-50_1755803693828.png" 
+                          src="/claude-logo.png" 
                           alt="Claude" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1510,7 +1510,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/icons8-gemini-ai-48_1755803693828.png" 
+                          src="/gemini-logo.png" 
                           alt="Gemini" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1524,7 +1524,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/icons8-perplexity-ai-50_1755803693827.png" 
+                          src="/perplexity-logo.png" 
                           alt="Perplexity" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1538,7 +1538,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/grok_1755803693829.png" 
+                          src="/grok-logo.png" 
                           alt="Grok" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1552,7 +1552,7 @@ Let's start the self-listen session!`;
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
-                          src="/attached_assets/deepseek-icon_1755803713167.png" 
+                          src="/deepseek-logo.png" 
                           alt="DeepSeek" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
@@ -1606,32 +1606,32 @@ Let's start the self-listen session!`;
                         switch(model) {
                           case 'gpt-4o': return { name: 'ChatGPT', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/icons8-chatgpt-50_1755803693828.png" alt="ChatGPT" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/chatgpt-logo.png" alt="ChatGPT" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'claude-3.5-sonnet': return { name: 'Claude', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/icons8-claude-50_1755803693828.png" alt="Claude" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/claude-logo.png" alt="Claude" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'gemini-pro': return { name: 'Gemini', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/icons8-gemini-ai-48_1755803693828.png" alt="Gemini" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/gemini-logo.png" alt="Gemini" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'perplexity': return { name: 'Perplexity', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/icons8-perplexity-ai-50_1755803693827.png" alt="Perplexity" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/perplexity-logo.png" alt="Perplexity" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'grok-4': return { name: 'Grok 4', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/grok_1755803693829.png" alt="Grok" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/grok-logo.png" alt="Grok" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'deepseek-r1': return { name: 'DeepSeek R1', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/attached_assets/deepseek-icon_1755803713167.png" alt="DeepSeek" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/deepseek-logo.png" alt="DeepSeek" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           default: return { name: model, logo: <div className="w-6 h-6 rounded-lg bg-gray-500"></div> };
