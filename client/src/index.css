@@ -416,12 +416,14 @@
   .dark .message-input {
     border: none !important;
     border-color: transparent !important;
+    background: transparent !important;
   }
 
   .dark .message-input:focus {
     border: none !important;
     border-color: transparent !important;
-    box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.3);
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .macos-function-bar {
