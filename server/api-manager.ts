@@ -21,6 +21,11 @@ class APIManager {
   }
 
   private initializeAPIs() {
+    console.log('Debug: Initializing APIs...');
+    console.log('Debug: GROQ_API_KEY exists?', !!process.env.GROQ_API_KEY);
+    console.log('Debug: OPENAI_API_KEY exists?', !!process.env.OPENAI_API_KEY);
+    console.log('Debug: GEMINI_API_KEY exists?', !!process.env.GEMINI_API_KEY);
+
     // Primary: Groq API
     if (process.env.GROQ_API_KEY) {
       this.apis.push({
@@ -30,6 +35,7 @@ class APIManager {
         failureCount: 0,
         requestCount: 0
       });
+      console.log('Debug: Added Groq API');
     }
 
     // Secondary: OpenRouter APIs (10 keys for load balancing)
@@ -43,6 +49,7 @@ class APIManager {
           failureCount: 0,
           requestCount: 0
         });
+        console.log(`Debug: Added OpenRouter API ${i}`);
       }
     }
 
@@ -55,6 +62,9 @@ class APIManager {
         failureCount: 0,
         requestCount: 0
       });
+      console.log('Debug: Added OpenAI API');
+    } else {
+      console.log('Debug: OpenAI API key not found or empty');
     }
 
     // Specialized: Gemini API
@@ -66,6 +76,9 @@ class APIManager {
         failureCount: 0,
         requestCount: 0
       });
+      console.log('Debug: Added Gemini API');
+    } else {
+      console.log('Debug: Gemini API key not found or empty');
     }
 
     console.log(`API Manager initialized with ${this.apis.length} APIs:`, 
