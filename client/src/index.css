@@ -82,16 +82,16 @@
     animation: logoSpin 0.8s ease-in-out;
   }
 
-  /* Message input styling for dark theme - match white theme style but in black */
+  /* Message input styling for dark theme - pure black backgrounds */
   .dark .message-input-container {
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
     border-radius: 1.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   }
   
   .dark .message-input {
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
     color: hsl(0, 0%, 98%) !important;
   }
@@ -101,26 +101,26 @@
     box-shadow: 0 0 0 2px hsl(240, 5%, 20%) !important;
   }
   
-  /* Fix all borders and elements in dark theme to match white theme visibility */
+  /* Fix all borders and elements in dark theme with pure black backgrounds */
   .dark [role="combobox"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
   }
   
   .dark [role="listbox"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
   }
 
   .dark [data-radix-select-content] {
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
   /* Fix dialog and modal borders in dark theme */
   .dark [role="dialog"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
   }
 
   /* Fix button borders in dark theme */
@@ -458,7 +458,7 @@
     padding-left: 16px !important;
     letter-spacing: 0px;
     text-align: left;
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
     color: hsl(0, 0%, 98%) !important;
   }
 
@@ -467,7 +467,7 @@
     outline: none !important;
     box-shadow: none !important;
     transform: none;
-    background: hsl(240, 6%, 10%) !important;
+    background: #000000 !important;
   }
 
   .macos-function-bar {
@@ -477,6 +477,7 @@
 
   .dark .macos-function-bar {
     border-color: var(--macos-border-light) !important;
+    background: #000000 !important;
   }
 
   .macos-button {

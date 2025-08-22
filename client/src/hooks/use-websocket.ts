@@ -17,10 +17,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const maxReconnectAttempts = 5;
 
   const connect = useCallback(() => {
+    // Prevent multiple connections
+    if (wsRef.current?.readyState === WebSocket.CONNECTING || wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connecting or connected, skipping...');
+      return;
+    }
+    
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws`;
       
+      console.log('Creating new WebSocket connection...');
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -47,9 +54,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         wsRef.current = null;
         options.onDisconnect?.();
 
-        // Attempt to reconnect if not a normal closure
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
-          const delay = Math.pow(2, reconnectAttempts.current) * 1000; // Exponential backoff
+        // Only reconnect on abnormal closures (not user-initiated)
+        if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts.current < maxReconnectAttempts) {
+          const delay = Math.min(Math.pow(2, reconnectAttempts.current) * 1000, 30000); // Cap at 30s
+          console.log(`WebSocket reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttempts.current++;
             connect();
@@ -69,7 +77,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       console.error('Failed to create WebSocket connection:', error);
       setConnectionError('Failed to create WebSocket connection');
     }
-  }, [options]);
+  }, []); // Remove options dependency to prevent reconnection on every render
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -101,7 +109,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, []); // Remove dependencies to prevent reconnection on every render
 
   return {
     isConnected,
