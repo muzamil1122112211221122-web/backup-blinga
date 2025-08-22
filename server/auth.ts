@@ -159,24 +159,27 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: 'Name and birth date are required' });
       }
       
-      // Create a unique identifier based on the person's name and birthdate
-      // This ensures each real person gets only one account
-      const userIdentifier = `${displayName.toLowerCase().replace(/\s+/g, '')}-${birthDate}`;
-      const uniqueEmail = `demo-${userIdentifier}@forus.com`;
-      const uniqueProviderId = `demo-${userIdentifier}`;
+      // Create a base identifier from name and birthdate
+      const baseIdentifier = `${displayName.toLowerCase().replace(/\s+/g, '')}-${birthDate}`;
       
       console.log(`Demo login attempt for: ${displayName} (${birthDate})`);
       
-      // Try to find existing user by unique provider ID first
-      let user = await storage.getUserByProviderId(uniqueProviderId);
+      // First, check if a user with this exact name and birthdate already exists
+      const existingUsers = await storage.getUsersByNameAndBirthDate(displayName, birthDate);
       
-      // If not found by provider ID, check by email as fallback
-      if (!user) {
-        user = await storage.getUserByEmail(uniqueEmail);
-      }
-      
-      if (!user) {
-        // Create a new unique user for this person
+      let user;
+      if (existingUsers.length > 0) {
+        // User found - use the existing account
+        user = existingUsers[0];
+        console.log(`Found existing user: ${user.id} for ${displayName}`);
+      } else {
+        // No existing user - create a new one with a unique identifier
+        // Add timestamp to ensure uniqueness even for same name+birthdate
+        const uniqueTimestamp = Date.now();
+        const uniqueIdentifier = `${baseIdentifier}-${uniqueTimestamp}`;
+        const uniqueEmail = `demo-${uniqueIdentifier}@forus.com`;
+        const uniqueProviderId = `demo-${uniqueIdentifier}`;
+        
         user = await storage.createUser({
           username: displayName,
           email: uniqueEmail,
@@ -186,9 +189,7 @@ export function setupAuth(app: Express) {
           displayName: displayName,
           birthDate: birthDate,
         });
-        console.log(`Created new demo user: ${user.id} for ${displayName}`);
-      } else {
-        console.log(`Found existing user: ${user.id} for ${displayName}`);
+        console.log(`Created new demo user: ${user.id} for ${displayName} with unique ID: ${uniqueIdentifier}`);
       }
 
       req.login(user, (err) => {

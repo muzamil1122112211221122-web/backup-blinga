@@ -1,13 +1,14 @@
 import { type User, type InsertUser, type Conversation, type InsertConversation, type Message, type InsertMessage, users, conversations, messages } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByProviderId(providerId: string): Promise<User | undefined>;
+  getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
 
@@ -45,6 +46,12 @@ export class MemStorage implements IStorage {
 
   async getUserByProviderId(providerId: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.providerId === providerId);
+  }
+
+  async getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => 
+      user.displayName === displayName && user.birthDate === birthDate
+    );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -158,6 +165,16 @@ export class DatabaseStorage implements IStorage {
   async getUserByProviderId(providerId: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.providerId, providerId));
     return user || undefined;
+  }
+
+  async getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.displayName, displayName),
+        eq(users.birthDate, birthDate)
+      ));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
