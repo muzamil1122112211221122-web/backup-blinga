@@ -72,9 +72,25 @@ export class OpenRouterService {
       maxTokens?: number;
       stream?: boolean;
     } = {}
-  ): Promise<OpenRouterResponse> {
+  ): Promise<OpenRouterResponse & { thinking?: string }> {
     const apiKey = this.getApiKey(model);
     const mappedModel = this.mapModel(model);
+
+    // Generate thinking process for Forus Pro (forus-prime) model
+    const thinking = model === 'forus-prime' ? this.generateThinkingProcess(messages[messages.length - 1]?.content || '') : undefined;
+
+    // Add thinking system prompt for Forus Pro
+    let finalMessages = messages;
+    if (thinking) {
+      const systemPrompt = `You are Forus Pro, an advanced AI with deep reasoning capabilities. Think step by step about the user's question.
+
+Thinking process (internal reasoning):
+${thinking}
+
+Based on this analysis, provide your response:`;
+      
+      finalMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+    }
     
     const response = await fetch(`${this.baseURL}/chat/completions`, {
       method: 'POST',
@@ -86,7 +102,7 @@ export class OpenRouterService {
       },
       body: JSON.stringify({
         model: mappedModel,
-        messages,
+        messages: finalMessages,
         temperature: options.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? 300,
         stream: options.stream ?? false,
@@ -98,7 +114,40 @@ export class OpenRouterService {
       throw new Error(`OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    return { ...result, thinking };
+  }
+
+  private generateThinkingProcess(userMessage: string): string {
+    // Simulate DeepSeek-style chain of thought reasoning
+    const thinkingSteps = [
+      "1. Understanding the user's question:",
+      `   - Analyzing: "${userMessage.slice(0, 100)}${userMessage.length > 100 ? '...' : ''}"`,
+      "   - Identifying key concepts and intent",
+      "   - Determining the type of response needed",
+      "",
+      "2. Knowledge retrieval and analysis:",
+      "   - Accessing relevant information from training data",
+      "   - Cross-referencing multiple sources for accuracy",
+      "   - Evaluating the reliability of information",
+      "",
+      "3. Reasoning and synthesis:",
+      "   - Breaking down complex concepts into understandable parts",
+      "   - Drawing logical connections between ideas",
+      "   - Considering multiple perspectives and approaches",
+      "",
+      "4. Response formulation:",
+      "   - Structuring information for clarity",
+      "   - Ensuring comprehensiveness while maintaining focus",
+      "   - Adapting language to user's apparent knowledge level",
+      "",
+      "5. Quality check:",
+      "   - Verifying accuracy of claims",
+      "   - Ensuring response addresses all aspects of the question",
+      "   - Checking for potential ambiguities or misunderstandings"
+    ];
+
+    return thinkingSteps.join('\n');
   }
 
   async *streamCompletion(

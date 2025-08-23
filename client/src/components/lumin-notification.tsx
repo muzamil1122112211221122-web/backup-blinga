@@ -35,25 +35,23 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
     <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ${
       isAnimated ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
     }`}>
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl shadow-xl border border-purple-400/30 backdrop-blur-sm">
+      <div className="bg-black text-white px-6 py-4 rounded-xl shadow-xl border border-gray-600">
         <div className="flex items-center space-x-4">
-          {/* Face Avatar */}
-          <div className="w-12 h-12 bg-gradient-to-br from-yellow-300/90 to-orange-400/90 rounded-full flex items-center justify-center border-2 border-white/40 shadow-lg relative overflow-hidden">
-            {/* Face background */}
-            <div className="w-10 h-10 bg-gradient-to-b from-yellow-200/80 to-yellow-300/80 rounded-full relative">
-              {/* Eyes */}
-              <div className="absolute top-3 left-2 w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-              <div className="absolute top-3 right-2 w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-              {/* Eye sparkles */}
-              <div className="absolute top-3.5 left-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-              <div className="absolute top-3.5 right-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
-              {/* Nose */}
-              <div className="absolute top-4.5 left-1/2 transform -translate-x-1/2 w-0.5 h-1 bg-orange-400/60 rounded-full"></div>
-              {/* Smile */}
-              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4 h-2 border-b-2 border-gray-800 rounded-full border-t-0 border-l-0 border-r-0"></div>
-              {/* Cheeks */}
-              <div className="absolute top-4.5 left-1 w-1 h-1 bg-pink-300/60 rounded-full blur-sm"></div>
-              <div className="absolute top-4.5 right-1 w-1 h-1 bg-pink-300/60 rounded-full blur-sm"></div>
+          {/* Anime Boy Avatar */}
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg">
+            <img 
+              src="/lumin-avatar.png" 
+              alt="Lumin Avatar" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to simple avatar if image fails to load
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+            <div className="w-full h-full bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{display: 'none'}}>
+              L
             </div>
           </div>
 

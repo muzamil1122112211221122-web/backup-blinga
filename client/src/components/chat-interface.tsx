@@ -1589,6 +1589,45 @@ Let's start the self-listen session!`;
                         {message.content}
                       </ReactMarkdown>
                     </div>
+                    
+                    {/* User Message Action Buttons */}
+                    <div className="flex items-center justify-end mt-3 pt-3 border-t border-border">
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-6 w-6 rounded-xl transition-all duration-300 ${
+                            copiedMessageId === message.id 
+                              ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                          }`}
+                          onClick={() => handleCopyMessage(message.content, message.id)}
+                          data-testid={`button-copy-user-${message.id}`}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150"
+                          onClick={() => {
+                            // Fill input with user message content for re-editing
+                            setInputValue(message.content);
+                            // Focus the input
+                            setTimeout(() => {
+                              const inputElement = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement;
+                              if (inputElement) {
+                                inputElement.focus();
+                                inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+                              }
+                            }, 100);
+                          }}
+                          data-testid={`button-redo-user-${message.id}`}
+                        >
+                          <Undo className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
@@ -2326,8 +2365,8 @@ Let's start the self-listen session!`;
         onTogglePlaying={() => {}}
       />
 
-      {/* Lumin Notification */}
-      {showLuminNotification && activeTab === 'lumin' && (
+      {/* Lumin Notification - Show in both tabs */}
+      {showLuminNotification && (
         <LuminNotification onClose={() => setShowLuminNotification(false)} />
       )}
     </div>
