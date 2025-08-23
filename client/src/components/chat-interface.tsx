@@ -32,6 +32,8 @@ function getVibrantColor(name: string, secondary = false): string {
 import { CustomizeModal } from "./customize-modal";
 import { ImageGenerationDialog } from "./image-generation-dialog";
 import { EducationModal } from "./education-modal";
+import { VoiceModeModal } from "./voice-mode-modal";
+import { LuminNotification } from "./lumin-notification";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
@@ -112,6 +114,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [luminMessages, setLuminMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
   const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
+  const [showLuminNotification, setShowLuminNotification] = useState(true);
+  const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
 
   // Conversation starters
   const conversationStarters = [
@@ -1778,6 +1782,20 @@ Let's start the self-listen session!`;
                       </div>
                     ), 
                     gradient: 'from-blue-400 to-cyan-500' 
+                  },
+                  'forus-ai': { 
+                    name: 'Forus AI', 
+                    logo: (
+                      <div className="w-8 h-8 flex items-center justify-center">
+                        <img 
+                          src="/forus-logo.png" 
+                          alt="Forus AI" 
+                          className="w-full h-full object-contain rounded-full"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </div>
+                    ), 
+                    gradient: 'from-purple-400 to-pink-500' 
                   }
                 }).map(([model, config]) => (
                   <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
@@ -1850,6 +1868,11 @@ Let's start the self-listen session!`;
                           case 'deepseek-r1': return { name: 'DeepSeek R1', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
                               <img src="/deepseek-logo.png" alt="DeepSeek" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                            </div>
+                          )};
+                          case 'forus-ai': return { name: 'Forus AI', logo: (
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              <img src="/forus-logo.png" alt="Forus AI" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           default: return { name: model, logo: <div className="w-6 h-6 rounded-lg bg-gray-500"></div> };
@@ -1933,7 +1956,7 @@ Let's start the self-listen session!`;
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-            onClick={() => setIsVoiceModeOpen(true)}
+            onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
           >
             <div className="flex items-center justify-center space-x-0.5 h-5 w-5">
@@ -2292,6 +2315,21 @@ Let's start the self-listen session!`;
         onStartExamination={handleStartExamination}
         onStartSelfListen={handleStartSelfListen}
       />
+
+      {/* Voice Mode Modal */}
+      <VoiceModeModal
+        isOpen={isVoiceModeModalOpen}
+        onClose={() => setIsVoiceModeModalOpen(false)}
+        isListening={isListening}
+        onToggleListening={toggleListening}
+        isPlaying={false}
+        onTogglePlaying={() => {}}
+      />
+
+      {/* Lumin Notification */}
+      {showLuminNotification && activeTab === 'lumin' && (
+        <LuminNotification onClose={() => setShowLuminNotification(false)} />
+      )}
     </div>
   );
 }

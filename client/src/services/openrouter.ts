@@ -11,6 +11,10 @@ const FORUS_API_KEYS = {
   'forus-context': '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',
   'forus-auto': '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',
   'forus-education': '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',
+  'gpt-4o': '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',
+  'claude-3.5-sonnet': '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',
+  'gemini-pro': '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',
+  'llama-3.3-70b-versatile': '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',
 };
 
 // Map Forus model names to actual OpenRouter models
@@ -24,6 +28,10 @@ const MODEL_MAPPING = {
   'forus-context': 'google/gemini-pro-1.5',
   'forus-auto': 'openrouter/auto',
   'forus-education': 'anthropic/claude-3.5-sonnet',
+  'gpt-4o': 'openai/gpt-4o',
+  'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
+  'gemini-pro': 'google/gemini-pro',
+  'llama-3.3-70b-versatile': 'meta-llama/llama-3.3-70b-versatile',
 };
 
 interface OpenRouterResponse {
@@ -166,7 +174,7 @@ export class OpenRouterService {
   async getModels(): Promise<Array<{ id: string; name: string; description?: string }>> {
     // Return Forus branded models
     return [
-      { id: 'forus-prime', name: 'Forus Prime', description: 'Advanced reasoning & analysis' },
+      { id: 'forus-prime', name: 'Forus Pro', description: 'Advanced reasoning & analysis' },
       { id: 'forus-code', name: 'Forus Code', description: 'Programming & development' },
       { id: 'forus-flash', name: 'Forus Flash', description: 'Fast responses & multimodal' },
       { id: 'forus-creative', name: 'Forus Creative', description: 'Creative writing & storytelling' },

@@ -44,7 +44,7 @@ export interface WebSocketMessage {
 export const MODEL_OPTIONS = [
   { 
     id: 'forus-prime', 
-    name: 'Forus Prime', 
+    name: 'Forus Pro', 
     description: 'Our most advanced general AI', 
     provider: 'forus',
     speed: 'fast',
