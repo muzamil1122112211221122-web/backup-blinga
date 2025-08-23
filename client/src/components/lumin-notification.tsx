@@ -37,16 +37,23 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
     }`}>
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl shadow-xl border border-purple-400/30 backdrop-blur-sm">
         <div className="flex items-center space-x-4">
-          {/* Custom Face Avatar - Stylized F logo with face elements */}
-          <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 rounded-full flex items-center justify-center border-2 border-white/30">
-            <div className="relative">
-              {/* Stylized F with face elements */}
-              <div className="text-white font-bold text-lg">F</div>
+          {/* Face Avatar */}
+          <div className="w-12 h-12 bg-gradient-to-br from-yellow-300/90 to-orange-400/90 rounded-full flex items-center justify-center border-2 border-white/40 shadow-lg relative overflow-hidden">
+            {/* Face background */}
+            <div className="w-10 h-10 bg-gradient-to-b from-yellow-200/80 to-yellow-300/80 rounded-full relative">
               {/* Eyes */}
-              <div className="absolute -top-1 -left-1 w-1 h-1 bg-white rounded-full opacity-80"></div>
-              <div className="absolute -top-1 right-1 w-1 h-1 bg-white rounded-full opacity-80"></div>
+              <div className="absolute top-3 left-2 w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
+              <div className="absolute top-3 right-2 w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
+              {/* Eye sparkles */}
+              <div className="absolute top-3.5 left-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+              <div className="absolute top-3.5 right-2.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+              {/* Nose */}
+              <div className="absolute top-4.5 left-1/2 transform -translate-x-1/2 w-0.5 h-1 bg-orange-400/60 rounded-full"></div>
               {/* Smile */}
-              <div className="absolute top-2 left-0 right-0 h-0.5 bg-white/60 rounded-full transform scale-x-75"></div>
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4 h-2 border-b-2 border-gray-800 rounded-full border-t-0 border-l-0 border-r-0"></div>
+              {/* Cheeks */}
+              <div className="absolute top-4.5 left-1 w-1 h-1 bg-pink-300/60 rounded-full blur-sm"></div>
+              <div className="absolute top-4.5 right-1 w-1 h-1 bg-pink-300/60 rounded-full blur-sm"></div>
             </div>
           </div>
 
