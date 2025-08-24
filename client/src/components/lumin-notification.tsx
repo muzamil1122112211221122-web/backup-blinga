@@ -38,15 +38,17 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
       <div className="bg-black text-white px-6 py-4 rounded-xl shadow-xl border border-gray-600">
         <div className="flex items-center space-x-4">
           {/* Anime Boy Avatar */}
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg">
             <img 
               src="/lumin-avatar.png" 
               alt="Lumin Avatar" 
               className="w-full h-full object-cover select-none"
               style={{
-                imageRendering: 'crisp-edges',
-                imageResolution: 'from-image',
-                filter: 'contrast(1.1) saturate(1.05)'
+                imageRendering: 'high-quality',
+                imageResolution: '300dpi',
+                filter: 'contrast(1.15) saturate(1.1) brightness(1.05)',
+                minWidth: '64px',
+                minHeight: '64px'
               }}
               onError={(e) => {
                 // Fallback to simple avatar if image fails to load

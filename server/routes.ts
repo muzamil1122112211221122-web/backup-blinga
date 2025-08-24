@@ -19,6 +19,7 @@ const MODEL_MAPPING = {
   'gpt-4o': 'openai/gpt-4o',
   'gemini-pro': 'google/gemini-pro',
   'llama-3.1': 'meta-llama/llama-3.1-405b-instruct',
+  'deepseek-r1': 'deepseek/deepseek-r1',
   'auto': 'anthropic/claude-3.5-sonnet' // Default for auto-routing
 };
 
