@@ -79,15 +79,16 @@ export class OpenRouterService {
     // Generate thinking process for Forus Pro (forus-prime) model
     const thinking = model === 'forus-prime' ? this.generateThinkingProcess(messages[messages.length - 1]?.content || '') : undefined;
 
-    // Add thinking system prompt for Forus Pro
+    // Add DeepSeek-style thinking system prompt for Forus Pro
     let finalMessages = messages;
     if (thinking) {
-      const systemPrompt = `You are Forus Pro, an advanced AI with deep reasoning capabilities. Think step by step about the user's question.
+      const systemPrompt = `You are Forus Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST show your thinking process before providing your final answer.
 
-Thinking process (internal reasoning):
+First, display your internal reasoning process exactly as provided below, then give your response.
+
 ${thinking}
 
-Based on this analysis, provide your response:`;
+Important: Always show the <thinking> tags and reasoning steps, then provide your final answer. This demonstrates transparent reasoning like DeepSeek R1.`;
       
       finalMessages = [{ role: 'system', content: systemPrompt }, ...messages];
     }
@@ -119,33 +120,91 @@ Based on this analysis, provide your response:`;
   }
 
   private generateThinkingProcess(userMessage: string): string {
-    // Simulate DeepSeek-style chain of thought reasoning
-    const thinkingSteps = [
-      "1. Understanding the user's question:",
-      `   - Analyzing: "${userMessage.slice(0, 100)}${userMessage.length > 100 ? '...' : ''}"`,
-      "   - Identifying key concepts and intent",
-      "   - Determining the type of response needed",
+    // DeepSeek-style chain of thought reasoning with explicit thinking steps
+    const messageWords = userMessage.toLowerCase().split(' ');
+    const isQuestion = userMessage.includes('?') || messageWords.some(word => 
+      ['what', 'how', 'why', 'when', 'where', 'who', 'which', 'can', 'could', 'would', 'should'].includes(word)
+    );
+    const isComputational = messageWords.some(word => 
+      ['calculate', 'solve', 'compute', 'math', 'equation', 'formula', 'number'].includes(word)
+    );
+    const isCreative = messageWords.some(word => 
+      ['write', 'create', 'design', 'story', 'poem', 'creative', 'imagine'].includes(word)
+    );
+    const isAnalytical = messageWords.some(word => 
+      ['analyze', 'compare', 'evaluate', 'assess', 'examine', 'review'].includes(word)
+    );
+
+    let thinkingSteps = [
+      "<thinking>",
+      "Let me break down this request step by step:",
       "",
-      "2. Knowledge retrieval and analysis:",
-      "   - Accessing relevant information from training data",
-      "   - Cross-referencing multiple sources for accuracy",
-      "   - Evaluating the reliability of information",
-      "",
-      "3. Reasoning and synthesis:",
-      "   - Breaking down complex concepts into understandable parts",
-      "   - Drawing logical connections between ideas",
-      "   - Considering multiple perspectives and approaches",
-      "",
-      "4. Response formulation:",
-      "   - Structuring information for clarity",
-      "   - Ensuring comprehensiveness while maintaining focus",
-      "   - Adapting language to user's apparent knowledge level",
-      "",
-      "5. Quality check:",
-      "   - Verifying accuracy of claims",
-      "   - Ensuring response addresses all aspects of the question",
-      "   - Checking for potential ambiguities or misunderstandings"
+      "1. PROBLEM ANALYSIS:",
     ];
+
+    if (isQuestion) {
+      thinkingSteps.push("   - This is an information-seeking question");
+      thinkingSteps.push("   - Need to identify the core information being requested");
+    } else if (isComputational) {
+      thinkingSteps.push("   - This involves mathematical or computational reasoning");
+      thinkingSteps.push("   - Need to identify the problem type and solution method");
+    } else if (isCreative) {
+      thinkingSteps.push("   - This is a creative task requiring imagination");
+      thinkingSteps.push("   - Need to understand style, tone, and requirements");
+    } else if (isAnalytical) {
+      thinkingSteps.push("   - This requires analytical thinking and evaluation");
+      thinkingSteps.push("   - Need to break down components for systematic analysis");
+    } else {
+      thinkingSteps.push("   - This appears to be a general request or conversation");
+      thinkingSteps.push("   - Need to understand context and appropriate response type");
+    }
+
+    thinkingSteps.push(`   - Key terms: ${messageWords.slice(0, 5).join(', ')}`);
+    thinkingSteps.push(`   - Message length: ${userMessage.length} characters`);
+    thinkingSteps.push("");
+
+    thinkingSteps.push("2. KNOWLEDGE ACTIVATION:");
+    thinkingSteps.push("   - Retrieving relevant information from training data");
+    thinkingSteps.push("   - Cross-referencing multiple knowledge domains");
+    thinkingSteps.push("   - Identifying potential gaps or uncertainties");
+    thinkingSteps.push("   - Prioritizing most relevant and reliable information");
+    thinkingSteps.push("");
+
+    thinkingSteps.push("3. REASONING CHAIN:");
+    if (isComputational) {
+      thinkingSteps.push("   - Breaking problem into solvable components");
+      thinkingSteps.push("   - Applying appropriate mathematical principles");
+      thinkingSteps.push("   - Verifying each step in the calculation");
+      thinkingSteps.push("   - Checking for logical consistency");
+    } else if (isAnalytical) {
+      thinkingSteps.push("   - Identifying key factors and variables");
+      thinkingSteps.push("   - Establishing evaluation criteria");
+      thinkingSteps.push("   - Weighing pros and cons systematically");
+      thinkingSteps.push("   - Drawing evidence-based conclusions");
+    } else {
+      thinkingSteps.push("   - Connecting relevant concepts logically");
+      thinkingSteps.push("   - Building from basic to complex ideas");
+      thinkingSteps.push("   - Considering multiple perspectives");
+      thinkingSteps.push("   - Identifying cause-and-effect relationships");
+    }
+    thinkingSteps.push("");
+
+    thinkingSteps.push("4. SOLUTION SYNTHESIS:");
+    thinkingSteps.push("   - Organizing information in logical sequence");
+    thinkingSteps.push("   - Ensuring completeness of coverage");
+    thinkingSteps.push("   - Adapting complexity to user's apparent level");
+    thinkingSteps.push("   - Preparing clear, actionable response");
+    thinkingSteps.push("");
+
+    thinkingSteps.push("5. VERIFICATION & QUALITY CHECK:");
+    thinkingSteps.push("   - Double-checking factual accuracy");
+    thinkingSteps.push("   - Ensuring response directly addresses the request");
+    thinkingSteps.push("   - Checking for potential misinterpretations");
+    thinkingSteps.push("   - Verifying logical consistency throughout");
+    thinkingSteps.push("   - Confirming appropriate tone and style");
+    thinkingSteps.push("");
+    thinkingSteps.push("Now I'll provide my response based on this analysis:");
+    thinkingSteps.push("</thinking>");
 
     return thinkingSteps.join('\n');
   }
