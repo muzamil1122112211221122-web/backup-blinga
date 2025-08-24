@@ -2,64 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGetStarted = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Function to check authentication with retry logic
-      const checkAuth = async (retryCount = 0): Promise<boolean> => {
-        try {
-          const authResponse = await fetch('/api/auth/user', { 
-            method: 'GET', 
-            credentials: 'include',
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
-          });
-          
-          if (authResponse.ok) {
-            return true;
-          }
-          
-          // If first attempt fails and we haven't retried yet, wait and try once more
-          if (retryCount === 0) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
-            return checkAuth(1);
-          }
-          
-          return false;
-        } catch (error) {
-          // If first attempt fails and we haven't retried yet, wait and try once more
-          if (retryCount === 0) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
-            return checkAuth(1);
-          }
-          return false;
-        }
-      };
-      
-      // Check if user is already authenticated (with retry)
-      const isAuthenticated = await checkAuth();
-      
-      if (isAuthenticated) {
-        // User is already logged in, go directly to chat
-        window.location.href = '/chat';
-        return;
-      }
-      
-      // User not logged in, proceed to registration
-      setIsLoading(false);
-      window.location.href = '/start';
-    } catch (error) {
-      // If auth check fails, proceed to registration
-      console.log('Auth check error (proceeding to registration):', error);
-      setIsLoading(false);
-      window.location.href = '/start';
-    }
+  const handleGetStarted = () => {
+    setIsLoading(true);
+    // Simple redirect to the login page - let the router handle auth logic
+    setLocation('/start');
   };
 
   const features = [

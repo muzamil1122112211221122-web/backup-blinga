@@ -24,6 +24,16 @@ function Router() {
 
   useEffect(() => {
     if (!isLoading) {
+      // If user is authenticated and on landing page, redirect to chat
+      if (user && location === "/") {
+        navigate("/chat", { replace: true });
+        return;
+      }
+      // If user is authenticated and on start page, redirect to chat
+      if (user && location === "/start") {
+        navigate("/chat", { replace: true });
+        return;
+      }
       // If user is authenticated and on protected routes, allow access
       if (user && location === "/chat") {
         // User can access chat
