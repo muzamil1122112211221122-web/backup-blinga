@@ -10,13 +10,42 @@ export default function Landing() {
     try {
       setIsLoading(true);
       
-      // Check if user is already authenticated
-      const authResponse = await fetch('/api/auth/user', { 
-        method: 'GET', 
-        credentials: 'include' 
-      });
+      // Function to check authentication with retry logic
+      const checkAuth = async (retryCount = 0): Promise<boolean> => {
+        try {
+          const authResponse = await fetch('/api/auth/user', { 
+            method: 'GET', 
+            credentials: 'include',
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          if (authResponse.ok) {
+            return true;
+          }
+          
+          // If first attempt fails and we haven't retried yet, wait and try once more
+          if (retryCount === 0) {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+            return checkAuth(1);
+          }
+          
+          return false;
+        } catch (error) {
+          // If first attempt fails and we haven't retried yet, wait and try once more
+          if (retryCount === 0) {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+            return checkAuth(1);
+          }
+          return false;
+        }
+      };
       
-      if (authResponse.ok) {
+      // Check if user is already authenticated (with retry)
+      const isAuthenticated = await checkAuth();
+      
+      if (isAuthenticated) {
         // User is already logged in, go directly to chat
         window.location.href = '/chat';
         return;
