@@ -32,8 +32,9 @@ export function setupAuth(app: Express) {
 
   // Google OAuth Strategy - only configure if credentials are available
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    // Use a completely unique callback path to avoid Google's duplicate URL restriction
-    const callbackURL = `https://${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.repl.co/auth/google/callback`;
+    // Use the correct Replit domain from REPLIT_DOMAINS environment variable
+    const domain = process.env.REPLIT_DOMAINS || `${process.env.REPL_SLUG}--${process.env.REPL_OWNER}.repl.co`;
+    const callbackURL = `https://${domain}/auth/google/callback`;
     
     console.log('Google OAuth Callback URL:', callbackURL);
     console.log('Google Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + '...');

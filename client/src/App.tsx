@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Landing from "@/pages/landing";
 import Chat from "@/pages/chat";
 import UserInfo from "@/pages/user-info";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/chat" component={Chat} />
       <Route path="/start" component={UserInfo} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
