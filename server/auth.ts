@@ -6,15 +6,18 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
 export function setupAuth(app: Express) {
+  // Create session store once
+  const sessionStore = new (connectPg(session))({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true, // This will create the session table
+    ttl: 7 * 24 * 60 * 60, // 1 week in seconds
+  });
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key-here',
     resave: false,
     saveUninitialized: true, // Changed to true for demo
-    store: new (connectPg(session))({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true, // This will create the session table
-      ttl: 7 * 24 * 60 * 60, // 1 week in seconds
-    }),
+    store: sessionStore,
     cookie: {
       httpOnly: true,
       secure: false, // Set to false for development
