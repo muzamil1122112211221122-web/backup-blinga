@@ -1624,7 +1624,7 @@ Let's start the self-listen session!`;
                           }}
                           data-testid={`button-redo-user-${message.id}`}
                         >
-                          <Undo className="h-3 w-3" />
+                          <RefreshCw className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -1809,12 +1809,12 @@ Let's start the self-listen session!`;
                     gradient: 'from-gray-400 to-black' 
                   },
                   'deepseek-r1': { 
-                    name: 'DeepSeek R1', 
+                    name: 'Deepseek V3', 
                     logo: (
                       <div className="w-8 h-8 flex items-center justify-center">
                         <img 
                           src="/deepseek-logo.png" 
-                          alt="DeepSeek" 
+                          alt="Deepseek V3" 
                           className="w-full h-full object-contain"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
@@ -1904,9 +1904,9 @@ Let's start the self-listen session!`;
                               <img src="/grok-logo.png" alt="Grok" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'deepseek-r1': return { name: 'DeepSeek R1', logo: (
+                          case 'deepseek-r1': return { name: 'Deepseek V3', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/deepseek-logo.png" alt="DeepSeek" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/deepseek-logo.png" alt="Deepseek V3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'forus-ai': return { name: 'Forus AI', logo: (

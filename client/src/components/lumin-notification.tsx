@@ -44,7 +44,9 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
               alt="Lumin Avatar" 
               className="w-full h-full object-cover select-none"
               style={{
-                imageRendering: 'auto'
+                imageRendering: 'crisp-edges',
+                imageResolution: 'from-image',
+                filter: 'contrast(1.1) saturate(1.05)'
               }}
               onError={(e) => {
                 // Fallback to simple avatar if image fails to load
