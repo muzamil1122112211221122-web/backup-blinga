@@ -1990,7 +1990,7 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-transparent macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+      <div className="bg-[#303030] macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4">
           <Button
             variant="ghost"
@@ -2139,7 +2139,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-transparent p-1 sm:p-2 message-input-container max-w-[56rem] mx-auto w-full">
+      <div className="bg-transparent p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full">
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -2147,7 +2147,7 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[42px] max-h-[120px] bg-background rounded-3xl pb-6 pr-16 sm:pb-9 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none"
+            className="message-input w-full min-h-[48px] max-h-[140px] bg-[#303030] rounded-3xl pb-6 pr-16 sm:pb-9 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none"
             style={{
               paddingRight: '64px',
               fontSize: '18px',
