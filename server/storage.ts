@@ -151,31 +151,38 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Fallback memory maps for degraded mode
+const fallbackUsers = new Map<string, User>();
+const fallbackConversations = new Map<string, Conversation>();
+const fallbackMessages = new Map<string, Message>();
+
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) return fallbackUsers.get(id);
     const [user] = await d.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) return Array.from(fallbackUsers.values()).find(user => user.email === email);
     const [user] = await d.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async getUserByProviderId(providerId: string): Promise<User | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) return Array.from(fallbackUsers.values()).find(user => user.providerId === providerId);
     const [user] = await d.select().from(users).where(eq(users.providerId, providerId));
     return user || undefined;
   }
 
   async getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]> {
     const d = db();
-    if (!d) return [];
+    if (!d) return Array.from(fallbackUsers.values()).filter(user => 
+      user.displayName === displayName && user.birthDate === birthDate
+    );
     return await d
       .select()
       .from(users)
@@ -188,9 +195,10 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const d = db();
     if (!d) {
-      // Emergency fallback to memory for demo if DB is down
       const id = randomUUID();
-      return { ...insertUser, id, createdAt: new Date(), password: insertUser.password || null, provider: insertUser.provider || null, providerId: insertUser.providerId || null, displayName: insertUser.displayName || null, birthDate: insertUser.birthDate || null } as User;
+      const user = { ...insertUser, id, createdAt: new Date(), password: insertUser.password || null, provider: insertUser.provider || null, providerId: insertUser.providerId || null, displayName: insertUser.displayName || null, birthDate: insertUser.birthDate || null } as User;
+      fallbackUsers.set(id, user);
+      return user;
     }
     const [user] = await d
       .insert(users)
@@ -201,7 +209,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) {
+      const user = fallbackUsers.get(id);
+      if (!user) return undefined;
+      const updated = { ...user, ...updates };
+      fallbackUsers.set(id, updated);
+      return updated;
+    }
     const [user] = await d
       .update(users)
       .set(updates)
@@ -212,14 +226,16 @@ export class DatabaseStorage implements IStorage {
 
   async getConversation(id: string): Promise<Conversation | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) return fallbackConversations.get(id);
     const [conversation] = await d.select().from(conversations).where(eq(conversations.id, id));
     return conversation || undefined;
   }
 
   async getUserConversations(userId: string): Promise<Conversation[]> {
     const d = db();
-    if (!d) return [];
+    if (!d) return Array.from(fallbackConversations.values())
+      .filter(conv => conv.userId === userId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     return await d
       .select()
       .from(conversations)
@@ -232,7 +248,18 @@ export class DatabaseStorage implements IStorage {
     if (!d) {
       const id = randomUUID();
       const now = new Date();
-      return { ...insertConversation, id, createdAt: now, updatedAt: now } as Conversation;
+      const conversation = { 
+        ...insertConversation, 
+        id, 
+        createdAt: now, 
+        updatedAt: now,
+        isPrivate: insertConversation.isPrivate ?? false,
+        preset: insertConversation.preset ?? "custom",
+        customInstructions: insertConversation.customInstructions ?? null,
+        model: insertConversation.model ?? "anthropic/claude-3.5-sonnet"
+      } as Conversation;
+      fallbackConversations.set(id, conversation);
+      return conversation;
     }
     const [conversation] = await d
       .insert(conversations)
@@ -243,7 +270,13 @@ export class DatabaseStorage implements IStorage {
 
   async updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined> {
     const d = db();
-    if (!d) return undefined;
+    if (!d) {
+      const conversation = fallbackConversations.get(id);
+      if (!conversation) return undefined;
+      const updated = { ...conversation, ...updates, updatedAt: new Date() };
+      fallbackConversations.set(id, updated);
+      return updated;
+    }
     const [conversation] = await d
       .update(conversations)
       .set({ ...updates, updatedAt: new Date() })
@@ -254,7 +287,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteConversation(id: string): Promise<boolean> {
     const d = db();
-    if (!d) return false;
+    if (!d) {
+      const deleted = fallbackConversations.delete(id);
+      Array.from(fallbackMessages.values())
+        .filter(msg => msg.conversationId === id)
+        .forEach(msg => fallbackMessages.delete(msg.id));
+      return deleted;
+    }
     // Delete messages first
     await d.delete(messages).where(eq(messages.conversationId, id));
     // Delete conversation
@@ -264,7 +303,9 @@ export class DatabaseStorage implements IStorage {
 
   async getConversationMessages(conversationId: string): Promise<Message[]> {
     const d = db();
-    if (!d) return [];
+    if (!d) return Array.from(fallbackMessages.values())
+      .filter(message => message.conversationId === conversationId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
     return await d
       .select()
       .from(messages)
@@ -276,7 +317,14 @@ export class DatabaseStorage implements IStorage {
     const d = db();
     if (!d) {
       const id = randomUUID();
-      return { ...insertMessage, id, createdAt: new Date() } as Message;
+      const message = { 
+        ...insertMessage, 
+        id, 
+        createdAt: new Date(),
+        metadata: insertMessage.metadata ?? null
+      } as Message;
+      fallbackMessages.set(id, message);
+      return message;
     }
     const [message] = await d
       .insert(messages)
@@ -287,7 +335,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMessage(id: string): Promise<boolean> {
     const d = db();
-    if (!d) return false;
+    if (!d) return fallbackMessages.delete(id);
     const result = await d.delete(messages).where(eq(messages.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
   }

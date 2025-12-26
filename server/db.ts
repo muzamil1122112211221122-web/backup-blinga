@@ -7,9 +7,15 @@ let db: ReturnType<typeof drizzle> | null = null;
 
 function getDb() {
   if (!db) {
-    const connectionString = process.env.DATABASE_URL || process.env.PGDATABASE; // Fallback or handle
+    let connectionString = process.env.DATABASE_URL;
+    
+    // If DATABASE_URL is empty or missing, check if individual PG vars are set
+    if (!connectionString && process.env.PGPASSWORD) {
+      connectionString = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`;
+    }
+
     if (!connectionString) {
-      console.error("DATABASE_URL is not set");
+      console.error("No database connection string available");
       return null;
     }
     
