@@ -1990,7 +1990,7 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-transparent macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+      <div className="bg-transparent macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 max-w-2xl mx-auto w-full" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
         <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4">
           <Button
             variant="ghost"
@@ -2139,7 +2139,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-transparent p-3 sm:p-4 message-input-container">
+      <div className="bg-transparent p-3 sm:p-4 message-input-container max-w-2xl mx-auto w-full">
         <div className="relative">
           <Textarea
             ref={textareaRef}
