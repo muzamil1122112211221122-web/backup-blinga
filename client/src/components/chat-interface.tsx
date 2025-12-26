@@ -2147,7 +2147,7 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[48px] max-h-[140px] bg-[#303030] rounded-3xl pb-6 pr-16 sm:pb-9 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none"
+            className="message-input w-full min-h-[48px] max-h-[140px] bg-[#303030] rounded-3xl pb-10 pr-16 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030]"
             style={{
               paddingRight: '64px',
               fontSize: '18px',
@@ -2155,6 +2155,9 @@ Let's start the self-listen session!`;
             }}
             data-testid="input-message"
           />
+          
+          {/* Bottom Overlay to hide scrolling text behind buttons */}
+          <div className="absolute bottom-1 left-1 right-1 h-12 bg-[#303030] rounded-b-3xl pointer-events-none z-10"></div>
           
           {/* Custom Placeholder */}
           {!inputValue && !attachedImage && (
@@ -2202,7 +2205,7 @@ Let's start the self-listen session!`;
           )}
           
           {/* Model Switcher - Bottom Left */}
-          <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3">
+          <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 z-20">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
               <SelectTrigger className="w-36 h-8 text-xs border border-border bg-background/80 backdrop-blur-sm rounded-lg shadow-sm hover:bg-background/90 transition-all focus:ring-0 focus:ring-offset-0">
                 <SelectValue placeholder="Model" />
@@ -2226,7 +2229,7 @@ Let's start the self-listen session!`;
             </Select>
           </div>
 
-          <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-end space-x-1 sm:space-x-2">
+          <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-end space-x-1 sm:space-x-2 z-20">
             <input
               type="file"
               ref={fileInputRef}
