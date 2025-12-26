@@ -2139,7 +2139,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-transparent p-3 sm:p-4 message-input-container max-w-2xl mx-auto w-full">
+      <div className="bg-transparent p-1 sm:p-2 message-input-container max-w-4xl mx-auto w-full">
         <div className="relative">
           <Textarea
             ref={textareaRef}
@@ -2147,7 +2147,7 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[80px] max-h-[200px] bg-background rounded-3xl pb-12 pr-16 sm:pb-16 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none"
+            className="message-input w-full min-h-[40px] max-h-[120px] bg-background rounded-3xl pb-6 pr-16 sm:pb-9 sm:pr-20 text-foreground placeholder-muted-foreground resize-none focus:outline-none"
             style={{
               paddingRight: '64px',
               fontSize: '18px',
