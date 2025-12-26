@@ -1990,8 +1990,8 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="bg-[#303030] macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !bg-[#303030] shadow-sm" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4">
+      <div className="macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !bg-[#303030] shadow-sm" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4 bg-[#303030] rounded-3xl">
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
@@ -2139,7 +2139,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-[#303030] p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl">
+      <div className="bg-[#303030] p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030]">
         <div className="relative bg-[#303030] rounded-3xl">
           <Textarea
             ref={textareaRef}
