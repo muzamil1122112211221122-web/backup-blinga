@@ -3,26 +3,49 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import memoryStoreFactory from "memorystore";
 import { storage } from "./storage";
 
+const MemoryStore = memoryStoreFactory(session);
+
 export function setupAuth(app: Express) {
-  // Create session store once
-  const sessionStore = new (connectPg(session))({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true, // This will create the session table
-    tableName: 'session', // Explicit table name
-    ttl: 7 * 24 * 60 * 60, // 1 week in seconds
-  });
+  const connectionString = process.env.DATABASE_URL;
+  
+  let sessionStore;
+  if (connectionString) {
+    try {
+      sessionStore = new (connectPg(session))({
+        conString: connectionString,
+        createTableIfMissing: true,
+        tableName: 'session',
+        ttl: 7 * 24 * 60 * 60,
+      });
+      console.log("Using PostgreSQL for session storage");
+    } catch (e) {
+      console.error("Failed to initialize PG session store, falling back to memory:", e);
+    }
+  }
+
+  if (!sessionStore) {
+    sessionStore = new MemoryStore({
+      checkPeriod: 86400000
+    });
+    console.warn("Using MemoryStore for session storage");
+  }
 
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'your-secret-key-here',
-    resave: false,
-    saveUninitialized: true, // Changed to true for demo
+    resave: true,
+    saveUninitialized: true,
+    rolling: true,
     store: sessionStore,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false, // Set to false for development
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      secure: false, 
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
     },
   };
 
@@ -30,6 +53,25 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Force session save on every request to ensure reliability in demo environment
+  app.use((req, res, next) => {
+    if (req.session && !req.session.save) {
+      return next();
+    }
+    const originalEnd = res.end;
+    res.end = function(chunk?: any, encoding?: any, callback?: any) {
+      if (req.session) {
+        req.session.save((err) => {
+          if (err) console.error("Session save error:", err);
+          originalEnd.call(this, chunk, encoding, callback);
+        });
+      } else {
+        originalEnd.call(this, chunk, encoding, callback);
+      }
+    } as any;
+    next();
+  });
 
   // Google OAuth Strategy - only configure if credentials are available
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {

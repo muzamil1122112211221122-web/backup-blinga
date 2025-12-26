@@ -8,10 +8,11 @@ export default function Landing() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGetStarted = () => {
+  const handleGetStarted = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    // Simple redirect to the login page - let the router handle auth logic
-    setLocation('/start');
+    // Hard redirect to avoid any SPA routing issues if navigate is failing
+    window.location.assign('/start');
   };
 
   const features = [

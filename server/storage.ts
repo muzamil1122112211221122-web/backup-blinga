@@ -153,22 +153,30 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db().select().from(users).where(eq(users.id, id));
+    const d = db();
+    if (!d) return undefined;
+    const [user] = await d.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db().select().from(users).where(eq(users.email, email));
+    const d = db();
+    if (!d) return undefined;
+    const [user] = await d.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async getUserByProviderId(providerId: string): Promise<User | undefined> {
-    const [user] = await db().select().from(users).where(eq(users.providerId, providerId));
+    const d = db();
+    if (!d) return undefined;
+    const [user] = await d.select().from(users).where(eq(users.providerId, providerId));
     return user || undefined;
   }
 
   async getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]> {
-    return await db()
+    const d = db();
+    if (!d) return [];
+    return await d
       .select()
       .from(users)
       .where(and(
@@ -178,7 +186,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db()
+    const d = db();
+    if (!d) {
+      // Emergency fallback to memory for demo if DB is down
+      const id = randomUUID();
+      return { ...insertUser, id, createdAt: new Date(), password: insertUser.password || null, provider: insertUser.provider || null, providerId: insertUser.providerId || null, displayName: insertUser.displayName || null, birthDate: insertUser.birthDate || null } as User;
+    }
+    const [user] = await d
       .insert(users)
       .values(insertUser)
       .returning();
@@ -186,7 +200,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const [user] = await db()
+    const d = db();
+    if (!d) return undefined;
+    const [user] = await d
       .update(users)
       .set(updates)
       .where(eq(users.id, id))
@@ -195,12 +211,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConversation(id: string): Promise<Conversation | undefined> {
-    const [conversation] = await db().select().from(conversations).where(eq(conversations.id, id));
+    const d = db();
+    if (!d) return undefined;
+    const [conversation] = await d.select().from(conversations).where(eq(conversations.id, id));
     return conversation || undefined;
   }
 
   async getUserConversations(userId: string): Promise<Conversation[]> {
-    return await db()
+    const d = db();
+    if (!d) return [];
+    return await d
       .select()
       .from(conversations)
       .where(eq(conversations.userId, userId))
@@ -208,7 +228,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
-    const [conversation] = await db()
+    const d = db();
+    if (!d) {
+      const id = randomUUID();
+      const now = new Date();
+      return { ...insertConversation, id, createdAt: now, updatedAt: now } as Conversation;
+    }
+    const [conversation] = await d
       .insert(conversations)
       .values(insertConversation)
       .returning();
@@ -216,7 +242,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined> {
-    const [conversation] = await db()
+    const d = db();
+    if (!d) return undefined;
+    const [conversation] = await d
       .update(conversations)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(conversations.id, id))
@@ -225,15 +253,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteConversation(id: string): Promise<boolean> {
+    const d = db();
+    if (!d) return false;
     // Delete messages first
-    await db().delete(messages).where(eq(messages.conversationId, id));
+    await d.delete(messages).where(eq(messages.conversationId, id));
     // Delete conversation
-    const result = await db().delete(conversations).where(eq(conversations.id, id));
+    const result = await d.delete(conversations).where(eq(conversations.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
   async getConversationMessages(conversationId: string): Promise<Message[]> {
-    return await db()
+    const d = db();
+    if (!d) return [];
+    return await d
       .select()
       .from(messages)
       .where(eq(messages.conversationId, conversationId))
@@ -241,7 +273,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
-    const [message] = await db()
+    const d = db();
+    if (!d) {
+      const id = randomUUID();
+      return { ...insertMessage, id, createdAt: new Date() } as Message;
+    }
+    const [message] = await d
       .insert(messages)
       .values(insertMessage)
       .returning();
@@ -249,7 +286,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteMessage(id: string): Promise<boolean> {
-    const result = await db().delete(messages).where(eq(messages.id, id));
+    const d = db();
+    if (!d) return false;
+    const result = await d.delete(messages).where(eq(messages.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 }

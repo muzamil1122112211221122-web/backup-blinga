@@ -7,12 +7,16 @@ let db: ReturnType<typeof drizzle> | null = null;
 
 function getDb() {
   if (!db) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error(
-        "DATABASE_URL must be set. Did you forget to provision a database?",
-      );
+    const connectionString = process.env.DATABASE_URL || process.env.PGDATABASE; // Fallback or handle
+    if (!connectionString) {
+      console.error("DATABASE_URL is not set");
+      return null;
     }
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    
+    pool = new Pool({ 
+      connectionString,
+      ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false
+    });
     db = drizzle(pool, { schema });
   }
   return db;

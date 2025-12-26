@@ -26,9 +26,9 @@ export default function UserInfo() {
     
     // Single step - Create account and login
     try {
+      console.log('Sending login request for:', name, birthDate);
       const response = await fetch('/api/auth/demo', { 
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -38,20 +38,20 @@ export default function UserInfo() {
         })
       });
       
+      const data = await response.json();
       if (response.ok) {
-        console.log('Login successful');
-        // Clear any stored auth state
-        localStorage.removeItem("authStep");
-        localStorage.removeItem("registeredName");
-        localStorage.removeItem("registeredBirthDate");
-        setLocation('/chat');
+        console.log('Login successful, redirecting...');
+        // Use a simple, immediate redirect. If session persistence is fixed on backend,
+        // this should be the most reliable way.
+        window.location.href = '/chat';
       } else {
-        setError('Authentication failed. Please try again.');
+        console.error('Authentication failed response:', data);
+        setError(data.message || 'Authentication failed. Please try again.');
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('Authentication failed:', error);
-      setError('Authentication failed. Please try again.');
+      console.error('Authentication error:', error);
+      setError('Connection failed. Please check your internet and try again.');
       setIsLoading(false);
     }
   };
