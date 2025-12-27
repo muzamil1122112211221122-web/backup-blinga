@@ -134,16 +134,25 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         console.log('Search shortcut triggered (Alt+T)');
         e.preventDefault();
         e.stopPropagation();
-        const searchInput = document.querySelector('input[data-testid="sidebar-search-input"]') as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
+        
+        // Open sidebar if closed
+        if (!isSidebarOpen) {
+          setIsSidebarOpen(true);
         }
+
+        // Wait for sidebar to open then focus
+        setTimeout(() => {
+          const searchInput = document.querySelector('input[data-testid="sidebar-search-input"]') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+          }
+        }, 100);
       }
     };
     
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, []);
+  }, [isSidebarOpen]);
 
   // Conversation starters
   const conversationStarters = [
