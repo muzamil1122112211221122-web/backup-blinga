@@ -153,7 +153,7 @@ export function Sidebar({
               className="w-full pl-10 pr-12 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 focus:bg-zinc-800/80 transition-all outline-none border border-zinc-800/30 focus:border-zinc-700/50 text-[15px] text-zinc-100 placeholder:text-zinc-500"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-[10px] font-medium text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800/50">Shift + F + Space</span>
+              <span className="text-[10px] font-medium text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800/50">Alt + T</span>
             </div>
           </div>
 
