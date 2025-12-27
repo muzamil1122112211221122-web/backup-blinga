@@ -115,7 +115,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
   const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
   const [showLuminNotification, setShowLuminNotification] = useState(true);
-  const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Conversation starters
   const conversationStarters = [
