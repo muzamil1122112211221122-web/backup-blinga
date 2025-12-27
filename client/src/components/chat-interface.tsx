@@ -1452,6 +1452,7 @@ Let's start the self-listen session!`;
         onDeleteProject={handleDeleteProject}
         onEditProject={handleEditProject}
         onUpdateAiRole={handleUpdateAiRole}
+        onSearchOpen={() => setIsSearchOpen(true)}
         user={user || undefined}
       />
       {/* Header */}

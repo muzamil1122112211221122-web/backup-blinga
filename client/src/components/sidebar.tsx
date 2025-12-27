@@ -127,8 +127,14 @@ export function Sidebar({
       {/* Sidebar */}
       <div className="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50">
         {/* Header - Logo Only */}
-        <div className="p-4 flex items-center">
+        <div className="p-4 flex items-center justify-between">
           <Logo size="sm" />
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors md:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -189,7 +195,7 @@ export function Sidebar({
                 <div key={groupName} className="space-y-1">
                   <h4 className="px-10 text-[13px] font-semibold text-zinc-500 mb-2">{groupName}</h4>
                   <div className="border-l border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
-                    {groupProjects.map((project) => (
+                    {groupProjects.slice(0, 5).map((project) => (
                       <div
                         key={project.id}
                         className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
@@ -269,9 +275,14 @@ export function Sidebar({
                         </div>
                       </div>
                     ))}
-                    <button className="px-3 py-1 text-[13px] text-zinc-600 hover:text-zinc-400 transition-colors font-medium">
-                      See all
-                    </button>
+                    {groupProjects.length > 5 && (
+                      <button 
+                        className="px-3 py-1 text-[13px] text-zinc-600 hover:text-zinc-400 transition-colors font-medium"
+                        onClick={() => {/* Implement full history view if needed */}}
+                      >
+                        See all
+                      </button>
+                    )}
                   </div>
                 </div>
               )
