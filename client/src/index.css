@@ -433,8 +433,7 @@
     font-size: 18px;
     border: none !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    padding-top: 8px !important;
-    padding-left: 16px !important;
+    padding: 8px 16px !important;
     letter-spacing: 0px;
     text-align: left;
     background: transparent !important;
