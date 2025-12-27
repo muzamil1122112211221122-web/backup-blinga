@@ -82,6 +82,8 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const { theme } = useTheme();
 
+  const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
+
   // Group projects by date
   const groupProjectsByDate = () => {
     const groups: { [key: string]: typeof projects } = {
@@ -129,7 +131,7 @@ export function Sidebar({
           <Logo size="sm" />
           <button
             onClick={onClose}
-            className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors md:hidden"
+            className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -193,7 +195,7 @@ export function Sidebar({
                 <div key={groupName} className="space-y-1">
                   <h4 className="px-10 text-[13px] font-semibold text-zinc-500 mb-2">{groupName}</h4>
                   <div className="border-l border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
-                    {groupProjects.slice(0, 5).map((project) => (
+                    {(showAllGroups.has(groupName) ? groupProjects : groupProjects.slice(0, 5)).map((project) => (
                       <div
                         key={project.id}
                         className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
@@ -273,10 +275,10 @@ export function Sidebar({
                         </div>
                       </div>
                     ))}
-                    {groupProjects.length > 5 && (
+                    {groupProjects.length > 5 && !showAllGroups.has(groupName) && (
                       <button 
                         className="px-3 py-1 text-[13px] text-zinc-600 hover:text-zinc-400 transition-colors font-medium"
-                        onClick={() => {/* Implement full history view if needed */}}
+                        onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName))}
                       >
                         See all
                       </button>
@@ -307,7 +309,13 @@ export function Sidebar({
                   </p>
                 </div>
               </div>
-              <ChevronLeft className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
+                title="Close Sidebar"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
             </div>
           )}
         </div>

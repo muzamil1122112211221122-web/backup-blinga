@@ -120,13 +120,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle both Shift+F and Ctrl+F if necessary, but focusing on Shift+F as requested
       if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+        console.log('Search shortcut triggered');
         e.preventDefault();
         setIsSearchOpen(true);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true); // Use capture to ensure it's caught
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, []);
 
   // Conversation starters
