@@ -1,25 +1,22 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/components/theme-provider";
 import { 
-  Home, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
   Plus,
   Trash2,
   X,
-  Edit3,
   PenTool,
   Check,
-  User,
-  Moon,
-  Sun
+  Search,
+  Mic,
+  Image as ImageIcon,
+  FolderOpen,
+  History,
+  ChevronLeft
 } from "lucide-react";
 import { Logo } from "./logo";
+import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 
 // Generate vibrant colors based on name
 function getVibrantColor(name: string, secondary = false): string {
@@ -61,6 +58,7 @@ interface SidebarProps {
   onDeleteProject: (id: string) => void;
   onEditProject?: (id: string, newTitle: string) => void;
   onUpdateAiRole?: (id: string, newAiRole: string) => void;
+  onSearchOpen?: () => void;
   user?: {
     email: string;
     username: string;
@@ -70,24 +68,53 @@ interface SidebarProps {
 export function Sidebar({
   isOpen,
   onClose,
-  onLogout,
   projects,
   currentProjectId,
   onProjectSelect,
   onNewProject,
   onDeleteProject,
   onEditProject,
-  onUpdateAiRole,
+  onSearchOpen,
   user
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
-  const [editingAiRole, setEditingAiRole] = useState<string | null>(null);
-  const [aiRoleText, setAiRoleText] = useState<string>('');
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
 
   if (!isOpen) return null;
+
+  // Group projects by date
+  const groupProjectsByDate = () => {
+    const groups: { [key: string]: typeof projects } = {
+      'Today': [],
+      'Yesterday': [],
+      'This Month': [],
+    };
+
+    const sortedProjects = [...projects].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    sortedProjects.forEach(project => {
+      const date = new Date(project.createdAt);
+      if (isToday(date)) {
+        groups['Today'].push(project);
+      } else if (isYesterday(date)) {
+        groups['Yesterday'].push(project);
+      } else if (isThisMonth(date)) {
+        groups['This Month'].push(project);
+      } else {
+        const monthYear = format(date, 'MMMM');
+        if (!groups[monthYear]) groups[monthYear] = [];
+        groups[monthYear].push(project);
+      }
+    });
+
+    return groups;
+  };
+
+  const projectGroups = groupProjectsByDate();
 
   return (
     <>
@@ -98,186 +125,180 @@ export function Sidebar({
       />
 
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 flex flex-col rounded-r-3xl shadow-xl">
-        {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Logo size="sm" />
-            <span className="font-semibold text-foreground">Forus Heavy API</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="text-muted-foreground hover:text-foreground rounded-2xl"
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground rounded-2xl"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50">
+        {/* Header - Logo Only */}
+        <div className="p-4 flex items-center">
+          <Logo size="sm" />
         </div>
 
-        {/* New Conversation */}
-        <div className="p-4 border-b border-border">
-          <Button
-            onClick={onNewProject}
-            className="w-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
-            data-testid="button-new-chat"
+        {/* Action Buttons */}
+        <div className="px-3 space-y-1 mt-2">
+          {/* Search */}
+          <button
+            onClick={onSearchOpen}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 transition-colors group border border-zinc-800/30"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+            <div className="flex items-center space-x-3 text-zinc-400">
+              <Search className="h-4.5 w-4.5" />
+              <span className="text-[15px]">Search</span>
+            </div>
+            <span className="text-[10px] font-medium text-zinc-600 group-hover:text-zinc-500">Shift + F</span>
+          </button>
+
+          {/* New Chat */}
+          <button
+            onClick={onNewProject}
+            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100"
+          >
+            <PenTool className="h-4.5 w-4.5" />
+            <span className="text-[15px] font-medium">Chat</span>
+          </button>
+
+          {/* Voice */}
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
+            <Mic className="h-4.5 w-4.5" />
+            <span className="text-[15px] font-medium">Voice</span>
+          </button>
+
+          {/* Imagine */}
+          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
+            <div className="flex items-center space-x-3">
+              <ImageIcon className="h-4.5 w-4.5" />
+              <span className="text-[15px] font-medium">Imagine</span>
+            </div>
+            <div className="h-1.5 w-1.5 rounded-full bg-blue-500/80 mr-1" />
+          </button>
+
+          {/* Projects */}
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
+            <FolderOpen className="h-4.5 w-4.5" />
+            <span className="text-[15px] font-medium">Projects</span>
+          </button>
         </div>
 
-        {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-2">
-            {projects.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No projects yet</p>
-                <p className="text-xs">Start a new chat to begin</p>
-              </div>
-            ) : (
-              projects.map((project) => (
-                <div
-                  key={project.id}
-                  className={`group relative p-3 rounded-lg transition-all duration-200 border ${
-                    currentProjectId === project.id
-                      ? 'bg-accent text-foreground border-foreground border-opacity-30'
-                      : 'hover:bg-accent text-foreground hover:border-foreground hover:border-opacity-20 border-border border-opacity-50'
-                  }`}
-                  onMouseEnter={() => setHoveredProject(project.id)}
-                  onMouseLeave={() => setHoveredProject(null)}
-                  data-testid={`project-${project.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0" onClick={() => editingProject !== project.id && onProjectSelect(project.id)} style={{ cursor: editingProject === project.id ? 'default' : 'pointer' }}>
-                      {editingProject === project.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            className="text-sm h-8"
-                            placeholder="Project title"
-                            autoFocus
-                          />
-                          <Textarea
-                            value={aiRoleText}
-                            onChange={(e) => setAiRoleText(e.target.value)}
-                            className="text-sm min-h-[60px] resize-none"
-                            placeholder="Define AI role and behavior (optional)"
-                            rows={3}
-                          />
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => {
-                                onEditProject?.(project.id, editTitle);
-                                onUpdateAiRole?.(project.id, aiRoleText);
-                                setEditingProject(null);
-                              }}
-                            >
-                              <Check className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => setEditingProject(null)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+        {/* History Section */}
+        <div className="flex-1 overflow-y-auto mt-6 px-3">
+          <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-100 font-semibold">
+            <History className="h-4.5 w-4.5" />
+            <span className="text-[15px]">History</span>
+          </div>
+
+          <div className="space-y-6">
+            {Object.entries(projectGroups).map(([groupName, groupProjects]) => (
+              groupProjects.length > 0 && (
+                <div key={groupName} className="space-y-1">
+                  <h4 className="px-10 text-[13px] font-semibold text-zinc-500 mb-2">{groupName}</h4>
+                  <div className="border-l border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
+                    {groupProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                          currentProjectId === project.id
+                            ? 'bg-zinc-800/50 text-zinc-100'
+                            : 'hover:bg-zinc-900/30 text-zinc-400 hover:text-zinc-100'
+                        }`}
+                        onClick={() => editingProject !== project.id && onProjectSelect(project.id)}
+                        onMouseEnter={() => setHoveredProject(project.id)}
+                        onMouseLeave={() => setHoveredProject(null)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            {editingProject === project.id ? (
+                              <div className="space-y-2 py-1">
+                                <Input
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="text-xs h-7 bg-zinc-900 border-zinc-800 text-zinc-100"
+                                  autoFocus
+                                />
+                                <div className="flex space-x-1">
+                                  <Button
+                                    size="sm"
+                                    className="h-6 px-2 text-[10px]"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEditProject?.(project.id, editTitle);
+                                      setEditingProject(null);
+                                    }}
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 px-2 text-[10px] border-zinc-800"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingProject(null);
+                                    }}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-[14px] font-medium truncate leading-relaxed">
+                                {project.title || 'New Project'}
+                              </p>
+                            )}
                           </div>
-                        </div>
-                      ) : (
-                        <>
-                          <h3 className="text-sm font-medium truncate text-current">
-                            {project.title || 'New Project'}
-                          </h3>
-                          <p className="text-xs mt-1 opacity-70 text-current">
-                            {new Date(project.createdAt).toLocaleDateString()}
-                          </p>
-                          {project.aiRole && (
-                            <p className="text-xs mt-1 opacity-60 text-current truncate">
-                              AI: {project.aiRole.substring(0, 50)}...
-                            </p>
+                          
+                          {hoveredProject === project.id && editingProject !== project.id && (
+                            <div className="flex items-center space-x-1 ml-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditTitle(project.title);
+                                  setEditingProject(project.id);
+                                }}
+                                className="p-1 hover:text-blue-400 transition-colors"
+                              >
+                                <PenTool className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteProject(project.id);
+                                }}
+                                className="p-1 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
                           )}
-                        </>
-                      )}
-                    </div>
-                    {hoveredProject === project.id && editingProject !== project.id && (
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-blue-400 transition-all duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditTitle(project.title);
-                            setAiRoleText(project.aiRole || 'You are a helpful AI assistant. Be informative, accurate, and concise in your responses.');
-                            setEditingProject(project.id);
-                          }}
-                          data-testid={`edit-project-${project.id}`}
-                          title="Edit project name and AI role"
-                        >
-                          <div className="relative">
-                            <PenTool className="h-3 w-3" />
-                            <div className="absolute -inset-1 bg-blue-400/20 rounded-full scale-0 group-hover:scale-110 transition-transform duration-300"></div>
-                          </div>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteProject(project.id);
-                          }}
-                          data-testid={`delete-project-${project.id}`}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        </div>
                       </div>
-                    )}
+                    ))}
+                    <button className="px-3 py-1 text-[13px] text-zinc-600 hover:text-zinc-400 transition-colors font-medium">
+                      See all
+                    </button>
                   </div>
                 </div>
-              ))
-            )}
+              )
+            ))}
           </div>
         </div>
 
-
         {/* User Profile */}
-        <div className="p-4 border-t border-border">
+        <div className="p-4 mt-auto border-t border-zinc-800/30">
           {user && (
-            <div className="flex items-center space-x-3">
-              <div 
-                className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold text-lg"
-                style={{
-                  background: `linear-gradient(45deg, ${getVibrantColor((user as any).displayName || user.username || user.email)}, ${getVibrantColor((user as any).displayName || user.username || user.email, true)})`
-                }}
-              >
-                {((user as any).displayName || user.username || user.email).charAt(0).toUpperCase()}
+            <div className="flex items-center justify-between group">
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
+                  style={{
+                    background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})`
+                  }}
+                >
+                  {(user.username || user.email).charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-zinc-100 truncate">
+                    {user.username || user.email}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {(user as any).displayName || user.username || user.email}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {(user as any).displayName ? user.username || user.email : user.email}
-                </p>
-              </div>
+              <ChevronLeft className="h-4 w-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
             </div>
           )}
         </div>

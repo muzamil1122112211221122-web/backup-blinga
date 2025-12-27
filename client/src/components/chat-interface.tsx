@@ -116,6 +116,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
   const [showLuminNotification, setShowLuminNotification] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
