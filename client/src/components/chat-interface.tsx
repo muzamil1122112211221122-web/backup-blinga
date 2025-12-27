@@ -1990,8 +1990,8 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full shadow-none" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4 bg-transparent">
+      <div className="macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none" style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
@@ -2162,7 +2162,7 @@ Let's start the self-listen session!`;
               className="absolute font-medium text-muted-foreground pointer-events-none"
               style={{
                 top: '8px',
-                left: '16px',
+                left: '18px',
                 lineHeight: '27px',
                 fontSize: '18px',
                 letterSpacing: '0px',
