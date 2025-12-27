@@ -2207,10 +2207,10 @@ Let's start the self-listen session!`;
           {/* Model Switcher - Bottom Left */}
           <div className="absolute left-2 bottom-2 sm:left-3 sm:bottom-3 z-20">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-36 h-8 text-xs border-none bg-transparent hover:bg-white/10 transition-all focus:ring-0 focus:ring-offset-0">
+              <SelectTrigger className="w-36 h-8 text-xs border-none bg-transparent hover:bg-white/10 transition-all focus:ring-0 focus:ring-offset-0 shadow-none outline-none">
                 <SelectValue placeholder="Model" />
               </SelectTrigger>
-              <SelectContent className="border border-border rounded-lg shadow-lg backdrop-blur-md">
+              <SelectContent className="border-none rounded-lg shadow-lg backdrop-blur-md">
                 {MODEL_OPTIONS.map((modelOption) => (
                   <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-accent">
                     <div className="flex items-center gap-2">
