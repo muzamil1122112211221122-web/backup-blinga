@@ -18,6 +18,20 @@ import {
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 
+import searchIcon from "@assets/search_button_1766857136554.png";
+import chatIcon from "@assets/chats_button_1766857136554.png";
+import voiceIcon from "@assets/voice_button_1766857136553.png";
+import imagineIcon from "@assets/imagine_button_1766857136552.png";
+import projectsIcon from "@assets/projects_button_1766857136552.png";
+import historyIcon from "@assets/history_button_1766857136551.png";
+
+import searchIconCopy from "@assets/search_button_-_Copy_1766857136547.png";
+import chatIconCopy from "@assets/chats_button_-_Copy_1766857136548.png";
+import voiceIconCopy from "@assets/voice_button_-_Copy_1766857136548.png";
+import imagineIconCopy from "@assets/imagine_button_-_Copy_1766857136549.png";
+import projectsIconCopy from "@assets/projects_button_-_Copy_1766857136550.png";
+import historyIconCopy from "@assets/history_button_-_Copy_1766857136550.png";
+
 // Generate vibrant colors based on name
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
@@ -82,6 +96,7 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState("");
   const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
 
@@ -143,14 +158,14 @@ export function Sidebar({
         <div className="px-3 space-y-1 mt-2">
           {/* Search */}
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
+            <img src={isDark ? searchIconCopy : searchIcon} className="absolute left-3 top-1/2 -translate-y-1/2 h-[22px] w-[22px] object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" alt="Search" />
             <input
               type="text"
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="sidebar-search-input"
-              className="w-full pl-10 pr-12 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 focus:bg-zinc-800/80 transition-all outline-none border border-zinc-800/30 focus:border-zinc-700/50 text-[15px] text-zinc-100 placeholder:text-zinc-500"
+              className="w-full pl-12 pr-12 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 focus:bg-zinc-800/80 transition-all outline-none border border-zinc-800/30 focus:border-zinc-700/50 text-[15px] text-zinc-100 placeholder:text-zinc-500"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
               <span className="text-[10px] font-medium text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800/50">Alt + T</span>
@@ -160,30 +175,30 @@ export function Sidebar({
           {/* New Chat */}
           <button
             onClick={onNewProject}
-            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100"
+            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group"
           >
-            <PenTool className="h-4.5 w-4.5" />
+            <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Chat" />
             <span className="text-[15px] font-medium">Chat</span>
           </button>
 
           {/* Voice */}
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
-            <Mic className="h-4.5 w-4.5" />
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
+            <img src={isDark ? voiceIconCopy : voiceIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
           {/* Imagine */}
-          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
+          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
-              <ImageIcon className="h-4.5 w-4.5" />
+              <img src={isDark ? imagineIconCopy : imagineIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
               <span className="text-[15px] font-medium">Imagine</span>
             </div>
             <div className="h-1.5 w-1.5 rounded-full bg-blue-500/80 mr-1" />
           </button>
 
           {/* Projects */}
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100">
-            <FolderOpen className="h-4.5 w-4.5" />
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
+            <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Projects" />
             <span className="text-[15px] font-medium">Projects</span>
           </button>
         </div>
@@ -191,7 +206,7 @@ export function Sidebar({
         {/* History Section */}
         <div className="flex-1 overflow-y-auto mt-6 px-3">
           <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-100 font-semibold">
-            <History className="h-4.5 w-4.5" />
+            <img src={isDark ? historyIconCopy : historyIcon} className="h-[22px] w-[22px] object-contain" alt="History" />
             <span className="text-[15px]">History</span>
           </div>
 
