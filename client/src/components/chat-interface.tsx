@@ -41,6 +41,15 @@ import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableMode
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { History } from "lucide-react";
+import {
   Menu,
   Bell,
   Mic,
@@ -120,7 +129,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus on Shift+F as requested
+      // Direct focus on Shift+F as requested
       if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
         console.log('Search shortcut triggered');
         e.preventDefault();
@@ -129,8 +138,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       }
     };
     
-    // Use capture phase and ensure it's on the window
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // Add to window with capture phase to intercept before other handlers
+    window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
@@ -2419,6 +2428,27 @@ Let's start the self-listen session!`;
       {showLuminNotification && (
         <LuminNotification onClose={() => setShowLuminNotification(false)} />
       )}
+      {/* Command Search Dialog */}
+      <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+        <CommandInput placeholder="Search projects..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Projects">
+            {projects.map((project) => (
+              <CommandItem
+                key={project.id}
+                onSelect={() => {
+                  handleProjectSelect(project.id);
+                  setIsSearchOpen(false);
+                }}
+              >
+                <History className="mr-2 h-4 w-4" />
+                <span>{project.title || "New Project"}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 }
