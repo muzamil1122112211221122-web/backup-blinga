@@ -82,22 +82,22 @@
     animation: logoSpin 0.8s ease-in-out;
   }
 
-  /* Message input styling for dark theme - transparent backgrounds */
-  .dark .message-input-container {
-    background: transparent !important;
+  /* Force Message input styling for BOTH themes with dark background */
+  .message-input-container {
+    background: #303030 !important;
     border: none !important;
     border-radius: 1.5rem;
-    box-shadow: none !important;
+    box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15) !important;
   }
   
-  .dark .message-input {
-    background: transparent !important;
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    color: hsl(0, 0%, 98%) !important;
+  .message-input {
+    background: #303030 !important;
+    border: none !important;
+    color: white !important;
   }
   
-  .dark .message-input:focus {
-    border-color: hsl(240, 5%, 25%) !important;
+  .message-input:focus {
+    border: none !important;
     box-shadow: none !important;
   }
   
