@@ -125,13 +125,20 @@ export function Sidebar({
       />
 
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+      <div 
+        className={`fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ pointerEvents: 'auto' }}
+      >
         {/* Header - Logo Only */}
         <div className="p-4 flex items-center justify-between">
           <Logo size="sm" />
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors pointer-events-auto"
           >
             <X className="h-5 w-5" />
           </button>
@@ -310,8 +317,12 @@ export function Sidebar({
                 </div>
               </div>
               <button
-                onClick={onClose}
-                className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors pointer-events-auto"
                 title="Close Sidebar"
               >
                 <ChevronLeft className="h-5 w-5" />
