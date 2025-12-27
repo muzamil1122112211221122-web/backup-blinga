@@ -2219,8 +2219,7 @@ Let's start the self-listen session!`;
               paddingRight: '64px',
               fontSize: '18px',
               lineHeight: '27px',
-              color: 'white',
-              backgroundColor: '#303030'
+              color: 'white'
             }}
             data-testid="input-message"
           />
