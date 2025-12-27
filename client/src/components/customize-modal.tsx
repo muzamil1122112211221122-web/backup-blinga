@@ -35,7 +35,7 @@ export function CustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="macos-dialog-content bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 max-w-md shadow-2xl rounded-2xl [&>button]:hidden">
+      <DialogContent className="macos-dialog-content bg-white dark:bg-[#0d0d0d] border-zinc-800/50 max-w-md shadow-2xl rounded-2xl [&>button]:hidden opacity-100">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between text-xl font-semibold text-gray-900 dark:text-gray-100">
             Customize Forus

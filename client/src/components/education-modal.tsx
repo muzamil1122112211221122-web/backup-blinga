@@ -401,7 +401,7 @@ export function EducationModal({ isOpen, onClose, onStartExamination, onStartSel
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="education-modal">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-[#0d0d0d] opacity-100 border-zinc-800/50" data-testid="education-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />

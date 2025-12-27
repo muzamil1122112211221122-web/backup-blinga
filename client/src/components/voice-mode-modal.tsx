@@ -50,7 +50,7 @@ export function VoiceModeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full mx-auto bg-gray-900 border-gray-700 text-white [&>button]:hidden">
+      <DialogContent className="max-w-md w-full mx-auto bg-white dark:bg-[#0d0d0d] border-zinc-800/50 text-foreground [&>button]:hidden opacity-100">
         {/* Close button */}
         <Button
           variant="ghost"
