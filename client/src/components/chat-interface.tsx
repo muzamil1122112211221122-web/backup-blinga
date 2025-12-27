@@ -1996,7 +1996,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 0 30px 5px rgba(255, 255, 255, 0.4), 0 0 15px 2px rgba(255, 255, 255, 0.2)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
             }}
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
@@ -2017,7 +2017,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 0 30px 5px rgba(255, 255, 255, 0.4), 0 0 15px 2px rgba(255, 255, 255, 0.2)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
             }}
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
@@ -2032,7 +2032,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 0 30px 5px rgba(255, 255, 255, 0.4), 0 0 15px 2px rgba(255, 255, 255, 0.2)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
             }}
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
@@ -2066,7 +2066,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 0 30px 5px rgba(255, 255, 255, 0.4), 0 0 15px 2px rgba(255, 255, 255, 0.2)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
             }}
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
@@ -2166,7 +2166,9 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative transition-all duration-300 shadow-[0_0_30px_5px_rgba(255,255,255,0.4),0_0_15px_2px_rgba(255,255,255,0.2)] z-50">
+      <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative transition-all duration-300" style={{
+        boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
+      }}>
         <div className="relative bg-[#303030] rounded-3xl">
           <Textarea
             ref={textareaRef}
