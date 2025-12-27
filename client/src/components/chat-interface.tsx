@@ -1994,43 +1994,64 @@ Let's start the self-listen session!`;
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none relative overflow-hidden"
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
           >
-            <div className="flex items-center justify-center space-x-0.5 h-5 w-5">
-              <div className="w-0.5 h-1.5 bg-current rounded-full"></div>
-              <div className="w-0.5 h-2.5 bg-current rounded-full"></div>
-              <div className="w-0.5 h-4 bg-current rounded-full"></div>
-              <div className="w-0.5 h-3 bg-current rounded-full"></div>
-              <div className="w-0.5 h-1 bg-current rounded-full"></div>
+            {/* White Glow Effect at Bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+              boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+            }}></div>
+            <div className="relative z-10 flex flex-col items-center space-y-1">
+              <div className="flex items-center justify-center space-x-0.5 h-5 w-5">
+                <div className="w-0.5 h-1.5 bg-current rounded-full"></div>
+                <div className="w-0.5 h-2.5 bg-current rounded-full"></div>
+                <div className="w-0.5 h-4 bg-current rounded-full"></div>
+                <div className="w-0.5 h-3 bg-current rounded-full"></div>
+                <div className="w-0.5 h-1 bg-current rounded-full"></div>
+              </div>
+              <span className="text-[10px] sm:text-xs font-medium">Voice Mode</span>
             </div>
-            <span className="text-[10px] sm:text-xs font-medium">Voice Mode</span>
           </Button>
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none relative overflow-hidden"
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
           >
-            <Image className="h-5 w-5" />
-            <span className="text-[10px] sm:text-xs font-medium">Create Images</span>
+            {/* White Glow Effect at Bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+              boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+            }}></div>
+            <div className="relative z-10 flex flex-col items-center space-y-1">
+              <Image className="h-5 w-5" />
+              <span className="text-[10px] sm:text-xs font-medium">Create Images</span>
+            </div>
           </Button>
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none relative overflow-hidden"
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
           >
-            <Camera className="h-5 w-5" />
-            <span className="text-[10px] sm:text-xs font-medium">Open Camera</span>
+            {/* White Glow Effect at Bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+              boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+            }}></div>
+            <div className="relative z-10 flex flex-col items-center space-y-1">
+              <Camera className="h-5 w-5" />
+              <span className="text-[10px] sm:text-xs font-medium">Open Camera</span>
+            </div>
           </Button>
 
           <Button
             variant="ghost"
-            className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-colors shadow-sm border-none ${
+            className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-colors shadow-sm border-none relative overflow-hidden ${
               forusIntegrationMode 
                 ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                 : 'text-muted-foreground bg-[#303030] hover:bg-[#353535]'
@@ -2038,29 +2059,51 @@ Let's start the self-listen session!`;
             onClick={adjustForus}
             data-testid="button-forus-integration"
           >
-            <Hammer className="h-5 w-5" />
-            <span className="text-[10px] sm:text-xs font-medium">Integration Answer</span>
+            {!forusIntegrationMode && (
+              <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+                background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+                boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+              }}></div>
+            )}
+            <div className="relative z-10 flex flex-col items-center space-y-1">
+              <Hammer className="h-5 w-5" />
+              <span className="text-[10px] sm:text-xs font-medium">Integration Answer</span>
+            </div>
           </Button>
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none relative overflow-hidden"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
           >
-            <Settings className="h-5 w-5" />
-            <span className="text-[10px] sm:text-xs font-medium">Adjust</span>
+            {/* White Glow Effect at Bottom */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+              background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+              boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+            }}></div>
+            <div className="relative z-10 flex flex-col items-center space-y-1">
+              <Settings className="h-5 w-5" />
+              <span className="text-[10px] sm:text-xs font-medium">Adjust</span>
+            </div>
           </Button>
 
           {selectedModel === 'forus-education' && (
             <Button
               variant="ghost"
-              className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+              className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none relative overflow-hidden"
               onClick={() => setIsEducationModalOpen(true)}
               data-testid="button-forus-examination"
             >
-              <GraduationCap className="h-5 w-5" />
-              <span className="text-[10px] sm:text-xs font-medium">Education</span>
+              {/* White Glow Effect at Bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+                background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+                boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+              }}></div>
+              <div className="relative z-10 flex flex-col items-center space-y-1">
+                <GraduationCap className="h-5 w-5" />
+                <span className="text-[10px] sm:text-xs font-medium">Education</span>
+              </div>
             </Button>
           )}
         </div>
@@ -2136,7 +2179,13 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="bg-[#303030] p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030]">
+      <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative overflow-hidden">
+        {/* White Glow Effect at Bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none" style={{
+          background: 'linear-gradient(to top, rgba(255, 255, 255, 0.08) 0%, transparent 100%)',
+          boxShadow: '0 4px 20px -5px rgba(255, 255, 255, 0.15)',
+          borderRadius: '0 0 1.5rem 1.5rem'
+        }}></div>
         <div className="relative bg-[#303030] rounded-3xl">
           <Textarea
             ref={textareaRef}
