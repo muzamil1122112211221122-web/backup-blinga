@@ -90,15 +90,15 @@ export function Sidebar({
   if (!isOpen) return null;
 
   return (
-    <>
+    <div className="fixed inset-0 z-50 flex md:relative md:z-0">
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        className="fixed inset-0 bg-black/50 md:hidden"
         onClick={onClose}
       />
 
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-80 bg-card border-r border-border z-50 flex flex-col rounded-r-3xl shadow-xl">
+      <div className="relative h-full w-80 bg-card border-r border-border flex flex-col rounded-r-3xl shadow-xl">
         {/* Header */}
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -282,6 +282,6 @@ export function Sidebar({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
