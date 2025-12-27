@@ -2218,7 +2218,8 @@ Let's start the self-listen session!`;
             style={{
               paddingRight: '64px',
               fontSize: '18px',
-              lineHeight: '27px'
+              lineHeight: '27px',
+              color: 'white'
             }}
             data-testid="input-message"
           />
@@ -2229,7 +2230,7 @@ Let's start the self-listen session!`;
           {/* Custom Placeholder */}
           {!inputValue && !attachedImage && (
             <div 
-              className="absolute font-medium text-muted-foreground pointer-events-none"
+              className="absolute font-medium text-zinc-400 pointer-events-none"
               style={{
                 top: '8px',
                 left: '18px',
@@ -2334,7 +2335,7 @@ Let's start the self-listen session!`;
             <Button
               variant="ghost"
               size="icon"
-              className="macos-button text-muted-foreground hover:text-gray-900 dark:hover:text-gray-100 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
+              className="macos-button text-zinc-400 hover:text-white h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
               onClick={handleEnhancePrompt}
               disabled={!inputValue.trim() || isEnhancing}
               data-testid="button-enhance-prompt"
@@ -2349,10 +2350,10 @@ Let's start the self-listen session!`;
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() && !attachedImage}
-              className="macos-button bg-black hover:bg-gray-800 text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="macos-button bg-white hover:bg-zinc-200 text-black rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
-              <span className="text-white text-sm sm:text-base">➤</span>
+              <span className="text-black text-sm sm:text-base">➤</span>
             </Button>
           </div>
         </div>
