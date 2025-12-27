@@ -431,7 +431,7 @@
     resize: none;
     line-height: 27px;
     font-size: 18px;
-    border: 1px solid var(--macos-border-light) !important;
+    border: none !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     padding-top: 8px !important;
     padding-left: 16px !important;
@@ -440,10 +440,21 @@
   }
 
   .message-input:focus {
-    border-color: var(--macos-border-light) !important;
+    border: none !important;
     outline: none !important;
     box-shadow: none !important;
     transform: none;
+  }
+
+  /* Force remove all borders from inputs/triggers in message bar */
+  .message-input-container button,
+  .message-input-container [role="combobox"],
+  .message-input-container .absolute.left-1.bottom-1 button {
+    border: none !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    ring: 0 !important;
   }
 
   .dark .message-input {
