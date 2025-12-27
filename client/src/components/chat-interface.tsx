@@ -129,9 +129,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus on search input when Shift+F is pressed
-      if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
-        console.log('Search shortcut triggered');
+      // Focus on search input when Shift+F+Space is pressed
+      if (e.shiftKey && (e.key === 'F' || e.key === 'f') && e.code === 'Space') {
+        console.log('Search shortcut triggered (Shift+F+Space)');
         e.preventDefault();
         e.stopPropagation();
         const searchInput = document.querySelector('input[data-testid="sidebar-search-input"]') as HTMLInputElement;
