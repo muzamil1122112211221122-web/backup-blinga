@@ -82,8 +82,6 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const { theme } = useTheme();
 
-  if (!isOpen) return null;
-
   // Group projects by date
   const groupProjectsByDate = () => {
     const groups: { [key: string]: typeof projects } = {
@@ -120,12 +118,12 @@ export function Sidebar({
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       {/* Sidebar */}
-      <div className="fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50">
+      <div className={`fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         {/* Header - Logo Only */}
         <div className="p-4 flex items-center justify-between">
           <Logo size="sm" />

@@ -94,6 +94,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'lumin'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [input, setInput] = useState("");
@@ -115,7 +116,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
   const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
   const [showLuminNotification, setShowLuminNotification] = useState(true);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
 
   useEffect(() => {
