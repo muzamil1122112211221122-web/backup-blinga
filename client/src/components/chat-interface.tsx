@@ -1996,7 +1996,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
             }}
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
@@ -2017,7 +2017,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
             }}
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
@@ -2032,7 +2032,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
             }}
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
@@ -2051,7 +2051,7 @@ Let's start the self-listen session!`;
                 : 'text-muted-foreground bg-[#303030] hover:bg-[#353535]'
             }`}
             style={{
-              boxShadow: forusIntegrationMode ? 'none' : '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+              boxShadow: forusIntegrationMode ? 'none' : '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
             }}
             onClick={adjustForus}
             data-testid="button-forus-integration"
@@ -2066,7 +2066,7 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
             style={{
-              boxShadow: '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
             }}
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
@@ -2082,7 +2082,7 @@ Let's start the self-listen session!`;
               variant="ghost"
               className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
               style={{
-                boxShadow: '0 8px 20px -4px rgba(255, 255, 255, 0.15)'
+                boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
               }}
               onClick={() => setIsEducationModalOpen(true)}
               data-testid="button-forus-examination"
