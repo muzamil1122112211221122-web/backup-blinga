@@ -146,7 +146,7 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div 
-        className={`fixed top-0 left-0 h-full w-72 bg-[#0d0d0d] text-zinc-100 z-50 flex flex-col border-r border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-zinc-100 z-50 flex flex-col border-r border-zinc-200 dark:border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ pointerEvents: 'auto' }}
       >
         {/* Header - Logo Only */}
@@ -165,30 +165,30 @@ export function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="sidebar-search-input"
-              className="w-full pl-12 pr-12 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 focus:bg-zinc-800/80 transition-all outline-none border border-zinc-800/30 focus:border-zinc-700/50 text-[15px] text-zinc-100 placeholder:text-zinc-500"
+              className="w-full pl-12 pr-12 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 focus:bg-zinc-200/80 dark:focus:bg-zinc-800/80 transition-all outline-none border border-zinc-200 dark:border-zinc-800/30 focus:border-zinc-300 dark:focus:border-zinc-700/50 text-[15px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
-              <span className="text-[10px] font-medium text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800/50">Alt + T</span>
+              <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-600 bg-white dark:bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-800/50">Alt + T</span>
             </div>
           </div>
 
           {/* New Chat */}
           <button
             onClick={onNewProject}
-            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group"
+            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group"
           >
             <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Chat" />
             <span className="text-[15px] font-medium">Chat</span>
           </button>
 
           {/* Voice */}
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <img src={isDark ? voiceIconCopy : voiceIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
           {/* Imagine */}
-          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
+          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
               <img src={isDark ? imagineIconCopy : imagineIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
               <span className="text-[15px] font-medium">Imagine</span>
@@ -197,7 +197,7 @@ export function Sidebar({
           </button>
 
           {/* Projects */}
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-100 group">
+          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Projects" />
             <span className="text-[15px] font-medium">Projects</span>
           </button>
@@ -205,7 +205,7 @@ export function Sidebar({
 
         {/* History Section */}
         <div className="flex-1 overflow-y-auto mt-6 px-3">
-          <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-100 font-semibold">
+          <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-900 dark:text-zinc-100 font-semibold">
             <img src={isDark ? historyIconCopy : historyIcon} className="h-[22px] w-[22px] object-contain" alt="History" />
             <span className="text-[15px]">History</span>
           </div>
@@ -215,14 +215,14 @@ export function Sidebar({
               groupProjects.length > 0 && (
                 <div key={groupName} className="space-y-1">
                   <h4 className="px-10 text-[13px] font-semibold text-zinc-500 mb-2">{groupName}</h4>
-                  <div className="border-l border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
+                  <div className="border-l border-zinc-200 dark:border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
                     {(showAllGroups.has(groupName) ? groupProjects : groupProjects.slice(0, 5)).map((project) => (
                       <div
                         key={project.id}
                         className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
                           currentProjectId === project.id
-                            ? 'bg-zinc-800/50 text-zinc-100'
-                            : 'hover:bg-zinc-900/30 text-zinc-400 hover:text-zinc-100'
+                            ? 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100'
+                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
                         }`}
                         onClick={() => editingProject !== project.id && onProjectSelect(project.id)}
                         onMouseEnter={() => setHoveredProject(project.id)}
@@ -235,7 +235,7 @@ export function Sidebar({
                                 <Input
                                   value={editTitle}
                                   onChange={(e) => setEditTitle(e.target.value)}
-                                  className="text-xs h-7 bg-zinc-900 border-zinc-800 text-zinc-100"
+                                  className="text-xs h-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
                                   autoFocus
                                 />
                                 <div className="flex space-x-1">
@@ -253,7 +253,7 @@ export function Sidebar({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="h-6 px-2 text-[10px] border-zinc-800"
+                                    className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingProject(null);
@@ -278,7 +278,7 @@ export function Sidebar({
                                   setEditTitle(project.title);
                                   setEditingProject(project.id);
                                 }}
-                                className="p-1 hover:text-blue-400 transition-colors"
+                                className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
                               >
                                 <PenTool className="h-3 w-3" />
                               </button>
@@ -287,7 +287,7 @@ export function Sidebar({
                                   e.stopPropagation();
                                   onDeleteProject(project.id);
                                 }}
-                                className="p-1 hover:text-red-400 transition-colors"
+                                className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>
@@ -298,7 +298,7 @@ export function Sidebar({
                     ))}
                     {groupProjects.length > 5 && !showAllGroups.has(groupName) && (
                       <button 
-                        className="px-3 py-1 text-[13px] text-zinc-600 hover:text-zinc-400 transition-colors font-medium"
+                        className="px-3 py-1 text-[13px] text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors font-medium"
                         onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName))}
                       >
                         See all
@@ -312,7 +312,7 @@ export function Sidebar({
         </div>
 
         {/* User Profile */}
-        <div className="p-4 mt-auto border-t border-zinc-800/30">
+        <div className="p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30">
           {user && (
             <div className="flex items-center justify-between group">
               <div className="flex items-center space-x-3">
@@ -325,7 +325,7 @@ export function Sidebar({
                   {(user.username || user.email).charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-zinc-100 truncate">
+                  <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                     {user.username || user.email}
                   </p>
                 </div>
@@ -336,7 +336,7 @@ export function Sidebar({
                   e.stopPropagation();
                   onClose();
                 }}
-                className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer relative z-[100]"
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer relative z-[100]"
                 title="Close Sidebar"
                 type="button"
               >
