@@ -431,16 +431,17 @@
     resize: none;
     line-height: 27px;
     font-size: 18px;
-    border: none !important;
+    border: 1px solid hsl(240, 5.9%, 90%) !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     padding-top: 8px !important;
     padding-left: 16px !important;
     letter-spacing: 0px;
     text-align: left;
+    background: transparent !important;
   }
 
   .message-input:focus {
-    border: none !important;
+    border: 1px solid hsl(240, 5.9%, 90%) !important;
     outline: none !important;
     box-shadow: none !important;
     transform: none;
