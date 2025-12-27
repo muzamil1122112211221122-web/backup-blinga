@@ -1990,11 +1990,11 @@ Let's start the self-listen session!`;
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="macos-function-bar rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !bg-[#303030] shadow-sm" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4 bg-[#303030] rounded-3xl">
+      <div className="macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full shadow-none" style={{width: 'fit-content', margin: '0 auto', marginBottom: '4px'}}>
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 lg:gap-6 p-3 sm:p-4 bg-transparent">
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
           >
@@ -2005,66 +2005,63 @@ Let's start the self-listen session!`;
               <div className="w-0.5 h-3 bg-current rounded-full"></div>
               <div className="w-0.5 h-1 bg-current rounded-full"></div>
             </div>
-            <span className="text-xs hidden sm:block">Voice Mode</span>
+            <span className="text-[10px] sm:text-xs font-medium">Voice Mode</span>
           </Button>
-          
+
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
           >
-            <Image className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Create Images</span>
+            <Image className="h-5 w-5" />
+            <span className="text-[10px] sm:text-xs font-medium">Create Images</span>
           </Button>
-          
+
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
           >
-            <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Open Camera</span>
+            <Camera className="h-5 w-5" />
+            <span className="text-[10px] sm:text-xs font-medium">Open Camera</span>
           </Button>
-          
+
           <Button
             variant="ghost"
-            className={`macos-button flex flex-col items-center space-y-1 px-2 sm:px-3 rounded-2xl transition-colors ${
+            className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-colors shadow-sm border-none ${
               forusIntegrationMode 
-                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                : 'text-muted-foreground bg-[#303030] hover:bg-[#353535]'
             }`}
             onClick={adjustForus}
             data-testid="button-forus-integration"
           >
-            <Hammer className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Forus Integration Answer</span>
+            <Hammer className="h-5 w-5" />
+            <span className="text-[10px] sm:text-xs font-medium">Integration Answer</span>
           </Button>
-          
+
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
           >
-            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs hidden sm:block">Adjust Forus</span>
+            <Settings className="h-5 w-5" />
+            <span className="text-[10px] sm:text-xs font-medium">Adjust</span>
           </Button>
-          
-          {/* Education Buttons - Only show when Forus Education model is selected */}
+
           {selectedModel === 'forus-education' && (
-            <>
-              <Button
-                variant="ghost"
-                className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-2 sm:px-3 rounded-2xl"
-                onClick={() => setIsEducationModalOpen(true)}
-                data-testid="button-forus-examination"
-              >
-                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="text-xs hidden sm:block">Forus Education</span>
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] shadow-sm hover:bg-[#353535] border-none"
+              onClick={() => setIsEducationModalOpen(true)}
+              data-testid="button-forus-examination"
+            >
+              <GraduationCap className="h-5 w-5" />
+              <span className="text-[10px] sm:text-xs font-medium">Education</span>
+            </Button>
           )}
         </div>
       </div>
