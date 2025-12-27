@@ -80,11 +80,12 @@ export function Sidebar({
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState("");
   const { theme } = useTheme();
 
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
 
-  // Group projects by date
+  // Group projects by date and filter by search query
   const groupProjectsByDate = () => {
     const groups: { [key: string]: typeof projects } = {
       'Today': [],
@@ -92,7 +93,11 @@ export function Sidebar({
       'This Month': [],
     };
 
-    const sortedProjects = [...projects].sort((a, b) => 
+    const filteredProjects = projects.filter(project => 
+      project.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const sortedProjects = [...filteredProjects].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -137,16 +142,20 @@ export function Sidebar({
         {/* Action Buttons */}
         <div className="px-3 space-y-1 mt-2">
           {/* Search */}
-          <button
-            onClick={onSearchOpen}
-            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 transition-colors group border border-zinc-800/30"
-          >
-            <div className="flex items-center space-x-3 text-zinc-400">
-              <Search className="h-4.5 w-4.5" />
-              <span className="text-[15px]">Search</span>
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-300 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="sidebar-search-input"
+              className="w-full pl-10 pr-12 py-2.5 rounded-xl bg-zinc-900/50 hover:bg-zinc-800/50 focus:bg-zinc-800/80 transition-all outline-none border border-zinc-800/30 focus:border-zinc-700/50 text-[15px] text-zinc-100 placeholder:text-zinc-500"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none">
+              <span className="text-[10px] font-medium text-zinc-600 bg-zinc-950 px-1.5 py-0.5 rounded border border-zinc-800/50">Shift + F</span>
             </div>
-            <span className="text-[10px] font-medium text-zinc-600 group-hover:text-zinc-500">Shift + F</span>
-          </button>
+          </div>
 
           {/* New Chat */}
           <button

@@ -129,16 +129,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Direct focus on Shift+F as requested
+      // Focus on search input when Shift+F is pressed
       if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
         console.log('Search shortcut triggered');
         e.preventDefault();
         e.stopPropagation();
-        setIsSearchOpen(true);
+        const searchInput = document.querySelector('input[data-testid="sidebar-search-input"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
       }
     };
     
-    // Add to window with capture phase to intercept before other handlers
     window.addEventListener('keydown', handleKeyDown, { capture: true, passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
@@ -2428,27 +2430,6 @@ Let's start the self-listen session!`;
       {showLuminNotification && (
         <LuminNotification onClose={() => setShowLuminNotification(false)} />
       )}
-      {/* Command Search Dialog */}
-      <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <CommandInput placeholder="Search projects..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Projects">
-            {projects.map((project) => (
-              <CommandItem
-                key={project.id}
-                onSelect={() => {
-                  handleProjectSelect(project.id);
-                  setIsSearchOpen(false);
-                }}
-              >
-                <History className="mr-2 h-4 w-4" />
-                <span>{project.title || "New Project"}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
     </div>
   );
 }
