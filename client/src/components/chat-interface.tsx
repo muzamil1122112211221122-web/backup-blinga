@@ -1428,7 +1428,7 @@ Let's start the self-listen session!`;
   const isAnyLuminModelTyping = Object.values(luminIsTyping).some(typing => typing);
 
   return (
-    <div className={`h-screen flex bg-background relative ${(isTyping || isAnyLuminModelTyping) ? 'ai-thinking' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyLuminModelTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -1442,69 +1442,67 @@ Let's start the self-listen session!`;
         onUpdateAiRole={handleUpdateAiRole}
         user={user || undefined}
       />
-      
-      <div className="flex flex-col flex-1 h-full min-w-0 relative">
-        {/* Header */}
-        <header className="bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between rounded-b-3xl shadow-sm">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setIsSidebarOpen(true)}
-              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-              data-testid="button-menu"
-            >
-              <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-            <Logo size="sm" />
-            <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
-          </div>
-          
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <Button
-              variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('ask')}
-              className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
-              data-testid="tab-ask"
-            >
-              Ask
-            </Button>
-            <Button
-              variant={activeTab === 'lumin' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab('lumin')}
-              className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
-              data-testid="tab-lumin"
-            >
-              <Brain className="h-3 w-3 mr-1" />
-              Lumin(Coders & Content Creator Heaven)
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
-              data-testid="button-theme-toggle"
-            >
-              <div className="relative">
-                {theme === 'dark' ? (
-                  <Sun className="h-4 w-4 text-yellow-500" />
-                ) : (
-                  <Moon className="h-4 w-4 text-blue-600" />
-                )}
-              </div>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-          </div>
-        </header>
+      {/* Header */}
+      <header className="bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between rounded-b-3xl shadow-sm">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsSidebarOpen(true)}
+            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            data-testid="button-menu"
+          >
+            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          <Logo size="sm" />
+          <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
+        </div>
+        
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <Button
+            variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('ask')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
+            data-testid="tab-ask"
+          >
+            Ask
+          </Button>
+          <Button
+            variant={activeTab === 'lumin' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('lumin')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
+            data-testid="tab-lumin"
+          >
+            <Brain className="h-3 w-3 mr-1" />
+            Lumin(Coders & Content Creator Heaven)
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
+            data-testid="button-theme-toggle"
+          >
+            <div className="relative">
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-600" />
+              )}
+            </div>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            data-testid="button-notifications"
+          >
+            <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+          </Button>
+        </div>
+      </header>
       
       {/* Chat Messages Area */}
       <div className="flex-1 overflow-y-auto p-4" data-testid="chat-messages">
