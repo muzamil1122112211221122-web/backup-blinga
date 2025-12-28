@@ -2134,8 +2134,77 @@ Let's start the self-listen session!`;
         </div>
       </div>
         
+      {/* Voice Mode Modal */}
+      {isVoiceModeOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-card rounded-3xl p-8 max-w-md w-full mx-4 text-center">
+            <div className="relative mb-6">
+              <div 
+                className="w-32 h-32 mx-auto rounded-full flex items-center justify-center transition-all duration-300"
+                style={{
+                  background: `linear-gradient(45deg, ${getVibrantColor(user?.displayName || user?.username || user?.email || 'default')} 0%, ${getVibrantColor(user?.displayName || user?.username || user?.email || 'default', true)} 100%)`,
+                  transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.1})`,
+                }}
+              >
+                <Logo size="lg" className="text-white" />
+              </div>
+              {isListening && (
+                <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full border-4 border-blue-500 animate-pulse"></div>
+              )}
+            </div>
+            
+            <h3 className="text-xl font-semibold mb-2">Voice Mode</h3>
+            <p className="text-muted-foreground mb-4">
+              {isListening ? "I'm listening..." : "Click to start speaking"}
+            </p>
+            
+            {/* Voice-to-Voice Toggle */}
+            <div className="flex items-center justify-center mb-6 space-x-3">
+              <span className={`text-sm ${!isVoiceToVoiceMode ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                Voice Input Only
+              </span>
+              <button
+                onClick={() => setIsVoiceToVoiceMode(!isVoiceToVoiceMode)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  isVoiceToVoiceMode ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isVoiceToVoiceMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm ${isVoiceToVoiceMode ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                Voice-to-Voice
+              </span>
+            </div>
+            
+            <div className="flex gap-4 justify-center">
+              <Button
+                onClick={toggleListening}
+                className={`w-16 h-16 rounded-full ${
+                  isListening 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+              >
+                {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+              </Button>
+              <Button
+                onClick={() => setIsVoiceModeOpen(false)}
+                variant="outline"
+                className="w-16 h-16 rounded-full"
+              >
+                <X className="w-6 h-6" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Message Input - Separate Section */}
-      <div className={`p-1 sm:p-2 message-input-container ${theme === 'dark' ? 'max-w-[45rem]' : 'max-w-[40rem]'} mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 ${theme === 'dark' ? 'shadow-xl' : 'shadow-none'}`}>
+      <div className={`p-1 sm:p-2 message-input-container max-w-[45rem] mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 ${theme === 'dark' ? 'shadow-xl' : 'shadow-none'}`}>
         <div className="relative bg-[#303030] rounded-[1.75rem] p-0.5 sm:p-1">
           <Textarea
             ref={textareaRef}
@@ -2143,30 +2212,30 @@ Let's start the self-listen session!`;
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className={`message-input w-full ${theme === 'dark' ? 'min-h-[50px]' : 'min-h-[44px]'} max-h-[140px] bg-[#303030] rounded-[1.75rem] pb-10 pr-14 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0`}
+            className="message-input w-full min-h-[50px] max-h-[140px] bg-[#303030] rounded-[1.75rem] pb-10 pr-14 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
             style={{
               paddingLeft: '20px',
               paddingRight: '70px',
-              paddingTop: theme === 'dark' ? '14px' : '12px',
-              fontSize: theme === 'dark' ? '18px' : '16px',
-              lineHeight: theme === 'dark' ? '26px' : '22px',
+              paddingTop: '14px',
+              fontSize: '18px',
+              lineHeight: '26px',
               color: 'white'
             }}
             data-testid="input-message"
           />
           
           {/* Bottom Overlay to hide scrolling text behind buttons */}
-          <div className={`absolute bottom-1.5 left-1.5 right-1.5 ${theme === 'dark' ? 'h-12' : 'h-10'} bg-[#303030] rounded-b-[1.75rem] pointer-events-none z-10"></div>
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 h-12 bg-[#303030] rounded-b-[1.75rem] pointer-events-none z-10"></div>
           
           {/* Custom Placeholder */}
           {!inputValue && !attachedImage && (
             <div 
               className="absolute font-medium text-zinc-400 pointer-events-none"
               style={{
-                top: theme === 'dark' ? '15px' : '13px',
+                top: '15px',
                 left: '22px',
-                lineHeight: theme === 'dark' ? '26px' : '22px',
-                fontSize: theme === 'dark' ? '18px' : '16px',
+                lineHeight: '26px',
+                fontSize: '18px',
                 letterSpacing: '0px',
                 textAlign: 'left',
                 fontFamily: 'inherit'
