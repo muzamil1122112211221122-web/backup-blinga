@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
 import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 
 interface CustomizeModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function CustomizeModal({
   customInstructions,
   onSave
 }: CustomizeModalProps) {
+  const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
@@ -46,9 +48,9 @@ export function CustomizeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="macos-dialog-content bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
+      <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
-        <div className="w-48 bg-[#161616] p-4 flex flex-col space-y-1">
+        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-zinc-800/50">
           <h2 className="text-white text-lg font-bold mb-4 px-2">Settings</h2>
           {menuItems.map((item) => (
             <button
@@ -67,7 +69,7 @@ export function CustomizeModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-8 overflow-y-auto relative">
+        <div className="flex-1 p-8 overflow-y-auto relative bg-[#0d0d0d] !bg-[#0d0d0d]">
           <Button 
             variant="ghost" 
             size="icon"
@@ -80,15 +82,23 @@ export function CustomizeModal({
           {activeSection === 'appearance' && (
             <div className="space-y-8">
               <div className="grid grid-cols-3 gap-3">
-                <Button variant="outline" className="flex flex-col h-20 bg-zinc-900 border-zinc-800 text-zinc-400">
+                <Button 
+                  variant="outline" 
+                  className={`flex flex-col h-20 border-zinc-800 text-zinc-400 ${theme === 'light' ? 'bg-zinc-800 text-white' : 'bg-zinc-900'}`}
+                  onClick={() => setTheme('light')}
+                >
                   <Sun className="w-5 h-5 mb-1" />
                   <span className="text-xs">Light</span>
                 </Button>
-                <Button variant="outline" className="flex flex-col h-20 bg-zinc-900 border-zinc-800 text-zinc-400">
+                <Button 
+                  variant="outline" 
+                  className={`flex flex-col h-20 border-zinc-800 text-zinc-400 ${theme === 'dark' ? 'bg-zinc-800 text-white' : 'bg-zinc-900'}`}
+                  onClick={() => setTheme('dark')}
+                >
                   <Moon className="w-5 h-5 mb-1" />
                   <span className="text-xs">Dark</span>
                 </Button>
-                <Button variant="outline" className="flex flex-col h-20 bg-zinc-800 border-zinc-700 text-white">
+                <Button variant="outline" className="flex flex-col h-20 bg-zinc-900 border-zinc-800 text-zinc-400">
                   <Laptop className="w-5 h-5 mb-1" />
                   <span className="text-xs">System</span>
                 </Button>

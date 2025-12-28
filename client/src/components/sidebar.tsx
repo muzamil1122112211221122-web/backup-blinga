@@ -13,7 +13,7 @@ import {
   FolderOpen,
   History,
   ChevronLeft,
-  Settings
+  Settings as LucideSettings
 } from "lucide-react";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
