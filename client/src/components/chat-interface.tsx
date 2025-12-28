@@ -2204,9 +2204,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-2 sm:p-3 message-input-container max-w-[50rem] mx-auto w-full rounded-[2.5rem] !bg-[#303030] relative transition-all duration-300 shadow-2xl" style={{
-        boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3)'
-      }}>
+      <div className="p-2 sm:p-3 message-input-container max-w-[50rem] mx-auto w-full rounded-[2.5rem] !bg-[#303030] relative transition-all duration-300 shadow-2xl">
         <div className="relative bg-[#303030] rounded-[2rem] p-1 sm:p-2">
           <Textarea
             ref={textareaRef}
