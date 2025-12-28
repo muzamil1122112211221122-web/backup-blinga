@@ -2032,10 +2032,7 @@ Let's start the self-listen session!`;
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
-            style={{
-              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
-            }}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
           >
@@ -2053,10 +2050,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
-            style={{
-              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
-            }}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
           >
@@ -2068,10 +2062,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
-            style={{
-              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
-            }}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
           >
@@ -2102,10 +2093,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
-            style={{
-              boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
-            }}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
           >
@@ -2118,11 +2106,8 @@ Let's start the self-listen session!`;
           {selectedModel === 'forus-education' && (
             <Button
               variant="ghost"
-              className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300"
-              style={{
-                boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
-              }}
-              onClick={() => setIsEducationModalOpen(true)}
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.2),0_4px_10px_-2px_rgba(255,255,255,0.1)]"
+            onClick={() => setIsEducationModalOpen(true)}
               data-testid="button-forus-examination"
             >
               <div className="relative z-10 flex flex-col items-center space-y-1">
@@ -2213,7 +2198,7 @@ Let's start the self-listen session!`;
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask Anything"
-              className="w-full min-h-[36px] max-h-[120px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[15px] sm:text-[16px] leading-relaxed p-1.5"
+              className="w-full min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[17px] sm:text-[18px] leading-relaxed p-2"
               data-testid="input-message"
             />
           </div>
