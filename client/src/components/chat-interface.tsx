@@ -2224,38 +2224,70 @@ Let's start the self-listen session!`;
               </Select>
             </div>
 
-            <div className="flex items-center space-x-1 sm:space-x-1.5">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                    title="Add attachment"
+                    data-testid="button-attachment"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-[#1a1a1a] border-none text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                  <DropdownMenuItem 
+                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-white/5 cursor-pointer rounded-lg focus:bg-white/10 focus:text-white"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <FileText className="w-4 h-4 text-zinc-400" />
+                    <span>Upload File</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-white/5 cursor-pointer rounded-lg focus:bg-white/10 focus:text-white"
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    <Image className="w-4 h-4 text-zinc-400" />
+                    <span>Upload Image</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
                 variant="ghost"
                 size="icon"
-                className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
+                className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
                 onClick={toggleListening}
                 disabled={!speechSupported}
                 title="Voice input"
+                data-testid="button-mic"
               >
-                <Mic className="w-4 h-4" />
+                <Mic className="w-5 h-5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
                 onClick={handleEnhancePrompt}
                 disabled={!inputValue.trim() || isEnhancing}
                 title="Enhance prompt"
+                data-testid="button-enhance"
               >
                 {isEnhancing ? (
-                  <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
+                  <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
                 ) : (
-                  <span className="text-lg font-bold">✦</span>
+                  <span className="text-xl font-bold">✦</span>
                 )}
               </Button>
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() && !attachedImage}
-                className="w-8 h-8 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
+                className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
                 data-testid="button-send-message"
               >
-                <ArrowUp className="w-4 h-4" />
+                <ArrowUp className="w-5 h-5" />
               </Button>
             </div>
           </div>
