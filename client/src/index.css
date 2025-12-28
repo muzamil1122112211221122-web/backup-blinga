@@ -102,9 +102,23 @@
   }
   
   /* Fix all borders and elements in dark theme with transparent backgrounds */
-  .dark [role="combobox"] {
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+  .dark [role="combobox"],
+  .dark [role="combobox"]:focus,
+  .dark [role="combobox"][data-state="open"] {
+    border: none !important;
+    outline: none !important;
+    ring: 0 !important;
+    box-shadow: none !important;
     background: transparent !important;
+  }
+  
+  [role="combobox"],
+  [role="combobox"]:focus,
+  [role="combobox"][data-state="open"] {
+    border: none !important;
+    outline: none !important;
+    ring: 0 !important;
+    box-shadow: none !important;
   }
   
   .dark [role="listbox"] {
