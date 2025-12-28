@@ -2203,171 +2203,90 @@ Let's start the self-listen session!`;
         </div>
       )}
 
-      {/* Message Input - Separate Section */}
-      <div className={`p-1 sm:p-2 message-input-container max-w-[45rem] mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 ${theme === 'dark' ? 'shadow-xl' : 'shadow-none'}`}>
-        <div className="relative bg-[#303030] rounded-[1.75rem] p-0.5 sm:p-1">
-          <Textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder=""
-            className="message-input w-full min-h-[50px] max-h-[140px] bg-[#303030] rounded-[1.75rem] pb-10 pr-14 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
-            style={{
-              paddingLeft: '20px',
-              paddingRight: '70px',
-              paddingTop: '14px',
-              fontSize: '18px',
-              lineHeight: '26px',
-              color: 'white'
-            }}
-            data-testid="input-message"
-          />
-          
-          {/* Bottom Overlay to hide scrolling text behind buttons */}
-          <div className="absolute bottom-1.5 left-1.5 right-1.5 h-12 bg-[#303030] rounded-b-[1.75rem] pointer-events-none z-10"></div>
-          
-          {/* Custom Placeholder */}
-          {!inputValue && !attachedImage && (
-            <div 
-              className="absolute font-medium text-zinc-400 pointer-events-none"
-              style={{
-                top: '15px',
-                left: '22px',
-                lineHeight: '26px',
-                fontSize: '18px',
-                letterSpacing: '0px',
-                textAlign: 'left',
-                fontFamily: 'inherit'
-              }}
-            >
-              Ask Anything
-            </div>
-          )}
+      {/* New Unified Message Bar */}
+      <div className="max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8">
+        <div className="relative bg-[#212121] rounded-[1.5rem] border border-white/5 shadow-2xl transition-all duration-300">
+          <div className="p-2 sm:p-3">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask Anything"
+              className="w-full min-h-[40px] max-h-[160px] bg-transparent text-white placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus-visible:ring-0 text-[16px] sm:text-[17px] leading-relaxed p-0"
+              data-testid="input-message"
+            />
+          </div>
 
-          {/* Image Preview - Positioned above input area for better visibility */}
-          {attachedImage && (
-            <div className="absolute -top-16 left-2 flex items-center space-x-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-2 border border-gray-200 dark:border-gray-600 max-w-[300px] shadow-lg z-10">
-              <img 
-                src={attachedImage.preview} 
-                alt="Attached image" 
-                className="w-12 h-12 object-cover rounded"
-              />
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-600 dark:text-gray-300 max-w-[150px] truncate font-medium">
-                  {attachedImage.file.name}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Image attached - Ready to analyze
-                </span>
-              </div>
+          <div className="flex items-center justify-between px-2 pb-2">
+            <div className="flex items-center">
+              <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
+                <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 border-none bg-transparent shadow-none ring-0 focus:ring-0 transition-all rounded-full">
+                  <SelectValue placeholder="Model" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a1a1a] border-white/10 text-white rounded-xl shadow-2xl overflow-hidden">
+                  {MODEL_OPTIONS.map((modelOption) => (
+                    <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-white/5 cursor-pointer focus:bg-white/10">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          modelOption.provider === 'openai' ? 'bg-emerald-500' :
+                          modelOption.provider === 'anthropic' ? 'bg-orange-500' :
+                          modelOption.provider === 'google' ? 'bg-blue-500' :
+                          'bg-zinc-500'
+                        }`}></div>
+                        {modelOption.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-1 sm:space-x-1.5">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-5 h-5 text-gray-400 hover:text-red-500 ml-2"
-                onClick={() => setAttachedImage(null)}
+                className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
+                onClick={toggleListening}
+                disabled={!speechSupported}
+                title="Voice input"
               >
-                <X className="w-4 h-4" />
+                <Mic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                onClick={handleEnhancePrompt}
+                disabled={!inputValue.trim() || isEnhancing}
+                title="Enhance prompt"
+              >
+                {isEnhancing ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
+                ) : (
+                  <span className="text-lg font-bold">✦</span>
+                )}
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() && !attachedImage}
+                className="w-8 h-8 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
+                data-testid="button-send-message"
+              >
+                <ArrowUp className="w-4 h-4" />
               </Button>
             </div>
-          )}
-          
-          {/* Model Switcher - Bottom Left */}
-          <div className="absolute left-2 bottom-2 sm:left-4 sm:bottom-4 z-20">
-            <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-auto min-w-[120px] h-10 text-sm !border-0 !border-none !bg-transparent !shadow-none !ring-0 !ring-offset-0 !outline-none hover:bg-white/10 transition-all px-3 focus:!ring-0 focus:!ring-offset-0 shadow-none border-transparent text-zinc-300">
-                <SelectValue placeholder="Model" />
-              </SelectTrigger>
-              <SelectContent className="!border-0 !border-none rounded-xl shadow-2xl backdrop-blur-md bg-[#252525]/95 overflow-hidden !ring-0 !outline-none border-transparent text-white">
-                {MODEL_OPTIONS.map((modelOption) => (
-                  <SelectItem key={modelOption.id} value={modelOption.id} className="text-sm hover:bg-white/10 cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        modelOption.provider === 'openai' ? 'bg-green-500' :
-                        modelOption.provider === 'anthropic' ? 'bg-orange-500' :
-                        modelOption.provider === 'google' ? 'bg-blue-500' :
-                        modelOption.provider === 'meta' ? 'bg-purple-500' :
-                        'bg-gray-500'
-                      }`}></div>
-                      {modelOption.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
-
-          <div className="absolute right-3 bottom-3 sm:right-5 sm:bottom-5 flex items-center space-x-2 sm:space-x-4 z-20">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-              className="hidden"
-            />
-            <input
-              type="file"
-              ref={imageInputRef}
-              onChange={handleImageUpload}
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="macos-button text-zinc-400 hover:text-white h-10 w-10 rounded-2xl"
-              onClick={() => setIsAttachmentDialogOpen(true)}
-              data-testid="button-attach-file"
-            >
-              <Paperclip className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`macos-button ${isListening ? 'text-green-400' : 'text-zinc-400'} hover:text-white h-10 w-10 rounded-2xl`}
-              onClick={toggleListening}
-              disabled={!speechSupported}
-              data-testid="button-voice-input"
-            >
-              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="macos-button text-zinc-400 hover:text-white h-10 w-10 rounded-2xl transition-colors"
-              onClick={handleEnhancePrompt}
-              disabled={!inputValue.trim() || isEnhancing}
-              data-testid="button-enhance-prompt"
-              title={isEnhancing ? "AI is enhancing prompt..." : "Enhance your prompt 1000x better"}
-            >
-              {isEnhancing ? (
-                <div className="animate-spin w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full"></div>
-              ) : (
-                <span className="text-xl font-bold">✦</span>
-              )}
-            </Button>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() && !attachedImage}
-              className="macos-button bg-[#b0b0b0] hover:bg-[#d0d0d0] text-black rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-              data-testid="button-send-message"
-            >
-              <span className="text-black text-base sm:text-lg">➤</span>
-            </Button>
-          </div>
-        </div>
-        
-        {/* Voice Input Indicator */}
-        {isListening && (
-          <div className="mt-2 text-center" data-testid="voice-listening-indicator">
-            <div className="inline-flex items-center space-x-2 text-green-400">
-              <div className="w-2 h-2 bg-green-400 rounded-full voice-pulse"></div>
-              <span className="text-sm">Listening<span className="loading-dots"></span></span>
+          {/* Voice Listening Indicator Overlay moved inside the relative container */}
+          {isListening && (
+            <div className="absolute inset-x-0 -top-8 flex justify-center">
+              <div className="bg-emerald-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/20 flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">Listening...</span>
+              </div>
             </div>
-          </div>
-        )}
-        
+          )}
+        </div>
       </div>
       
 
