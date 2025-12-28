@@ -2204,10 +2204,11 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative transition-all duration-300" style={{
-        boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
-      }}>
-        <div className="relative bg-[#303030] rounded-3xl">
+      {theme === 'dark' && (
+        <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative transition-all duration-300" style={{
+          boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
+        }}>
+          <div className="relative bg-[#303030] rounded-3xl">
           <Textarea
             ref={textareaRef}
             value={inputValue}
@@ -2368,8 +2369,8 @@ Let's start the self-listen session!`;
           </div>
         )}
         
-
       </div>
+      )}
       
 
 
