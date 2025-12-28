@@ -2204,7 +2204,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-1 sm:p-2 message-input-container max-w-[45rem] mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 shadow-xl">
+      <div className={`p-1 sm:p-2 message-input-container max-w-[45rem] mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 ${theme === 'dark' ? 'shadow-xl' : 'shadow-none'}`}>
         <div className="relative bg-[#303030] rounded-[1.75rem] p-0.5 sm:p-1">
           <Textarea
             ref={textareaRef}
