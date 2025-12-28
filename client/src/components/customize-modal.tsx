@@ -32,6 +32,9 @@ export function CustomizeModal({
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
+  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
 
   const [toggles, setToggles] = useState({
     wrapLines: true,
@@ -49,11 +52,38 @@ export function CustomizeModal({
 
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+    setIsDirty(true);
+  };
+
+  const moveOrder = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...aiOrder];
+    if (direction === 'up' && index > 0) {
+      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+    } else if (direction === 'down' && index < newOrder.length - 1) {
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    }
+    setAiOrder(newOrder);
+    setIsDirty(true);
+  };
+
+  const handleCloseAttempt = () => {
+    if (isDirty) {
+      setShowExitDialog(true);
+    } else {
+      onClose();
+    }
   };
 
   const handleSave = () => {
     onSave(selectedPreset, instructions, isEnabled, selectedModel);
+    setIsDirty(false);
     onClose();
+  };
+
+  const handleDontSave = () => {
+    setIsDirty(false);
+    onClose();
+    setShowExitDialog(false);
   };
 
   const menuItems = [
@@ -64,20 +94,9 @@ export function CustomizeModal({
     { id: 'data', label: 'Lumin Settings', icon: Database },
   ];
 
-  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
-
-  const moveOrder = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...aiOrder];
-    if (direction === 'up' && index > 0) {
-      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
-    } else if (direction === 'down' && index < newOrder.length - 1) {
-      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-    }
-    setAiOrder(newOrder);
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+    <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
       <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
         <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-[#2a2a2a] !border-[#2a2a2a]">
@@ -86,7 +105,7 @@ export function CustomizeModal({
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="text-zinc-500 hover:text-white h-6 w-6 rounded-full"
             >
               <X className="h-3 w-3" />
@@ -116,7 +135,7 @@ export function CustomizeModal({
                 <Button 
                   variant="outline" 
                   className={`flex flex-col h-20 border-zinc-800 text-zinc-400 ${theme === 'light' ? 'bg-zinc-800 text-white' : 'bg-zinc-900'}`}
-                  onClick={() => setTheme('light')}
+                  onClick={() => { setTheme('light'); setIsDirty(true); }}
                 >
                   <Sun className="w-5 h-5 mb-1" />
                   <span className="text-xs">Light</span>
@@ -124,7 +143,7 @@ export function CustomizeModal({
                 <Button 
                   variant="outline" 
                   className={`flex flex-col h-20 border-zinc-800 text-zinc-400 ${theme === 'dark' ? 'bg-zinc-800 text-white' : 'bg-zinc-900'}`}
-                  onClick={() => setTheme('dark')}
+                  onClick={() => { setTheme('dark'); setIsDirty(true); }}
                 >
                   <Moon className="w-5 h-5 mb-1" />
                   <span className="text-xs">Dark</span>
@@ -172,7 +191,7 @@ export function CustomizeModal({
                         ? 'border-zinc-500 bg-zinc-800'
                         : 'border-zinc-800 bg-[#161616] hover:bg-zinc-800/50'
                     }`}
-                    onClick={() => setSelectedPreset(key as ChatPreset)}
+                    onClick={() => { setSelectedPreset(key as ChatPreset); setIsDirty(true); }}
                   >
                     <CardContent className="p-3">
                       <div className="font-medium text-sm text-white">
@@ -301,5 +320,31 @@ export function CustomizeModal({
         </div>
       </DialogContent>
     </Dialog>
+    {showExitDialog && (
+      <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <DialogContent className="macos-dialog-content bg-[#161616] border-zinc-800 border max-w-sm shadow-2xl rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold">Unsaved Changes</DialogTitle>
+          </DialogHeader>
+          <p className="text-zinc-400 text-sm mt-2">You have unsaved changes. Do you want to save them before leaving?</p>
+          <div className="mt-6 flex justify-end space-x-3">
+            <Button
+              variant="ghost"
+              onClick={handleDontSave}
+              className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            >
+              Don't Save
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-white text-black hover:bg-zinc-200"
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+  </>
   );
 }
