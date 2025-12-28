@@ -2205,7 +2205,7 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div className="max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8">
-        <div className="relative bg-[#212121] rounded-[1.5rem] border border-white/5 shadow-2xl transition-all duration-300">
+        <div className="relative bg-[#212121] rounded-[1.5rem] shadow-2xl transition-all duration-300">
           <div className="p-2 sm:p-3">
             <Textarea
               ref={textareaRef}
@@ -2213,7 +2213,7 @@ Let's start the self-listen session!`;
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask Anything"
-              className="w-full min-h-[40px] max-h-[160px] bg-transparent text-white placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus-visible:ring-0 text-[16px] sm:text-[17px] leading-relaxed p-0"
+              className="w-full min-h-[40px] max-h-[160px] bg-transparent text-white placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus-visible:ring-0 focus-visible:outline-none text-[16px] sm:text-[17px] leading-relaxed p-0"
               data-testid="input-message"
             />
           </div>
