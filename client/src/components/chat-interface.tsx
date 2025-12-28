@@ -2254,16 +2254,16 @@ Let's start the self-listen session!`;
                     />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#1a1a1a] border-none text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
                   <DropdownMenuItem 
-                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-white/5 cursor-pointer rounded-lg focus:bg-white/10 focus:text-white"
+                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <FileText className="w-4 h-4 text-zinc-400" />
                     <span>Upload File</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-white/5 cursor-pointer rounded-lg focus:bg-white/10 focus:text-white"
+                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                     onClick={() => imageInputRef.current?.click()}
                   >
                     <Image className="w-4 h-4 text-zinc-400" />
