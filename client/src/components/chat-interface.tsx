@@ -2204,38 +2204,38 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-2 sm:p-3 message-input-container max-w-[50rem] mx-auto w-full rounded-[2.5rem] !bg-[#303030] relative transition-all duration-300 shadow-2xl">
-        <div className="relative bg-[#303030] rounded-[2rem] p-1 sm:p-2">
+      <div className="p-1 sm:p-2 message-input-container max-w-[45rem] mx-auto w-full rounded-[2rem] !bg-[#303030] relative transition-all duration-300 shadow-xl">
+        <div className="relative bg-[#303030] rounded-[1.75rem] p-0.5 sm:p-1">
           <Textarea
             ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[60px] max-h-[160px] bg-[#303030] rounded-[2rem] pb-12 pr-16 sm:pb-16 sm:pr-24 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
+            className="message-input w-full min-h-[50px] max-h-[140px] bg-[#303030] rounded-[1.75rem] pb-10 pr-14 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
             style={{
-              paddingLeft: '24px',
-              paddingRight: '80px',
-              paddingTop: '16px',
-              fontSize: '20px',
-              lineHeight: '30px',
+              paddingLeft: '20px',
+              paddingRight: '70px',
+              paddingTop: '14px',
+              fontSize: '18px',
+              lineHeight: '26px',
               color: 'white'
             }}
             data-testid="input-message"
           />
           
           {/* Bottom Overlay to hide scrolling text behind buttons */}
-          <div className="absolute bottom-2 left-2 right-2 h-14 bg-[#303030] rounded-b-[2rem] pointer-events-none z-10"></div>
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 h-12 bg-[#303030] rounded-b-[1.75rem] pointer-events-none z-10"></div>
           
           {/* Custom Placeholder */}
           {!inputValue && !attachedImage && (
             <div 
               className="absolute font-medium text-zinc-400 pointer-events-none"
               style={{
-                top: '18px',
-                left: '26px',
-                lineHeight: '30px',
-                fontSize: '20px',
+                top: '15px',
+                left: '22px',
+                lineHeight: '26px',
+                fontSize: '18px',
                 letterSpacing: '0px',
                 textAlign: 'left',
                 fontFamily: 'inherit'
@@ -2350,10 +2350,10 @@ Let's start the self-listen session!`;
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() && !attachedImage}
-              className="macos-button bg-[#b0b0b0] hover:bg-[#d0d0d0] text-black rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-200 transform hover:scale-105"
+              className="macos-button bg-[#b0b0b0] hover:bg-[#d0d0d0] text-black rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
-              <span className="text-black text-lg sm:text-xl">➤</span>
+              <span className="text-black text-base sm:text-lg">➤</span>
             </Button>
           </div>
         </div>
