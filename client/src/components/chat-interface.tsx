@@ -2206,7 +2206,7 @@ Let's start the self-listen session!`;
       {/* New Unified Message Bar */}
       <div className="max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8">
         <div className="relative bg-[#212121] rounded-[1.5rem] shadow-2xl transition-all duration-300">
-          <div className="p-2 sm:p-3">
+          <div className="p-3 sm:p-4">
             <Textarea
               ref={textareaRef}
               value={inputValue}
