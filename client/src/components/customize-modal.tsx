@@ -99,7 +99,7 @@ export function CustomizeModal({
     <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
       <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
-        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-[#2a2a2a] !border-[#2a2a2a]">
+        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col border-r border-[#2a2a2a] !border-[#2a2a2a]">
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-white text-lg font-bold">Settings</h2>
             <Button 
@@ -111,20 +111,37 @@ export function CustomizeModal({
               <X className="h-3 w-3" />
             </Button>
           </div>
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id as SettingsSection)}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
-                activeSection === item.id 
-                  ? 'bg-zinc-800 text-white' 
-                  : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
-              }`}
+          <div className="flex-1 flex flex-col space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id as SettingsSection)}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
+                  activeSection === item.id 
+                    ? 'bg-zinc-800 text-white' 
+                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-auto pt-4 flex flex-col space-y-2">
+            <Button
+              onClick={handleSave}
+              className="w-full bg-white text-black hover:bg-zinc-200 text-xs h-9"
             >
-              <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
-            </button>
-          ))}
+              Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="w-full bg-transparent border-zinc-800 text-zinc-400 hover:bg-zinc-800 text-xs h-9"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -302,21 +319,6 @@ export function CustomizeModal({
               </div>
             </div>
           )}
-          <div className="mt-8 flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-white text-black hover:bg-zinc-200"
-            >
-              Save Changes
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
