@@ -33,6 +33,24 @@ export function CustomizeModal({
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
 
+  const [toggles, setToggles] = useState({
+    wrapLines: true,
+    showPreviews: true,
+    starryBg: true,
+    autoScroll: true,
+    sidebarEditor: true,
+    notifyThinking: false,
+    cmdEnter: false,
+    richText: true,
+    improveModel: true,
+    personalize: true,
+    linkSharing: true
+  });
+
+  const handleToggle = (key: keyof typeof toggles) => {
+    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const handleSave = () => {
     onSave(selectedPreset, instructions, isEnabled, selectedModel);
     onClose();
@@ -50,8 +68,18 @@ export function CustomizeModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
-        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-zinc-800/50">
-          <h2 className="text-white text-lg font-bold mb-4 px-2">Settings</h2>
+        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-zinc-800/80">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h2 className="text-white text-lg font-bold">Settings</h2>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={onClose}
+              className="text-zinc-500 hover:text-white h-6 w-6 rounded-full"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
           {menuItems.map((item) => (
             <button
               key={item.id}
@@ -70,15 +98,6 @@ export function CustomizeModal({
 
         {/* Content */}
         <div className="flex-1 p-8 overflow-y-auto relative bg-[#0d0d0d] !bg-[#0d0d0d]">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onClose}
-            className="absolute top-4 right-4 text-zinc-500 hover:text-white h-8 w-8 rounded-full"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-
           {activeSection === 'appearance' && (
             <div className="space-y-8">
               <div className="grid grid-cols-3 gap-3">
@@ -107,15 +126,15 @@ export function CustomizeModal({
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-200">Wrap Long Lines For Code Blocks By Default</span>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.wrapLines} onCheckedChange={() => handleToggle('wrapLines')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-200">Show Conversation Previews in History</span>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-200">Enable Starry Background</span>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.starryBg} onCheckedChange={() => handleToggle('starryBg')} />
                 </div>
               </div>
             </div>
@@ -125,20 +144,20 @@ export function CustomizeModal({
             <div className="space-y-6 text-zinc-200">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Auto Scroll</span>
-                <Switch checked={true} />
+                <Switch checked={toggles.autoScroll} onCheckedChange={() => handleToggle('autoScroll')} />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Sidebar Editor For Code And Documents</span>
-                <Switch checked={true} />
+                <Switch checked={toggles.sidebarEditor} onCheckedChange={() => handleToggle('sidebarEditor')} />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-zinc-500">Notify When Forus Finishes Thinking</span>
-                <Switch checked={false} />
+                <Switch checked={toggles.notifyThinking} onCheckedChange={() => handleToggle('notifyThinking')} />
               </div>
               <div className="pt-4 border-t border-zinc-800">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm">Require Cmd+Enter To Submit</span>
-                  <Switch checked={false} />
+                  <Switch checked={toggles.cmdEnter} onCheckedChange={() => handleToggle('cmdEnter')} />
                 </div>
                 <p className="text-xs text-zinc-500">When enabled, press Cmd+Enter (or Ctrl+Enter) to submit. Enter will add a new line.</p>
               </div>
@@ -147,7 +166,7 @@ export function CustomizeModal({
                   <span className="text-sm">Enable Rich Text Editor</span>
                   <p className="text-xs text-zinc-500">Enable code blocks and lists in the query bar</p>
                 </div>
-                <Switch checked={true} />
+                <Switch checked={toggles.richText} onCheckedChange={() => handleToggle('richText')} />
               </div>
             </div>
           )}
@@ -192,18 +211,18 @@ export function CustomizeModal({
                     <span className="text-sm text-white">Improve the Model</span>
                     <p className="text-xs text-zinc-500 mt-1">By allowing your data to be used for training our models, you help enhance your own experience and improve the quality of the model for all users.</p>
                   </div>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.improveModel} onCheckedChange={() => handleToggle('improveModel')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="max-w-[80%]">
                     <span className="text-sm text-white">Personalize Forus with your conversation history <span className="text-[10px] bg-zinc-800 px-1 rounded">beta</span></span>
                     <p className="text-xs text-zinc-500 mt-1">Allow Forus to remember details from your previous conversations.</p>
                   </div>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white">Allow chat link sharing</span>
-                  <Switch checked={true} />
+                  <Switch checked={toggles.linkSharing} onCheckedChange={() => handleToggle('linkSharing')} />
                 </div>
               </div>
 
