@@ -125,9 +125,24 @@
   .dark [role="listbox"],
   .dark [role="menu"],
   .dark .select-content {
-    background-color: #000000 !important;
-    background: #000000 !important;
+    background-color: #303030 !important;
+    background: #303030 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+  }
+
+  /* Improve visibility of hover effects in white theme dropdowns */
+  [data-radix-select-content] [role="option"]:hover,
+  [data-radix-select-content] [role="option"]:focus,
+  [role="menu"] [role="menuitem"]:hover,
+  [role="menu"] [role="menuitem"]:focus {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  .dark [data-radix-select-content] [role="option"]:hover,
+  .dark [data-radix-select-content] [role="option"]:focus,
+  .dark [role="menu"] [role="menuitem"]:hover,
+  .dark [role="menu"] [role="menuitem"]:focus {
+    background-color: rgba(255, 255, 255, 0.1) !important;
   }
 
   /* Fix dialog and modal borders in dark theme */

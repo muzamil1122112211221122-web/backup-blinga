@@ -2219,9 +2219,9 @@ Let's start the self-listen session!`;
                 <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-black !bg-white dark:!bg-black !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                <SelectContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
                   {MODEL_OPTIONS.map((modelOption) => (
-                    <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-white/5 cursor-pointer focus:bg-white/10">
+                    <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${
                           modelOption.provider === 'openai' ? 'bg-emerald-500' :
