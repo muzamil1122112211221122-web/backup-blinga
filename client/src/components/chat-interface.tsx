@@ -2032,7 +2032,7 @@ Let's start the self-listen session!`;
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={() => setIsVoiceModeModalOpen(true)}
             data-testid="button-voice-mode"
           >
@@ -2050,7 +2050,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={handleCreateImageFromFunctionBar}
             data-testid="button-create-images"
           >
@@ -2062,7 +2062,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={handleOpenCameraFromFunctionBar}
             data-testid="button-open-camera"
           >
@@ -2074,14 +2074,11 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative ${
+            className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)] ${
               forusIntegrationMode 
-                ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                : 'text-muted-foreground bg-[#303030] hover:bg-[#353535]'
+                ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' 
+                : 'text-muted-foreground bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'
             }`}
-            style={{
-              boxShadow: forusIntegrationMode ? 'none' : '0 10px 30px -5px rgba(255, 255, 255, 0.2), 0 4px 10px -2px rgba(255, 255, 255, 0.1)'
-            }}
             onClick={adjustForus}
             data-testid="button-forus-integration"
           >
@@ -2093,7 +2090,7 @@ Let's start the self-listen session!`;
 
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
+            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={() => setIsCustomizeModalOpen(true)}
             data-testid="button-adjust-forus"
           >
@@ -2106,8 +2103,8 @@ Let's start the self-listen session!`;
           {selectedModel === 'forus-education' && (
             <Button
               variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-[#303030] border-none relative transition-all duration-300 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.3),0_4px_15px_-2px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.2),0_4px_10px_-2px_rgba(255,255,255,0.1)]"
-            onClick={() => setIsEducationModalOpen(true)}
+              className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.2),0_4px_10px_-2px_rgba(255,255,255,0.1)]"
+              onClick={() => setIsEducationModalOpen(true)}
               data-testid="button-forus-examination"
             >
               <div className="relative z-10 flex flex-col items-center space-y-1">
