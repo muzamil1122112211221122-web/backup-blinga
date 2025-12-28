@@ -6,14 +6,14 @@ import {
   Plus,
   Trash2,
   X,
-  PenTool,
   Check,
   Search,
   Mic,
   Image as ImageIcon,
   FolderOpen,
   History,
-  ChevronLeft
+  ChevronLeft,
+  Settings
 } from "lucide-react";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";

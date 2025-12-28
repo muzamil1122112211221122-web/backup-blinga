@@ -2105,11 +2105,11 @@ Let's start the self-listen session!`;
             variant="ghost"
             className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
             onClick={() => setIsCustomizeModalOpen(true)}
-            data-testid="button-adjust-forus"
+            data-testid="button-settings"
           >
             <div className="relative z-10 flex flex-col items-center space-y-1">
               <Settings className="h-5 w-5" />
-              <span className="text-[10px] sm:text-xs font-medium">Adjust</span>
+              <span className="text-[10px] sm:text-xs font-medium">Settings</span>
             </div>
           </Button>
 
