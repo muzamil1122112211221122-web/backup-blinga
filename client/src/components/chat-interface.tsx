@@ -96,6 +96,13 @@ interface ChatInterfaceProps {
   onShowAuth: () => void;
 }
 
+import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
+import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
+import attachmentLight from "@assets/attachment_button_1766904971888.png";
+import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
+import micLight from "@assets/mic_button_1766904971887.png";
+import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
+
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -2240,7 +2247,11 @@ Let's start the self-listen session!`;
                     title="Add attachment"
                     data-testid="button-attachment"
                   >
-                    <Paperclip className="w-5 h-5" />
+                    <img 
+                      src={theme === 'dark' ? attachmentDark : attachmentLight} 
+                      alt="Attachment" 
+                      className="w-5 h-5"
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-[#1a1a1a] border-none text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
@@ -2270,7 +2281,11 @@ Let's start the self-listen session!`;
                 title="Voice input"
                 data-testid="button-mic"
               >
-                <Mic className="w-5 h-5" />
+                <img 
+                  src={theme === 'dark' ? micDark : micLight} 
+                  alt="Mic" 
+                  className="w-5 h-5"
+                />
               </Button>
               <Button
                 variant="ghost"
@@ -2284,7 +2299,11 @@ Let's start the self-listen session!`;
                 {isEnhancing ? (
                   <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
                 ) : (
-                  <span className="text-xl font-bold">✦</span>
+                  <img 
+                    src={theme === 'dark' ? enhancePromptDark : enhancePromptLight} 
+                    alt="Enhance" 
+                    className="w-5 h-5"
+                  />
                 )}
               </Button>
               <Button
