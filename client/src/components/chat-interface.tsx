@@ -2250,7 +2250,7 @@ Let's start the self-listen session!`;
                     <img 
                       src={theme === 'dark' ? attachmentDark : attachmentLight} 
                       alt="Attachment" 
-                      className="w-5 h-5"
+                      className="w-5 h-5 brightness-150 contrast-125"
                     />
                   </Button>
                 </DropdownMenuTrigger>
@@ -2284,7 +2284,7 @@ Let's start the self-listen session!`;
                 <img 
                   src={theme === 'dark' ? micDark : micLight} 
                   alt="Mic" 
-                  className="w-5 h-5"
+                  className="w-5 h-5 brightness-150 contrast-125"
                 />
               </Button>
               <Button
@@ -2302,7 +2302,7 @@ Let's start the self-listen session!`;
                   <img 
                     src={theme === 'dark' ? enhancePromptDark : enhancePromptLight} 
                     alt="Enhance" 
-                    className="w-5 h-5"
+                    className="w-5 h-5 brightness-150 contrast-125"
                   />
                 )}
               </Button>
