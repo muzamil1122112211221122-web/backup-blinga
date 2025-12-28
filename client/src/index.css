@@ -127,7 +127,7 @@
   }
 
   .dark [data-radix-select-content] {
-    background: transparent !important;
+    background: black !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
