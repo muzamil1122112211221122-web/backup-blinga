@@ -2204,38 +2204,40 @@ Let's start the self-listen session!`;
       )}
 
       {/* Message Input - Separate Section */}
-      <div className="p-1 sm:p-2 message-input-container max-w-[50rem] mx-auto w-full rounded-3xl !bg-[#303030] relative transition-all duration-300" style={{
-        boxShadow: '0 10px 30px -5px rgba(255, 255, 255, 0.25), 0 4px 15px -2px rgba(255, 255, 255, 0.15)'
+      <div className="p-2 sm:p-3 message-input-container max-w-[50rem] mx-auto w-full rounded-[2.5rem] !bg-[#303030] relative transition-all duration-300 shadow-2xl" style={{
+        boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 10px 20px -5px rgba(0, 0, 0, 0.3)'
       }}>
-          <div className="relative bg-[#303030] rounded-3xl">
+        <div className="relative bg-[#303030] rounded-[2rem] p-1 sm:p-2">
           <Textarea
             ref={textareaRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder=""
-            className="message-input w-full min-h-[48px] max-h-[140px] bg-[#303030] rounded-3xl pb-10 pr-16 sm:pb-14 sm:pr-20 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
+            className="message-input w-full min-h-[60px] max-h-[160px] bg-[#303030] rounded-[2rem] pb-12 pr-16 sm:pb-16 sm:pr-24 text-white placeholder-muted-foreground resize-none focus:outline-none border-none !bg-[#303030] shadow-none ring-0 focus-visible:ring-0"
             style={{
-              paddingRight: '64px',
-              fontSize: '18px',
-              lineHeight: '27px',
+              paddingLeft: '24px',
+              paddingRight: '80px',
+              paddingTop: '16px',
+              fontSize: '20px',
+              lineHeight: '30px',
               color: 'white'
             }}
             data-testid="input-message"
           />
           
           {/* Bottom Overlay to hide scrolling text behind buttons */}
-          <div className="absolute bottom-1 left-1 right-1 h-12 bg-[#303030] rounded-b-3xl pointer-events-none z-10"></div>
+          <div className="absolute bottom-2 left-2 right-2 h-14 bg-[#303030] rounded-b-[2rem] pointer-events-none z-10"></div>
           
           {/* Custom Placeholder */}
           {!inputValue && !attachedImage && (
             <div 
               className="absolute font-medium text-zinc-400 pointer-events-none"
               style={{
-                top: '8px',
-                left: '18px',
-                lineHeight: '27px',
-                fontSize: '18px',
+                top: '18px',
+                left: '26px',
+                lineHeight: '30px',
+                fontSize: '20px',
                 letterSpacing: '0px',
                 textAlign: 'left',
                 fontFamily: 'inherit'
@@ -2273,14 +2275,14 @@ Let's start the self-listen session!`;
           )}
           
           {/* Model Switcher - Bottom Left */}
-          <div className="absolute left-1 bottom-1 sm:left-2 sm:bottom-2 z-20">
+          <div className="absolute left-2 bottom-2 sm:left-4 sm:bottom-4 z-20">
             <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-              <SelectTrigger className="w-auto min-w-[100px] h-8 text-xs !border-0 !border-none !bg-transparent !shadow-none !ring-0 !ring-offset-0 !outline-none hover:bg-white/10 transition-all px-2 focus:!ring-0 focus:!ring-offset-0 shadow-none border-transparent">
+              <SelectTrigger className="w-auto min-w-[120px] h-10 text-sm !border-0 !border-none !bg-transparent !shadow-none !ring-0 !ring-offset-0 !outline-none hover:bg-white/10 transition-all px-3 focus:!ring-0 focus:!ring-offset-0 shadow-none border-transparent text-zinc-300">
                 <SelectValue placeholder="Model" />
               </SelectTrigger>
-              <SelectContent className="!border-0 !border-none rounded-lg shadow-lg backdrop-blur-md bg-[#252525]/90 overflow-hidden !ring-0 !outline-none border-transparent">
+              <SelectContent className="!border-0 !border-none rounded-xl shadow-2xl backdrop-blur-md bg-[#252525]/95 overflow-hidden !ring-0 !outline-none border-transparent text-white">
                 {MODEL_OPTIONS.map((modelOption) => (
-                  <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-accent">
+                  <SelectItem key={modelOption.id} value={modelOption.id} className="text-sm hover:bg-white/10 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
                         modelOption.provider === 'openai' ? 'bg-green-500' :
@@ -2297,7 +2299,7 @@ Let's start the self-listen session!`;
             </Select>
           </div>
 
-          <div className="absolute right-2 bottom-2 sm:right-3 sm:bottom-3 flex items-end space-x-1 sm:space-x-2 z-20">
+          <div className="absolute right-3 bottom-3 sm:right-5 sm:bottom-5 flex items-center space-x-2 sm:space-x-4 z-20">
             <input
               type="file"
               ref={fileInputRef}
@@ -2316,44 +2318,44 @@ Let's start the self-listen session!`;
             <Button
               variant="ghost"
               size="icon"
-              className="macos-button text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+              className="macos-button text-zinc-400 hover:text-white h-10 w-10 rounded-2xl"
               onClick={() => setIsAttachmentDialogOpen(true)}
               data-testid="button-attach-file"
             >
-              <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Paperclip className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className={`macos-button ${isListening ? 'text-green-400' : 'text-muted-foreground'} hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl`}
+              className={`macos-button ${isListening ? 'text-green-400' : 'text-zinc-400'} hover:text-white h-10 w-10 rounded-2xl`}
               onClick={toggleListening}
               disabled={!speechSupported}
               data-testid="button-voice-input"
             >
-              {isListening ? <MicOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Mic className="h-3 w-3 sm:h-4 sm:w-4" />}
+              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="macos-button text-zinc-400 hover:text-white h-8 w-8 sm:h-10 sm:w-10 rounded-2xl transition-colors"
+              className="macos-button text-zinc-400 hover:text-white h-10 w-10 rounded-2xl transition-colors"
               onClick={handleEnhancePrompt}
               disabled={!inputValue.trim() || isEnhancing}
               data-testid="button-enhance-prompt"
               title={isEnhancing ? "AI is enhancing prompt..." : "Enhance your prompt 1000x better"}
             >
               {isEnhancing ? (
-                <div className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></div>
+                <div className="animate-spin w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full"></div>
               ) : (
-                <span className="text-lg font-bold">✦</span>
+                <span className="text-xl font-bold">✦</span>
               )}
             </Button>
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() && !attachedImage}
-              className="macos-button bg-white hover:bg-zinc-200 text-black rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className="macos-button bg-[#b0b0b0] hover:bg-[#d0d0d0] text-black rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-200 transform hover:scale-105"
               data-testid="button-send-message"
             >
-              <span className="text-black text-sm sm:text-base">➤</span>
+              <span className="text-black text-lg sm:text-xl">➤</span>
             </Button>
           </div>
         </div>
