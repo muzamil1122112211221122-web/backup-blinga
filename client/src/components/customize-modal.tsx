@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,6 +50,16 @@ export function CustomizeModal({
     linkSharing: true
   });
 
+  // Reset local state when modal opens to ensure we start with saved values
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPreset(currentPreset);
+      setInstructions(customInstructions);
+      setIsDirty(false);
+      setShowExitDialog(false);
+    }
+  }, [isOpen, currentPreset, customInstructions]);
+
   const handleToggle = (key: keyof typeof toggles) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
     setIsDirty(true);
@@ -78,12 +88,13 @@ export function CustomizeModal({
     onSave(selectedPreset, instructions, isEnabled, selectedModel);
     setIsDirty(false);
     onClose();
+    setShowExitDialog(false);
   };
 
   const handleDontSave = () => {
     setIsDirty(false);
-    onClose();
     setShowExitDialog(false);
+    onClose();
   };
 
   const menuItems = [
@@ -96,10 +107,12 @@ export function CustomizeModal({
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) handleCloseAttempt();
+    }}>
       <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
-        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col border-r border-[#2a2a2a] !border-[#2a2a2a]">
+        <div className="w-56 bg-[#161616] !bg-[#161616] p-4 flex flex-col border-r border-[#2a2a2a] !border-[#2a2a2a] flex-shrink-0">
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-white text-lg font-bold">Settings</h2>
             <Button 
@@ -111,7 +124,7 @@ export function CustomizeModal({
               <X className="h-3 w-3" />
             </Button>
           </div>
-          <div className="flex-1 flex flex-col space-y-1">
+          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
               <button
                 key={item.id}
@@ -127,16 +140,16 @@ export function CustomizeModal({
               </button>
             ))}
           </div>
-          <div className="mt-auto pt-4 flex flex-col space-y-2">
+          <div className="mt-auto pt-4 flex flex-col space-y-2 border-t border-[#2a2a2a]">
             <Button
               onClick={handleSave}
-              className="w-full bg-white text-black hover:bg-zinc-200 text-xs h-9"
+              className="w-full bg-white text-black hover:bg-zinc-200 text-xs h-9 font-bold"
             >
               Save Changes
             </Button>
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="w-full bg-transparent border-zinc-800 text-zinc-400 hover:bg-zinc-800 text-xs h-9"
             >
               Cancel
@@ -221,9 +234,18 @@ export function CustomizeModal({
                   </Card>
                 ))}
               </div>
+              <div className="pt-4 space-y-4">
+                <label className="text-sm font-medium text-zinc-400">Custom Instructions</label>
+                <Textarea 
+                  value={instructions}
+                  onChange={(e) => { setInstructions(e.target.value); setIsDirty(true); }}
+                  placeholder="Tell Forus how to behave..."
+                  className="bg-[#161616] border-zinc-800 text-white min-h-[100px]"
+                />
+              </div>
               <p className="text-xs text-zinc-500 flex items-center space-x-2">
                 <Settings className="w-3 h-3" />
-                <span>Select an instruction set from above to customize Forus's responses.</span>
+                <span>Select an instruction set from above or write your own to customize Forus's responses.</span>
               </p>
             </div>
           )}
@@ -234,7 +256,7 @@ export function CustomizeModal({
                 <h4 className="text-sm font-medium text-white">Order Switcher</h4>
                 <div className="space-y-2">
                   {aiOrder.map((name, index) => (
-                    <div key={name} className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                    <div key={name} className="flex items-center justify-between p-3 bg-[#161616] rounded-lg border border-zinc-800">
                       <span className="text-sm text-white">{name}</span>
                       <div className="flex items-center space-x-1">
                         <Button 
@@ -260,7 +282,7 @@ export function CustomizeModal({
                   ))}
                 </div>
 
-                <div className="pt-6 border-t border-zinc-800 space-y-4">
+                <div className="pt-6 border-t border-[#2a2a2a] space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="max-w-[80%]">
                       <span className="text-sm text-white">Improve the Model</span>
@@ -282,7 +304,7 @@ export function CustomizeModal({
                 </div>
               </div>
 
-              <div className="p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+              <div className="p-4 bg-[#161616] rounded-xl border border-zinc-800">
                 <div className="flex items-center space-x-2 mb-4">
                   <Database className="w-4 h-4 text-white" />
                   <span className="text-sm font-medium text-white">Storage Usage</span>
@@ -297,7 +319,7 @@ export function CustomizeModal({
 
           {activeSection === 'account' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-xl border border-zinc-800">
+              <div className="flex items-center justify-between p-4 bg-[#161616] rounded-xl border border-zinc-800">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">M</div>
                   <div>
@@ -324,11 +346,13 @@ export function CustomizeModal({
     </Dialog>
     {showExitDialog && (
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent className="macos-dialog-content bg-[#161616] border-zinc-800 border max-w-sm shadow-2xl rounded-2xl p-6">
+        <DialogContent className="macos-dialog-content bg-[#161616] !bg-[#161616] border-zinc-800 border max-w-sm shadow-2xl rounded-2xl p-6 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold">Unsaved Changes</DialogTitle>
+            <DialogDescription className="text-zinc-400 text-sm mt-2">
+              You have unsaved changes. Do you want to save them before leaving?
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-zinc-400 text-sm mt-2">You have unsaved changes. Do you want to save them before leaving?</p>
           <div className="mt-6 flex justify-end space-x-3">
             <Button
               variant="ghost"
@@ -350,3 +374,4 @@ export function CustomizeModal({
   </>
   );
 }
+
