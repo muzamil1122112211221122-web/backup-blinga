@@ -2205,7 +2205,7 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div className="max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8">
-        <div className="relative bg-white dark:bg-[#212121] rounded-[1.5rem] transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,0,0,0.3)] dark:hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] focus-within:shadow-[0_0_25px_rgba(0,0,0,0.3)] dark:focus-within:shadow-[0_0_30px_rgba(255,255,255,0.25)]">
+        <div className="relative bg-white dark:bg-[#212121] rounded-[1.5rem] transition-all duration-300 shadow-[0_8px_15px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(255,255,255,0.1)] hover:shadow-[0_12px_25px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_15px_30px_rgba(255,255,255,0.15)] focus-within:shadow-[0_12px_25px_rgba(0,0,0,0.25)] dark:focus-within:shadow-[0_15px_30px_rgba(255,255,255,0.15)]">
           <div className="p-1.5 sm:p-2">
             <Textarea
               ref={textareaRef}
