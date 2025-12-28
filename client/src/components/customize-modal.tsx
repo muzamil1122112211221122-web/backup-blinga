@@ -283,6 +283,21 @@ export function CustomizeModal({
               </div>
             </div>
           )}
+          <div className="mt-8 flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-white text-black hover:bg-zinc-200"
+            >
+              Save Changes
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
