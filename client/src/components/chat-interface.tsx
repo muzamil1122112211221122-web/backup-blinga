@@ -2205,20 +2205,20 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div className="max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8">
-        <div className="relative bg-[#212121] rounded-[1.5rem] shadow-2xl transition-all duration-300">
-          <div className="p-3 sm:p-4">
+        <div className="relative bg-[#212121] dark:bg-[#212121] bg-white rounded-[1.5rem] transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.1)] dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+          <div className="p-1.5 sm:p-2">
             <Textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask Anything"
-              className="w-full min-h-[40px] max-h-[160px] bg-transparent text-white placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[16px] sm:text-[17px] leading-relaxed p-2"
+              className="w-full min-h-[36px] max-h-[120px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[15px] sm:text-[16px] leading-relaxed p-1.5"
               data-testid="input-message"
             />
           </div>
 
-          <div className="flex items-center justify-between px-2 pb-2">
+          <div className="flex items-center justify-between px-2 pb-1.5">
             <div className="flex items-center">
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                 <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 border-none bg-transparent shadow-none ring-0 focus:ring-0 transition-all rounded-full">
