@@ -121,13 +121,12 @@
     box-shadow: none !important;
   }
   
-  .dark [role="listbox"] {
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: transparent !important;
-  }
-
-  .dark [data-radix-select-content] {
-    background: black !important;
+  .dark [data-radix-select-content],
+  .dark [role="listbox"],
+  .dark [role="menu"],
+  .dark .select-content {
+    background-color: #000000 !important;
+    background: #000000 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
