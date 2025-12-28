@@ -477,12 +477,25 @@
   /* Force remove all borders from inputs/triggers in message bar */
   .message-input-container button,
   .message-input-container [role="combobox"],
+  .message-input-container [role="menuitem"],
+  .message-input-container [data-state],
+  .message-input-container button:focus,
+  .message-input-container button:active,
   .message-input-container .absolute.left-1.bottom-1 button {
     border: none !important;
     border-width: 0 !important;
     box-shadow: none !important;
     outline: none !important;
     ring: 0 !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Target specifically the attachment button trigger and its states */
+  [data-radix-menu-content-trigger],
+  [data-state="open"],
+  [data-state="closed"] {
+    outline: none !important;
+    box-shadow: none !important;
   }
 
   .dark .message-input {
