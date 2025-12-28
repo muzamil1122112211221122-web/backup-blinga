@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon } from "lucide-react";
+import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
 interface CustomizeModalProps {
@@ -61,14 +61,26 @@ export function CustomizeModal({
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'behavior', label: 'Behavior', icon: Zap },
     { id: 'customize', label: 'Customize', icon: Sliders },
-    { id: 'data', label: 'Data Controls', icon: Database },
+    { id: 'data', label: 'Lumin Settings', icon: Database },
   ];
+
+  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+
+  const moveOrder = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...aiOrder];
+    if (direction === 'up' && index > 0) {
+      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+    } else if (direction === 'down' && index < newOrder.length - 1) {
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+    }
+    setAiOrder(newOrder);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
         {/* Sidebar */}
-        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-zinc-800/80">
+        <div className="w-48 bg-[#161616] !bg-[#161616] p-4 flex flex-col space-y-1 border-r border-[#2a2a2a] !border-[#2a2a2a]">
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-white text-lg font-bold">Settings</h2>
             <Button 
@@ -100,7 +112,7 @@ export function CustomizeModal({
         <div className="flex-1 p-8 overflow-y-auto relative bg-[#0d0d0d] !bg-[#0d0d0d]">
           {activeSection === 'appearance' && (
             <div className="space-y-8">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline" 
                   className={`flex flex-col h-20 border-zinc-800 text-zinc-400 ${theme === 'light' ? 'bg-zinc-800 text-white' : 'bg-zinc-900'}`}
@@ -117,10 +129,6 @@ export function CustomizeModal({
                   <Moon className="w-5 h-5 mb-1" />
                   <span className="text-xs">Dark</span>
                 </Button>
-                <Button variant="outline" className="flex flex-col h-20 bg-zinc-900 border-zinc-800 text-zinc-400">
-                  <Laptop className="w-5 h-5 mb-1" />
-                  <span className="text-xs">System</span>
-                </Button>
               </div>
 
               <div className="space-y-6">
@@ -132,10 +140,6 @@ export function CustomizeModal({
                   <span className="text-sm text-zinc-200">Show Conversation Previews in History</span>
                   <Switch checked={toggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-200">Enable Starry Background</span>
-                  <Switch checked={toggles.starryBg} onCheckedChange={() => handleToggle('starryBg')} />
-                </div>
               </div>
             </div>
           )}
@@ -145,21 +149,6 @@ export function CustomizeModal({
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Auto Scroll</span>
                 <Switch checked={toggles.autoScroll} onCheckedChange={() => handleToggle('autoScroll')} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Enable Sidebar Editor For Code And Documents</span>
-                <Switch checked={toggles.sidebarEditor} onCheckedChange={() => handleToggle('sidebarEditor')} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500">Notify When Forus Finishes Thinking</span>
-                <Switch checked={toggles.notifyThinking} onCheckedChange={() => handleToggle('notifyThinking')} />
-              </div>
-              <div className="pt-4 border-t border-zinc-800">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm">Require Cmd+Enter To Submit</span>
-                  <Switch checked={toggles.cmdEnter} onCheckedChange={() => handleToggle('cmdEnter')} />
-                </div>
-                <p className="text-xs text-zinc-500">When enabled, press Cmd+Enter (or Ctrl+Enter) to submit. Enter will add a new line.</p>
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -206,23 +195,54 @@ export function CustomizeModal({
           {activeSection === 'data' && (
             <div className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="max-w-[80%]">
-                    <span className="text-sm text-white">Improve the Model</span>
-                    <p className="text-xs text-zinc-500 mt-1">By allowing your data to be used for training our models, you help enhance your own experience and improve the quality of the model for all users.</p>
-                  </div>
-                  <Switch checked={toggles.improveModel} onCheckedChange={() => handleToggle('improveModel')} />
+                <h4 className="text-sm font-medium text-white">Order Switcher</h4>
+                <div className="space-y-2">
+                  {aiOrder.map((name, index) => (
+                    <div key={name} className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800">
+                      <span className="text-sm text-white">{name}</span>
+                      <div className="flex items-center space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-zinc-500 hover:text-white"
+                          onClick={() => moveOrder(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-zinc-500 hover:text-white"
+                          onClick={() => moveOrder(index, 'down')}
+                          disabled={index === aiOrder.length - 1}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="max-w-[80%]">
-                    <span className="text-sm text-white">Personalize Forus with your conversation history <span className="text-[10px] bg-zinc-800 px-1 rounded">beta</span></span>
-                    <p className="text-xs text-zinc-500 mt-1">Allow Forus to remember details from your previous conversations.</p>
+
+                <div className="pt-6 border-t border-zinc-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="max-w-[80%]">
+                      <span className="text-sm text-white">Improve the Model</span>
+                      <p className="text-xs text-zinc-500 mt-1">By allowing your data to be used for training our models, you help enhance your own experience and improve the quality of the model for all users.</p>
+                    </div>
+                    <Switch checked={toggles.improveModel} onCheckedChange={() => handleToggle('improveModel')} />
                   </div>
-                  <Switch checked={toggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white">Allow chat link sharing</span>
-                  <Switch checked={toggles.linkSharing} onCheckedChange={() => handleToggle('linkSharing')} />
+                  <div className="flex items-center justify-between">
+                    <div className="max-w-[80%]">
+                      <span className="text-sm text-white">Personalize Forus with your conversation history <span className="text-[10px] bg-zinc-800 px-1 rounded">beta</span></span>
+                      <p className="text-xs text-zinc-500 mt-1">Allow Forus to remember details from your previous conversations.</p>
+                    </div>
+                    <Switch checked={toggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-white">Allow chat link sharing</span>
+                    <Switch checked={toggles.linkSharing} onCheckedChange={() => handleToggle('linkSharing')} />
+                  </div>
                 </div>
               </div>
 
@@ -235,14 +255,6 @@ export function CustomizeModal({
                   <div className="bg-zinc-400 h-full w-[2%]" />
                 </div>
                 <p className="text-[10px] text-zinc-500 mt-2">13.59 MB used of 1.07 GB</p>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-                <div>
-                  <span className="text-sm text-white">See Files and Assets</span>
-                  <p className="text-xs text-zinc-500 mt-1">See all the files and assets you have uploaded to Forus.</p>
-                </div>
-                <Button variant="outline" className="bg-zinc-900 border-zinc-800 text-white text-xs h-8">Manage</Button>
               </div>
             </div>
           )}
@@ -263,30 +275,10 @@ export function CustomizeModal({
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-2">
                   <div className="flex items-center space-x-3">
-                    <Zap className="w-4 h-4 text-zinc-400" />
-                    <span className="text-sm text-white">Get Forus Pro</span>
-                  </div>
-                  <Button variant="outline" className="bg-zinc-900 border-zinc-800 text-white text-xs h-8">Upgrade</Button>
-                </div>
-                <div className="flex items-center justify-between p-2">
-                  <div className="flex items-center space-x-3">
                     <Settings className="w-4 h-4 text-zinc-400" />
                     <span className="text-sm text-white">Account Settings</span>
                   </div>
                   <Button variant="outline" className="bg-zinc-900 border-zinc-800 text-white text-xs h-8">Manage</Button>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-8 border-t border-zinc-800">
-                <div className="bg-gradient-to-r from-zinc-900 to-zinc-950 p-4 rounded-2xl flex items-center justify-between border border-zinc-800">
-                  <div className="flex items-center space-x-3">
-                    <Zap className="w-5 h-5 text-white" />
-                    <div>
-                      <p className="text-sm font-bold text-white">Forus Pro</p>
-                      <p className="text-[10px] text-zinc-500">Fewer rate limits, more capabilities</p>
-                    </div>
-                  </div>
-                  <Button className="bg-white text-black hover:bg-zinc-200 rounded-full px-6 h-9 text-xs font-bold">Go Pro</Button>
                 </div>
               </div>
             </div>
