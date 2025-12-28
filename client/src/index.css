@@ -140,7 +140,7 @@
 
   /* Fix textarea borders in dark theme */
   .dark textarea {
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    border: none !important;
   }
 
   /* Fix Forus settings text color in dark theme */
@@ -463,7 +463,7 @@
     resize: none;
     line-height: 27px;
     font-size: 18px;
-    border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+    border: none !important;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     padding-top: 8px !important;
     padding-left: 16px !important;
