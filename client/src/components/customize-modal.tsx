@@ -123,9 +123,9 @@ export function CustomizeModal({
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) handleCloseAttempt();
     }}>
-      <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] dark:bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row">
+      <DialogContent className="macos-dialog-content bg-[#0d0d0d] !bg-[#0d0d0d] border-zinc-800/50 max-w-3xl h-[500px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row z-[50]">
         {/* Sidebar */}
-        <div className="w-56 bg-[#161616] !bg-[#161616] dark:bg-[#161616] p-4 flex flex-col border-r border-[#2a2a2a] !border-[#2a2a2a] flex-shrink-0">
+        <div className="w-56 bg-[#161616] !bg-[#161616] p-4 flex flex-col border-r border-[#2a2a2a] !border-[#2a2a2a] flex-shrink-0 z-[60]">
           <div className="flex items-center justify-between mb-4 px-2">
             <h2 className="text-white text-lg font-bold">Settings</h2>
             <Button 
@@ -359,7 +359,7 @@ export function CustomizeModal({
     </Dialog>
     {showExitDialog && (
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-[#161616] !bg-[#161616] dark:bg-[#161616] border border-zinc-800 max-w-sm shadow-2xl rounded-2xl p-6 z-[200] opacity-100">
+        <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-[#161616] !bg-[#161616] border border-zinc-800 max-w-sm shadow-2xl rounded-2xl p-6 z-[200] opacity-100">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold">Unsaved Changes</DialogTitle>
             <DialogDescription className="text-zinc-400 text-sm mt-2">
