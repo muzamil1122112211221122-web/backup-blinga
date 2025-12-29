@@ -15,6 +15,8 @@ interface CustomizeModalProps {
   currentPreset: ChatPreset;
   customInstructions: string;
   onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => void;
+  toggles: any;
+  aiOrder: string[];
 }
 
 type SettingsSection = 'account' | 'appearance' | 'behavior' | 'customize' | 'data';
@@ -24,7 +26,9 @@ export function CustomizeModal({
   onClose,
   currentPreset,
   customInstructions,
-  onSave
+  onSave,
+  toggles,
+  aiOrder
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
@@ -55,24 +59,12 @@ export function CustomizeModal({
     if (isOpen) {
       setSelectedPreset(currentPreset);
       setInstructions(customInstructions);
-      setLocalToggles({
-        wrapLines: true,
-        showPreviews: true,
-        starryBg: true,
-        autoScroll: true,
-        sidebarEditor: true,
-        notifyThinking: false,
-        cmdEnter: false,
-        richText: true,
-        improveModel: true,
-        personalize: true,
-        linkSharing: true
-      });
-      setLocalAiOrder(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+      setLocalToggles({ ...toggles });
+      setLocalAiOrder([...aiOrder]);
       setIsDirty(false);
       setShowExitDialog(false);
     }
-  }, [isOpen, currentPreset, customInstructions]);
+  }, [isOpen, currentPreset, customInstructions, toggles, aiOrder]);
 
   const handleToggle = (key: string) => {
     setLocalToggles(prev => ({ ...prev, [key]: !prev[prev.hasOwnProperty(key) ? key : 'wrapLines' as keyof typeof prev] }));

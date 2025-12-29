@@ -139,6 +139,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
   const [showLuminNotification, setShowLuminNotification] = useState(true);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
+  
+  // Settings state
+  const [settingsToggles, setSettingsToggles] = useState({
+    wrapLines: true,
+    showPreviews: true,
+    starryBg: true,
+    autoScroll: true,
+    sidebarEditor: true,
+    notifyThinking: false,
+    cmdEnter: false,
+    richText: true,
+    improveModel: true,
+    personalize: true,
+    linkSharing: true
+  });
+  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1200,7 +1216,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   }, [forusIntegrationMode]);
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, newAiOrder?: string[]) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
     // Store selected model
@@ -1208,8 +1224,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setSelectedModel(selectedModel);
       localStorage.setItem('selectedModel', selectedModel);
     }
-    // Handle toggles and AI order if needed in parent state
-    console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, aiOrder });
+    // Update toggles and AI order in parent state
+    if (toggles) {
+      setSettingsToggles(toggles);
+    }
+    if (newAiOrder) {
+      setAiOrder(newAiOrder);
+    }
+    console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, newAiOrder });
     setIsCustomizeModalOpen(false);
   };
 
@@ -2369,6 +2391,8 @@ Let's start the self-listen session!`;
         currentPreset={currentPreset}
         customInstructions={customInstructions}
         onSave={handleCustomizeSave}
+        toggles={settingsToggles}
+        aiOrder={aiOrder}
       />
 
       {/* Image Generation Dialog */}
