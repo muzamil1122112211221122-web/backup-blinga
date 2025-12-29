@@ -1683,146 +1683,152 @@ Let's start the self-listen session!`;
               
               {/* Premium AI Model Toggles with Authentic Logos */}
               <div className="flex flex-wrap gap-4 mb-8">
-                {Object.entries({
-                  'gpt-4o': { 
-                    name: 'ChatGPT', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/chatgpt-logo.png" 
-                          alt="ChatGPT" 
-                          className="w-full h-full object-contain dark:filter dark:invert"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-green-400 to-blue-500' 
-                  },
-                  'claude-3.5-sonnet': { 
-                    name: 'Claude', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/claude-logo.png" 
-                          alt="Claude" 
-                          className="w-full h-full object-contain"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-orange-400 to-orange-600' 
-                  }, 
-                  'gemini-pro': { 
-                    name: 'Gemini', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/gemini-logo.png" 
-                          alt="Gemini" 
-                          className="w-full h-full object-contain"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-teal-400 to-emerald-500' 
-                  },
-                  'perplexity': { 
-                    name: 'Perplexity', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/perplexity-logo.png" 
-                          alt="Perplexity" 
-                          className="w-full h-full object-contain"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-sky-300 to-blue-400' 
-                  },
-                  'grok-4': { 
-                    name: 'Grok 4', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/grok-logo.png" 
-                          alt="Grok" 
-                          className="w-full h-full object-contain filter brightness-0 dark:filter dark:brightness-0 dark:invert"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-gray-400 to-black' 
-                  },
-                  'deepseek-r1': { 
-                    name: 'Deepseek V3', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/deepseek-logo.png" 
-                          alt="Deepseek V3" 
-                          className="w-full h-full object-contain"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-blue-400 to-cyan-500' 
-                  },
-                  'forus-ai': { 
-                    name: 'Forus AI', 
-                    logo: (
-                      <div className="w-8 h-8 flex items-center justify-center">
-                        <img 
-                          src="/forus-logo.png" 
-                          alt="Forus AI" 
-                          className="w-full h-full object-contain rounded-full"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        />
-                      </div>
-                    ), 
-                    gradient: 'from-purple-400 to-pink-500' 
-                  }
-                }).map(([model, config]) => (
-                  <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
-                    activeAIModels.has(model) ? 'shadow-lg scale-105' : 'hover:scale-102'
-                  }`}>
-                    <div className="bg-background dark:bg-background/95 backdrop-blur-sm rounded-2xl p-4 flex items-center space-x-3">
-                      <button
-                        onClick={() => {
-                          const newActive = new Set(activeAIModels);
-                          if (newActive.has(model)) {
-                            newActive.delete(model);
-                          } else {
-                            newActive.add(model);
-                          }
-                          setActiveAIModels(newActive);
-                        }}
-                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                          activeAIModels.has(model) 
-                            ? `bg-gradient-to-r ${config.gradient} shadow-md` 
-                            : 'bg-gray-300 dark:bg-gray-600'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 absolute top-0.5 flex items-center justify-center ${
-                          activeAIModels.has(model) ? 'translate-x-6' : 'translate-x-0.5'
-                        }`}>
-                          {activeAIModels.has(model) && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+                {luminModels.map((modelObj) => {
+                  const model = modelObj.id;
+                  const configMap: {[key: string]: {name: string, logo: any, gradient: string}} = {
+                    'gpt-4o': { 
+                      name: 'ChatGPT', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/chatgpt-logo.png" 
+                            alt="ChatGPT" 
+                            className="w-full h-full object-contain dark:filter dark:invert"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
                         </div>
-                      </button>
-                      <div className="flex items-center space-x-3">
-                        {config.logo}
-                        <span className="text-sm font-semibold text-foreground">{config.name}</span>
+                      ), 
+                      gradient: 'from-green-400 to-blue-500' 
+                    },
+                    'claude-3.5-sonnet': { 
+                      name: 'Claude', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/claude-logo.png" 
+                            alt="Claude" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-orange-400 to-orange-600' 
+                    }, 
+                    'gemini-pro': { 
+                      name: 'Gemini', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/gemini-logo.png" 
+                            alt="Gemini" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-teal-400 to-emerald-500' 
+                    },
+                    'perplexity': { 
+                      name: 'Perplexity', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/perplexity-logo.png" 
+                            alt="Perplexity" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-sky-300 to-blue-400' 
+                    },
+                    'grok-4': { 
+                      name: 'Grok 4', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/grok-logo.png" 
+                            alt="Grok" 
+                            className="w-full h-full object-contain filter brightness-0 dark:filter dark:brightness-0 dark:invert"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-gray-400 to-black' 
+                    },
+                    'deepseek-r1': { 
+                      name: 'Deepseek V3', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/deepseek-logo.png" 
+                            alt="Deepseek V3" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-blue-400 to-cyan-500' 
+                    },
+                    'forus-ai': { 
+                      name: 'Forus AI', 
+                      logo: (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <img 
+                            src="/forus-logo.png" 
+                            alt="Forus AI" 
+                            className="w-full h-full object-contain rounded-full"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                      ), 
+                      gradient: 'from-purple-400 to-pink-500' 
+                    }
+                  };
+                  const config = configMap[model] || { name: model, logo: null, gradient: 'from-gray-400 to-gray-600' };
+                  return (
+                    <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
+                      activeAIModels.has(model) ? 'shadow-lg scale-105' : 'hover:scale-102'
+                    }`}>
+                      <div className="bg-background dark:bg-background/95 backdrop-blur-sm rounded-2xl p-4 flex items-center space-x-3">
+                        <button
+                          onClick={() => {
+                            const newActive = new Set(activeAIModels);
+                            if (newActive.has(model)) {
+                              newActive.delete(model);
+                            } else {
+                              newActive.add(model);
+                            }
+                            setActiveAIModels(newActive);
+                          }}
+                          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                            activeAIModels.has(model) 
+                              ? `bg-gradient-to-r ${config.gradient} shadow-md` 
+                              : 'bg-gray-300 dark:bg-gray-600'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 absolute top-0.5 flex items-center justify-center ${
+                            activeAIModels.has(model) ? 'translate-x-6' : 'translate-x-0.5'
+                          }`}>
+                            {activeAIModels.has(model) && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+                          </div>
+                        </button>
+                        <div className="flex items-center space-x-3">
+                          {config.logo}
+                          <span className="text-sm font-semibold text-foreground">{config.name}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               
               {/* Multi-AI Responses - Horizontal Scrolling */}
               {Object.keys(luminMessages).length > 0 && (
                 <div className="mb-6">
                   <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style={{scrollbarWidth: 'thin'}}>
-                    {Array.from(activeAIModels).map(model => {
+                    {luminModels.filter(m => activeAIModels.has(m.id)).map(modelObj => {
+                      const model = modelObj.id;
                       const getModelConfig = (model: string) => {
                         switch(model) {
                           case 'gpt-4o': return { name: 'ChatGPT', logo: (
