@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Mic, MicOff, Volume2, VolumeX, X } from "lucide-react";
+import { Mic, X, Settings2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface VoiceModeModalProps {
   isOpen: boolean;
@@ -25,11 +26,11 @@ export function VoiceModeModal({
 
   // Simulate audio levels for visual feedback
   useEffect(() => {
-    if (isListening && isOpen) {
+    if ((isListening || isPlaying) && isOpen) {
       const animate = () => {
         setCurrentLevel(prev => {
-          const next = prev + (Math.random() - 0.5) * 0.3;
-          return Math.max(0, Math.min(1, next));
+          const next = prev + (Math.random() - 0.5) * 0.4;
+          return Math.max(0.1, Math.min(1, next));
         });
         animationRef.current = requestAnimationFrame(animate);
       };
@@ -46,128 +47,166 @@ export function VoiceModeModal({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isListening, isOpen]);
+  }, [isListening, isPlaying, isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full mx-auto bg-white dark:bg-[#0d0d0d] border-zinc-800/50 text-foreground [&>button]:hidden opacity-100">
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white z-10"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      <DialogContent className="max-w-none w-screen h-screen m-0 p-0 bg-black border-none text-white overflow-hidden flex flex-col items-center justify-center opacity-100 ring-0 focus:ring-0">
+        {/* Top Right Controls */}
+        <div className="absolute top-6 right-6 flex items-center space-x-4 z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+          >
+            <Settings2 className="h-5 w-5" />
+          </Button>
+        </div>
 
-        <div className="flex flex-col items-center justify-center py-8">
-          {/* Large circular audio visualizer */}
-          <div className="relative w-48 h-48 mb-8">
-            {/* Outer pulsing ring */}
-            <div 
-              className={`absolute inset-0 rounded-full border-2 transition-all duration-300 ${
-                isListening 
-                  ? 'border-green-400 animate-pulse' 
-                  : isPlaying 
-                  ? 'border-blue-400 animate-pulse'
-                  : 'border-gray-600'
-              }`}
-              style={{
-                transform: isListening ? `scale(${1 + currentLevel * 0.1})` : 'scale(1)'
+        {/* Central Circular AI Core */}
+        <div className="relative flex flex-col items-center justify-center">
+          <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+            {/* Outer Glow Layer 1 */}
+            <motion.div
+              animate={{
+                scale: [1, 1.1 + currentLevel * 0.2, 1],
+                opacity: [0.3, 0.5 + currentLevel * 0.3, 0.3],
               }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 rounded-full bg-blue-500/20 blur-3xl"
             />
             
-            {/* Inner circle with gradient */}
-            <div 
-              className={`absolute inset-4 rounded-full flex items-center justify-center transition-all duration-200 ${
-                isListening 
-                  ? 'bg-gradient-to-br from-green-500/30 to-green-600/30' 
-                  : isPlaying
-                  ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/30'
-                  : 'bg-gradient-to-br from-gray-700/50 to-gray-800/50'
-              }`}
-              style={{
-                transform: isListening ? `scale(${1 + currentLevel * 0.05})` : 'scale(1)'
+            {/* Outer Glow Layer 2 */}
+            <motion.div
+              animate={{
+                scale: [1.1, 1.3 + currentLevel * 0.3, 1.1],
+                opacity: [0.1, 0.2 + currentLevel * 0.2, 0.1],
               }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              className="absolute inset-0 rounded-full bg-cyan-400/10 blur-2xl"
+            />
+
+            {/* The Main Circular Visualizer (Matching the image) */}
+            <motion.div 
+              className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)]"
+              animate={{
+                scale: isListening || isPlaying ? 1.05 : 1,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
-              {/* Microphone icon */}
-              {isListening ? (
-                <Mic className="h-12 w-12 text-green-400" />
-              ) : isPlaying ? (
-                <Volume2 className="h-12 w-12 text-blue-400" />
-              ) : (
-                <Mic className="h-12 w-12 text-gray-400" />
-              )}
-            </div>
-            
-            {/* Audio level bars around the circle */}
-            {isListening && (
-              <div className="absolute inset-0">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div
+              {/* Complex Gradient/Cloudy Background mimicking the image */}
+              <div className="absolute inset-0 bg-[#000000]">
+                {/* Bottom Deep Blue */}
+                <div className="absolute bottom-0 left-0 right-0 h-3/4 bg-gradient-to-t from-[#0066FF] to-transparent opacity-90" />
+                
+                {/* Center Cyan Highlight */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#40E0D0]/40 to-transparent" />
+                
+                {/* Top White/Cloudy Mist */}
+                <motion.div 
+                  animate={{
+                    y: [-5, 5, -5],
+                    x: [-3, 3, -3],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-1/4 left-0 right-0 h-3/4 bg-white/40 blur-3xl rounded-full"
+                />
+
+                {/* Animated Inner Particles for "Life" */}
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <motion.div
                     key={i}
-                    className="absolute w-1 bg-green-400 rounded-full origin-bottom transition-all duration-150"
+                    className="absolute bg-white rounded-full opacity-30"
                     style={{
-                      height: `${8 + Math.random() * currentLevel * 24}px`,
-                      left: '50%',
-                      bottom: '50%',
-                      transform: `rotate(${i * 45}deg) translateX(-50%) translateY(100px)`,
+                      width: Math.random() * 4 + 2,
+                      height: Math.random() * 4 + 2,
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                    }}
+                    animate={{
+                      y: [0, (Math.random() - 0.5) * 40],
+                      x: [0, (Math.random() - 0.5) * 40],
+                      opacity: [0.1, 0.4, 0.1],
+                    }}
+                    transition={{
+                      duration: 3 + Math.random() * 2,
+                      repeat: Infinity,
+                      ease: "linear"
                     }}
                   />
                 ))}
               </div>
-            )}
+
+              {/* Logo Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <motion.div
+                  animate={{
+                    opacity: isListening || isPlaying ? 0.3 : 0.6,
+                    scale: isListening || isPlaying ? 0.9 : 1
+                  }}
+                  className="w-20 h-20 md:w-24 md:h-24 opacity-60 mix-blend-overlay"
+                >
+                   {/* Using a simplified version of the logo for better visibility on the background */}
+                   <svg viewBox="0 0 100 100" className="w-full h-full fill-white">
+                      <path d="M50 10C27.9 10 10 27.9 10 50s17.9 40 40 40 40-17.9 40-40S72.1 10 50 10zm0 70c-16.5 0-30-13.5-30-30s13.5-30 30-30 30 13.5 30 30-13.5 30-30 30z" />
+                      <circle cx="50" cy="50" r="15" />
+                   </svg>
+                </motion.div>
+              </div>
+            </motion.div>
           </div>
 
-          {/* Status text */}
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold mb-2">
-              {isListening ? 'Listening...' : isPlaying ? 'Speaking...' : 'Voice Mode'}
-            </h2>
-            <p className="text-gray-400 text-sm">
-              {isListening 
-                ? 'Speak now, I\'m listening' 
-                : isPlaying 
-                ? 'Playing response'
-                : 'Press the microphone to start'
-              }
+          {/* AI Name & Status */}
+          <div className="mt-12 text-center">
+            <h2 className="text-2xl font-light tracking-widest text-white/90 mb-2 uppercase">FORUS AI</h2>
+            <p className="text-white/50 text-sm font-medium h-6">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={isListening ? 'listening' : isPlaying ? 'speaking' : 'idle'}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isListening ? "Listening..." : isPlaying ? "Speaking..." : "Tap to start"}
+                </motion.span>
+              </AnimatePresence>
             </p>
           </div>
+        </div>
 
-          {/* Control buttons */}
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={onToggleListening}
-              className={`h-14 w-14 rounded-full transition-all ${
-                isListening
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-              }`}
-            >
-              {isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </Button>
+        {/* Bottom Bar Controls */}
+        <div className="absolute bottom-10 left-0 right-0 px-10 flex items-center justify-between z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleListening}
+            className={`h-14 w-14 rounded-full transition-all border border-white/10 ${
+              isListening ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'
+            }`}
+          >
+            <Mic className={`h-6 w-6 ${isListening ? 'animate-pulse' : ''}`} />
+          </Button>
 
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={onTogglePlaying}
-              className={`h-14 w-14 rounded-full transition-all ${
-                isPlaying
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-              }`}
-            >
-              {isPlaying ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-14 w-14 rounded-full bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
 
-          {/* Helper text */}
-          <p className="text-xs text-gray-500 mt-4 text-center max-w-xs">
-            Enable microphone access in Settings to use voice mode
-          </p>
+        {/* Dynamic Background Mesh */}
+        <div className="fixed inset-0 pointer-events-none z-[-1]">
+          <div className="absolute inset-0 bg-black" />
+          <motion.div 
+            animate={{
+              opacity: isListening || isPlaying ? 0.4 : 0.2,
+            }}
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-transparent"
+          />
         </div>
       </DialogContent>
     </Dialog>
