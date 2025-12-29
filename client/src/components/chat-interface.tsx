@@ -601,6 +601,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const content = inputValue.trim();
     if (!content && !attachedImage) return;
 
+    // Handle voice mode button clicking "start"
+    if (content.toLowerCase() === 'start') {
+      setIsVoiceModeModalOpen(true);
+      setInputValue("");
+      return;
+    }
+
     // Handle Lumin multi-AI mode
     if (activeTab === 'lumin' && activeAIModels.size > 0) {
       await handleLuminSendMessage(content);

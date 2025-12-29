@@ -147,10 +147,9 @@ export function VoiceModeModal({
                   className="w-20 h-20 md:w-24 md:h-24 opacity-60 mix-blend-overlay"
                 >
                    {/* Using a simplified version of the logo for better visibility on the background */}
-                   <svg viewBox="0 0 100 100" className="w-full h-full fill-white">
-                      <path d="M50 10C27.9 10 10 27.9 10 50s17.9 40 40 40 40-17.9 40-40S72.1 10 50 10zm0 70c-16.5 0-30-13.5-30-30s13.5-30 30-30 30 13.5 30 30-13.5 30-30 30z" />
-                      <circle cx="50" cy="50" r="15" />
-                   </svg>
+                   <div className="w-24 h-24 md:w-32 md:h-32 flex items-center justify-center">
+                     <Logo size="lg" className="w-full h-full text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+                   </div>
                 </motion.div>
               </div>
             </motion.div>
