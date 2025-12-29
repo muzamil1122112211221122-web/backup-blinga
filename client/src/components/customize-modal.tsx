@@ -14,7 +14,7 @@ interface CustomizeModalProps {
   onClose: () => void;
   currentPreset: ChatPreset;
   customInstructions: string;
-  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel) => void;
+  onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => void;
 }
 
 type SettingsSection = 'account' | 'appearance' | 'behavior' | 'customize' | 'data';
@@ -99,7 +99,7 @@ export function CustomizeModal({
   };
 
   const handleSave = () => {
-    onSave(selectedPreset, instructions, isEnabled, selectedModel);
+    onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
     setShowExitDialog(false);

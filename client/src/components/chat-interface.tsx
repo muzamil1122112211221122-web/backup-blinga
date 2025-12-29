@@ -1200,7 +1200,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   }, [forusIntegrationMode]);
 
-  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel) => {
+  const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => {
     setCurrentPreset(preset);
     setCustomInstructions(instructions);
     // Store selected model
@@ -1208,6 +1208,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setSelectedModel(selectedModel);
       localStorage.setItem('selectedModel', selectedModel);
     }
+    // Handle toggles and AI order if needed in parent state
+    console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, aiOrder });
+    setIsCustomizeModalOpen(false);
   };
 
   const handleNewProject = async () => {
