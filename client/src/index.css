@@ -148,7 +148,6 @@
   /* Fix dialog and modal borders in dark theme */
   .dark [role="dialog"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
-    background: transparent !important;
   }
 
   /* Fix button borders in dark theme */
