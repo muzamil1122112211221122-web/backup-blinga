@@ -33,6 +33,22 @@ export function CustomizeModal({
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
   const [localAiOrder, setLocalAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
+  const [localToggles, setLocalToggles] = useState({
+    wrapLines: true,
+    showPreviews: true,
+    starryBg: true,
+    autoScroll: true,
+    sidebarEditor: true,
+    notifyThinking: false,
+    cmdEnter: false,
+    richText: true,
+    improveModel: true,
+    personalize: true,
+    linkSharing: true
+  });
 
   // Reset local state when modal opens to ensure we start with saved values
   useEffect(() => {
@@ -58,8 +74,8 @@ export function CustomizeModal({
     }
   }, [isOpen, currentPreset, customInstructions]);
 
-  const handleToggle = (key: keyof typeof localToggles) => {
-    setLocalToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleToggle = (key: string) => {
+    setLocalToggles(prev => ({ ...prev, [key]: !prev[prev.hasOwnProperty(key) ? key : 'wrapLines' as keyof typeof prev] }));
     setIsDirty(true);
   };
 
