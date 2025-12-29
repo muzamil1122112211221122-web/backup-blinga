@@ -1100,7 +1100,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setSettingsToggles(toggles);
     }
     if (newAiOrder) {
-      setAiOrder(newAiOrder);
+      setAiOrder([...newAiOrder]); // Spread to ensure reference change triggers useEffect
     }
     console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, newAiOrder });
     setIsCustomizeModalOpen(false);
