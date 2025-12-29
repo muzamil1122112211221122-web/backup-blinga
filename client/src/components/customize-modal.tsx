@@ -36,7 +36,7 @@ export function CustomizeModal({
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
-  const [localAiOrder, setLocalAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
 
@@ -67,7 +67,7 @@ export function CustomizeModal({
   }, [isOpen, currentPreset, customInstructions, toggles, aiOrder]);
 
   const handleToggle = (key: string) => {
-    setLocalToggles(prev => ({ ...prev, [key]: !prev[prev.hasOwnProperty(key) ? key : 'wrapLines' as keyof typeof prev] }));
+    setLocalToggles(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
     setIsDirty(true);
   };
 

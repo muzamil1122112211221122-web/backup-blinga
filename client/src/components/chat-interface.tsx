@@ -155,6 +155,26 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     linkSharing: true
   });
   const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
+  const [luminModels, setLuminModels] = useState<{name: string, provider: string, id: string}[]>([]);
+
+  useEffect(() => {
+    // Sync luminModels with aiOrder
+    const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
+      'gpt-4o': { name: 'ChatGPT', provider: 'openai', id: 'gpt-4o' },
+      'claude-3.5-sonnet': { name: 'Claude', provider: 'anthropic', id: 'claude-3.5-sonnet' },
+      'gemini-pro': { name: 'Gemini', provider: 'google', id: 'gemini-pro' },
+      'perplexity': { name: 'Perplexity', provider: 'perplexity', id: 'perplexity' },
+      'grok-4': { name: 'Grok', provider: 'x-ai', id: 'grok-4' },
+      'deepseek-r1': { name: 'DeepSeek', provider: 'deepseek', id: 'deepseek-r1' },
+      'forus-ai': { name: 'Forus', provider: 'forus', id: 'forus-ai' }
+    };
+
+    const newLuminModels = aiOrder
+      .map(id => modelMap[id])
+      .filter(Boolean);
+    
+    setLuminModels(newLuminModels);
+  }, [aiOrder]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -525,10 +545,61 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const content = inputValue.trim();
     if (!content && !attachedImage) return;
 
-    // Handle Lumin multi-AI mode
-    if (activeTab === 'lumin' && activeAIModels.size > 0) {
-      return await handleLuminSendMessage(content);
+  const handleLuminSendMessage = async (content: string) => {
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      conversationId: 'lumin',
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue("");
+    
+    // Send to each selected model in order
+    const modelsToCall = luminModels.filter(m => activeAIModels.has(m.id));
+    
+    for (const model of modelsToCall) {
+      setLuminIsTyping(prev => ({ ...prev, [model.id]: true }));
+      
+      try {
+        const response = await fetch('/api/test-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: content,
+            conversationId: 'lumin',
+            model: model.id,
+            provider: model.provider
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const aiMessage: ChatMessage = {
+            id: `${Date.now()}-${model.id}`,
+            conversationId: 'lumin',
+            role: 'assistant',
+            content: result.response,
+            createdAt: new Date(),
+            metadata: {
+              ...result.metadata,
+              modelName: model.name
+            }
+          };
+          setLuminMessages(prev => ({
+            ...prev,
+            [model.id]: [...(prev[model.id] || []), aiMessage]
+          }));
+        }
+      } catch (error) {
+        console.error(`Error calling ${model.name}:`, error);
+      } finally {
+        setLuminIsTyping(prev => ({ ...prev, [model.id]: false }));
+      }
     }
+  };
 
     // Create conversation if needed
     let conversationId = currentProjectId;
