@@ -57,6 +57,19 @@ export function CustomizeModal({
       setInstructions(customInstructions);
       setIsDirty(false);
       setShowExitDialog(false);
+      setToggles({
+        wrapLines: true,
+        showPreviews: true,
+        starryBg: true,
+        autoScroll: true,
+        sidebarEditor: true,
+        notifyThinking: false,
+        cmdEnter: false,
+        richText: true,
+        improveModel: true,
+        personalize: true,
+        linkSharing: true
+      });
     }
   }, [isOpen, currentPreset, customInstructions]);
 
@@ -124,12 +137,12 @@ export function CustomizeModal({
               <X className="h-3 w-3" />
             </Button>
           </div>
-          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto">
+          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto min-h-0">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id as SettingsSection)}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium flex-shrink-0 ${
                   activeSection === item.id 
                     ? 'bg-zinc-800 text-white' 
                     : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
@@ -346,7 +359,7 @@ export function CustomizeModal({
     </Dialog>
     {showExitDialog && (
       <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <DialogContent className="macos-dialog-content bg-[#161616] !bg-[#161616] border-zinc-800 border max-w-sm shadow-2xl rounded-2xl p-6 z-[100]">
+        <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] bg-[#161616] !bg-[#161616] border border-zinc-800 max-w-sm shadow-2xl rounded-2xl p-6 z-[200] opacity-100">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold">Unsaved Changes</DialogTitle>
             <DialogDescription className="text-zinc-400 text-sm mt-2">
