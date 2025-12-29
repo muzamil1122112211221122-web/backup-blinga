@@ -263,7 +263,7 @@ export function CustomizeModal({
                 <div className="space-y-2">
                   {localAiOrder.map((name, index) => (
                     <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border border-zinc-200 dark:border-zinc-800">
-                      <span className="text-sm text-zinc-900 dark:text-white">{name}</span>
+                      <span className="text-sm text-zinc-900 dark:text-white capitalize">{name.replace(/-/g, ' ')}</span>
                       <div className="flex items-center space-x-1">
                         <Button 
                           variant="ghost" 

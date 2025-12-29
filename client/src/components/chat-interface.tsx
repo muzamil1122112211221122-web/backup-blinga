@@ -293,7 +293,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   // WebSocket connection - lazy load to improve initial performance
   const { isConnected, sendMessage: sendWsMessage } = useWebSocket({
-    onMessage: handleWebSocketMessage,
+    onMessage: (message: WebSocketMessage) => handleWebSocketMessage(message),
     onConnect: () => {
       // Join conversation if we have one
       if (currentProjectId && user) {
@@ -433,7 +433,63 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     );
   };
 
-  function handleWebSocketMessage(message: WebSocketMessage) {
+  const handleLuminSendMessage = async (content: string) => {
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      conversationId: 'lumin',
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue("");
+    
+    // Send to each selected model in order
+    const modelsToCall = luminModels.filter(m => activeAIModels.has(m.id));
+    
+    for (const model of modelsToCall) {
+      setLuminIsTyping(prev => ({ ...prev, [model.id]: true }));
+      
+      try {
+        const response = await fetch('/api/test-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: content,
+            conversationId: 'lumin',
+            model: model.id,
+            provider: model.provider
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const aiMessage: ChatMessage = {
+            id: `${Date.now()}-${model.id}`,
+            conversationId: 'lumin',
+            role: 'assistant',
+            content: result.response,
+            createdAt: new Date(),
+            metadata: {
+              ...result.metadata,
+              modelName: model.name
+            }
+          };
+          setLuminMessages(prev => ({
+            ...prev,
+            [model.id]: [...(prev[model.id] || []), aiMessage]
+          }));
+        }
+      } catch (error) {
+        console.error(`Error calling ${model.name}:`, error);
+      } finally {
+        setLuminIsTyping(prev => ({ ...prev, [model.id]: false }));
+      }
+    }
+  };
+
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
     switch (message.type) {
       case 'message':
         if (message.message) {
@@ -476,7 +532,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         }]);
         break;
     }
-  }
+  }, [isVoiceToVoiceMode, speak, currentProjectId]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -545,61 +601,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const content = inputValue.trim();
     if (!content && !attachedImage) return;
 
-  const handleLuminSendMessage = async (content: string) => {
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      conversationId: 'lumin',
-      role: 'user',
-      content,
-      createdAt: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue("");
-    
-    // Send to each selected model in order
-    const modelsToCall = luminModels.filter(m => activeAIModels.has(m.id));
-    
-    for (const model of modelsToCall) {
-      setLuminIsTyping(prev => ({ ...prev, [model.id]: true }));
-      
-      try {
-        const response = await fetch('/api/test-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: content,
-            conversationId: 'lumin',
-            model: model.id,
-            provider: model.provider
-          }),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          const aiMessage: ChatMessage = {
-            id: `${Date.now()}-${model.id}`,
-            conversationId: 'lumin',
-            role: 'assistant',
-            content: result.response,
-            createdAt: new Date(),
-            metadata: {
-              ...result.metadata,
-              modelName: model.name
-            }
-          };
-          setLuminMessages(prev => ({
-            ...prev,
-            [model.id]: [...(prev[model.id] || []), aiMessage]
-          }));
-        }
-      } catch (error) {
-        console.error(`Error calling ${model.name}:`, error);
-      } finally {
-        setLuminIsTyping(prev => ({ ...prev, [model.id]: false }));
-      }
+    // Handle Lumin multi-AI mode
+    if (activeTab === 'lumin' && activeAIModels.size > 0) {
+      await handleLuminSendMessage(content);
+      return;
     }
-  };
 
     // Create conversation if needed
     let conversationId = currentProjectId;
@@ -758,212 +764,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
-
-  // Handle Lumin multi-AI message sending
-  const handleLuminSendMessage = async (content: string) => {
-    if (!content || activeAIModels.size === 0) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      conversationId: currentProjectId || 'lumin-session',
-      role: 'user' as const,
-      content,
-      createdAt: new Date()
-    };
-
-    // Add user message to all active AI models
-    const newLuminMessages = { ...luminMessages };
-    Array.from(activeAIModels).forEach(model => {
-      if (!newLuminMessages[model]) {
-        newLuminMessages[model] = [];
-      }
-      newLuminMessages[model].push(userMessage);
-    });
-    setLuminMessages(newLuminMessages);
-    setInputValue("");
-
-    // Set all active models as typing
-    const newTypingState = { ...luminIsTyping };
-    Array.from(activeAIModels).forEach(model => {
-      newTypingState[model] = true;
-    });
-    setLuminIsTyping(newTypingState);
-
-    // Check for image generation requests for ChatGPT and Gemini models
-    const imageKeywords = ['generate image', 'create image', 'make image', 'draw', 'generate picture', 'create picture', 'make picture', 'image of', 'picture of', 'show me', 'create a visual', 'generate visual', 'illustrate'];
-    const isImageRequest = imageKeywords.some(keyword => content.toLowerCase().includes(keyword.toLowerCase()));
-    
-    const imageCapableModels = Array.from(activeAIModels).filter(model => 
-      model === 'gpt-4o' || model === 'gemini-pro'
-    );
-
-    // Send requests to all active AI models with proper error handling
-    const promises = Array.from(activeAIModels).map(async (model) => {
-      try {
-        // Handle image generation for ChatGPT and Gemini
-        if (isImageRequest && imageCapableModels.includes(model as 'gpt-4o' | 'gemini-pro')) {
-          try {
-            console.log(`${model === 'gpt-4o' ? 'ChatGPT' : 'Gemini'} generating image for: "${content}"`);
-            const imageResponse = await fetch('/api/generate-image', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                prompt: content,
-                size: "1024x1024",
-                quality: "standard"
-              }),
-            });
-
-            if (imageResponse.ok) {
-              const imageData = await imageResponse.json();
-              if (imageData.success && imageData.url) {
-                const imageMessage: ChatMessage = {
-                  id: Date.now().toString() + '-' + model + '-image',
-                  conversationId: currentProjectId || 'lumin-session',
-                  role: 'assistant' as const,
-                  content: `I've generated an image for you:\n\n![Generated Image](${imageData.url})\n\n*Generated using ${model === 'gpt-4o' ? 'ChatGPT' : 'Gemini'} + ${imageData.revisedPrompt ? 'Gemini Vision API' : 'OpenAI DALL-E'}*`,
-                  createdAt: new Date()
-                };
-
-                setLuminMessages(prev => ({
-                  ...prev,
-                  [model]: [...(prev[model] || []), imageMessage]
-                }));
-
-                setLuminIsTyping(prev => ({
-                  ...prev,
-                  [model]: false
-                }));
-                return;
-              }
-            }
-          } catch (imageError) {
-            console.error(`Image generation failed for ${model}:`, imageError);
-          }
-        }
-
-        // Use model-specific endpoints for authentic responses
-        let endpoint = '/api/test-ai';
-        let requestBody: any = {
-          message: content,
-          model: model,
-          conversationId: currentProjectId || 'lumin-session'
-        };
-        
-        // Route to specific AI services for authentic responses
-        switch(model) {
-          case 'gpt-4o':
-            // Use OpenAI directly for ChatGPT
-            requestBody.provider = 'openai';
-            requestBody.model = 'gpt-4o';
-            break;
-          case 'claude-3.5-sonnet':
-            // Use Anthropic via OpenRouter for Claude
-            requestBody.provider = 'openrouter';
-            requestBody.model = 'anthropic/claude-3.5-sonnet';
-            break;
-          case 'gemini-pro':
-            // Use Google Gemini directly
-            requestBody.provider = 'gemini';
-            requestBody.model = 'gemini-pro';
-            break;
-          case 'perplexity':
-            // Use Perplexity via OpenRouter
-            requestBody.provider = 'openrouter';
-            requestBody.model = 'perplexity/llama-3.1-sonar-large-128k-online';
-            break;
-          case 'grok-4':
-            // Use xAI Grok via OpenRouter
-            requestBody.provider = 'openrouter';
-            requestBody.model = 'x-ai/grok-2-1212';
-            break;
-          case 'deepseek-r1':
-            // Use DeepSeek R1 via OpenRouter
-            requestBody.provider = 'openrouter';
-            requestBody.model = 'deepseek/deepseek-r1';
-            break;
-          default:
-            // Fallback to Groq
-            requestBody.provider = 'groq';
-        }
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            const aiMessage: ChatMessage = {
-              id: Date.now().toString() + '-' + model,
-              conversationId: currentProjectId || 'lumin-session',
-              role: 'assistant' as const,
-              content: data.response || data.message || 'No response received',
-              createdAt: new Date()
-            };
-
-            setLuminMessages(prev => ({
-              ...prev,
-              [model]: [...(prev[model] || []), aiMessage]
-            }));
-          } else {
-            const errorMessage: ChatMessage = {
-              id: Date.now().toString() + '-' + model + '-error',
-              conversationId: currentProjectId || 'lumin-session',
-              role: 'assistant' as const,
-              content: data.message || 'AI service temporarily unavailable',
-              createdAt: new Date()
-            };
-
-            setLuminMessages(prev => ({
-              ...prev,
-              [model]: [...(prev[model] || []), errorMessage]
-            }));
-          }
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage: ChatMessage = {
-            id: Date.now().toString() + '-' + model + '-error',
-            conversationId: currentProjectId || 'lumin-session',
-            role: 'assistant' as const,
-            content: errorData.message || `API error (${response.status}). Please try again.`,
-            createdAt: new Date()
-          };
-
-          setLuminMessages(prev => ({
-            ...prev,
-            [model]: [...(prev[model] || []), errorMessage]
-          }));
-        }
-      } catch (error) {
-        console.error(`Connection error with ${model}:`, error);
-        const errorMessage: ChatMessage = {
-          id: Date.now().toString() + '-' + model + '-error',
-          conversationId: currentProjectId || 'lumin-session',
-          role: 'assistant' as const,
-          content: 'Network connection error. Check your internet and try again.',
-          createdAt: new Date()
-        };
-
-        setLuminMessages(prev => ({
-          ...prev,
-          [model]: [...(prev[model] || []), errorMessage]
-        }));
-      } finally {
-        setLuminIsTyping(prev => ({
-          ...prev,
-          [model]: false
-        }));
-      }
-    });
-
-    await Promise.all(promises);
   };
 
   const handleCopyMessage = (content: string, messageId: string) => {
