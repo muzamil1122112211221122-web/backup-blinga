@@ -32,32 +32,14 @@ export function CustomizeModal({
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
-  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
-  const [isDirty, setIsDirty] = useState(false);
-  const [showExitDialog, setShowExitDialog] = useState(false);
-
-  const [toggles, setToggles] = useState({
-    wrapLines: true,
-    showPreviews: true,
-    starryBg: true,
-    autoScroll: true,
-    sidebarEditor: true,
-    notifyThinking: false,
-    cmdEnter: false,
-    richText: true,
-    improveModel: true,
-    personalize: true,
-    linkSharing: true
-  });
+  const [localAiOrder, setLocalAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
 
   // Reset local state when modal opens to ensure we start with saved values
   useEffect(() => {
     if (isOpen) {
       setSelectedPreset(currentPreset);
       setInstructions(customInstructions);
-      setIsDirty(false);
-      setShowExitDialog(false);
-      setToggles({
+      setLocalToggles({
         wrapLines: true,
         showPreviews: true,
         starryBg: true,
@@ -70,22 +52,25 @@ export function CustomizeModal({
         personalize: true,
         linkSharing: true
       });
+      setLocalAiOrder(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+      setIsDirty(false);
+      setShowExitDialog(false);
     }
   }, [isOpen, currentPreset, customInstructions]);
 
-  const handleToggle = (key: keyof typeof toggles) => {
-    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleToggle = (key: keyof typeof localToggles) => {
+    setLocalToggles(prev => ({ ...prev, [key]: !prev[key] }));
     setIsDirty(true);
   };
 
   const moveOrder = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...aiOrder];
+    const newOrder = [...localAiOrder];
     if (direction === 'up' && index > 0) {
       [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
     } else if (direction === 'down' && index < newOrder.length - 1) {
       [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
     }
-    setAiOrder(newOrder);
+    setLocalAiOrder(newOrder);
     setIsDirty(true);
   };
 
@@ -99,6 +84,7 @@ export function CustomizeModal({
 
   const handleSave = () => {
     onSave(selectedPreset, instructions, isEnabled, selectedModel);
+    // Here we would also save localToggles and localAiOrder if onSave supported them
     setIsDirty(false);
     onClose();
     setShowExitDialog(false);
@@ -196,11 +182,11 @@ export function CustomizeModal({
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Wrap Long Lines For Code Blocks By Default</span>
-                  <Switch checked={toggles.wrapLines} onCheckedChange={() => handleToggle('wrapLines')} />
+                  <Switch checked={localToggles.wrapLines} onCheckedChange={() => handleToggle('wrapLines')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Conversation Previews in History</span>
-                  <Switch checked={toggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
+                  <Switch checked={localToggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
                 </div>
               </div>
             </div>
@@ -210,14 +196,14 @@ export function CustomizeModal({
             <div className="space-y-6 text-zinc-700 dark:text-zinc-200">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Auto Scroll</span>
-                <Switch checked={toggles.autoScroll} onCheckedChange={() => handleToggle('autoScroll')} />
+                <Switch checked={localToggles.autoScroll} onCheckedChange={() => handleToggle('autoScroll')} />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Enable Rich Text Editor</span>
                   <p className="text-xs text-zinc-500">Enable code blocks and lists in the query bar</p>
                 </div>
-                <Switch checked={toggles.richText} onCheckedChange={() => handleToggle('richText')} />
+                <Switch checked={localToggles.richText} onCheckedChange={() => handleToggle('richText')} />
               </div>
             </div>
           )}
@@ -268,7 +254,7 @@ export function CustomizeModal({
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-zinc-900 dark:text-white">Order Switcher</h4>
                 <div className="space-y-2">
-                  {aiOrder.map((name, index) => (
+                  {localAiOrder.map((name, index) => (
                     <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border border-zinc-200 dark:border-zinc-800">
                       <span className="text-sm text-zinc-900 dark:text-white">{name}</span>
                       <div className="flex items-center space-x-1">
@@ -286,7 +272,7 @@ export function CustomizeModal({
                           size="icon" 
                           className="h-7 w-7 text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-white"
                           onClick={() => moveOrder(index, 'down')}
-                          disabled={index === aiOrder.length - 1}
+                          disabled={index === localAiOrder.length - 1}
                         >
                           <ChevronDown className="h-4 w-4" />
                         </Button>
@@ -301,18 +287,18 @@ export function CustomizeModal({
                       <span className="text-sm text-zinc-900 dark:text-white">Improve the Model</span>
                       <p className="text-xs text-zinc-500 mt-1">By allowing your data to be used for training our models, you help enhance your own experience and improve the quality of the model for all users.</p>
                     </div>
-                    <Switch checked={toggles.improveModel} onCheckedChange={() => handleToggle('improveModel')} />
+                    <Switch checked={localToggles.improveModel} onCheckedChange={() => handleToggle('improveModel')} />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="max-w-[80%]">
                       <span className="text-sm text-zinc-900 dark:text-white">Personalize Forus with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
                       <p className="text-xs text-zinc-500 mt-1">Allow Forus to remember details from your previous conversations.</p>
                     </div>
-                    <Switch checked={toggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
+                    <Switch checked={localToggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-zinc-900 dark:text-white">Allow chat link sharing</span>
-                    <Switch checked={toggles.linkSharing} onCheckedChange={() => handleToggle('linkSharing')} />
+                    <Switch checked={localToggles.linkSharing} onCheckedChange={() => handleToggle('linkSharing')} />
                   </div>
                 </div>
               </div>
