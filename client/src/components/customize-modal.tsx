@@ -100,7 +100,6 @@ export function CustomizeModal({
 
   const handleSave = () => {
     onSave(selectedPreset, instructions, isEnabled, selectedModel);
-    // Here we would also save localToggles and localAiOrder if onSave supported them
     setIsDirty(false);
     onClose();
     setShowExitDialog(false);
