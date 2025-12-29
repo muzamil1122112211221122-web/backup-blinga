@@ -154,7 +154,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     personalize: true,
     linkSharing: true
   });
-  const [aiOrder, setAiOrder] = useState(['ChatGPT', 'Claude', 'Gemini', 'Perplexity', 'Forus']);
+  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
