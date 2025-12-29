@@ -132,7 +132,7 @@ export function CustomizeModal({
               variant="ghost" 
               size="icon"
               onClick={handleCloseAttempt}
-              className="text-zinc-500 hover:text-white h-6 w-6 rounded-full"
+              className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white h-6 w-6 rounded-full"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -145,10 +145,10 @@ export function CustomizeModal({
                 className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium flex-shrink-0 ${
                   activeSection === item.id 
                     ? 'bg-zinc-800 text-white' 
-                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <item.icon className={`w-4 h-4 ${activeSection === item.id ? 'text-white' : 'text-zinc-500 dark:text-zinc-400'}`} />
                 <span>{item.label}</span>
               </button>
             ))}
