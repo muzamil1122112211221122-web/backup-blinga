@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Mic, X, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Logo } from "./logo";
 
 interface VoiceModeModalProps {
   isOpen: boolean;
