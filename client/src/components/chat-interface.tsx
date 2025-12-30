@@ -1739,8 +1739,8 @@ Let's start the self-listen session!`;
         )
         ) : activeTab === 'coding' ? (
           // Coding Tab UI
-          <div className="max-w-6xl mx-auto flex flex-col h-full bg-[#0a0a0a] rounded-3xl border border-zinc-800/50 overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-zinc-800 bg-zinc-900/30 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto flex flex-col h-full bg-transparent rounded-3xl overflow-hidden">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="p-2.5 bg-blue-500/10 rounded-xl">
                   <Code className="h-6 w-6 text-blue-500" />
