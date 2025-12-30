@@ -8,6 +8,11 @@ import { generateImage, getAvailableKeyCount, analyzeImage } from "./openai-serv
 import { z } from "zod";
 import fs from "fs";
 import path from "path";
+import Groq from "groq-sdk";
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-manager';
 

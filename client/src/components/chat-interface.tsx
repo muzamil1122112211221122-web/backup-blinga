@@ -608,6 +608,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       return;
     }
 
+    // Handle Project Mode status bar
+    const projectStatusBar = document.getElementById('project-status-bar');
+    if (isProjectMode && projectStatusBar) {
+      projectStatusBar.classList.add('animate-bounce');
+      setTimeout(() => projectStatusBar.classList.remove('animate-bounce'), 1000);
+    }
+
     // Handle Lumin multi-AI mode
     if (activeTab === 'lumin' && activeAIModels.size > 0) {
       await handleLuminSendMessage(content);
@@ -875,6 +882,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       setIsTyping(false);
     }
   };
+
+  const isProjectMode = activeTab === 'ask' && currentProjectId;
 
   const showToast = (message: string) => {
     const toast = document.createElement('div');
@@ -1585,7 +1594,11 @@ Let's start the self-listen session!`;
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
-                    <div className="bg-card rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border border-border">
+                    <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border ${
+                      message.content.includes('```') 
+                        ? 'bg-[#1e1e1e] border-zinc-700 shadow-xl' 
+                        : 'bg-card border-border'
+                    }`}>
                       <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">

@@ -14,7 +14,8 @@ import {
   FolderOpen,
   History,
   ChevronLeft,
-  Settings as LucideSettings
+  Settings as LucideSettings,
+  Edit3 as PenTool
 } from "lucide-react";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
