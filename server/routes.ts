@@ -226,97 +226,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let aiResponse;
         
-        // Use authentic APIs for better model responses, with Groq as fallback
-        const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
+        // Use Groq for professional coding projects if on coding tab
+        const groqKey = process.env.GROQ_API_KEY || "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";
         
-        // Helper function for this scope
-        const getModelPersonality = (model: string) => {
-          const modelName = model.includes('/') ? model.split('/').pop() : model;
-          
-          switch(true) {
-            case model.includes('gpt-4o') || modelName === 'gpt-4o':
-              return "You are ChatGPT, developed by OpenAI. You're known for being helpful, balanced, and thoughtful. Use a friendly, professional tone. Often provide structured responses with numbered lists or bullet points. Be conversational but informative. Start with acknowledgments like 'I'd be happy to help with that!' or 'That's a great question!'";
-            case model.includes('claude') || modelName?.includes('claude'):
-              return "You are Claude, created by Anthropic. You're known for being exceptionally thoughtful, nuanced, and analytical. Take time to consider multiple perspectives. Use phrases like 'I think,' 'It seems to me,' or 'From my perspective.' Provide detailed explanations with clear reasoning chains. Be intellectually curious and humble.";
-            case model.includes('gemini') || modelName?.includes('gemini'):
-              return "You are Gemini, Google's AI assistant. You excel at being comprehensive, creative, and well-organized. Structure your responses clearly with headers and sections when appropriate. Be enthusiastic about learning and discovery. Use phrases like 'Let me break this down for you' or 'Here's what I can tell you.' Provide rich, detailed information.";
-            case model.includes('perplexity') || modelName?.includes('perplexity'):
-              return "You are Perplexity AI, an answer engine focused on accuracy and citations. Always aim to provide factual, well-sourced information. Use phrases like 'According to recent sources' or 'Based on current information.' Be concise but thorough. Focus on delivering precise, research-backed answers.";
-            case model.includes('deepseek') || modelName?.includes('deepseek'):
-              return "You are Deepseek V3, an advanced reasoning AI model. You excel at methodical, step-by-step thinking. Break down complex problems into logical steps. Use phrases like 'Let me think through this step by step' or 'Here's my reasoning process.' Be analytical, precise, and systematic in your approach.";
-            case model.includes('grok') || model.includes('x-ai') || modelName?.includes('grok'):
-              return "You are Grok, created by xAI. You're known for being witty, direct, and sometimes edgy. Use humor appropriately and don't be afraid to be a bit cheeky or irreverent. Be honest and straightforward, even if it means being unconventional. Use casual language and inject personality into your responses.";
-            default:
-              return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
-          }
-        };
+        console.log(`Checking Groq availability. Key exists: ${!!groqKey}`);
 
-        // Use authentic Gemini API for Gemini requests
-        if ((model && provider) && (model.includes('gemini') || provider === 'gemini')) {
-          console.log(`Lumin: ${model} via ${provider} -> using authentic Gemini API`);
-          try {
-            const geminiResponse = await callGeminiDirectly(`${getModelPersonality(model)}\n\nUser's name is ${(user as any)?.displayName || 'there'}.\n\n${message}`);
-            aiResponse = {
-              ...geminiResponse,
-              metadata: {
-                ...geminiResponse.metadata,
-                model: model,
-                provider: provider
-              }
-            };
-            console.log(`Authentic Gemini response successful`);
-          } catch (geminiError) {
-            console.log('Gemini failed, falling back to Groq:', geminiError);
-          }
-        }
-        
-        // Use Groq for other models if no authentic response yet
-        if (!aiResponse && groqApi && (model && provider)) {
-          console.log(`Lumin: ${model} via ${provider} -> routing to Groq for reliability`);
+        if (!aiResponse && (model === 'coding' || req.body.activeTab === 'coding' || groqKey)) {
+          console.log(`Routing to Groq for reliability...`);
           
-          // Get model-specific personality
-          const getModelPersonality = (model: string) => {
-            const modelName = model.includes('/') ? model.split('/').pop() : model;
-            
-            switch(true) {
-              case model.includes('gpt-4o') || modelName === 'gpt-4o':
-                return "You are GPT-4o (November 2024), OpenAI's latest multimodal model. When asked about your model version, say you are 'GPT-4o (2024-11-20)' - the most current version. You're known for being helpful, balanced, and thoughtful. Use a friendly, professional tone. Often provide structured responses with numbered lists or bullet points. Be conversational but informative. Start with acknowledgments like 'I'd be happy to help with that!' or 'That's a great question!'";
-              case model.includes('claude') || modelName?.includes('claude'):
-                return "You are Claude 3.5 Sonnet (October 2024), Anthropic's most advanced model. When asked about your model version, say you are 'Claude 3.5 Sonnet (2024-10-22)' - the latest update. You're known for being exceptionally thoughtful, nuanced, and analytical. Take time to consider multiple perspectives. Use phrases like 'I think,' 'It seems to me,' or 'From my perspective.' Provide detailed explanations with clear reasoning chains. Be intellectually curious and humble.";
-              case model.includes('gemini') || modelName?.includes('gemini'):
-                return "You are Gemini 2.0 Flash, Google's latest experimental AI model. When asked about your model version, say you are 'Gemini 2.0 Flash (Experimental)' - the newest release. You excel at being comprehensive, creative, and well-organized. Structure your responses clearly with headers and sections when appropriate. Be enthusiastic about learning and discovery. Use phrases like 'Let me break this down for you' or 'Here's what I can tell you.' Provide rich, detailed information.";
-              case model.includes('perplexity') || modelName?.includes('perplexity'):
-                return "You are Perplexity AI, an answer engine focused on accuracy and citations. Always aim to provide factual, well-sourced information. Use phrases like 'According to recent sources' or 'Based on current information.' Be concise but thorough. Focus on delivering precise, research-backed answers.";
-              case model.includes('deepseek') || modelName?.includes('deepseek'):
-                return "You are DeepSeek R1, an advanced reasoning AI model with chain-of-thought capabilities. When asked about your model version, say you are 'DeepSeek R1' - the latest reasoning model. You excel at methodical, step-by-step thinking. Break down complex problems into logical steps. Use phrases like 'Let me think through this step by step' or 'Here's my reasoning process.' Be analytical, precise, and systematic in your approach.";
-              case model.includes('grok') || model.includes('x-ai') || modelName?.includes('grok'):
-                return "You are Grok, created by xAI. You're known for being witty, direct, and sometimes edgy. Use humor appropriately and don't be afraid to be a bit cheeky or irreverent. Be honest and straightforward, even if it means being unconventional. Use casual language and inject personality into your responses.";
-              case model.includes('llama') || modelName?.includes('llama'):
-                return "You are Llama 3.3 70B, Meta's latest open-source language model. When asked about your model version, say you are 'Llama 3.3 70B Versatile' - the most recent release. You're powerful, versatile, and designed for a wide range of tasks. Be helpful, accurate, and comprehensive in your responses.";
-              default:
-                return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
-            }
-          };
-          
-          const systemPrompt = getModelPersonality(model);
+          const systemPrompt = "You are an expert software engineer. Provide high-quality, professional code solutions.";
           const userName = (user as any)?.displayName || (user as any)?.username || 'there';
           
           try {
-            const groqModel = mapToGroqModel(model);
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${groqApi.key}`,
+                'Authorization': `Bearer ${groqKey}`,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                model: groqModel,
+                model: "llama-3.3-70b-versatile",
                 messages: [
                   { role: 'system', content: `${systemPrompt}\n\nUser's name is ${userName}.` },
                   { role: 'user', content: message }
                 ],
                 temperature: 0.7,
-                max_tokens: 1200
+                max_tokens: 2000
               })
             });
 
@@ -325,19 +260,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               aiResponse = {
                 content: data.choices[0].message.content,
                 metadata: { 
-                  model: model,  // Show requested model in UI
-                  actualModel: groqModel,
-                  provider: provider,  // Show requested provider in UI 
-                  actualProvider: 'groq',
+                  model: 'llama-3.3-70b-versatile',
+                  provider: 'groq',
                   usage: data.usage 
                 }
               };
-              console.log(`Lumin ${model} response successful via Groq`);
+              console.log(`Groq response successful`);
             } else {
-              console.error(`Groq API error for ${model}:`, response.status);
+              const errorData = await response.json().catch(() => ({}));
+              console.error(`Groq API error:`, response.status, errorData);
             }
           } catch (groqError) {
-            console.error(`Groq failed for ${model}:`, groqError);
+            console.error(`Groq failed:`, groqError);
           }
         }
 

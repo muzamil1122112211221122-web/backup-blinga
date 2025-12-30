@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
-import { ProjectModal } from "./project-modal";
+import { ProjectModal } from "@/components/project-modal";
 import { 
   Plus,
   Trash2,

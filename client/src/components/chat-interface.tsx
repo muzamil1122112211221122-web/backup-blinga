@@ -707,10 +707,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
     // Always use direct API call for better reliability
     console.log('Using direct API call for better reliability...');
-    await handleDirectApiCall(enhancedContent, conversationId);
+    await handleDirectApiCall(enhancedContent, conversationId, activeTab);
   };
 
-  const handleDirectApiCall = async (content: string, conversationId: string) => {
+  const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
     try {
       console.log('Making direct API call...');
       const response = await fetch('/api/test-ai', {
@@ -721,6 +721,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         body: JSON.stringify({
           message: content,
           conversationId: conversationId,
+          activeTab: currentTab || activeTab,
         }),
       });
 
@@ -1746,7 +1747,7 @@ Let's start the self-listen session!`;
                         <div className="flex space-x-4">
                           <div className="flex-shrink-0 mt-1">
                             <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
-                              <Logo size="xs" className="text-white" />
+                              <Logo size="sm" className="text-white" />
                             </div>
                           </div>
                           <div className="flex-1 min-w-0 bg-[#141414] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
