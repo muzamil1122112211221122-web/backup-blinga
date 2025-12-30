@@ -1784,14 +1784,9 @@ Let's start the self-listen session!`;
                       {message.role === 'assistant' ? (
                         <div className="flex space-x-4">
                           <div className="flex-shrink-0 mt-1">
-                            <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
-                              <Logo size="sm" className="text-white" />
-                            </div>
+                            <Logo size="sm" className="text-white border-none" />
                           </div>
                           <div className="flex-1 min-w-0 bg-transparent overflow-hidden">
-                            <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Assistant Response</span>
-                            </div>
                             <div className="p-6">
                               <TypingText text={message.content} messageId={message.id} />
                             </div>
