@@ -38,8 +38,11 @@ import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
 import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableModel, WebSocketMessage } from "../types/chat";
+import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -409,6 +412,41 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         <ReactMarkdown 
           remarkPlugins={[remarkGfm]}
           components={{
+            code({ node, inline, className, children, ...props }: any) {
+              const match = /language-(\w+)/.exec(className || '');
+              return !inline && match ? (
+                <div className="rounded-lg overflow-hidden my-4 border border-zinc-800 shadow-2xl">
+                  <div className="bg-[#1a1a1a] px-4 py-1.5 border-b border-zinc-800 flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
+                      className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <SyntaxHighlighter
+                    {...props}
+                    style={vscDarkPlus}
+                    language={match[1]}
+                    PreTag="div"
+                    customStyle={{
+                      margin: 0,
+                      padding: '1.5rem',
+                      fontSize: '13px',
+                      lineHeight: '1.6',
+                      background: '#0d0d0d'
+                    }}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                </div>
+              ) : (
+                <code className={cn("bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
+                  {children}
+                </code>
+              );
+            },
             img: ({src, alt}) => (
               <img 
                 src={src} 
@@ -1750,32 +1788,12 @@ Let's start the self-listen session!`;
                               <Logo size="sm" className="text-white" />
                             </div>
                           </div>
-                          <div className="flex-1 min-w-0 bg-[#141414] border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-                            <div className="px-4 py-2 border-b border-zinc-800 bg-[#1a1a1a] flex items-center justify-between">
-                              <div className="flex space-x-1.5">
-                                <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/40" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/40" />
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/40" />
-                              </div>
+                          <div className="flex-1 min-w-0 bg-transparent overflow-hidden">
+                            <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
                               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Assistant Response</span>
                             </div>
                             <div className="p-6">
                               <TypingText text={message.content} messageId={message.id} />
-                            </div>
-                            <div className="px-6 py-3 border-t border-zinc-800/50 bg-zinc-900/20 flex items-center space-x-4">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-xs text-zinc-500 hover:text-white"
-                                onClick={() => handleCopyMessage(message.content, message.id)}
-                              >
-                                <Copy className="h-3 w-3 mr-2" />
-                                Copy Code
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-xs text-zinc-500 hover:text-white">
-                                <Undo className="h-3 w-3 mr-2" />
-                                Refactor
-                              </Button>
                             </div>
                           </div>
                         </div>
