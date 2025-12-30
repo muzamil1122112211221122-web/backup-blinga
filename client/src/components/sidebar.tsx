@@ -98,12 +98,15 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState("");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
   const { theme } = useTheme();
 
   const handleProjectSubmit = (data: any) => {
     console.log("New Project Data:", data);
     onNewProject(); // Fallback to existing logic for now
     setIsProjectModalOpen(false);
+    // Expand projects to show the new one
+    setIsProjectsExpanded(true);
   };
   const isDark = theme === "dark";
 
@@ -206,20 +209,127 @@ export function Sidebar({
           </button>
 
           {/* Projects */}
-          <div className="flex items-center space-x-1 group">
-            <button className="flex-1 flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn">
-              <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Projects" />
-              <span className="text-[15px] font-medium">Projects</span>
-            </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsProjectModalOpen(true)}
-              className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-              title="Create Advanced Project"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+          <div className="space-y-1">
+            <div className="flex items-center space-x-1 group">
+              <button 
+                onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+                className="flex-1 flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
+              >
+                <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Projects" />
+                <span className="text-[15px] font-medium">Projects</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsProjectModalOpen(true)}
+                className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                title="Create Advanced Project"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {isProjectsExpanded && (
+              <div className="ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-800/50 space-y-4 py-2">
+                {Object.entries(projectGroups).map(([groupName, groupProjects]) => (
+                  groupProjects.length > 0 && (
+                    <div key={groupName} className="space-y-1">
+                      <h4 className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-2 px-3">{groupName}</h4>
+                      <div className="space-y-1">
+                        {(showAllGroups.has(groupName) ? groupProjects : groupProjects.slice(0, 5)).map((project) => (
+                          <div
+                            key={project.id}
+                            className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                              currentProjectId === project.id
+                                ? 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                                : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                            }`}
+                            onClick={() => editingProject !== project.id && onProjectSelect(project.id)}
+                            onMouseEnter={() => setHoveredProject(project.id)}
+                            onMouseLeave={() => setHoveredProject(null)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                {editingProject === project.id ? (
+                                  <div className="space-y-2 py-1">
+                                    <Input
+                                      value={editTitle}
+                                      onChange={(e) => setEditTitle(e.target.value)}
+                                      className="text-xs h-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                                      autoFocus
+                                    />
+                                    <div className="flex space-x-1">
+                                      <Button
+                                        size="sm"
+                                        className="h-6 px-2 text-[10px]"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onEditProject?.(project.id, editTitle);
+                                          setEditingProject(null);
+                                        }}
+                                      >
+                                        <Check className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingProject(null);
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[13px] font-medium truncate leading-relaxed">
+                                    {project.title || 'New Project'}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              {hoveredProject === project.id && editingProject !== project.id && (
+                                <div className="flex items-center space-x-1 ml-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditTitle(project.title);
+                                      setEditingProject(project.id);
+                                    }}
+                                    className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                  >
+                                    <PenTool className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDeleteProject(project.id);
+                                    }}
+                                    className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {groupProjects.length > 5 && !showAllGroups.has(groupName) && (
+                          <button 
+                            className="px-3 py-1 text-[11px] text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors font-bold uppercase tracking-tighter"
+                            onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName))}
+                          >
+                            See more
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -230,111 +340,11 @@ export function Sidebar({
           onSubmit={handleProjectSubmit}
         />
 
-        {/* History Section */}
+        {/* History Section (Now only for general chats) */}
         <div className="flex-1 overflow-y-auto mt-6 px-3">
           <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-900 dark:text-zinc-100 font-semibold">
             <img src={isDark ? historyIconCopy : historyIcon} className="h-[22px] w-[22px] object-contain" alt="History" />
-            <span className="text-[15px]">History</span>
-          </div>
-
-          <div className="space-y-6">
-            {Object.entries(projectGroups).map(([groupName, groupProjects]) => (
-              groupProjects.length > 0 && (
-                <div key={groupName} className="space-y-1">
-                  <h4 className="px-10 text-[13px] font-semibold text-zinc-500 mb-2">{groupName}</h4>
-                  <div className="border-l border-zinc-200 dark:border-zinc-800/50 ml-[1.35rem] pl-4 space-y-1">
-                    {(showAllGroups.has(groupName) ? groupProjects : groupProjects.slice(0, 5)).map((project) => (
-                      <div
-                        key={project.id}
-                        className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${
-                          currentProjectId === project.id
-                            ? 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100'
-                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                        }`}
-                        onClick={() => editingProject !== project.id && onProjectSelect(project.id)}
-                        onMouseEnter={() => setHoveredProject(project.id)}
-                        onMouseLeave={() => setHoveredProject(null)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            {editingProject === project.id ? (
-                              <div className="space-y-2 py-1">
-                                <Input
-                                  value={editTitle}
-                                  onChange={(e) => setEditTitle(e.target.value)}
-                                  className="text-xs h-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
-                                  autoFocus
-                                />
-                                <div className="flex space-x-1">
-                                  <Button
-                                    size="sm"
-                                    className="h-6 px-2 text-[10px]"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEditProject?.(project.id, editTitle);
-                                      setEditingProject(null);
-                                    }}
-                                  >
-                                    <Check className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingProject(null);
-                                    }}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className="text-[14px] font-medium truncate leading-relaxed">
-                                {project.title || 'New Project'}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {hoveredProject === project.id && editingProject !== project.id && (
-                            <div className="flex items-center space-x-1 ml-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditTitle(project.title);
-                                  setEditingProject(project.id);
-                                }}
-                                className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                              >
-                                <PenTool className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteProject(project.id);
-                                }}
-                                className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {groupProjects.length > 5 && !showAllGroups.has(groupName) && (
-                      <button 
-                        className="px-3 py-1 text-[13px] text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors font-medium"
-                        onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName))}
-                      >
-                        See all
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            ))}
+            <span className="text-[15px]">General History</span>
           </div>
         </div>
 
