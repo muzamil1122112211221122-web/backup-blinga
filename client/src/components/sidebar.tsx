@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
+import { ProjectModal } from "./project-modal";
 import { 
   Plus,
   Trash2,
@@ -95,7 +96,14 @@ export function Sidebar({
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState("");
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const { theme } = useTheme();
+
+  const handleProjectSubmit = (data: any) => {
+    console.log("New Project Data:", data);
+    onNewProject(); // Fallback to existing logic for now
+    setIsProjectModalOpen(false);
+  };
   const isDark = theme === "dark";
 
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
@@ -197,11 +205,29 @@ export function Sidebar({
           </button>
 
           {/* Projects */}
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Projects" />
-            <span className="text-[15px] font-medium">Projects</span>
-          </button>
+          <div className="flex items-center space-x-1 group">
+            <button className="flex-1 flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn">
+              <img src={isDark ? projectsIconCopy : projectsIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Projects" />
+              <span className="text-[15px] font-medium">Projects</span>
+            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsProjectModalOpen(true)}
+              className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              title="Create Advanced Project"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
+
+        {/* Advanced Project Modal */}
+        <ProjectModal 
+          isOpen={isProjectModalOpen} 
+          onClose={() => setIsProjectModalOpen(false)} 
+          onSubmit={handleProjectSubmit}
+        />
 
         {/* History Section */}
         <div className="flex-1 overflow-y-auto mt-6 px-3">
