@@ -415,14 +415,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
               return !inline && match ? (
-                <div className="rounded-lg overflow-hidden my-4 border border-zinc-800 shadow-2xl">
-                  <div className="bg-[#1a1a1a] px-4 py-1.5 border-b border-zinc-800 flex justify-between items-center">
+                <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
+                  <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
                     <button 
-                      onClick={() => navigator.clipboard.writeText(String(children).replace(/\n$/, ''))}
-                      className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                        showToast('Code copied to clipboard');
+                      }}
+                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      title="Copy code"
                     >
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-4 w-4" />
                     </button>
                   </div>
                   <SyntaxHighlighter
@@ -432,10 +436,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                     PreTag="div"
                     customStyle={{
                       margin: 0,
-                      padding: '1.5rem',
+                      padding: '1rem 0',
                       fontSize: '13px',
                       lineHeight: '1.6',
-                      background: '#0d0d0d'
+                      background: 'transparent'
                     }}
                   >
                     {String(children).replace(/\n$/, '')}
@@ -1784,10 +1788,10 @@ Let's start the self-listen session!`;
                       {message.role === 'assistant' ? (
                         <div className="flex space-x-4">
                           <div className="flex-shrink-0 mt-1">
-                            <Logo size="sm" className="text-white border-none" />
+                            <Logo size="sm" className="text-zinc-900 dark:text-zinc-100" />
                           </div>
                           <div className="flex-1 min-w-0 bg-transparent overflow-hidden">
-                            <div className="p-6">
+                            <div className="p-0">
                               <TypingText text={message.content} messageId={message.id} />
                             </div>
                           </div>
