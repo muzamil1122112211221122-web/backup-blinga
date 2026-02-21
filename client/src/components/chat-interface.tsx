@@ -611,14 +611,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     try {
       const projectTitle = firstMessage 
         ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
-        : 'New Project';
+        : 'New Chat';
         
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: projectTitle,
-          isPrivate: isPrivateMode,
+          isProject: false,
           preset: currentPreset,
           customInstructions,
           model: selectedModel,

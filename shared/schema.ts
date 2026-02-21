@@ -20,6 +20,7 @@ export const conversations = pgTable("conversations", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   isPrivate: boolean("is_private").default(false).notNull(),
+  isProject: boolean("is_project").default(false).notNull(),
   preset: text("preset").default("custom").notNull(),
   customInstructions: text("custom_instructions"),
   model: text("model").default("forus-prime").notNull(),

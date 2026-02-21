@@ -96,6 +96,7 @@ export class MemStorage implements IStorage {
       ...insertConversation,
       id,
       isPrivate: insertConversation.isPrivate ?? false,
+      isProject: insertConversation.isProject ?? false,
       preset: insertConversation.preset ?? "custom",
       customInstructions: insertConversation.customInstructions ?? null,
       model: insertConversation.model ?? "anthropic/claude-3.5-sonnet",
@@ -254,6 +255,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: now, 
         updatedAt: now,
         isPrivate: insertConversation.isPrivate ?? false,
+        isProject: insertConversation.isProject ?? false,
         preset: insertConversation.preset ?? "custom",
         customInstructions: insertConversation.customInstructions ?? null,
         model: insertConversation.model ?? "anthropic/claude-3.5-sonnet"
