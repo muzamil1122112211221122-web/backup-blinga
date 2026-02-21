@@ -92,7 +92,8 @@ import {
   Moon,
   Sun,
   ToggleLeft,
-  Square
+  Square,
+  ChevronLeft
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -531,6 +532,51 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    switch (message.type) {
+      case 'message':
+        if (message.message) {
+          setMessages(prev => [...prev, message.message!]);
+          setIsTyping(false);
+          
+          // Auto-speak AI responses in voice-to-voice mode
+          if (isVoiceToVoiceMode && message.message.role === 'assistant') {
+            // Clean the content for speech by removing markdown and special characters
+            const cleanedContent = message.message.content
+              .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+              .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+              .replace(/`(.*?)`/g, '$1') // Remove code blocks
+              .replace(/#{1,6}\s/g, '') // Remove headers
+              .replace(/!\[.*?\]\(.*?\)/g, '') // Remove image links
+              .replace(/\[.*?\]\(.*?\)/g, '$1') // Remove links but keep text
+              .replace(/\n/g, ' ') // Replace newlines with spaces
+              .replace(/\s+/g, ' ') // Normalize spaces
+              .trim();
+            
+            if (cleanedContent) {
+              speak(cleanedContent);
+            }
+          }
+        }
+        break;
+      case 'typing':
+        setIsTyping(message.isTyping || false);
+        break;
+      case 'error':
+        console.error('WebSocket error:', message.error);
+        setIsTyping(false);
+        // Show error to user
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          conversationId: currentProjectId || '',
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your message. Please try again.',
+          createdAt: new Date(),
+        }]);
+        break;
+    }
+  }, [isVoiceToVoiceMode, speak, currentProjectId]);
+
   const handleProjectSelect = async (id: string) => {
     setCurrentProjectId(id);
     localStorage.setItem('currentProjectId', id);
@@ -634,7 +680,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // Create conversation if needed
     let conversationId = currentProjectId;
     if (!conversationId) {
-      conversationId = await createNewProject(content);
+      conversationId = await createNewProject(false, content);
       if (!conversationId) return;
     }
 
@@ -1142,6 +1188,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         },
         body: JSON.stringify({
           title: 'New Project',
+          isProject: true,
           preset: currentPreset,
           model: selectedModel,
         }),
@@ -1162,7 +1209,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleProjectSelect = async (id: string) => {
+  const handleProjectSelect_original = async (id: string) => {
     setCurrentProjectId(id);
     localStorage.setItem('currentProjectId', id);
     // Load messages for this project
