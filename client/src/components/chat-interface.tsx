@@ -531,50 +531,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
-    switch (message.type) {
-      case 'message':
-        if (message.message) {
-          setMessages(prev => [...prev, message.message!]);
-          setIsTyping(false);
-          
-          // Auto-speak AI responses in voice-to-voice mode
-          if (isVoiceToVoiceMode && message.message.role === 'assistant') {
-            // Clean the content for speech by removing markdown and special characters
-            const cleanedContent = message.message.content
-              .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
-              .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
-              .replace(/`(.*?)`/g, '$1') // Remove code blocks
-              .replace(/#{1,6}\s/g, '') // Remove headers
-              .replace(/!\[.*?\]\(.*?\)/g, '') // Remove image links
-              .replace(/\[.*?\]\(.*?\)/g, '$1') // Remove links but keep text
-              .replace(/\n/g, ' ') // Replace newlines with spaces
-              .replace(/\s+/g, ' ') // Normalize spaces
-              .trim();
-            
-            if (cleanedContent) {
-              speak(cleanedContent);
-            }
-          }
-        }
-        break;
-      case 'typing':
-        setIsTyping(message.isTyping || false);
-        break;
-      case 'error':
-        console.error('WebSocket error:', message.error);
-        setIsTyping(false);
-        // Show error to user
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          conversationId: currentProjectId || '',
-          role: 'assistant',
-          content: 'Sorry, I encountered an error processing your message. Please try again.',
-          createdAt: new Date(),
-        }]);
-        break;
-    }
-  }, [isVoiceToVoiceMode, speak, currentProjectId]);
+  const handleProjectSelect = async (id: string) => {
+    setCurrentProjectId(id);
+    localStorage.setItem('currentProjectId', id);
+    await loadProjectMessages(id);
+    setIsSidebarOpen(false);
+  };
+
+  const handleGoBack = () => {
+    setCurrentProjectId(null);
+    setMessages([]);
+    localStorage.removeItem('currentProjectId');
+  };
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -607,7 +575,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     };
   }, [isTyping]);
 
-  const createNewProject = async (firstMessage?: string) => {
+  const createNewProject = async (isProject: boolean = false, firstMessage?: string) => {
     try {
       const projectTitle = firstMessage 
         ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
@@ -618,7 +586,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: projectTitle,
-          isProject: false,
+          isProject: isProject,
           preset: currentPreset,
           customInstructions,
           model: selectedModel,
@@ -1461,6 +1429,17 @@ Let's start the self-listen session!`;
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
+          {currentProjectId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGoBack}
+              className="mr-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+          )}
           <Logo size="sm" />
           <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
         </div>

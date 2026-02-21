@@ -59,7 +59,7 @@ interface SidebarProps {
   }>;
   currentProjectId?: string;
   onProjectSelect: (id: string) => void;
-  onNewProject: () => void;
+  onNewProject?: (isProject?: boolean) => void;
   onDeleteProject: (id: string) => void;
   onEditProject?: (id: string, newTitle: string) => void;
   onUpdateAiRole?: (id: string, newAiRole: string) => void;
@@ -179,13 +179,28 @@ export function Sidebar({
             />
           </div>
 
-          <button
-            onClick={onNewProject}
-            className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group"
-          >
-            <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Chat" />
-            <span className="text-[15px] font-medium">Chat</span>
-          </button>
+          {/* New Chat */}
+          <div className="flex items-center space-x-1 group">
+            <button
+              onClick={() => onNewProject?.(false)}
+              className="flex-1 flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
+            >
+              <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
+              <span className="text-[15px] font-medium">Chat</span>
+            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNewProject?.(false);
+              }}
+              className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              title="New Chat"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
 
           <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <img src={isDark ? voiceIconCopy : voiceIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
