@@ -123,6 +123,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
+  const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
   const [input, setInput] = useState("");
   const [forusIntegrationMode, setForusIntegrationMode] = useState(false);
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
@@ -1464,7 +1465,9 @@ Let's start the self-listen session!`;
         onSearchOpen={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
         user={user || undefined}
-        onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName } : prev)}
+        onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
+        profilePicture={profilePicture || undefined}
+        onProfilePictureChange={(dataUrl) => { setProfilePicture(dataUrl); localStorage.setItem('profilePicture', dataUrl); }}
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}

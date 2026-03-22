@@ -65,6 +65,8 @@ interface SidebarProps {
     username: string;
   };
   onUserRename?: (newUsername: string) => void;
+  profilePicture?: string;
+  onProfilePictureChange?: (dataUrl: string) => void;
   closeButtonPosition?: 'top' | 'bottom';
 }
 
@@ -81,6 +83,8 @@ export function Sidebar({
   onOpenSettings,
   user,
   onUserRename,
+  profilePicture,
+  onProfilePictureChange,
   closeButtonPosition = 'top'
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
@@ -89,9 +93,10 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
+  const [isCustomizing, setIsCustomizing] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const picInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { theme } = useTheme();
 
@@ -101,7 +106,7 @@ export function Sidebar({
     function handleClickOutside(e: MouseEvent) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
         setProfileMenuOpen(false);
-        setIsRenaming(false);
+        setIsCustomizing(false);
       }
     }
     if (profileMenuOpen) {
@@ -116,13 +121,25 @@ export function Sidebar({
     try {
       await apiRequest('PUT', '/api/user/rename', { username: trimmed });
       onUserRename?.(trimmed);
-      toast({ title: 'Profile renamed', description: `Your name is now "${trimmed}"` });
-      setIsRenaming(false);
+      toast({ title: 'Profile updated', description: `Your name is now "${trimmed}"` });
+      setIsCustomizing(false);
       setProfileMenuOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
     } catch {
       toast({ title: 'Rename failed', description: 'Could not update your name.', variant: 'destructive' });
     }
+  }
+
+  function handlePictureUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      onProfilePictureChange?.(dataUrl);
+      toast({ title: 'Photo updated' });
+    };
+    reader.readAsDataURL(file);
   }
 
   const groupItemsByDate = (items: typeof projects) => {
@@ -349,21 +366,53 @@ export function Sidebar({
               {/* Profile menu popup */}
               {profileMenuOpen && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-10">
-                  {isRenaming ? (
-                    <div className="p-3">
-                      <p className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Rename profile</p>
+                  {isCustomizing ? (
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
+                        <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Avatar picker */}
+                      <div className="flex flex-col items-center mb-4">
+                        <button
+                          onClick={() => picInputRef.current?.click()}
+                          className="relative group"
+                        >
+                          {profilePicture ? (
+                            <img src={profilePicture} alt="Profile" className="h-16 w-16 rounded-full object-cover shadow-lg" />
+                          ) : (
+                            <div
+                              className="h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg"
+                              style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
+                            >
+                              {(user.username || user.email).charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <UserPen className="h-5 w-5 text-white" />
+                          </div>
+                        </button>
+                        <p className="text-[11px] text-zinc-400 mt-1.5">Click to upload photo</p>
+                        <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
+                      </div>
+
+                      {/* Name field */}
+                      <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Display name</p>
                       <div className="flex items-center gap-2">
                         <Input
                           value={renameValue}
                           onChange={e => setRenameValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsRenaming(false); }}
+                          onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsCustomizing(false); }}
                           placeholder={user.username || user.email}
                           autoFocus
                           className="h-8 text-sm"
                         />
                         <button
                           onClick={handleRenameSubmit}
-                          className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity"
+                          className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0"
                         >
                           <Check className="h-4 w-4" />
                         </button>
@@ -379,13 +428,12 @@ export function Sidebar({
                         Settings
                       </button>
                       <button
-                        onClick={() => { setRenameValue(user.username || user.email); setIsRenaming(true); }}
+                        onClick={() => { setRenameValue(user.username || user.email); setIsCustomizing(true); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                       >
                         <UserPen className="h-4 w-4 text-zinc-400" />
-                        Rename profile
+                        Customize profile
                       </button>
-                      <div className="border-t border-zinc-100 dark:border-zinc-800" />
                       <button
                         onClick={() => { setProfileMenuOpen(false); onLogout(); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
@@ -404,14 +452,16 @@ export function Sidebar({
                   onClick={() => setProfileMenuOpen(v => !v)}
                   className="flex items-center space-x-3 flex-1 min-w-0 rounded-xl p-1.5 -ml-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
                 >
-                  <div
-                    className="h-9 w-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
-                    style={{
-                      background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})`
-                    }}
-                  >
-                    {(user.username || user.email).charAt(0).toUpperCase()}
-                  </div>
+                  {profilePicture ? (
+                    <img src={profilePicture} alt="Profile" className="h-9 w-9 rounded-full flex-shrink-0 object-cover shadow-lg" />
+                  ) : (
+                    <div
+                      className="h-9 w-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
+                      style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
+                    >
+                      {(user.username || user.email).charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                       {user.username || user.email}
