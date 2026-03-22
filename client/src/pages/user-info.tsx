@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,25 @@ export default function UserInfo() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const today = new Date().toISOString().split('T')[0];
+  const getToday = () => new Date().toISOString().split('T')[0];
+  const [today, setToday] = useState(getToday);
   const minDate = "1900-01-01";
+
+  useEffect(() => {
+    const scheduleUpdate = () => {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+      const msUntilMidnight = midnight.getTime() - now.getTime();
+      const timeout = setTimeout(() => {
+        setToday(getToday());
+        const interval = setInterval(() => setToday(getToday()), 24 * 60 * 60 * 1000);
+        return () => clearInterval(interval);
+      }, msUntilMidnight);
+      return () => clearTimeout(timeout);
+    };
+    const cleanup = scheduleUpdate();
+    return cleanup;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
