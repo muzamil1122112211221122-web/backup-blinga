@@ -118,7 +118,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'lumin' | 'coding'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'lumin'>('ask');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
@@ -940,7 +940,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     }
   };
 
-  const isProjectMode = (activeTab === 'ask' || activeTab === 'coding') && currentProjectId;
+  const isProjectMode = activeTab === 'ask' && currentProjectId;
 
   const showToast = (message: string) => {
     const toast = document.createElement('div');
@@ -1187,8 +1187,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: 'New Project',
-          isProject: true,
+          title: 'New Chat',
+          isProject: false,
           preset: currentPreset,
           model: selectedModel,
         }),
@@ -1201,8 +1201,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         setMessages([]);
         setProjects(prev => [newProject, ...prev]);
         setIsSidebarOpen(false);
-        // Switch to coding UI for new projects
-        setActiveTab('coding');
+        setActiveTab('ask');
       }
     } catch (error) {
       console.error('Failed to create project:', error);
@@ -1763,81 +1762,6 @@ Let's start the self-listen session!`;
             <div ref={messagesEndRef} />
           </div>
         )
-        ) : activeTab === 'coding' ? (
-          // Coding Tab UI
-          <div className="max-w-6xl mx-auto flex flex-col h-full bg-transparent rounded-3xl overflow-hidden">
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="p-2.5 bg-blue-500/10 rounded-xl">
-                  <Code className="h-6 w-6 text-blue-500" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white uppercase tracking-wider">Professional IDE Mode</h2>
-                  <p className="text-xs text-zinc-500 font-medium">Powered by Groq High-Speed Intelligence</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" className="bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-white">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Documentation
-                </Button>
-                <div className="h-8 w-[1px] bg-zinc-800 mx-2" />
-                <div className="flex items-center space-x-1">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Active</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-50">
-                  <div className="p-8 bg-zinc-900/50 rounded-full border border-zinc-800">
-                    <Zap className="h-16 w-16 text-blue-500" />
-                  </div>
-                  <div className="max-w-md">
-                    <h3 className="text-2xl font-bold text-white mb-2">Ready to Code?</h3>
-                    <p className="text-zinc-400">Describe the feature or component you want to build. Groq AI will generate professional, optimized code instantly.</p>
-                  </div>
-                </div>
-              ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`${
-                      message.role === 'user' 
-                        ? 'bg-zinc-800/50 text-zinc-100 rounded-2xl px-6 py-4 max-w-2xl border border-zinc-700/50' 
-                        : 'w-full space-y-4'
-                    }`}>
-                      {message.role === 'assistant' ? (
-                        <div className="flex space-x-4">
-                          <div className="flex-shrink-0 mt-1">
-                            <Logo size="sm" className="text-zinc-900 dark:text-zinc-100" />
-                          </div>
-                          <div className="flex-1 min-w-0 bg-transparent overflow-hidden">
-                            <div className="p-0">
-                              <TypingText text={message.content} messageId={message.id} />
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm font-medium leading-relaxed">{message.content}</p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-              {isTyping && (
-                <div className="flex space-x-4 animate-pulse">
-                  <div className="w-10 h-10 bg-zinc-800 rounded-lg" />
-                  <div className="flex-1 h-32 bg-zinc-900/50 rounded-2xl border border-zinc-800" />
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
         ) : (
           // Lumin Tab - Multi-AI Interface
           <div className="max-w-7xl mx-auto">

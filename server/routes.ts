@@ -226,12 +226,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let aiResponse;
         
-        // Use Groq for professional coding projects if on coding tab
         const groqKey = process.env.GROQ_API_KEY || "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";
         
-        console.log(`Checking Groq availability. Key exists: ${!!groqKey}`);
-
-        if (!aiResponse && (model === 'coding' || req.body.activeTab === 'coding' || groqKey)) {
+        if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
           
           const systemPrompt = "You are an expert software engineer. Provide high-quality, professional code solutions.";
