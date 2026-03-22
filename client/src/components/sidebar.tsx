@@ -133,6 +133,12 @@ export function Sidebar({
       >
         <div className="p-3 flex items-center justify-between">
           <Logo size="sm" />
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="px-3 space-y-0.5 mt-1">
@@ -311,16 +317,6 @@ export function Sidebar({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClose();
-                }}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer relative z-[100]"
-              >
-                <ChevronLeft className="h-5 w-5 pointer-events-none" />
-              </button>
             </div>
           )}
         </div>

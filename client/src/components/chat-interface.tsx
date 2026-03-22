@@ -1475,17 +1475,6 @@ Let's start the self-listen session!`;
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          {isSidebarOpen && currentProjectId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGoBack}
-              className="mr-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back
-            </Button>
-          )}
           <Logo size="sm" />
           <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
         </div>
