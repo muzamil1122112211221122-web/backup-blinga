@@ -1475,7 +1475,7 @@ Let's start the self-listen session!`;
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          {currentProjectId && (
+          {isSidebarOpen && currentProjectId && (
             <Button
               variant="ghost"
               size="sm"
