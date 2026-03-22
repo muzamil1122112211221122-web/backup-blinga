@@ -8,10 +8,20 @@ export const users = pgTable("users", {
   username: text("username").notNull(),
   email: text("email").notNull().unique(),
   password: text("password"),
+  passwordHash: text("password_hash"),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   provider: text("provider"),
   providerId: text("provider_id"),
-  displayName: text("display_name"), // User's chosen display name
-  birthDate: text("birth_date"), // User's birth date (stored as string)
+  displayName: text("display_name"),
+  birthDate: text("birth_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const emailVerificationTokens = pgTable("email_verification_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -31,15 +41,23 @@ export const conversations = pgTable("conversations", {
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   conversationId: varchar("conversation_id").references(() => conversations.id).notNull(),
-  role: text("role").notNull(), // 'user' | 'assistant'
+  role: text("role").notNull(),
   content: text("content").notNull(),
-  metadata: jsonb("metadata"), // For additional data like model used, tokens, etc.
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userSettings = pgTable("user_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  settings: jsonb("settings").notNull().default(sql`'{}'::jsonb`),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  emailVerified: true,
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
