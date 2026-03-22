@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +39,8 @@ export function CustomizeModal({
   const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [localTheme, setLocalTheme] = useState<string>(theme);
+  const originalTheme = useRef<string>(theme);
 
   const [localToggles, setLocalToggles] = useState({
     wrapLines: true,
@@ -55,17 +57,21 @@ export function CustomizeModal({
     sidebarCloseTop: true
   });
 
-  // Reset local state when modal opens to ensure we start with saved values
+  // Only reset local state when modal transitions from closed → open
+  const prevIsOpen = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpen.current) {
       setSelectedPreset(currentPreset);
       setInstructions(customInstructions);
       setLocalToggles({ ...toggles });
       setLocalAiOrder([...aiOrder]);
+      setLocalTheme(theme);
+      originalTheme.current = theme;
       setIsDirty(false);
       setShowExitDialog(false);
     }
-  }, [isOpen, currentPreset, customInstructions, toggles, aiOrder]);
+    prevIsOpen.current = isOpen;
+  });
 
   const handleToggle = (key: string) => {
     setLocalToggles(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
@@ -92,6 +98,7 @@ export function CustomizeModal({
   };
 
   const handleSave = () => {
+    setTheme(localTheme);
     onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
@@ -99,6 +106,7 @@ export function CustomizeModal({
   };
 
   const handleDontSave = () => {
+    setTheme(originalTheme.current);
     setIsDirty(false);
     setShowExitDialog(false);
     onClose();
@@ -171,16 +179,16 @@ export function CustomizeModal({
               <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline" 
-                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${theme === 'light' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
-                  onClick={() => { setTheme('light'); setIsDirty(true); }}
+                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'light' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
+                  onClick={() => { setLocalTheme('light'); setTheme('light'); setIsDirty(true); }}
                 >
                   <Sun className="w-5 h-5 mb-1" />
                   <span className="text-xs">Light</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${theme === 'dark' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
-                  onClick={() => { setTheme('dark'); setIsDirty(true); }}
+                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'dark' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
+                  onClick={() => { setLocalTheme('dark'); setTheme('dark'); setIsDirty(true); }}
                 >
                   <Moon className="w-5 h-5 mb-1" />
                   <span className="text-xs">Dark</span>
