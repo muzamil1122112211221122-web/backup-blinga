@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
-import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 import searchIcon from "@assets/search_button_1766857136554.png";
 import chatIcon from "@assets/chats_button_1766857136554.png";
@@ -58,23 +59,28 @@ interface SidebarProps {
   onEditProject?: (id: string, newTitle: string) => void;
   onUpdateAiRole?: (id: string, newAiRole: string) => void;
   onSearchOpen?: () => void;
+  onOpenSettings?: () => void;
   user?: {
     email: string;
     username: string;
   };
+  onUserRename?: (newUsername: string) => void;
   closeButtonPosition?: 'top' | 'bottom';
 }
 
 export function Sidebar({
   isOpen,
   onClose,
+  onLogout,
   projects,
   currentProjectId,
   onProjectSelect,
   onNewProject,
   onDeleteProject,
   onEditProject,
+  onOpenSettings,
   user,
+  onUserRename,
   closeButtonPosition = 'top'
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
@@ -82,9 +88,42 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const { theme } = useTheme();
 
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+        setIsRenaming(false);
+      }
+    }
+    if (profileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileMenuOpen]);
+
+  async function handleRenameSubmit() {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    try {
+      await apiRequest('PUT', '/api/user/rename', { username: trimmed });
+      onUserRename?.(trimmed);
+      toast({ title: 'Profile renamed', description: `Your name is now "${trimmed}"` });
+      setIsRenaming(false);
+      setProfileMenuOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    } catch {
+      toast({ title: 'Rename failed', description: 'Could not update your name.', variant: 'destructive' });
+    }
+  }
 
   const groupItemsByDate = (items: typeof projects) => {
     const groups: { [key: string]: typeof projects } = {
@@ -306,30 +345,89 @@ export function Sidebar({
 
         <div className="p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30">
           {user && (
-            <div className="flex items-center justify-between group">
-              <div className="flex items-center space-x-3">
-                <div
-                  className="h-9 w-9 rounded-full flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
-                  style={{
-                    background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})`
-                  }}
-                >
-                  {(user.username || user.email).charAt(0).toUpperCase()}
+            <div className="relative" ref={profileMenuRef}>
+              {/* Profile menu popup */}
+              {profileMenuOpen && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-10">
+                  {isRenaming ? (
+                    <div className="p-3">
+                      <p className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 mb-2">Rename profile</p>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsRenaming(false); }}
+                          placeholder={user.username || user.email}
+                          autoFocus
+                          className="h-8 text-sm"
+                        />
+                        <button
+                          onClick={handleRenameSubmit}
+                          className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <Settings className="h-4 w-4 text-zinc-400" />
+                        Settings
+                      </button>
+                      <button
+                        onClick={() => { setRenameValue(user.username || user.email); setIsRenaming(true); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <UserPen className="h-4 w-4 text-zinc-400" />
+                        Rename profile
+                      </button>
+                      <div className="border-t border-zinc-100 dark:border-zinc-800" />
+                      <button
+                        onClick={() => { setProfileMenuOpen(false); onLogout(); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Log out
+                      </button>
+                    </>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                    {user.username || user.email}
-                  </p>
-                </div>
-              </div>
-              {closeButtonPosition === 'bottom' && (
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
               )}
+
+              {/* Profile row (clickable) */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setProfileMenuOpen(v => !v)}
+                  className="flex items-center space-x-3 flex-1 min-w-0 rounded-xl p-1.5 -ml-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
+                >
+                  <div
+                    className="h-9 w-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
+                    style={{
+                      background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})`
+                    }}
+                  >
+                    {(user.username || user.email).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                      {user.username || user.email}
+                    </p>
+                  </div>
+                  <ChevronUp className={`h-4 w-4 text-zinc-400 transition-transform flex-shrink-0 ${profileMenuOpen ? '' : 'rotate-180'}`} />
+                </button>
+                {closeButtonPosition === 'bottom' && (
+                  <button
+                    onClick={onClose}
+                    className="ml-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

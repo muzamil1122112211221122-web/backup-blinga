@@ -1462,7 +1462,9 @@ Let's start the self-listen session!`;
         onEditProject={handleEditProject}
         onUpdateAiRole={handleUpdateAiRole}
         onSearchOpen={() => setIsSearchOpen(true)}
+        onOpenSettings={() => setIsCustomizeModalOpen(true)}
         user={user || undefined}
+        onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName } : prev)}
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
