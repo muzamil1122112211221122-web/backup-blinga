@@ -131,11 +131,11 @@ export function Sidebar({
         className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-zinc-100 z-50 flex flex-col border-r border-zinc-200 dark:border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ pointerEvents: 'auto' }}
       >
-        <div className="p-4 flex items-center justify-between">
+        <div className="p-3 flex items-center justify-between">
           <Logo size="sm" />
         </div>
 
-        <div className="px-3 space-y-1 mt-2">
+        <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
             <img src={isDark ? searchIconCopy : searchIcon} className="absolute left-3 top-1/2 -translate-y-1/2 h-[22px] w-[22px] object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" alt="Search" />
@@ -153,7 +153,7 @@ export function Sidebar({
           <div className="flex items-center space-x-1 group">
             <button
               onClick={() => onNewProject?.(false)}
-              className="flex-1 flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
+              className="flex-1 flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
             >
               <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
               <span className="text-[15px] font-medium">Chat</span>
@@ -172,12 +172,12 @@ export function Sidebar({
             </Button>
           </div>
 
-          <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
+          <button className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <img src={isDark ? voiceIconCopy : voiceIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
-          <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
+          <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
               <img src={isDark ? imagineIconCopy : imagineIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
               <span className="text-[15px] font-medium">Imagine</span>
@@ -187,17 +187,17 @@ export function Sidebar({
         </div>
 
         {/* History */}
-        <div className="flex-1 overflow-y-auto mt-6 px-3">
-          <div className="flex items-center space-x-3 px-3 mb-4 text-zinc-900 dark:text-zinc-100 font-semibold">
+        <div className="flex-1 overflow-y-auto mt-3 px-3">
+          <div className="flex items-center space-x-3 px-3 mb-2 text-zinc-900 dark:text-zinc-100 font-semibold">
             <img src={isDark ? historyIconCopy : historyIcon} className="h-[22px] w-[22px] object-contain" alt="History" />
             <span className="text-[15px]">History</span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {Object.entries(chatGroups).map(([groupName, groupChats]) => (
               groupChats.length > 0 && (
-                <div key={groupName} className="space-y-1">
-                  <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2 px-3">{groupName}</h4>
+                <div key={groupName} className="space-y-0.5">
+                  <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1 px-3">{groupName}</h4>
                   <div className="space-y-1">
                     {(showAllGroups.has(groupName + "_chat") ? groupChats : groupChats.slice(0, 5)).map((chat) => (
                       <div
