@@ -71,6 +71,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/user/rename', requireAuth, async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username || typeof username !== 'string' || !username.trim()) {
+        return res.status(400).json({ message: 'Valid username is required' });
+      }
+      (req.user as any).username = username.trim();
+      (req.user as any).displayName = username.trim();
+      req.session.save((err) => {
+        if (err) return res.status(500).json({ message: 'Failed to save session' });
+        res.json(req.user);
+      });
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Conversation routes
   app.get('/api/conversations', requireAuth, async (req, res) => {
     try {

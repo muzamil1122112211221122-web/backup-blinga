@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme-provider";
-import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool } from "lucide-react";
+import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 
