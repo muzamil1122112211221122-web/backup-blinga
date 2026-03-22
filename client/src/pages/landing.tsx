@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
@@ -6,13 +5,10 @@ import { useLocation } from "wouter";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleGetStarted = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Hard redirect to avoid any SPA routing issues if navigate is failing
-    window.location.assign('/start');
+    setLocation('/start');
   };
 
   const features = [
@@ -67,12 +63,11 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <Button 
                 onClick={handleGetStarted}
-                disabled={isLoading}
-                className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg disabled:opacity-50"
+                className="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>{isLoading ? 'Starting...' : 'Begin Experience'}</span>
+                <span>Begin Experience</span>
               </Button>
             </div>
           </div>
@@ -94,13 +89,12 @@ export default function Landing() {
           <div className="flex justify-center">
             <Button 
               onClick={handleGetStarted}
-              disabled={isLoading}
               size="lg"
-              className="bg-white hover:bg-gray-100 text-gray-800 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4 disabled:opacity-50"
+              className="bg-white hover:bg-gray-100 text-gray-800 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
-              <span>{isLoading ? 'Starting...' : 'Begin Experience'}</span>
+              <span>Begin Experience</span>
             </Button>
           </div>
           <div className="text-center mt-6 text-gray-300">
@@ -230,12 +224,11 @@ export default function Landing() {
           </p>
           <Button 
             onClick={handleGetStarted}
-            disabled={isLoading}
             size="lg"
-            className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50"
+            className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
             data-testid="button-cta-start"
           >
-            {isLoading ? 'Starting...' : 'Start Your Journey'}
+            Start Your Journey
           </Button>
         </div>
       </section>
