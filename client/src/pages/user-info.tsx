@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MessageCircle, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 
 export default function UserInfo() {
   const [, setLocation] = useLocation();
@@ -24,9 +25,7 @@ export default function UserInfo() {
     setIsLoading(true);
     setError("");
     
-    // Single step - Create account and login
     try {
-      console.log('Sending login request for:', name, birthDate);
       const response = await fetch('/api/auth/demo', { 
         method: 'POST',
         headers: {
@@ -40,10 +39,8 @@ export default function UserInfo() {
       
       const data = await response.json();
       if (response.ok) {
-        console.log('Login successful, redirecting...');
-        // Use a simple, immediate redirect. If session persistence is fixed on backend,
-        // this should be the most reliable way.
-        window.location.href = '/chat';
+        queryClient.setQueryData(["/api/auth/user"], data.user || data);
+        setLocation('/chat');
       } else {
         console.error('Authentication failed response:', data);
         setError(data.message || 'Authentication failed. Please try again.');
