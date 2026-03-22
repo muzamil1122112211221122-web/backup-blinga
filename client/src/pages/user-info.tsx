@@ -14,11 +14,32 @@ export default function UserInfo() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const today = new Date().toISOString().split('T')[0];
+  const minDate = "1900-01-01";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim() || !birthDate) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const minYear = new Date(minDate);
+
+    if (birth > now) {
+      setError("Date of birth cannot be in the future.");
+      return;
+    }
+    if (birth < minYear) {
+      setError("Please enter a valid date of birth.");
+      return;
+    }
+    const age = (now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    if (age < 5) {
+      setError("You must be at least 5 years old to use this app.");
       return;
     }
 
@@ -138,6 +159,8 @@ export default function UserInfo() {
                     type="date"
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
+                    min={minDate}
+                    max={today}
                     className="h-12 bg-white/10 border-white/20 text-white text-base focus:border-white/40 focus:ring-white/20"
                     required
                     data-testid="input-birth-date"
