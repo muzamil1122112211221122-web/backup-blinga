@@ -156,7 +156,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     richText: true,
     improveModel: true,
     personalize: true,
-    linkSharing: true
+    linkSharing: true,
+    sidebarCloseTop: true
   });
   const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
   const [luminModels, setLuminModels] = useState<{name: string, provider: string, id: string}[]>([]);
@@ -1462,6 +1463,7 @@ Let's start the self-listen session!`;
         onUpdateAiRole={handleUpdateAiRole}
         onSearchOpen={() => setIsSearchOpen(true)}
         user={user || undefined}
+        closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
       <header className="bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between rounded-b-3xl shadow-sm">

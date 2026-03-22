@@ -61,6 +61,7 @@ interface SidebarProps {
     email: string;
     username: string;
   };
+  closeButtonPosition?: 'top' | 'bottom';
 }
 
 export function Sidebar({
@@ -72,7 +73,8 @@ export function Sidebar({
   onNewProject,
   onDeleteProject,
   onEditProject,
-  user
+  user,
+  closeButtonPosition = 'top'
 }: SidebarProps) {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
@@ -133,12 +135,14 @@ export function Sidebar({
       >
         <div className="p-3 flex items-center justify-between">
           <Logo size="sm" />
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
+          {closeButtonPosition === 'top' && (
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         <div className="px-3 space-y-0.5 mt-1">
@@ -317,6 +321,14 @@ export function Sidebar({
                   </p>
                 </div>
               </div>
+              {closeButtonPosition === 'bottom' && (
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
             </div>
           )}
         </div>

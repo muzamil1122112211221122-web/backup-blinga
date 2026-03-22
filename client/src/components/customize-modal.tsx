@@ -31,7 +31,7 @@ export function CustomizeModal({
   aiOrder
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('account');
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
@@ -51,7 +51,8 @@ export function CustomizeModal({
     richText: true,
     improveModel: true,
     personalize: true,
-    linkSharing: true
+    linkSharing: true,
+    sidebarCloseTop: true
   });
 
   // Reset local state when modal opens to ensure we start with saved values
@@ -105,9 +106,9 @@ export function CustomizeModal({
 
   const menuItems = [
     { id: 'account', label: 'Account', icon: User },
+    { id: 'customize', label: 'General', icon: Sliders },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'behavior', label: 'Behavior', icon: Zap },
-    { id: 'customize', label: 'Customize', icon: Sliders },
     { id: 'data', label: 'Lumin Settings', icon: Database },
   ];
 
@@ -217,7 +218,29 @@ export function CustomizeModal({
 
           {activeSection === 'customize' && (
             <div className="space-y-6">
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Customize Forus's Response</h4>
+              <div>
+                <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-4">Sidebar</h4>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Sidebar Close Button Position</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Choose where the close button appears in the sidebar</p>
+                  </div>
+                  <Select
+                    value={localToggles.sidebarCloseTop ? 'top' : 'bottom'}
+                    onValueChange={(val) => { setLocalToggles(prev => ({ ...prev, sidebarCloseTop: val === 'top' })); setIsDirty(true); }}
+                  >
+                    <SelectTrigger className="w-28 h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top">Top</SelectItem>
+                      <SelectItem value="bottom">Bottom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
+              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Customize Forus's Response</h4>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(CHAT_PRESETS).map(([key, preset]) => (
                   <Card
@@ -253,6 +276,7 @@ export function CustomizeModal({
                 <Settings className="w-3 h-3" />
                 <span>Select an instruction set from above or write your own to customize Forus's responses.</span>
               </p>
+              </div>
             </div>
           )}
 
