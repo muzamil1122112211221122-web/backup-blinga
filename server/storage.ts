@@ -237,4 +237,16 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Use DatabaseStorage if a DB connection is available, otherwise fall back to MemStorage
+// so the app stays fully functional without a database connection.
+function createStorage(): IStorage {
+  const d = db();
+  if (d) {
+    console.log("✓ Using persistent DatabaseStorage.");
+    return new DatabaseStorage();
+  }
+  console.warn("⚠️  Using in-memory storage (data will not persist across restarts).");
+  return new MemStorage();
+}
+
+export const storage = createStorage();

@@ -23,7 +23,7 @@ export async function sendVerificationEmail(
   token: string,
   baseUrl: string
 ) {
-  const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
+  const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
   const transporter = createTransporter();
 
   if (!transporter) {

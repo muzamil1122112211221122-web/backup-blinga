@@ -3,29 +3,56 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
 let pool: Pool | null = null;
-let db: ReturnType<typeof drizzle> | null = null;
+let drizzleDb: ReturnType<typeof drizzle> | null = null;
+let initialized = false;
+
+function buildConnectionString(): string | null {
+  // Try DATABASE_URL first
+  const url = process.env.DATABASE_URL;
+  if (url) return url;
+
+  // Construct from individual PG vars
+  const host = process.env.PGHOST;
+  const port = process.env.PGPORT || '5432';
+  const user = process.env.PGUSER;
+  const pass = process.env.PGPASSWORD;
+  const dbName = process.env.PGDATABASE;
+
+  if (host && user && pass && dbName) {
+    const encodedPass = encodeURIComponent(pass);
+    return `postgresql://${user}:${encodedPass}@${host}:${port}/${dbName}`;
+  }
+
+  return null;
+}
 
 function getDb() {
-  if (!db) {
-    let connectionString = process.env.DATABASE_URL;
-    
-    // If DATABASE_URL is empty or missing, check if individual PG vars are set
-    if (!connectionString && process.env.PGPASSWORD) {
-      connectionString = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`;
-    }
+  if (initialized) return drizzleDb;
+  initialized = true;
 
-    if (!connectionString) {
-      console.error("No database connection string available");
-      return null;
-    }
-    
-    pool = new Pool({ 
-      connectionString,
-      ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false
-    });
-    db = drizzle(pool, { schema });
+  const connectionString = buildConnectionString();
+
+  if (!connectionString) {
+    console.error("⚠️  No database connection string available — running with in-memory storage.");
+    console.error("   Restart the Repl from the Replit dashboard to inject database secrets.");
+    return null;
   }
-  return db;
+
+  try {
+    pool = new Pool({
+      connectionString,
+      ssl: connectionString.includes('neon.tech') || connectionString.includes('supabase')
+        ? { rejectUnauthorized: false }
+        : false,
+      connectionTimeoutMillis: 5000,
+    });
+    drizzleDb = drizzle(pool, { schema });
+    console.log("✓ Database connection established.");
+    return drizzleDb;
+  } catch (err: any) {
+    console.error("⚠️  Database connection failed:", err.message);
+    return null;
+  }
 }
 
 export { getDb as db };

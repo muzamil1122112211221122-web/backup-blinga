@@ -151,11 +151,12 @@ export function setupAuth(app: Express) {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await storage.createVerificationToken(user.id, token, expiresAt);
 
-      const domain = process.env.REPLIT_DOMAINS
-        ? `https://${process.env.REPLIT_DOMAINS}`
-        : `http://localhost:5000`;
+      // Build base URL from the incoming request — works in any environment
+      const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+      const baseUrl = `${proto}://${host}`;
 
-      const result = await sendVerificationEmail(normalizedEmail, name.trim(), token, domain);
+      const result = await sendVerificationEmail(normalizedEmail, name.trim(), token, baseUrl);
 
       res.status(201).json({
         message: "Account created! Please check your email to verify your account.",
@@ -204,11 +205,11 @@ export function setupAuth(app: Express) {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       await storage.createVerificationToken(user.id, token, expiresAt);
 
-      const domain = process.env.REPLIT_DOMAINS
-        ? `https://${process.env.REPLIT_DOMAINS}`
-        : `http://localhost:5000`;
+      const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+      const baseUrl = `${proto}://${host}`;
 
-      const result = await sendVerificationEmail(user.email, user.displayName || user.username, token, domain);
+      const result = await sendVerificationEmail(user.email, user.displayName || user.username, token, baseUrl);
       res.json({
         message: "Verification email sent.",
         devVerifyUrl: result.sent ? undefined : result.devUrl,
