@@ -17,6 +17,7 @@ interface CustomizeModalProps {
   onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => void;
   toggles: any;
   aiOrder: string[];
+  user?: { email: string; username: string; displayName?: string | null } | null;
 }
 
 type SettingsSection = 'account' | 'appearance' | 'behavior' | 'customize' | 'data';
@@ -28,7 +29,8 @@ export function CustomizeModal({
   customInstructions,
   onSave,
   toggles,
-  aiOrder
+  aiOrder,
+  user
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('account');
@@ -359,10 +361,12 @@ export function CustomizeModal({
             <div className="space-y-6">
               <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">M</div>
+                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                    {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
+                  </div>
                   <div>
-                    <p className="text-sm font-bold text-zinc-900 dark:text-white uppercase">MUZZAMIL ALI</p>
-                    <p className="text-xs text-zinc-500">muzamil1122112211221122@gmail.com</p>
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white uppercase">{user?.displayName || user?.username || 'User'}</p>
+                    <p className="text-xs text-zinc-500">{user?.email || ''}</p>
                   </div>
                 </div>
                 <Button variant="outline" className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-xs h-8">Manage</Button>

@@ -2359,6 +2359,7 @@ Let's start the self-listen session!`;
         onSave={handleCustomizeSave}
         toggles={settingsToggles}
         aiOrder={aiOrder}
+        user={user}
       />
 
       {/* Image Generation Dialog */}
