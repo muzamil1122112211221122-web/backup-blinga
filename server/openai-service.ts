@@ -189,12 +189,38 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Generating photorealistic image for: "${prompt}"`);
-  
-  // First try: Gemini image generation (multiple models + Imagen 3)
+
+  // First try: Pollinations AI — free, real photorealistic images up to 2K
+  try {
+    console.log('Using Pollinations AI for high-quality photorealistic image...');
+    const seed = Math.floor(Math.random() * 999999);
+    const encodedPrompt = encodeURIComponent(`${prompt}, photorealistic, ultra detailed, 4k, high quality`);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=2048&height=2048&model=flux&nologo=true&seed=${seed}`;
+
+    // Fetch the image and convert to base64 to avoid expiring URLs
+    const imgResponse = await fetch(pollinationsUrl, { signal: AbortSignal.timeout(25000) });
+    if (imgResponse.ok) {
+      const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+      const arrayBuffer = await imgResponse.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      console.log(`Pollinations AI image generated successfully (${Math.round(base64.length / 1024)}KB)`);
+      return {
+        success: true,
+        url: `data:${contentType};base64,${base64}`,
+        revisedPrompt: `Photorealistic: ${prompt}`,
+      };
+    } else {
+      console.log('Pollinations AI failed:', imgResponse.status);
+    }
+  } catch (error) {
+    console.log('Pollinations AI error:', error);
+  }
+
+  // Second try: Gemini image generation (Imagen 4 / Gemini image models — requires paid plan)
   const geminiResult = await tryGeminiImageGeneration(prompt);
   if (geminiResult) return geminiResult;
   
-  // Second try: Use OpenAI DALL-E 3 for photorealistic images
+  // Third try: Use OpenAI DALL-E 3 for photorealistic images
   if (process.env.OPENAI_API_KEY) {
     try {
       console.log('Using OpenAI DALL-E 3 for high-quality image generation...');
@@ -239,7 +265,11 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
     console.log('No OpenAI API key found, skipping DALL-E 3');
   }
 
-  // Third try: Use Groq to generate an SVG illustration
+  // Fourth try: Use Gemini text model to generate an SVG illustration (free tier)
+  const geminiSvgResult = await tryGeminiSvgGeneration(prompt);
+  if (geminiSvgResult) return geminiSvgResult;
+
+  // Fifth try: Use Groq to generate an SVG illustration
   const groqSvgResult = await tryGroqSvgGeneration(prompt);
   if (groqSvgResult) return groqSvgResult;
   
