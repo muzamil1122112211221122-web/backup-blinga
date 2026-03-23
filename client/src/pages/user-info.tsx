@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 
@@ -144,9 +144,7 @@ export default function UserInfo() {
 
   const logo = (
     <div className="flex items-center justify-center mb-6">
-      <div className="w-12 h-12 bg-gradient-to-br from-white to-gray-400 rounded-xl flex items-center justify-center">
-        <MessageCircle className="w-7 h-7 text-black" />
-      </div>
+      <img src="/forus-logo.png" alt="Forus" className="w-12 h-12 object-contain" />
     </div>
   );
 

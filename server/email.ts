@@ -73,9 +73,7 @@ export async function sendVerificationEmail(
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:40px 32px;background:#0d0d0d;color:#f4f4f5;border-radius:16px;">
           <div style="margin-bottom:28px;">
-            <div style="width:48px;height:48px;background:linear-gradient(135deg,#ffffff,#a1a1aa);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-              <span style="font-size:24px;">💬</span>
-            </div>
+            <img src="${baseUrl}/forus-logo.png" alt="Forus" width="48" height="48" style="border-radius:12px;object-fit:contain;margin-bottom:20px;display:block;" />
             <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;">Welcome to Forus, ${name}!</h1>
             <p style="color:#a1a1aa;margin:0;font-size:15px;line-height:1.5;">Click the button below to verify your email address and activate your account.</p>
           </div>
