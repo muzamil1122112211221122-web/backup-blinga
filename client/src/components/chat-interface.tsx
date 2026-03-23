@@ -349,12 +349,19 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [philosopherIsTyping, setPhilosopherIsTyping] = useState(false);
   const [selectedPersonality, setSelectedPersonality] = useState<HistoricalPersonality | null>(null);
   const [personalitySearch, setPersonalitySearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [personalityCategory, setPersonalityCategory] = useState('All');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(personalitySearch), 250);
+    return () => clearTimeout(timer);
+  }, [personalitySearch]);
+
   const filteredPersonalities = useMemo(() => {
     return HISTORICAL_PERSONALITIES
       .filter(p => personalityCategory === 'All' || p.category === personalityCategory)
-      .filter(p => personalitySearch === '' || p.name.toLowerCase().includes(personalitySearch.toLowerCase()) || p.role.toLowerCase().includes(personalitySearch.toLowerCase()));
-  }, [personalitySearch, personalityCategory]);
+      .filter(p => debouncedSearch === '' || p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || p.role.toLowerCase().includes(debouncedSearch.toLowerCase()));
+  }, [debouncedSearch, personalityCategory]);
   const [gamesState, setGamesState] = useState<{activeGame: string | null; gameMessages: Array<{id: string; role: 'user' | 'assistant'; content: string}>; gameInput: string; isTyping: boolean}>({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
