@@ -108,6 +108,40 @@ import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 
+function WikiFace({ name, className = '' }: { name: string; className?: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        observer.disconnect();
+        const title = name.replace(/ /g, '_');
+        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`)
+          .then(r => r.json())
+          .then(data => { if (data.thumbnail?.source) setSrc(data.thumbnail.source); })
+          .catch(() => {});
+      }
+    }, { rootMargin: '150px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [name]);
+
+  return (
+    <div ref={ref} className={`rounded-full overflow-hidden flex-shrink-0 ${className}`}>
+      {src ? (
+        <img src={src} alt={name} className="w-full h-full object-cover object-top" />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold">
+          {name.charAt(0)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface HistoricalPersonality {
   id: string;
   name: string;
@@ -2368,14 +2402,7 @@ Let's start the self-listen session!`;
                           onClick={() => { setSelectedPersonality(p); setPhilosopherMessages([]); setPhilosopherInput(''); }}
                           className="flex flex-col items-center p-3 bg-card border border-border rounded-xl hover:bg-accent hover:border-ring transition-all duration-200 text-center group"
                         >
-                          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border group-hover:border-ring transition-all mb-2 flex-shrink-0">
-                            <img
-                              src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(p.name)}&backgroundColor=fef3c7,fed7aa,fde68a,d1fae5,dbeafe&skinColor=f5cba7,e8b89a,d4a88a,b8866a`}
-                              alt={p.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; (e.currentTarget.parentElement as HTMLElement).style.background='linear-gradient(135deg,#f59e0b,#ea580c)'; (e.currentTarget.parentElement as HTMLElement).innerHTML=`<span class="text-white text-xl font-bold flex items-center justify-center w-full h-full">${p.name.charAt(0)}</span>`; }}
-                            />
-                          </div>
+                          <WikiFace name={p.name} className="w-16 h-16 border-2 border-border group-hover:border-ring transition-all mb-2" />
                           <div className="text-xs font-semibold text-foreground leading-tight">{p.name}</div>
                           <div className="text-[10px] text-muted-foreground mt-0.5">{p.era}</div>
                           <div className="text-[10px] text-muted-foreground leading-tight mt-1 line-clamp-1">{p.role}</div>
@@ -2395,9 +2422,7 @@ Let's start the self-listen session!`;
               <div className="max-w-3xl mx-auto w-full h-full flex flex-col">
                 <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                   <button onClick={() => { setSelectedPersonality(null); setPhilosopherMessages([]); }} className="text-muted-foreground hover:text-foreground text-sm">← Back</button>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-border">
-                    <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
-                  </div>
+                  <WikiFace name={selectedPersonality.name} className="w-10 h-10 border-2 border-border" />
                   <div>
                     <div className="font-semibold text-foreground text-sm">{selectedPersonality.name}</div>
                     <div className="text-xs text-muted-foreground">{selectedPersonality.era} · {selectedPersonality.role}</div>
@@ -2406,9 +2431,7 @@ Let's start the self-listen session!`;
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
                   {philosopherMessages.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-border mx-auto mb-4">
-                        <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
-                      </div>
+                      <WikiFace name={selectedPersonality.name} className="w-20 h-20 border-4 border-border mx-auto mb-4" />
                       <p className="font-medium text-foreground mb-1">{selectedPersonality.name} awaits you</p>
                       <p className="text-sm">{selectedPersonality.era} · {selectedPersonality.role}</p>
                       <p className="text-sm mt-4">Say hello or ask anything — they will respond in their authentic voice.</p>
@@ -2417,9 +2440,7 @@ Let's start the self-listen session!`;
                   {philosopherMessages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-full overflow-hidden border border-border mr-2 flex-shrink-0 mt-1">
-                          <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
-                        </div>
+                        <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border mr-2 mt-1" />
                       )}
                       <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
@@ -2428,9 +2449,7 @@ Let's start the self-listen session!`;
                   ))}
                   {philosopherIsTyping && (
                     <div className="flex justify-start items-center gap-2">
-                      <div className="w-7 h-7 rounded-full overflow-hidden border border-border flex-shrink-0">
-                        <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
-                      </div>
+                      <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border" />
                       <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
