@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown } from "lucide-react";
+import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { Input } from "@/components/ui/input";
 
 interface CustomizeModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ interface CustomizeModalProps {
   toggles: any;
   aiOrder: string[];
   user?: { email: string; username: string; displayName?: string | null } | null;
+  profilePicture?: string;
+  onUserRename?: (name: string) => void;
+  onProfilePictureChange?: (dataUrl: string) => void;
 }
 
 type SettingsSection = 'account' | 'appearance' | 'behavior' | 'customize' | 'data';
@@ -30,7 +34,10 @@ export function CustomizeModal({
   onSave,
   toggles,
   aiOrder,
-  user
+  user,
+  profilePicture,
+  onUserRename,
+  onProfilePictureChange
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('account');
@@ -43,6 +50,10 @@ export function CustomizeModal({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [localTheme, setLocalTheme] = useState<string>(theme);
   const originalTheme = useRef<string>(theme);
+  const [showCustomizePanel, setShowCustomizePanel] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [previewPic, setPreviewPic] = useState('');
+  const picInputRef = useRef<HTMLInputElement>(null);
 
   const [localToggles, setLocalToggles] = useState({
     wrapLines: true,
@@ -358,28 +369,109 @@ export function CustomizeModal({
           )}
 
           {activeSection === 'account' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
+            <div className="space-y-4">
+              <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      {(previewPic || profilePicture) ? (
+                        <img src={previewPic || profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl">
+                          {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white uppercase">{user?.displayName || user?.username || 'User'}</p>
+                      <p className="text-xs text-zinc-500">{user?.email || ''}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-zinc-900 dark:text-white uppercase">{user?.displayName || user?.username || 'User'}</p>
-                    <p className="text-xs text-zinc-500">{user?.email || ''}</p>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-xs h-8 flex items-center gap-1.5"
+                    onClick={() => {
+                      setEditName(user?.displayName || user?.username || '');
+                      setPreviewPic('');
+                      setShowCustomizePanel(v => !v);
+                    }}
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Customize
+                  </Button>
                 </div>
-                <Button variant="outline" className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-xs h-8">Manage</Button>
-              </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-2">
-                  <div className="flex items-center space-x-3">
-                    <Settings className="w-4 h-4 text-zinc-400" />
-                    <span className="text-sm text-zinc-900 dark:text-white">Account Settings</span>
+                {showCustomizePanel && (
+                  <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Display Name</label>
+                      <Input
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        placeholder="Enter your name"
+                        className="h-8 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Profile Picture</label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-zinc-200 dark:border-zinc-700">
+                          {(previewPic || profilePicture) ? (
+                            <img src={previewPic || profilePicture} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                              {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs flex items-center gap-1.5 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                          onClick={() => picInputRef.current?.click()}
+                        >
+                          <Camera className="w-3 h-3" />
+                          Upload Photo
+                        </Button>
+                        <input
+                          ref={picInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => setPreviewPic(ev.target?.result as string);
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => { setShowCustomizePanel(false); setPreviewPic(''); }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center gap-1.5"
+                        onClick={() => {
+                          if (editName.trim()) onUserRename?.(editName.trim());
+                          if (previewPic) onProfilePictureChange?.(previewPic);
+                          setShowCustomizePanel(false);
+                        }}
+                      >
+                        <Check className="w-3 h-3" />
+                        Save
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="outline" className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs h-8">Manage</Button>
-                </div>
+                )}
               </div>
             </div>
           )}

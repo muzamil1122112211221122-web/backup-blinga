@@ -2360,6 +2360,9 @@ Let's start the self-listen session!`;
         toggles={settingsToggles}
         aiOrder={aiOrder}
         user={user}
+        profilePicture={profilePicture || undefined}
+        onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
+        onProfilePictureChange={(dataUrl) => { setProfilePicture(dataUrl); localStorage.setItem('profilePicture', dataUrl); }}
       />
 
       {/* Image Generation Dialog */}
