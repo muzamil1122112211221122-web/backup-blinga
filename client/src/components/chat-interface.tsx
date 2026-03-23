@@ -733,6 +733,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const userName = user?.displayName || user?.username || 'Seeker';
     const msgId = Date.now().toString();
     setPhilosopherMessages(prev => [...prev, { id: msgId, role: 'user', content }]);
+    setInputValue('');
     setPhilosopherInput('');
     setPhilosopherIsTyping(true);
     const p = selectedPersonality;
@@ -776,6 +777,7 @@ IMPORTANT RULES:
   const handleGamesSend = async (content: string) => {
     if (!content.trim()) return;
     const msgId = Date.now().toString();
+    setInputValue('');
     setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: msgId, role: 'user', content }], gameInput: '', isTyping: true }));
     try {
       const gameContext = gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Forus Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`;
@@ -941,6 +943,18 @@ IMPORTANT RULES:
     // Handle Lumin multi-AI mode
     if (activeTab === 'lumin' && activeAIModels.size > 0) {
       await handleLuminSendMessage(content);
+      return;
+    }
+
+    // Handle Philosopher mode
+    if (activeTab === 'philosopher' && selectedPersonality) {
+      await handlePhilosopherSend(content);
+      return;
+    }
+
+    // Handle Forus Games mode
+    if (activeTab === 'forus-games') {
+      await handleGamesSend(content);
       return;
     }
 
@@ -2352,18 +2366,19 @@ Let's start the self-listen session!`;
                         <button
                           key={p.id}
                           onClick={() => { setSelectedPersonality(p); setPhilosopherMessages([]); setPhilosopherInput(''); }}
-                          className="flex flex-col items-start p-3 bg-card border border-border rounded-xl hover:bg-accent hover:border-ring transition-all duration-200 text-left"
+                          className="flex flex-col items-center p-3 bg-card border border-border rounded-xl hover:bg-accent hover:border-ring transition-all duration-200 text-center group"
                         >
-                          <div className="flex items-center gap-2 mb-1 w-full">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                              {p.name.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-foreground leading-tight truncate">{p.name}</div>
-                              <div className="text-[10px] text-muted-foreground truncate">{p.era}</div>
-                            </div>
+                          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border group-hover:border-ring transition-all mb-2 flex-shrink-0">
+                            <img
+                              src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(p.name)}&backgroundColor=fef3c7,fed7aa,fde68a,d1fae5,dbeafe&skinColor=f5cba7,e8b89a,d4a88a,b8866a`}
+                              alt={p.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display='none'; (e.currentTarget.parentElement as HTMLElement).style.background='linear-gradient(135deg,#f59e0b,#ea580c)'; (e.currentTarget.parentElement as HTMLElement).innerHTML=`<span class="text-white text-xl font-bold flex items-center justify-center w-full h-full">${p.name.charAt(0)}</span>`; }}
+                            />
                           </div>
-                          <div className="text-[10px] text-muted-foreground leading-tight mt-1 line-clamp-2">{p.role}</div>
+                          <div className="text-xs font-semibold text-foreground leading-tight">{p.name}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">{p.era}</div>
+                          <div className="text-[10px] text-muted-foreground leading-tight mt-1 line-clamp-1">{p.role}</div>
                           <div className="mt-1.5">
                             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">{p.category}</span>
                           </div>
@@ -2380,8 +2395,8 @@ Let's start the self-listen session!`;
               <div className="max-w-3xl mx-auto w-full h-full flex flex-col">
                 <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
                   <button onClick={() => { setSelectedPersonality(null); setPhilosopherMessages([]); }} className="text-muted-foreground hover:text-foreground text-sm">← Back</button>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold">
-                    {selectedPersonality.name.charAt(0)}
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-border">
+                    <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <div className="font-semibold text-foreground text-sm">{selectedPersonality.name}</div>
@@ -2391,8 +2406,8 @@ Let's start the self-listen session!`;
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
                   {philosopherMessages.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                        {selectedPersonality.name.charAt(0)}
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-border mx-auto mb-4">
+                        <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
                       </div>
                       <p className="font-medium text-foreground mb-1">{selectedPersonality.name} awaits you</p>
                       <p className="text-sm">{selectedPersonality.era} · {selectedPersonality.role}</p>
@@ -2402,8 +2417,8 @@ Let's start the self-listen session!`;
                   {philosopherMessages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0 mt-1">
-                          {selectedPersonality.name.charAt(0)}
+                        <div className="w-7 h-7 rounded-full overflow-hidden border border-border mr-2 flex-shrink-0 mt-1">
+                          <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
                         </div>
                       )}
                       <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
@@ -2413,8 +2428,8 @@ Let's start the self-listen session!`;
                   ))}
                   {philosopherIsTyping && (
                     <div className="flex justify-start items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {selectedPersonality.name.charAt(0)}
+                      <div className="w-7 h-7 rounded-full overflow-hidden border border-border flex-shrink-0">
+                        <img src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(selectedPersonality.name)}&backgroundColor=fef3c7,fed7aa`} alt={selectedPersonality.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
@@ -2423,20 +2438,6 @@ Let's start the self-listen session!`;
                       </div>
                     </div>
                   )}
-                </div>
-                <div className="flex gap-2 mt-auto">
-                  <input
-                    type="text"
-                    value={philosopherInput}
-                    onChange={e => setPhilosopherInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePhilosopherSend(philosopherInput); }}}
-                    placeholder={`Speak to ${selectedPersonality.name}...`}
-                    className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    disabled={philosopherIsTyping}
-                  />
-                  <Button size="sm" onClick={() => handlePhilosopherSend(philosopherInput)} disabled={philosopherIsTyping || !philosopherInput.trim()} className="rounded-2xl">
-                    Send
-                  </Button>
                 </div>
               </div>
             )}
@@ -2488,32 +2489,18 @@ Let's start the self-listen session!`;
               )}
             </div>
             {gamesState.gameMessages.length > 0 && (
-              <div className="flex gap-2 mb-2">
+              <div className="flex gap-2 pb-2">
                 <button onClick={() => setGamesState({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false })} className="text-xs text-muted-foreground hover:text-foreground underline">
                   ← Back to games menu
                 </button>
               </div>
             )}
-            <div className="flex gap-2 mt-auto">
-              <input
-                type="text"
-                value={gamesState.gameInput}
-                onChange={e => setGamesState(prev => ({ ...prev, gameInput: e.target.value }))}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGamesSend(gamesState.gameInput); }}}
-                placeholder="Type your answer or move..."
-                className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                disabled={gamesState.isTyping}
-              />
-              <Button size="sm" onClick={() => handleGamesSend(gamesState.gameInput)} disabled={gamesState.isTyping || !gamesState.gameInput.trim()} className="rounded-2xl">
-                Send
-              </Button>
-            </div>
           </div>
         )}
       </div>
       
       {/* Tool Buttons - Separate Section */}
-      <div className="macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none" style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+      <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
@@ -2679,7 +2666,7 @@ Let's start the self-listen session!`;
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="What do you want to know ?"
+              placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
               className="w-full min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2"
               data-testid="input-message"
             />
