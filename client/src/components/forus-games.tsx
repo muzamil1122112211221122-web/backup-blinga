@@ -756,20 +756,20 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const GAMES = [
     {
       id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', desc: 'Solve math problems — 10s per question',
-      accent: 'text-blue-400', iconBg: 'bg-blue-500/15',
+      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-blue-600',
       preview: (
         <div className="flex items-center gap-1.5 font-mono font-bold text-base">
-          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-lg">7</span>
-          <span className="text-zinc-400">×</span>
-          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-lg">8</span>
-          <span className="text-zinc-400">=</span>
-          <span className="bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-lg border border-yellow-400/30">?</span>
+          <span className="bg-white/20 text-white px-2 py-0.5 rounded-lg">7</span>
+          <span className="text-white/50">×</span>
+          <span className="bg-white/20 text-white px-2 py-0.5 rounded-lg">8</span>
+          <span className="text-white/50">=</span>
+          <span className="bg-yellow-300/30 text-yellow-200 px-2 py-0.5 rounded-lg border border-yellow-300/40">?</span>
         </div>
       ),
     },
     {
       id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', desc: 'Unscramble letters — 10s per word',
-      accent: 'text-emerald-400', iconBg: 'bg-emerald-500/15',
+      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-emerald-600',
       preview: (
         <div className="flex gap-1">
           {['P','L','N','A','E','T'].map((l, i) => (
@@ -780,7 +780,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
     {
       id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', desc: 'Match all pairs before time runs out',
-      accent: 'text-purple-400', iconBg: 'bg-purple-500/15',
+      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-violet-600',
       preview: (
         <div className="grid grid-cols-4 gap-1">
           {['🦁','❓','🦊','❓','❓','🐸','❓','🦁'].map((e, i) => (
@@ -791,7 +791,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
     {
       id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', desc: 'Answer questions — 10s each',
-      accent: 'text-orange-400', iconBg: 'bg-orange-500/15',
+      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-orange-500',
       preview: (
         <div className="grid grid-cols-2 gap-1 w-full">
           {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
@@ -829,18 +829,18 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         {GAMES.map(g => (
           <button key={g.id} onClick={() => setPendingGame(g.id)}
-            className="group flex flex-col p-4 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/80 transition-all duration-200 text-left hover:scale-[1.01] active:scale-[0.99]">
+            className={`group flex flex-col p-4 rounded-2xl ${g.cardBg} hover:brightness-110 active:brightness-95 transition-all duration-200 text-left hover:scale-[1.02] active:scale-[0.98] shadow-lg`}>
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-14 h-14 ${g.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
                 <img src={g.icon} alt={g.label} className="w-11 h-11 object-contain" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className={`font-bold text-sm ${g.accent}`}>{g.label}</div>
-                <div className="text-zinc-500 text-xs mt-0.5 leading-snug">{g.desc}</div>
+                <div className={`font-bold text-base ${g.accent}`}>{g.label}</div>
+                <div className="text-white/60 text-xs mt-0.5 leading-snug">{g.desc}</div>
               </div>
-              <div className="text-zinc-600 group-hover:text-zinc-300 text-sm transition-colors">→</div>
+              <div className="text-white/40 group-hover:text-white text-sm transition-colors">→</div>
             </div>
-            <div className="bg-zinc-800/60 rounded-xl px-3 py-2.5 flex items-center justify-center min-h-[44px] border border-zinc-700/40">
+            <div className="bg-black/20 rounded-xl px-3 py-2.5 flex items-center justify-center min-h-[48px]">
               {g.preview}
             </div>
           </button>
