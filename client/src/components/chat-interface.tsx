@@ -2550,48 +2550,6 @@ Let's start the self-listen session!`;
         <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
           <Button
             variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
-            onClick={() => setIsVoiceModeModalOpen(true)}
-            data-testid="button-voice-mode"
-          >
-            <div className="relative z-10 flex flex-col items-center space-y-1">
-              <div className="flex items-center justify-center space-x-0.5 h-5 w-5">
-                <div className="w-0.5 h-1.5 bg-current rounded-full"></div>
-                <div className="w-0.5 h-2.5 bg-current rounded-full"></div>
-                <div className="w-0.5 h-4 bg-current rounded-full"></div>
-                <div className="w-0.5 h-3 bg-current rounded-full"></div>
-                <div className="w-0.5 h-1 bg-current rounded-full"></div>
-              </div>
-              <span className="text-[10px] sm:text-xs font-medium">Voice Mode</span>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
-            onClick={handleCreateImageFromFunctionBar}
-            data-testid="button-create-images"
-          >
-            <div className="relative z-10 flex flex-col items-center space-y-1">
-              <Image className="h-5 w-5" />
-              <span className="text-[10px] sm:text-xs font-medium">Create Images</span>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
-            className="macos-button flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground px-4 py-6 rounded-2xl bg-white dark:bg-[#303030] border-none relative transition-all duration-300 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]"
-            onClick={handleOpenCameraFromFunctionBar}
-            data-testid="button-open-camera"
-          >
-            <div className="relative z-10 flex flex-col items-center space-y-1">
-              <Camera className="h-5 w-5" />
-              <span className="text-[10px] sm:text-xs font-medium">Open Camera</span>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
             className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)] ${
               forusIntegrationMode 
                 ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' 
