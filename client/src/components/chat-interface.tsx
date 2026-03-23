@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -179,6 +179,7 @@ const HISTORICAL_PERSONALITIES: HistoricalPersonality[] = [
   { id: 'bolivar', name: 'Simón Bolívar', era: '1783–1830', role: 'South American Liberator', category: 'Leaders', style: 'Passionate, visionary, references freedom and Latin American unity, rhetorical and romantic, deeply patriotic' },
   { id: 'castro', name: 'Fidel Castro', era: '1926–2016', role: 'Cuban Leader', category: 'Leaders', style: 'Long speeches, ideological, references imperialism and revolution, speaks with fiery conviction and marathon endurance' },
   { id: 'mussolini', name: 'Benito Mussolini', era: '1883–1945', role: 'Italian Dictator', category: 'Leaders', style: 'Bombastic, theatrical, references Roman glory and Italian greatness, dramatic and authoritative, uses fascist rhetoric' },
+  { id: 'hitler', name: 'Adolf Hitler', era: '1889–1945', role: 'German Dictator', category: 'Leaders', style: 'Intensely ideological, fiery and demagogic, references German nationalism and racial ideology, speaks with extreme conviction and inflammatory rhetoric, historically infamous for leading the Nazi regime and causing World War II' },
   { id: 'bismarck', name: 'Otto von Bismarck', era: '1815–1898', role: 'German Chancellor', category: 'Leaders', style: 'Realpolitik master, blunt and pragmatic, references blood and iron, sardonic wit, speaks with Prussian directness' },
   { id: 'charlemagne', name: 'Charlemagne', era: '742–814', role: 'Frankish Emperor', category: 'Leaders', style: 'Devout, imperial, references Christendom and unity, speaks with medieval formality and kingly authority' },
   { id: 'joan', name: 'Joan of Arc', era: '1412–1431', role: 'French Military Leader', category: 'Leaders', style: 'Fervent, visionary, references divine mission and France, speaks with religious conviction and youthful courage' },
@@ -349,6 +350,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [selectedPersonality, setSelectedPersonality] = useState<HistoricalPersonality | null>(null);
   const [personalitySearch, setPersonalitySearch] = useState('');
   const [personalityCategory, setPersonalityCategory] = useState('All');
+  const filteredPersonalities = useMemo(() => {
+    return HISTORICAL_PERSONALITIES
+      .filter(p => personalityCategory === 'All' || p.category === personalityCategory)
+      .filter(p => personalitySearch === '' || p.name.toLowerCase().includes(personalitySearch.toLowerCase()) || p.role.toLowerCase().includes(personalitySearch.toLowerCase()));
+  }, [personalitySearch, personalityCategory]);
   const [gamesState, setGamesState] = useState<{activeGame: string | null; gameMessages: Array<{id: string; role: 'user' | 'assistant'; content: string}>; gameInput: string; isTyping: boolean}>({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -2396,10 +2402,7 @@ Let's start the self-listen session!`;
                 {/* Personalities Grid */}
                 <div className="flex-1 overflow-y-auto">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {HISTORICAL_PERSONALITIES
-                      .filter(p => personalityCategory === 'All' || p.category === personalityCategory)
-                      .filter(p => personalitySearch === '' || p.name.toLowerCase().includes(personalitySearch.toLowerCase()) || p.role.toLowerCase().includes(personalitySearch.toLowerCase()))
-                      .map(p => (
+                    {filteredPersonalities.map(p => (
                         <button
                           key={p.id}
                           onClick={() => { setSelectedPersonality(p); setPhilosopherMessages([]); setPhilosopherInput(''); }}
@@ -2415,7 +2418,7 @@ Let's start the self-listen session!`;
                         </button>
                       ))}
                   </div>
-                  {HISTORICAL_PERSONALITIES.filter(p => (personalityCategory === 'All' || p.category === personalityCategory) && (personalitySearch === '' || p.name.toLowerCase().includes(personalitySearch.toLowerCase()) || p.role.toLowerCase().includes(personalitySearch.toLowerCase()))).length === 0 && (
+                  {filteredPersonalities.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground text-sm">No personalities found matching your search.</div>
                   )}
                 </div>
