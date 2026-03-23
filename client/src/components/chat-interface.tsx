@@ -108,26 +108,28 @@ import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 
-function WikiFace({ name, className = '' }: { name: string; className?: string }) {
+function WikiFace({ name, wikiTitle, className = '' }: { name: string; wikiTitle?: string; className?: string }) {
   const [src, setSrc] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const articleTitle = wikiTitle || name;
 
   useEffect(() => {
+    setSrc(null);
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         observer.disconnect();
-        const title = name.replace(/ /g, '_');
+        const title = articleTitle.replace(/ /g, '_');
         fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`)
           .then(r => r.json())
           .then(data => { if (data.thumbnail?.source) setSrc(data.thumbnail.source); })
           .catch(() => {});
       }
-    }, { rootMargin: '150px' });
+    }, { rootMargin: '200px' });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [name]);
+  }, [articleTitle]);
 
   return (
     <div ref={ref} className={`rounded-full overflow-hidden flex-shrink-0 ${className}`}>
@@ -149,6 +151,7 @@ interface HistoricalPersonality {
   role: string;
   category: string;
   style: string;
+  wikiTitle?: string;
 }
 
 const HISTORICAL_PERSONALITIES: HistoricalPersonality[] = [
