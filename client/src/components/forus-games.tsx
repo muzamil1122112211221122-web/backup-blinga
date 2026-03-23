@@ -754,10 +754,54 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const [selectedLevel, setSelectedLevel] = useState<Level>('medium');
 
   const GAMES = [
-    { id: 'maths'  as GameId, icon: mathIcon,   label: 'Forus Maths',   desc: 'Solve math problems — 10s per question', grad: 'from-blue-600 via-blue-500 to-cyan-400',     shadow: 'shadow-blue-500/30' },
-    { id: 'word'   as GameId, icon: wordIcon,   label: 'Forus Word',    desc: 'Unscramble letters — 10s per word',       grad: 'from-green-600 via-emerald-500 to-teal-400', shadow: 'shadow-green-500/30' },
-    { id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory',  desc: 'Match all pairs before time runs out',    grad: 'from-purple-600 via-violet-500 to-pink-500', shadow: 'shadow-purple-500/30' },
-    { id: 'quiz'   as GameId, icon: quizIcon,   label: 'Forus Quiz',    desc: 'Answer questions — 10s each',             grad: 'from-orange-600 via-red-500 to-pink-500',    shadow: 'shadow-orange-500/30' },
+    {
+      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', desc: 'Solve math problems — 10s per question',
+      accent: 'text-blue-400', iconBg: 'bg-blue-500/15',
+      preview: (
+        <div className="flex items-center gap-1.5 font-mono font-bold text-base">
+          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-lg">7</span>
+          <span className="text-zinc-400">×</span>
+          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-lg">8</span>
+          <span className="text-zinc-400">=</span>
+          <span className="bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-lg border border-yellow-400/30">?</span>
+        </div>
+      ),
+    },
+    {
+      id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', desc: 'Unscramble letters — 10s per word',
+      accent: 'text-emerald-400', iconBg: 'bg-emerald-500/15',
+      preview: (
+        <div className="flex gap-1">
+          {['P','L','N','A','E','T'].map((l, i) => (
+            <div key={i} className={`w-7 h-7 rounded-md text-[11px] font-bold flex items-center justify-center text-white ${ ['bg-blue-500/60','bg-purple-500/60','bg-pink-500/60','bg-red-500/60','bg-orange-500/60','bg-green-500/60'][i] }`}>{l}</div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', desc: 'Match all pairs before time runs out',
+      accent: 'text-purple-400', iconBg: 'bg-purple-500/15',
+      preview: (
+        <div className="grid grid-cols-4 gap-1">
+          {['🦁','❓','🦊','❓','❓','🐸','❓','🦁'].map((e, i) => (
+            <div key={i} className={`w-7 h-7 rounded-md text-sm flex items-center justify-center ${e === '❓' ? 'bg-white/5 border border-white/10 text-zinc-600 text-xs' : 'bg-white/10 text-base'}`}>{e}</div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', desc: 'Answer questions — 10s each',
+      accent: 'text-orange-400', iconBg: 'bg-orange-500/15',
+      preview: (
+        <div className="grid grid-cols-2 gap-1 w-full">
+          {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
+            <div key={i} className={`text-[10px] font-semibold px-2 py-1 rounded-md flex items-center gap-1 ${i === 0 ? 'bg-green-500/20 border border-green-500/40 text-green-300' : 'bg-white/5 text-zinc-500'}`}>
+              <span className="font-bold">{l}.</span><span>{t}</span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
   ];
 
   const goBack = () => { setActiveGame('menu'); setPendingGame(null); };
@@ -785,15 +829,20 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         {GAMES.map(g => (
           <button key={g.id} onClick={() => setPendingGame(g.id)}
-            className={`group relative overflow-hidden flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br ${g.grad} shadow-lg ${g.shadow} hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 text-left`}>
-            <div className="w-20 h-20 bg-white/15 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <img src={g.icon} alt={g.label} className="w-16 h-16 object-contain" />
+            className="group flex flex-col p-4 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/80 transition-all duration-200 text-left hover:scale-[1.01] active:scale-[0.99]">
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`w-14 h-14 ${g.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                <img src={g.icon} alt={g.label} className="w-11 h-11 object-contain" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`font-bold text-sm ${g.accent}`}>{g.label}</div>
+                <div className="text-zinc-500 text-xs mt-0.5 leading-snug">{g.desc}</div>
+              </div>
+              <div className="text-zinc-600 group-hover:text-zinc-300 text-sm transition-colors">→</div>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-base">{g.label}</div>
-              <div className="text-white/60 text-xs mt-0.5">{g.desc}</div>
+            <div className="bg-zinc-800/60 rounded-xl px-3 py-2.5 flex items-center justify-center min-h-[44px] border border-zinc-700/40">
+              {g.preview}
             </div>
-            <div className="text-white/40 group-hover:text-white text-lg transition-colors ml-1">→</div>
           </button>
         ))}
       </div>
