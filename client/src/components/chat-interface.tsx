@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient } from "@/lib/queryClient";
+import { ForusGames } from "./forus-games";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 function getVibrantColor(name: string, secondary = false): string {
@@ -2476,57 +2477,8 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Forus Games Tab
-          <div className="max-w-3xl mx-auto h-full flex flex-col">
-            <div className="mb-4 text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-1">Forus Games</h2>
-              <p className="text-muted-foreground text-sm">Interactive text-based games powered by AI</p>
-            </div>
-            {gamesState.gameMessages.length === 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                {[
-                  { emoji: '🧠', label: 'Trivia Challenge', game: 'Trivia' },
-                  { emoji: '❓', label: '20 Questions', game: '20 Questions' },
-                  { emoji: '🔤', label: 'Word Riddles', game: 'Word Riddles' },
-                  { emoji: '📖', label: 'Story Adventure', game: 'Storytelling Adventure' },
-                  { emoji: '🤔', label: 'Would You Rather', game: 'Would You Rather' },
-                  { emoji: '💡', label: 'Brain Teasers', game: 'Brain Teasers' },
-                ].map(item => (
-                  <button
-                    key={item.game}
-                    onClick={() => { setGamesState(prev => ({ ...prev, activeGame: item.game })); handleGamesSend(`Let's play ${item.game}! Start the game now.`); }}
-                    className="flex flex-col items-center justify-center p-4 bg-card border border-border rounded-2xl hover:bg-accent hover:border-ring transition-all duration-200 cursor-pointer"
-                  >
-                    <span className="text-3xl mb-2">{item.emoji}</span>
-                    <span className="text-sm font-medium text-foreground">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
-              {gamesState.gameMessages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                  </div>
-                </div>
-              ))}
-              {gamesState.isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
-                  </div>
-                </div>
-              )}
-            </div>
-            {gamesState.gameMessages.length > 0 && (
-              <div className="flex gap-2 pb-2">
-                <button onClick={() => setGamesState({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false })} className="text-xs text-muted-foreground hover:text-foreground underline">
-                  ← Back to games menu
-                </button>
-              </div>
-            )}
+          <div className="max-w-2xl mx-auto w-full h-full flex flex-col">
+            <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
           </div>
         )}
       </div>
