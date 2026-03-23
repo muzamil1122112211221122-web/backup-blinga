@@ -1566,7 +1566,6 @@ Let's start the self-listen session!`;
             className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
             data-testid="tab-lumin"
           >
-            <Brain className="h-3 w-3 mr-1" />
             Lumin(Coders & Content Creator Heaven)
           </Button>
           <Button
@@ -1576,7 +1575,7 @@ Let's start the self-listen session!`;
             className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
             data-testid="tab-philosopher"
           >
-            🏛️ Philosopher & {user?.displayName || user?.username || 'You'}
+            Philosophers & {user?.displayName || user?.username || 'You'}
           </Button>
           <Button
             variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
@@ -1585,7 +1584,7 @@ Let's start the self-listen session!`;
             className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
             data-testid="tab-forus-games"
           >
-            🎮 Forus Games
+            Forus Games
           </Button>
           <Button 
             variant="ghost" 
@@ -2109,9 +2108,8 @@ Let's start the self-listen session!`;
           // Philosopher Tab
           <div className="max-w-3xl mx-auto h-full flex flex-col">
             <div className="mb-6 text-center">
-              <div className="text-5xl mb-3">🏛️</div>
               <h2 className="text-2xl font-bold text-foreground mb-1">
-                Philosopher & {user?.displayName || user?.username || 'You'}
+                Philosophers & {user?.displayName || user?.username || 'You'}
               </h2>
               <p className="text-muted-foreground text-sm">A dialogue across the ages — wisdom, reflection, and truth</p>
             </div>
@@ -2159,7 +2157,6 @@ Let's start the self-listen session!`;
           // Forus Games Tab
           <div className="max-w-3xl mx-auto h-full flex flex-col">
             <div className="mb-4 text-center">
-              <div className="text-5xl mb-3">🎮</div>
               <h2 className="text-2xl font-bold text-foreground mb-1">Forus Games</h2>
               <p className="text-muted-foreground text-sm">Interactive text-based games powered by AI</p>
             </div>
