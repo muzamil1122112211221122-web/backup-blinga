@@ -710,7 +710,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={() => setActiveGame('menu')} />;
 
   return (
-    <div className="flex flex-col h-full justify-center">
+    <div className="flex flex-col">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-foreground mb-1">Forus Games</h2>
         <p className="text-muted-foreground text-sm">Choose a game, earn points, climb the leaderboard</p>

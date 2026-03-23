@@ -2477,8 +2477,10 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Forus Games Tab
-          <div className="max-w-2xl mx-auto w-full h-full flex flex-col">
-            <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
+          <div className="flex items-center justify-center" style={{ minHeight: '100%' }}>
+            <div className="max-w-2xl w-full">
+              <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
+            </div>
           </div>
         )}
       </div>
