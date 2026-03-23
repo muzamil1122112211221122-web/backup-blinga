@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, conversationId, model, provider } = req.body;
+      const { message, conversationId, model, provider, systemPrompt: customSystemPrompt } = req.body;
       const user = req.user;
       
       if (!message) {
@@ -248,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
           
-          const systemPrompt = "You are an expert software engineer. Provide high-quality, professional code solutions.";
+          const systemPrompt = customSystemPrompt || "You are an expert software engineer. Provide high-quality, professional code solutions.";
           const userName = (user as any)?.displayName || (user as any)?.username || 'there';
           
           try {
@@ -261,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                  { role: 'system', content: `${systemPrompt}\n\nUser's name is ${userName}.` },
+                  { role: 'system', content: customSystemPrompt ? systemPrompt : `${systemPrompt}\n\nUser's name is ${userName}.` },
                   { role: 'user', content: message }
                 ],
                 temperature: 0.7,

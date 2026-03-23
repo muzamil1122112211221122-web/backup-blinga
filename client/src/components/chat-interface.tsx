@@ -119,7 +119,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'lumin'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'lumin' | 'philosopher' | 'forus-games'>('ask');
+  const [philosopherMessages, setPhilosopherMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string}>>([]);
+  const [philosopherInput, setPhilosopherInput] = useState('');
+  const [philosopherIsTyping, setPhilosopherIsTyping] = useState(false);
+  const [gamesState, setGamesState] = useState<{activeGame: string | null; gameMessages: Array<{id: string; role: 'user' | 'assistant'; content: string}>; gameInput: string; isTyping: boolean}>({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
@@ -532,6 +536,62 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       } finally {
         setLuminIsTyping(prev => ({ ...prev, [model.id]: false }));
       }
+    }
+  };
+
+  const handlePhilosopherSend = async (content: string) => {
+    if (!content.trim()) return;
+    const userName = user?.displayName || user?.username || 'Seeker';
+    const msgId = Date.now().toString();
+    setPhilosopherMessages(prev => [...prev, { id: msgId, role: 'user', content }]);
+    setPhilosopherInput('');
+    setPhilosopherIsTyping(true);
+    try {
+      const response = await fetch('/api/test-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          conversationId: 'philosopher',
+          model: 'forus-ai',
+          provider: 'openai',
+          systemPrompt: `You are a wise and thoughtful philosopher AI. You speak with depth, wisdom, and insight, drawing from great philosophical traditions — Socratic dialogue, Stoicism, Existentialism, Eastern philosophy, and more. You always address the user by their name: "${userName}". You ask probing questions, offer reflective insights, and guide the user toward deeper self-understanding. Be poetic yet clear, profound yet accessible.`,
+        }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setPhilosopherMessages(prev => [...prev, { id: `${Date.now()}-ai`, role: 'assistant', content: result.response }]);
+      }
+    } catch (err) {
+      setPhilosopherMessages(prev => [...prev, { id: `${Date.now()}-err`, role: 'assistant', content: 'The cosmos seems disrupted. Please try again.' }]);
+    } finally {
+      setPhilosopherIsTyping(false);
+    }
+  };
+
+  const handleGamesSend = async (content: string) => {
+    if (!content.trim()) return;
+    const msgId = Date.now().toString();
+    setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: msgId, role: 'user', content }], gameInput: '', isTyping: true }));
+    try {
+      const gameContext = gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Forus Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`;
+      const response = await fetch('/api/test-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          conversationId: 'forus-games',
+          model: 'forus-ai',
+          provider: 'openai',
+          systemPrompt: gameContext,
+        }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: `${Date.now()}-ai`, role: 'assistant', content: result.response }], isTyping: false }));
+      }
+    } catch (err) {
+      setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: `${Date.now()}-err`, role: 'assistant', content: 'Game error! Please try again.' }], isTyping: false }));
     }
   };
 
@@ -1509,6 +1569,24 @@ Let's start the self-listen session!`;
             <Brain className="h-3 w-3 mr-1" />
             Lumin(Coders & Content Creator Heaven)
           </Button>
+          <Button
+            variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('philosopher')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
+            data-testid="tab-philosopher"
+          >
+            🏛️ Philosopher & {user?.displayName || user?.username || 'You'}
+          </Button>
+          <Button
+            variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('forus-games')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
+            data-testid="tab-forus-games"
+          >
+            🎮 Forus Games
+          </Button>
           <Button 
             variant="ghost" 
             size="icon"
@@ -1761,7 +1839,7 @@ Let's start the self-listen session!`;
             <div ref={messagesEndRef} />
           </div>
         )
-        ) : (
+        ) : activeTab === 'lumin' ? (
           // Lumin Tab - Multi-AI Interface
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
@@ -2025,6 +2103,125 @@ Let's start the self-listen session!`;
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        ) : activeTab === 'philosopher' ? (
+          // Philosopher Tab
+          <div className="max-w-3xl mx-auto h-full flex flex-col">
+            <div className="mb-6 text-center">
+              <div className="text-5xl mb-3">🏛️</div>
+              <h2 className="text-2xl font-bold text-foreground mb-1">
+                Philosopher & {user?.displayName || user?.username || 'You'}
+              </h2>
+              <p className="text-muted-foreground text-sm">A dialogue across the ages — wisdom, reflection, and truth</p>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
+              {philosopherMessages.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground">
+                  <p className="text-lg italic mb-2">"The unexamined life is not worth living."</p>
+                  <p className="text-sm">— Socrates</p>
+                  <p className="mt-6 text-sm">Ask me anything, {user?.displayName || user?.username || 'friend'} — about existence, meaning, ethics, or simply what weighs on your mind.</p>
+                </div>
+              )}
+              {philosopherMessages.map(msg => (
+                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+              {philosopherIsTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 mt-auto">
+              <input
+                type="text"
+                value={philosopherInput}
+                onChange={e => setPhilosopherInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePhilosopherSend(philosopherInput); }}}
+                placeholder={`Share your thoughts, ${user?.displayName || user?.username || 'Seeker'}...`}
+                className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={philosopherIsTyping}
+              />
+              <Button size="sm" onClick={() => handlePhilosopherSend(philosopherInput)} disabled={philosopherIsTyping || !philosopherInput.trim()} className="rounded-2xl">
+                Send
+              </Button>
+            </div>
+          </div>
+        ) : (
+          // Forus Games Tab
+          <div className="max-w-3xl mx-auto h-full flex flex-col">
+            <div className="mb-4 text-center">
+              <div className="text-5xl mb-3">🎮</div>
+              <h2 className="text-2xl font-bold text-foreground mb-1">Forus Games</h2>
+              <p className="text-muted-foreground text-sm">Interactive text-based games powered by AI</p>
+            </div>
+            {gamesState.gameMessages.length === 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                {[
+                  { emoji: '🧠', label: 'Trivia Challenge', game: 'Trivia' },
+                  { emoji: '❓', label: '20 Questions', game: '20 Questions' },
+                  { emoji: '🔤', label: 'Word Riddles', game: 'Word Riddles' },
+                  { emoji: '📖', label: 'Story Adventure', game: 'Storytelling Adventure' },
+                  { emoji: '🤔', label: 'Would You Rather', game: 'Would You Rather' },
+                  { emoji: '💡', label: 'Brain Teasers', game: 'Brain Teasers' },
+                ].map(item => (
+                  <button
+                    key={item.game}
+                    onClick={() => { setGamesState(prev => ({ ...prev, activeGame: item.game })); handleGamesSend(`Let's play ${item.game}! Start the game now.`); }}
+                    className="flex flex-col items-center justify-center p-4 bg-card border border-border rounded-2xl hover:bg-accent hover:border-ring transition-all duration-200 cursor-pointer"
+                  >
+                    <span className="text-3xl mb-2">{item.emoji}</span>
+                    <span className="text-sm font-medium text-foreground">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
+              {gamesState.gameMessages.map(msg => (
+                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+              {gamesState.isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                  </div>
+                </div>
+              )}
+            </div>
+            {gamesState.gameMessages.length > 0 && (
+              <div className="flex gap-2 mb-2">
+                <button onClick={() => setGamesState({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false })} className="text-xs text-muted-foreground hover:text-foreground underline">
+                  ← Back to games menu
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2 mt-auto">
+              <input
+                type="text"
+                value={gamesState.gameInput}
+                onChange={e => setGamesState(prev => ({ ...prev, gameInput: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGamesSend(gamesState.gameInput); }}}
+                placeholder="Type your answer or move..."
+                className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={gamesState.isTyping}
+              />
+              <Button size="sm" onClick={() => handleGamesSend(gamesState.gameInput)} disabled={gamesState.isTyping || !gamesState.gameInput.trim()} className="rounded-2xl">
+                Send
+              </Button>
             </div>
           </div>
         )}
