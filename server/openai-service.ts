@@ -4,15 +4,56 @@ async function tryGeminiImageGeneration(prompt: string): Promise<{ success: bool
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) return null;
 
-  // Try gemini-2.0-flash-exp-image-generation model
-  const modelsToTry = [
-    'gemini-2.0-flash-exp-image-generation',
-    'gemini-2.0-flash-exp',
+  // Try Imagen 4 models first (highest quality, uses :predict endpoint)
+  const imagenModels = [
+    'imagen-4.0-generate-001',
+    'imagen-4.0-fast-generate-001',
+    'imagen-4.0-ultra-generate-001',
   ];
 
-  for (const model of modelsToTry) {
+  for (const model of imagenModels) {
     try {
-      console.log(`Trying Gemini model: ${model}`);
+      console.log(`Trying Imagen model: ${model}`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt: prompt.trim() }],
+          parameters: { sampleCount: 1 }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const prediction = data.predictions?.[0];
+        if (prediction?.bytesBase64Encoded) {
+          const mimeType = prediction.mimeType || 'image/png';
+          console.log(`${model} image generation succeeded`);
+          return {
+            success: true,
+            url: `data:${mimeType};base64,${prediction.bytesBase64Encoded}`,
+            revisedPrompt: `Imagen-generated: ${prompt}`,
+          };
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.log(`${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
+      }
+    } catch (err) {
+      console.log(`${model} error:`, err);
+    }
+  }
+
+  // Try Gemini image generation models (use :generateContent endpoint)
+  const geminiImageModels = [
+    'gemini-2.5-flash-image',
+    'gemini-3.1-flash-image-preview',
+    'gemini-3-pro-image-preview',
+  ];
+
+  for (const model of geminiImageModels) {
+    try {
+      console.log(`Trying Gemini image model: ${model}`);
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,7 +69,7 @@ async function tryGeminiImageGeneration(prompt: string): Promise<{ success: bool
         for (const part of parts) {
           if (part.inlineData?.data) {
             const mimeType = part.inlineData.mimeType || 'image/jpeg';
-            console.log(`Gemini image generation succeeded with model: ${model}`);
+            console.log(`${model} image generation succeeded`);
             return {
               success: true,
               url: `data:${mimeType};base64,${part.inlineData.data}`,
@@ -38,43 +79,54 @@ async function tryGeminiImageGeneration(prompt: string): Promise<{ success: bool
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.log(`Gemini model ${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
+        console.log(`${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
       }
     } catch (err) {
-      console.log(`Gemini model ${model} error:`, err);
+      console.log(`${model} error:`, err);
     }
   }
 
-  // Try Imagen 3 API as alternative Gemini-based image generation
+  return null;
+}
+
+async function tryGeminiSvgGeneration(prompt: string): Promise<{ success: boolean; url: string; revisedPrompt: string } | null> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) return null;
+
   try {
-    console.log('Trying Imagen 3 API for image generation...');
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${geminiKey}`, {
+    console.log('Using Gemini to generate SVG illustration...');
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        instances: [{ prompt: prompt.trim() }],
-        parameters: { sampleCount: 1 }
+        contents: [{
+          role: 'user',
+          parts: [{ text: `Create a detailed, beautiful, colorful SVG illustration of: ${prompt}\n\nRequirements:\n- Use rich colors, gradients, and artistic details\n- Include realistic shapes and visual depth\n- Size: 1024x1024 viewBox\n- Return ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation.` }]
+        }],
+        generationConfig: { maxOutputTokens: 4000, temperature: 0.8 }
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      const prediction = data.predictions?.[0];
-      if (prediction?.bytesBase64Encoded) {
-        const mimeType = prediction.mimeType || 'image/png';
-        console.log('Imagen 3 image generation succeeded');
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text && text.includes('<svg')) {
+        const svgStart = text.indexOf('<svg');
+        const svgEnd = text.lastIndexOf('</svg>') + 6;
+        const cleanSvg = text.substring(svgStart, svgEnd);
+        console.log('Gemini SVG generation succeeded');
         return {
           success: true,
-          url: `data:${mimeType};base64,${prediction.bytesBase64Encoded}`,
-          revisedPrompt: `Imagen-generated: ${prompt}`,
+          url: `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`,
+          revisedPrompt: `Gemini illustration: ${prompt}`,
         };
       }
     } else {
       const errorData = await response.json().catch(() => ({}));
-      console.log('Imagen 3 failed:', response.status, JSON.stringify(errorData).substring(0, 200));
+      console.log('Gemini SVG generation failed:', response.status, JSON.stringify(errorData).substring(0, 200));
     }
   } catch (err) {
-    console.log('Imagen 3 error:', err);
+    console.log('Gemini SVG generation error:', err);
   }
 
   return null;
