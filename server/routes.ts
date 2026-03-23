@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let aiResponse;
         
-        const groqKey = process.env.GROQ_API_KEY || "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";
+        const groqKey = process.env.GROQ_API_KEY;
         
         if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
