@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
+import { queryClient } from "@/lib/queryClient";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 function getVibrantColor(name: string, secondary = false): string {
@@ -1281,9 +1282,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      onShowAuth();
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      queryClient.setQueryData(["/api/auth/user"], null);
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       onShowAuth();
     }
   };
