@@ -1,0 +1,9 @@
+{
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "muzamil1122112211221122@gmail.com",
+    "password": "rfxlhzbryhhwqqvz",
+    "from": "muzamil1122112211221122@gmail.com"
+  }
+}

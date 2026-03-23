@@ -178,12 +178,6 @@ export default function UserInfo() {
                   We sent a verification link to <span className="text-white font-medium">{registeredEmail}</span>.
                   Click the link to activate your account.
                 </p>
-                {devVerifyUrl && (
-                  <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-left">
-                    <p className="text-yellow-400 text-xs font-semibold mb-1">Dev mode — no SMTP configured:</p>
-                    <a href={devVerifyUrl} className="text-blue-400 text-xs break-all underline">{devVerifyUrl}</a>
-                  </div>
-                )}
                 {error && <p className="text-red-400 text-sm">{error}</p>}
                 {info && <p className="text-green-400 text-sm">{info}</p>}
                 <Button
