@@ -1882,7 +1882,7 @@ Let's start the self-listen session!`;
       </header>
       
       {/* Chat Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4" data-testid="chat-messages">
+      <div className={`flex-1 overflow-y-auto p-4 ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`} data-testid="chat-messages">
         {activeTab === 'ask' ? (
           messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
@@ -2477,10 +2477,8 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Forus Games Tab
-          <div className="flex items-center justify-center" style={{ minHeight: '100%' }}>
-            <div className="max-w-2xl w-full">
-              <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
-            </div>
+          <div className="max-w-3xl w-full">
+            <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
           </div>
         )}
       </div>
