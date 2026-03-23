@@ -205,15 +205,15 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
       body: JSON.stringify({
         prompt: enhancedPrompt,
         params: {
-          width: 1024,
-          height: 1024,
-          steps: 25,
+          width: 768,
+          height: 768,
+          steps: 20,
           n: 1,
           sampler_name: 'k_euler_a',
-          cfg_scale: 7.5,
+          cfg_scale: 7,
           karras: true
         },
-        models: ['Deliberate', 'Realistic Vision', 'Dreamshaper'],
+        models: ['Realistic Vision', 'Deliberate', 'Dreamshaper'],
         r2: true,
         shared: false
       }),
