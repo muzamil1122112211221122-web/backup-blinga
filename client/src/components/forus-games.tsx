@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import mathIcon from "@assets/math-symbols-icon-vector_1774278684726.jpg";
+import wordIcon from "@assets/10199730_1774278684725.png";
+import memoryIcon from "@assets/external-Memory-game-table-games-icongeek26-linear-colour-icon_1774278684722.jpg";
+import quizIcon from "@assets/original-fa9d3d38cfcf858b263c26ff6a5ebb9d_1774278684726.webp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
@@ -232,7 +236,7 @@ function ForusMaths({ playerName, onBack }: { playerName: string; onBack: () => 
 
   if (!started) return (
     <div className="flex flex-col h-full items-center justify-center text-center">
-      <div className="text-7xl mb-4">🧮</div>
+      <img src={mathIcon} alt="Forus Maths" className="w-24 h-24 object-contain mb-4" />
       <h2 className="text-2xl font-bold text-foreground mb-2">Forus Maths</h2>
       <p className="text-muted-foreground text-sm mb-6 max-w-xs">Solve as many math problems as you can in 60 seconds! Earn bonus points for answer streaks.</p>
       <div className="grid grid-cols-2 gap-3 mb-6 text-sm text-muted-foreground">
@@ -354,7 +358,7 @@ function ForusWord({ playerName, onBack }: { playerName: string; onBack: () => v
 
   if (!started) return (
     <div className="flex flex-col h-full items-center justify-center text-center">
-      <div className="text-7xl mb-4">🔤</div>
+      <img src={wordIcon} alt="Forus Word" className="w-24 h-24 object-contain mb-4" />
       <h2 className="text-2xl font-bold text-foreground mb-2">Forus Word</h2>
       <p className="text-muted-foreground text-sm mb-6 max-w-xs">Unscramble the letters to form the correct word! Use hints wisely — they reduce your points.</p>
       <div className="grid grid-cols-2 gap-3 mb-6 text-sm text-muted-foreground">
@@ -501,7 +505,7 @@ function ForusMemory({ playerName, onBack }: { playerName: string; onBack: () =>
 
   if (!started) return (
     <div className="flex flex-col h-full items-center justify-center text-center">
-      <div className="text-7xl mb-4">🃏</div>
+      <img src={memoryIcon} alt="Forus Memory" className="w-24 h-24 object-contain mb-4" />
       <h2 className="text-2xl font-bold text-foreground mb-2">Forus Memory</h2>
       <p className="text-muted-foreground text-sm mb-6 max-w-xs">Flip cards to find matching pairs! Fewer moves and faster time means higher score.</p>
       <div className="grid grid-cols-2 gap-3 mb-6 text-sm text-muted-foreground">
@@ -614,7 +618,7 @@ function ForusQuiz({ playerName, onBack }: { playerName: string; onBack: () => v
 
   if (!started) return (
     <div className="flex flex-col h-full items-center justify-center text-center">
-      <div className="text-7xl mb-4">🧠</div>
+      <img src={quizIcon} alt="Forus Quiz" className="w-24 h-24 object-contain mb-4" />
       <h2 className="text-2xl font-bold text-foreground mb-2">Forus Quiz</h2>
       <p className="text-muted-foreground text-sm mb-6 max-w-xs">Answer {TOTAL} general knowledge questions. Fast answers earn bonus points — you have 15 seconds each!</p>
       <div className="grid grid-cols-2 gap-3 mb-6 text-sm text-muted-foreground">
@@ -693,10 +697,10 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const [activeGame, setActiveGame] = useState<GameId>('menu');
 
   const GAMES = [
-    { id: 'maths' as GameId, emoji: '🧮', label: 'Forus Maths', desc: 'Solve math problems against the clock', color: 'from-blue-500 to-cyan-500' },
-    { id: 'word' as GameId, emoji: '🔤', label: 'Forus Word', desc: 'Unscramble letters to find the word', color: 'from-green-500 to-emerald-500' },
-    { id: 'memory' as GameId, emoji: '🃏', label: 'Forus Memory', desc: 'Flip cards and match the pairs', color: 'from-purple-500 to-pink-500' },
-    { id: 'quiz' as GameId, emoji: '🧠', label: 'Forus Quiz', desc: 'Test your general knowledge', color: 'from-orange-500 to-red-500' },
+    { id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', desc: 'Solve math problems against the clock', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', desc: 'Unscramble letters to find the word', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+    { id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', desc: 'Flip cards and match the pairs', bg: 'bg-green-50 dark:bg-green-900/20' },
+    { id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', desc: 'Test your general knowledge', bg: 'bg-orange-50 dark:bg-orange-900/20' },
   ];
 
   if (activeGame === 'maths') return <ForusMaths playerName={playerName} onBack={() => setActiveGame('menu')} />;
@@ -718,8 +722,8 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             onClick={() => setActiveGame(g.id)}
             className="group relative overflow-hidden flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:border-ring transition-all duration-200 text-left"
           >
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl flex-shrink-0 shadow-md group-hover:scale-110 transition-transform`}>
-              {g.emoji}
+            <div className={`w-14 h-14 rounded-xl ${g.bg} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform overflow-hidden`}>
+              <img src={g.icon} alt={g.label} className="w-12 h-12 object-contain" />
             </div>
             <div>
               <div className="font-semibold text-foreground">{g.label}</div>
