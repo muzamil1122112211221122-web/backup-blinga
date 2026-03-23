@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import mathIcon from "@assets/math-symbols-icon-vector-Photoroom_1774279072726.png";
 import wordIcon from "@assets/external-Memory-game-table-games-icongeek26-linear-colour-icon_1774279072725.png";
 import memoryIcon from "@assets/10199730_1774278684725.png";
-import quizIcon from "@assets/original-fa9d3d38cfcf858b263c26ff6a5ebb9d-Photoroom_1774279072727.png";
+import quizIcon from "@assets/16815634_1774279387584.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
