@@ -383,6 +383,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImage, setAttachedImage] = useState<{file: File, preview: string} | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{file: File, name: string, size: string, type: string} | null>(null);
   // Multi-AI states for Lumin tab
   const [luminMessages, setLuminMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
@@ -975,7 +976,7 @@ IMPORTANT RULES:
 
   const handleSendMessage = async () => {
     const content = inputValue.trim();
-    if (!content && !attachedImage) return;
+    if (!content && !attachedImage && !attachedFile) return;
 
     // Handle voice mode button clicking "start"
     if (content.toLowerCase() === 'start') {
@@ -1016,12 +1017,12 @@ IMPORTANT RULES:
       if (!conversationId) return;
     }
 
-    // Add user message immediately (with image if attached)
+    // Add user message immediately (with image/file if attached)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       conversationId,
       role: 'user',
-      content: content || (attachedImage ? "What's in this image?" : ""),
+      content: content || (attachedImage ? "What's in this image?" : attachedFile ? `File: ${attachedFile.name}` : ""),
       createdAt: new Date(),
       imageUrl: attachedImage?.preview
     };
@@ -1084,8 +1085,14 @@ IMPORTANT RULES:
       
       // Clear attached image and typing indicator
       setAttachedImage(null);
+      setAttachedFile(null);
       setIsTyping(false);
       return;
+    }
+
+    // If only a file is attached (non-image), just send as text message and clear
+    if (attachedFile) {
+      setAttachedFile(null);
     }
 
     // Modify content if Forus Integration mode is enabled
@@ -1297,20 +1304,39 @@ IMPORTANT RULES:
     }, 3000);
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       console.log('File selected:', file.name, file.type, file.size);
       
-      // Handle image files with AI analysis
       if (file.type.startsWith('image/')) {
-        await handleImageAnalysis(file);
+        // For images, show preview in input area
+        const preview = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        setAttachedImage({ file, preview });
+        setAttachedFile(null);
       } else {
-        showToast(`File "${file.name}" selected. Non-image files will be supported soon.`);
+        // For non-image files, show file info card
+        setAttachedFile({
+          file,
+          name: file.name,
+          size: formatFileSize(file.size),
+          type: file.type || 'unknown'
+        });
+        setAttachedImage(null);
       }
     }
     event.target.value = '';
-    setIsAttachmentDialogOpen(false);
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2644,6 +2670,43 @@ Let's start the self-listen session!`;
       {/* New Unified Message Bar */}
       <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' ? 'hidden' : ''}`}>
         <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 shadow-[0_8px_15px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(255,255,255,0.1)] !border-none !ring-0 !outline-none">
+          {/* Attached image/file preview - ChatGPT style */}
+          {(attachedImage || attachedFile) && (
+            <div className="px-3 pt-3 pb-1 flex items-start gap-2 flex-wrap">
+              {attachedImage && (
+                <div className="relative inline-block group">
+                  <img
+                    src={attachedImage.preview}
+                    alt="Attached"
+                    className="h-20 w-20 object-cover rounded-xl border border-white/10"
+                  />
+                  <button
+                    onClick={() => setAttachedImage(null)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all" />
+                </div>
+              )}
+              {attachedFile && (
+                <div className="relative flex items-center gap-2 bg-black/10 dark:bg-white/5 border border-white/10 rounded-xl px-3 py-2 pr-8 max-w-[260px] group">
+                  <FileText className="w-6 h-6 text-blue-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-black dark:text-white truncate">{attachedFile.name}</p>
+                    <p className="text-xs text-zinc-500">{attachedFile.size}</p>
+                  </div>
+                  <button
+                    onClick={() => setAttachedFile(null)}
+                    className="absolute top-1.5 right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="p-1.5 sm:p-2">
             <Textarea
               ref={textareaRef}
@@ -2751,7 +2814,7 @@ Let's start the self-listen session!`;
               </Button>
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() && !attachedImage}
+                disabled={!inputValue.trim() && !attachedImage && !attachedFile}
                 className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
                 data-testid="button-send-message"
               >
