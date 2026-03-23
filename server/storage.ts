@@ -2,6 +2,8 @@ import { type User, type InsertUser, type Conversation, type InsertConversation,
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
 export interface IStorage {
   // User operations
@@ -237,16 +239,152 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use DatabaseStorage if a DB connection is available, otherwise fall back to MemStorage
-// so the app stays fully functional without a database connection.
+const DATA_DIR = join(process.cwd(), "data");
+const DATA_FILE = join(DATA_DIR, "storage.json");
+
+interface PersistedData {
+  users: [string, User][];
+  conversations: [string, Conversation][];
+  messages: [string, Message][];
+  verificationTokens: [string, { userId: string; expiresAt: string }][];
+  settings: [string, Record<string, any>][];
+}
+
+export class PersistentStorage extends MemStorage {
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    super();
+    this.load();
+  }
+
+  private load() {
+    try {
+      if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+      if (!existsSync(DATA_FILE)) return;
+      const raw = readFileSync(DATA_FILE, "utf-8");
+      const data: PersistedData = JSON.parse(raw);
+
+      if (data.users) {
+        for (const [k, v] of data.users) {
+          (this as any).users.set(k, { ...v, createdAt: new Date(v.createdAt) });
+        }
+      }
+      if (data.conversations) {
+        for (const [k, v] of data.conversations) {
+          (this as any).conversations.set(k, { ...v, createdAt: new Date(v.createdAt), updatedAt: new Date(v.updatedAt) });
+        }
+      }
+      if (data.messages) {
+        for (const [k, v] of data.messages) {
+          (this as any).messages.set(k, { ...v, createdAt: new Date(v.createdAt) });
+        }
+      }
+      if (data.verificationTokens) {
+        for (const [k, v] of data.verificationTokens) {
+          (this as any).verificationTokens.set(k, { ...v, expiresAt: new Date(v.expiresAt) });
+        }
+      }
+      if (data.settings) {
+        for (const [k, v] of data.settings) {
+          (this as any).settings.set(k, v);
+        }
+      }
+      console.log(`✓ Loaded persistent storage (${data.users?.length ?? 0} users, ${data.conversations?.length ?? 0} conversations).`);
+    } catch (err: any) {
+      console.warn("Could not load persistent storage:", err.message);
+    }
+  }
+
+  private scheduleSave() {
+    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => this.flush(), 300);
+  }
+
+  private flush() {
+    try {
+      if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
+      const data: PersistedData = {
+        users: Array.from((this as any).users.entries()),
+        conversations: Array.from((this as any).conversations.entries()),
+        messages: Array.from((this as any).messages.entries()),
+        verificationTokens: Array.from((this as any).verificationTokens.entries()).map(([k, v]: [string, any]) => [k, { ...v, expiresAt: v.expiresAt.toISOString() }]),
+        settings: Array.from((this as any).settings.entries()),
+      };
+      writeFileSync(DATA_FILE, JSON.stringify(data), "utf-8");
+    } catch (err: any) {
+      console.warn("Could not save persistent storage:", err.message);
+    }
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const user = await super.createUser(insertUser);
+    this.scheduleSave();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>) {
+    const user = await super.updateUser(id, updates);
+    if (user) this.scheduleSave();
+    return user;
+  }
+
+  async createVerificationToken(userId: string, token: string, expiresAt: Date) {
+    await super.createVerificationToken(userId, token, expiresAt);
+    this.scheduleSave();
+  }
+
+  async deleteVerificationToken(token: string) {
+    await super.deleteVerificationToken(token);
+    this.scheduleSave();
+  }
+
+  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+    const conv = await super.createConversation(insertConversation);
+    this.scheduleSave();
+    return conv;
+  }
+
+  async updateConversation(id: string, updates: Partial<Conversation>) {
+    const conv = await super.updateConversation(id, updates);
+    if (conv) this.scheduleSave();
+    return conv;
+  }
+
+  async deleteConversation(id: string) {
+    const result = await super.deleteConversation(id);
+    this.scheduleSave();
+    return result;
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const msg = await super.createMessage(insertMessage);
+    this.scheduleSave();
+    return msg;
+  }
+
+  async deleteMessage(id: string) {
+    const result = await super.deleteMessage(id);
+    this.scheduleSave();
+    return result;
+  }
+
+  async saveUserSettings(userId: string, settings: Record<string, any>) {
+    await super.saveUserSettings(userId, settings);
+    this.scheduleSave();
+  }
+}
+
+// Use DatabaseStorage if a DB connection is available, otherwise use PersistentStorage
+// which saves all data to disk so nothing is lost on restart.
 function createStorage(): IStorage {
   const d = db();
   if (d) {
     console.log("✓ Using persistent DatabaseStorage.");
     return new DatabaseStorage();
   }
-  console.warn("⚠️  Using in-memory storage (data will not persist across restarts).");
-  return new MemStorage();
+  console.log("✓ Using file-based PersistentStorage (data/storage.json).");
+  return new PersistentStorage();
 }
 
 export const storage = createStorage();

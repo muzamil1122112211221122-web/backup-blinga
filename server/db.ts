@@ -33,8 +33,7 @@ function getDb() {
   const connectionString = buildConnectionString();
 
   if (!connectionString) {
-    console.error("⚠️  No database connection string available — running with in-memory storage.");
-    console.error("   Restart the Repl from the Replit dashboard to inject database secrets.");
+    console.log("ℹ️  No database connection string — using file-based persistent storage.");
     return null;
   }
 

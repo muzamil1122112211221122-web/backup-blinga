@@ -4,13 +4,15 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import memoryStoreFactory from "memorystore";
+import FileStoreFactory from "session-file-store";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
+import { mkdirSync, existsSync } from "fs";
+import { join } from "path";
 import { storage } from "./storage";
 import { sendVerificationEmail } from "./email";
 
-const MemoryStore = memoryStoreFactory(session);
+const FileStore = FileStoreFactory(session);
 
 export function setupAuth(app: Express) {
   const connectionString = process.env.DATABASE_URL;
@@ -25,12 +27,19 @@ export function setupAuth(app: Express) {
         ttl: 7 * 24 * 60 * 60,
       });
     } catch {
-      // fall through to memory store
+      // fall through to file store
     }
   }
   if (!sessionStore) {
-    sessionStore = new MemoryStore({ checkPeriod: 86400000 });
-    console.warn("Using MemoryStore for session storage");
+    const sessionsDir = join(process.cwd(), "data", "sessions");
+    if (!existsSync(sessionsDir)) mkdirSync(sessionsDir, { recursive: true });
+    sessionStore = new FileStore({
+      path: sessionsDir,
+      ttl: 7 * 24 * 60 * 60,
+      retries: 1,
+      logFn: () => {},
+    });
+    console.log("✓ Using file-based session storage (data/sessions).");
   }
 
   const sessionSettings: session.SessionOptions = {
