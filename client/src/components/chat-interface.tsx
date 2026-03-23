@@ -435,13 +435,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   useEffect(() => {
     // Sync luminModels with aiOrder
     const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
-      'gpt-4o': { name: 'ChatGPT', provider: 'openai', id: 'gpt-4o' },
-      'claude-3.5-sonnet': { name: 'Claude', provider: 'anthropic', id: 'claude-3.5-sonnet' },
-      'gemini-pro': { name: 'Gemini', provider: 'google', id: 'gemini-pro' },
-      'perplexity': { name: 'Perplexity', provider: 'perplexity', id: 'perplexity' },
-      'grok-4': { name: 'Grok', provider: 'x-ai', id: 'grok-4' },
-      'deepseek-r1': { name: 'DeepSeek', provider: 'deepseek', id: 'deepseek-r1' },
-      'forus-ai': { name: 'Forus', provider: 'forus', id: 'forus-ai' }
+      'gpt-4o': { name: 'ChatGPT 5', provider: 'openai', id: 'gpt-4o' },
+      'claude-3.5-sonnet': { name: 'Claude Sonnet 4', provider: 'anthropic', id: 'claude-3.5-sonnet' },
+      'gemini-pro': { name: 'Gemini 2.5 Pro', provider: 'google', id: 'gemini-pro' },
+      'perplexity': { name: 'Perplexity Sonar Pro', provider: 'perplexity', id: 'perplexity' },
+      'grok-4': { name: 'Grok 4', provider: 'x-ai', id: 'grok-4' },
+      'deepseek-r1': { name: 'Deepseek v3', provider: 'deepseek', id: 'deepseek-r1' },
+      'forus-ai': { name: 'Forus Pro', provider: 'forus', id: 'forus-ai' }
     };
 
     const newLuminModels = aiOrder
@@ -2184,12 +2184,12 @@ Let's start the self-listen session!`;
                   const model = modelObj.id;
                   const configMap: {[key: string]: {name: string, logo: any, gradient: string}} = {
                     'gpt-4o': { 
-                      name: 'ChatGPT', 
+                      name: 'ChatGPT 5', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/chatgpt-logo.png" 
-                            alt="ChatGPT" 
+                            alt="ChatGPT 5" 
                             className="w-full h-full object-contain dark:filter dark:invert"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2198,12 +2198,12 @@ Let's start the self-listen session!`;
                       gradient: 'from-green-400 to-blue-500' 
                     },
                     'claude-3.5-sonnet': { 
-                      name: 'Claude', 
+                      name: 'Claude Sonnet 4', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/claude-logo.png" 
-                            alt="Claude" 
+                            alt="Claude Sonnet 4" 
                             className="w-full h-full object-contain"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2212,12 +2212,12 @@ Let's start the self-listen session!`;
                       gradient: 'from-orange-400 to-orange-600' 
                     }, 
                     'gemini-pro': { 
-                      name: 'Gemini', 
+                      name: 'Gemini 2.5 Pro', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/gemini-logo.png" 
-                            alt="Gemini" 
+                            alt="Gemini 2.5 Pro" 
                             className="w-full h-full object-contain"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2226,12 +2226,12 @@ Let's start the self-listen session!`;
                       gradient: 'from-teal-400 to-emerald-500' 
                     },
                     'perplexity': { 
-                      name: 'Perplexity', 
+                      name: 'Perplexity Sonar Pro', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/perplexity-logo.png" 
-                            alt="Perplexity" 
+                            alt="Perplexity Sonar Pro" 
                             className="w-full h-full object-contain"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2245,7 +2245,7 @@ Let's start the self-listen session!`;
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/grok-logo.png" 
-                            alt="Grok" 
+                            alt="Grok 4" 
                             className="w-full h-full object-contain filter brightness-0 dark:filter dark:brightness-0 dark:invert"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2254,12 +2254,12 @@ Let's start the self-listen session!`;
                       gradient: 'from-gray-400 to-black' 
                     },
                     'deepseek-r1': { 
-                      name: 'Deepseek V3', 
+                      name: 'Deepseek v3', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/deepseek-logo.png" 
-                            alt="Deepseek V3" 
+                            alt="Deepseek v3" 
                             className="w-full h-full object-contain"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2268,12 +2268,12 @@ Let's start the self-listen session!`;
                       gradient: 'from-blue-400 to-cyan-500' 
                     },
                     'forus-ai': { 
-                      name: 'Forus AI', 
+                      name: 'Forus Pro', 
                       logo: (
                         <div className="w-8 h-8 flex items-center justify-center">
                           <img 
                             src="/forus-logo.png" 
-                            alt="Forus AI" 
+                            alt="Forus Pro" 
                             className="w-full h-full object-contain rounded-full"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -2328,39 +2328,39 @@ Let's start the self-listen session!`;
                       const model = modelObj.id;
                       const getModelConfig = (model: string) => {
                         switch(model) {
-                          case 'gpt-4o': return { name: 'ChatGPT', logo: (
+                          case 'gpt-4o': return { name: 'ChatGPT 5', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/chatgpt-logo.png" alt="ChatGPT" className="w-full h-full object-contain filter invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/chatgpt-logo.png" alt="ChatGPT 5" className="w-full h-full object-contain filter invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'claude-3.5-sonnet': return { name: 'Claude', logo: (
+                          case 'claude-3.5-sonnet': return { name: 'Claude Sonnet 4', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/claude-logo.png" alt="Claude" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/claude-logo.png" alt="Claude Sonnet 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'gemini-pro': return { name: 'Gemini', logo: (
+                          case 'gemini-pro': return { name: 'Gemini 2.5 Pro', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/gemini-logo.png" alt="Gemini" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/gemini-logo.png" alt="Gemini 2.5 Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'perplexity': return { name: 'Perplexity', logo: (
+                          case 'perplexity': return { name: 'Perplexity Sonar Pro', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/perplexity-logo.png" alt="Perplexity" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/perplexity-logo.png" alt="Perplexity Sonar Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           case 'grok-4': return { name: 'Grok 4', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/grok-logo.png" alt="Grok" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/grok-logo.png" alt="Grok 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'deepseek-r1': return { name: 'Deepseek V3', logo: (
+                          case 'deepseek-r1': return { name: 'Deepseek v3', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/deepseek-logo.png" alt="Deepseek V3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/deepseek-logo.png" alt="Deepseek v3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
-                          case 'forus-ai': return { name: 'Forus AI', logo: (
+                          case 'forus-ai': return { name: 'Forus Pro', logo: (
                             <div className="w-6 h-6 flex items-center justify-center">
-                              <img src="/forus-logo.png" alt="Forus AI" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                              <img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             </div>
                           )};
                           default: return { name: model, logo: <div className="w-6 h-6 rounded-lg bg-gray-500"></div> };

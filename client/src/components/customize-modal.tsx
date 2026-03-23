@@ -306,9 +306,19 @@ export function CustomizeModal({
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-zinc-900 dark:text-white">Order Switcher</h4>
                 <div className="space-y-2">
-                  {localAiOrder.map((name, index) => (
+                  {localAiOrder.map((name, index) => {
+                    const modelDisplayNames: Record<string, string> = {
+                      'gpt-4o': 'ChatGPT 5',
+                      'claude-3.5-sonnet': 'Claude Sonnet 4',
+                      'gemini-pro': 'Gemini 2.5 Pro',
+                      'perplexity': 'Perplexity Sonar Pro',
+                      'grok-4': 'Grok 4',
+                      'deepseek-r1': 'Deepseek v3',
+                      'forus-ai': 'Forus Pro',
+                    };
+                    return (
                     <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border border-zinc-200 dark:border-zinc-800">
-                      <span className="text-sm text-zinc-900 dark:text-white capitalize">{name.replace(/-/g, ' ')}</span>
+                      <span className="text-sm text-zinc-900 dark:text-white capitalize">{modelDisplayNames[name] || name.replace(/-/g, ' ')}</span>
                       <div className="flex items-center space-x-1">
                         <Button 
                           variant="ghost" 
@@ -330,7 +340,8 @@ export function CustomizeModal({
                         </Button>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
 
                 <div className="pt-6 border-t border-zinc-200 dark:border-[#2a2a2a] space-y-4">

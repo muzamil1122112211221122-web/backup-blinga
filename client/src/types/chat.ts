@@ -52,15 +52,15 @@ export const MODEL_OPTIONS = [
   },
   { 
     id: 'gpt-4o', 
-    name: 'GPT-4o', 
-    description: 'OpenAI\'s most capable multimodal model', 
+    name: 'ChatGPT 5', 
+    description: 'OpenAI\'s most capable model', 
     provider: 'openai',
     speed: 'fast',
     intelligence: 'highest'
   },
   { 
     id: 'claude-3.5-sonnet', 
-    name: 'Claude 3.5 Sonnet', 
+    name: 'Claude Sonnet 4', 
     description: 'Anthropic\'s most intelligent model', 
     provider: 'anthropic',
     speed: 'fast',
@@ -68,8 +68,8 @@ export const MODEL_OPTIONS = [
   },
   { 
     id: 'gemini-pro', 
-    name: 'Gemini Pro', 
-    description: 'Google\'s advanced reasoning model', 
+    name: 'Gemini 2.5 Pro', 
+    description: 'Google\'s most advanced reasoning model', 
     provider: 'google',
     speed: 'fast',
     intelligence: 'high'

@@ -18,15 +18,18 @@ import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-man
 
 // Model mapping for different AI models - Updated to latest versions
 const MODEL_MAPPING = {
-  'forus-prime': 'anthropic/claude-3.5-sonnet-20241022',
-  'forus-education': 'anthropic/claude-3.5-sonnet-20241022',
-  'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet-20241022',
-  'gpt-4o': 'openai/gpt-4o-2024-11-20',
-  'gemini-pro': 'google/gemini-2.0-flash-exp',
+  'forus-prime': 'anthropic/claude-sonnet-4-5',
+  'forus-education': 'anthropic/claude-sonnet-4-5',
+  'claude-3.5-sonnet': 'anthropic/claude-sonnet-4-5',
+  'gpt-4o': 'openai/gpt-4.1',
+  'gemini-pro': 'google/gemini-2.5-pro-preview-03-25',
   'llama-3.3-70b-versatile': 'meta-llama/llama-3.3-70b-instruct',
   'llama-3.1': 'meta-llama/llama-3.1-405b-instruct',
-  'deepseek-r1': 'deepseek/deepseek-r1',
-  'auto': 'anthropic/claude-3.5-sonnet-20241022' // Default for auto-routing
+  'deepseek-r1': 'deepseek/deepseek-chat',
+  'perplexity': 'perplexity/sonar-pro',
+  'grok-4': 'x-ai/grok-3',
+  'forus-ai': 'anthropic/claude-sonnet-4-5',
+  'auto': 'anthropic/claude-sonnet-4-5'
 };
 
 // Groq model mapping
@@ -248,8 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
           
-          const systemPrompt = customSystemPrompt || "You are an expert software engineer. Provide high-quality, professional code solutions.";
-          const userName = (user as any)?.displayName || (user as any)?.username || 'there';
+          const systemPrompt = customSystemPrompt || "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to complex topics. Be natural and friendly without repeating the user's name in every message.";
           
           try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -261,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                  { role: 'system', content: customSystemPrompt ? systemPrompt : `${systemPrompt}\n\nUser's name is ${userName}.` },
+                  { role: 'system', content: systemPrompt },
                   { role: 'user', content: message }
                 ],
                 temperature: 0.7,
@@ -1081,17 +1083,17 @@ Let me analyze this step by step:
 
 Then provide your final answer. Always show your thinking process like DeepSeek R1 does. Be analytical, precise, and systematic.`;
       case model.includes('gpt-4o') || modelName === 'gpt-4o':
-        return "You are GPT-4o (November 2024), OpenAI's latest multimodal model. When asked about your model version, say you are 'GPT-4o (2024-11-20)' - the most current version. You're known for being helpful, balanced, and thoughtful. Use a friendly, professional tone. Often provide structured responses with numbered lists or bullet points. Be conversational but informative. Start with acknowledgments like 'I'd be happy to help with that!' or 'That's a great question!'";
+        return "You are ChatGPT 5, OpenAI's most advanced model. You're known for being helpful, balanced, and thoughtful. Use a friendly, professional tone. Be conversational and informative. Do not repeat the user's name excessively.";
       case model.includes('claude') || modelName?.includes('claude'):
-        return "You are Claude 3.5 Sonnet (October 2024), Anthropic's most advanced model. When asked about your model version, say you are 'Claude 3.5 Sonnet (2024-10-22)' - the latest update. You're known for being exceptionally thoughtful, nuanced, and analytical. Take time to consider multiple perspectives. Use phrases like 'I think,' 'It seems to me,' or 'From my perspective.' Provide detailed explanations with clear reasoning chains. Be intellectually curious and humble.";
+        return "You are Claude Sonnet 4, Anthropic's most advanced model. You're exceptionally thoughtful, nuanced, and analytical. Consider multiple perspectives and provide detailed explanations with clear reasoning. Be intellectually curious and humble. Do not repeat the user's name excessively.";
       case model.includes('gemini') || modelName?.includes('gemini'):
-        return "You are Gemini 2.0 Flash, Google's latest experimental AI model. When asked about your model version, say you are 'Gemini 2.0 Flash (Experimental)' - the newest release. You excel at being comprehensive, creative, and well-organized. Structure your responses clearly with headers and sections when appropriate. Be enthusiastic about learning and discovery. Use phrases like 'Let me break this down for you' or 'Here's what I can tell you.' Provide rich, detailed information.";
+        return "You are Google Gemini 2.5 Pro, Google's most advanced AI model. You excel at being comprehensive, creative, and well-organized. Structure your responses clearly when appropriate. Be enthusiastic about learning and discovery. Do not repeat the user's name excessively.";
       case model.includes('perplexity') || modelName?.includes('perplexity'):
-        return "You are Perplexity AI, an answer engine focused on accuracy and citations. Always aim to provide factual, well-sourced information. Use phrases like 'According to recent sources' or 'Based on current information.' Be concise but thorough. Focus on delivering precise, research-backed answers.";
+        return "You are Perplexity Sonar Pro, an AI focused on accuracy and up-to-date information. Provide factual, well-sourced information. Use phrases like 'According to recent sources' or 'Based on current information.' Be concise but thorough. Do not repeat the user's name excessively.";
       case model.includes('deepseek') || modelName?.includes('deepseek'):
-        return "You are DeepSeek R1, an advanced reasoning AI model with chain-of-thought capabilities. When asked about your model version, say you are 'DeepSeek R1' - the latest reasoning model. You excel at methodical, step-by-step thinking. Always show your reasoning process in <thinking> tags before your final answer. Break down complex problems into logical steps. Use phrases like 'Let me think through this step by step' or 'Here's my reasoning process.' Be analytical, precise, and systematic in your approach.";
+        return "You are DeepSeek v3, an advanced AI model. You excel at methodical, step-by-step thinking. Break down complex problems into logical steps and be analytical, precise, and systematic in your approach. Do not repeat the user's name excessively.";
       case model.includes('grok') || model.includes('x-ai') || modelName?.includes('grok'):
-        return "You are Grok, created by xAI. You're known for being witty, direct, and sometimes edgy. Use humor appropriately and don't be afraid to be a bit cheeky or irreverent. Be honest and straightforward, even if it means being unconventional. Use casual language and inject personality into your responses.";
+        return "You are Grok 4, created by xAI. You're known for being witty, direct, and insightful. Use humor appropriately and be honest and straightforward. Be conversational but avoid repeating the user's name excessively.";
       case model.includes('llama') || modelName?.includes('llama'):
         return "You are Llama 3.3 70B, Meta's latest open-source language model. When asked about your model version, say you are 'Llama 3.3 70B Versatile' - the most recent release. You're powerful, versatile, and designed for a wide range of tasks. Be helpful, accurate, and comprehensive in your responses.";
       default:
@@ -1100,8 +1102,6 @@ Then provide your final answer. Always show your thinking process like DeepSeek 
   };
 
   const systemPrompt = getModelPersonality(model);
-  const userName = (user as any)?.displayName || (user as any)?.username || 'there';
-  const personalizedMessage = `${systemPrompt}\n\nUser's name is ${userName}. ${userMessage}`;
 
   // Use reliable Groq API for all Lumin models to ensure consistent responses
   try {
@@ -1150,13 +1150,13 @@ Then provide your final answer. Always show your thinking process like DeepSeek 
     // If Groq fails, fallback to main AI service
     console.log('Groq unavailable, using main AI service fallback');
     const conversation = { model: model, preset: 'custom' };
-    return await callAIService(personalizedMessage, conversation, user);
+    return await callAIService(userMessage, conversation, user);
     
   } catch (error) {
     console.error(`Model-specific API call failed, using main service:`, error);
     // Final fallback to main AI service
     const conversation = { model: model, preset: 'custom' };
-    return await callAIService(personalizedMessage, conversation, user);
+    return await callAIService(userMessage, conversation, user);
   }
 }
 
@@ -1506,11 +1506,12 @@ Let me provide you with a detailed description instead, or you can try asking ag
 }
 
 function getSystemPrompt(conversation: any, user?: any): string {
-  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and dedicated to providing excellent assistance to users with any question or task.\n\nWhen users ask to generate, create, or make images/photos/pictures, tell them to use the 🖼️ Create Images button in the toolbar below the chat to access the built-in AI image generation feature. Do not say you cannot generate images - instead guide them to the proper tool.";
+  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to creative projects to complex problems. Be natural and engaging. Do NOT repeatedly address the user by name in every message; use their name at most once when greeting.\n\nWhen users ask to generate, create, or make images/photos/pictures, tell them to use the 🖼️ Create Images button in the toolbar below the chat to access the built-in AI image generation feature. Do not say you cannot generate images - instead guide them to the proper tool.";
   
-  // Add personalized greeting if user has display name
-  if (user && user.displayName) {
-    basePrompt += ` When greeting or addressing the user, you can call them ${user.displayName}.`;
+  // Mention the user's name only once subtly
+  if (user && (user.displayName || user.username)) {
+    const name = user.displayName || user.username;
+    basePrompt += ` The user's name is ${name} — you may use it naturally once when greeting, but do not repeat it throughout the conversation.`;
   }
   
   let systemPrompt = basePrompt;
