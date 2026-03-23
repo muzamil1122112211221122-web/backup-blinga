@@ -95,9 +95,7 @@ export default function Landing() {
               <span>Begin Experience</span>
             </Button>
           </div>
-          <div className="text-center mt-6 text-gray-300">
-            <p className="text-lg">No sign-up required • Access all AI models instantly</p>
-          </div>
+
         </div>
       </section>
 
