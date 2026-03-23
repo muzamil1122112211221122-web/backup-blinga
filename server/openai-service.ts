@@ -1,62 +1,146 @@
 import { apiManager } from './api-manager';
 
-export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Generating photorealistic image for: "${prompt}"`);
-  
-  // First try: Use Gemini 2.0 Flash for high-quality image generation
-  if (process.env.GEMINI_API_KEY) {
+async function tryGeminiImageGeneration(prompt: string): Promise<{ success: boolean; url: string; revisedPrompt: string } | null> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) return null;
+
+  // Try gemini-2.0-flash-exp-image-generation model
+  const modelsToTry = [
+    'gemini-2.0-flash-exp-image-generation',
+    'gemini-2.0-flash-exp',
+  ];
+
+  for (const model of modelsToTry) {
     try {
-      console.log('Using Gemini 2.0 Flash for photorealistic image generation...');
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      console.log(`Trying Gemini model: ${model}`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [{ text: prompt.trim() }]
-          }],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE']
-          }
+          contents: [{ role: 'user', parts: [{ text: prompt.trim() }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Gemini image generation response:', data);
-        
-        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-          const parts = data.candidates[0].content.parts;
-          
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              console.log(`Successfully generated Gemini image for: "${prompt}"`);
-              const imageData = part.inlineData.data;
-              const mimeType = part.inlineData.mimeType || 'image/jpeg';
-              const dataUrl = `data:${mimeType};base64,${imageData}`;
-              
-              return {
-                success: true,
-                url: dataUrl,
-                revisedPrompt: `Gemini-generated: ${prompt}`,
-              };
-            }
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        for (const part of parts) {
+          if (part.inlineData?.data) {
+            const mimeType = part.inlineData.mimeType || 'image/jpeg';
+            console.log(`Gemini image generation succeeded with model: ${model}`);
+            return {
+              success: true,
+              url: `data:${mimeType};base64,${part.inlineData.data}`,
+              revisedPrompt: `Gemini-generated: ${prompt}`,
+            };
           }
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.log('Gemini image generation failed:', response.status, errorData);
-        throw new Error(`Gemini error: ${response.status}`);
+        console.log(`Gemini model ${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
       }
-    } catch (error) {
-      console.log('Gemini generation failed, trying OpenAI alternative:', error);
+    } catch (err) {
+      console.log(`Gemini model ${model} error:`, err);
     }
-  } else {
-    console.log('No Gemini API key found, skipping Gemini image generation');
   }
+
+  // Try Imagen 3 API as alternative Gemini-based image generation
+  try {
+    console.log('Trying Imagen 3 API for image generation...');
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${geminiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt: prompt.trim() }],
+        parameters: { sampleCount: 1 }
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const prediction = data.predictions?.[0];
+      if (prediction?.bytesBase64Encoded) {
+        const mimeType = prediction.mimeType || 'image/png';
+        console.log('Imagen 3 image generation succeeded');
+        return {
+          success: true,
+          url: `data:${mimeType};base64,${prediction.bytesBase64Encoded}`,
+          revisedPrompt: `Imagen-generated: ${prompt}`,
+        };
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.log('Imagen 3 failed:', response.status, JSON.stringify(errorData).substring(0, 200));
+    }
+  } catch (err) {
+    console.log('Imagen 3 error:', err);
+  }
+
+  return null;
+}
+
+async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean; url: string; revisedPrompt: string } | null> {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (!groqKey) return null;
+
+  try {
+    console.log('Using Groq to generate SVG illustration...');
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert SVG artist. Create detailed, beautiful SVG images with rich colors and gradients. Return ONLY the complete SVG code starting with <svg and ending with </svg>. No explanations, no markdown, just raw SVG.'
+          },
+          {
+            role: 'user',
+            content: `Create a detailed, beautiful, colorful SVG illustration of: ${prompt}\n\nMake it 1024x1024 with gradients, artistic details, and visual richness.`
+          }
+        ],
+        max_tokens: 3000,
+        temperature: 0.7
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const svgContent = data.choices?.[0]?.message?.content;
+      if (svgContent && svgContent.includes('<svg')) {
+        const svgStart = svgContent.indexOf('<svg');
+        const svgEnd = svgContent.lastIndexOf('</svg>') + 6;
+        const cleanSvg = svgContent.substring(svgStart, svgEnd);
+        const dataUrl = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
+        console.log('Groq SVG generation succeeded');
+        return {
+          success: true,
+          url: dataUrl,
+          revisedPrompt: `AI illustration: ${prompt}`,
+        };
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      console.log('Groq SVG generation failed:', response.status, errorData);
+    }
+  } catch (err) {
+    console.log('Groq SVG generation error:', err);
+  }
+
+  return null;
+}
+
+export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
+  console.log(`Generating photorealistic image for: "${prompt}"`);
+  
+  // First try: Gemini image generation (multiple models + Imagen 3)
+  const geminiResult = await tryGeminiImageGeneration(prompt);
+  if (geminiResult) return geminiResult;
   
   // Second try: Use OpenAI DALL-E 3 for photorealistic images
   if (process.env.OPENAI_API_KEY) {
@@ -97,139 +181,15 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
         throw new Error(`OpenAI DALL-E 3 error: ${response.status}`);
       }
     } catch (error) {
-      console.log('DALL-E 3 generation failed, trying OpenRouter alternative:', error);
+      console.log('DALL-E 3 generation failed, trying Groq SVG alternative:', error);
     }
   } else {
     console.log('No OpenAI API key found, skipping DALL-E 3');
   }
-  
-  // Second try: Use OpenRouter for AI-generated SVG illustrations
-  try {
-    const openRouterAPI = apiManager.getBestChatAPI();
-    if (!openRouterAPI) {
-      throw new Error('No OpenRouter API available');
-    }
-    const apiKey = openRouterAPI.key;
-    console.log(`Using OpenRouter AI to create detailed illustration: ${apiKey.substring(0, 10)}...`);
-    
-    // Use AI to create a detailed SVG image
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-        'X-Title': 'LineusAPI'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert SVG artist. Create detailed, beautiful SVG images. Use rich colors, gradients, and artistic details. Make the image visually appealing and realistic-looking within SVG constraints.
-            
-Return ONLY the complete SVG code starting with <svg and ending with </svg>. No explanations, no markdown formatting, just the raw SVG code.`
-          },
-          {
-            role: 'user',
-            content: `Create a detailed, beautiful SVG illustration of: ${prompt}
-            
-Make it colorful, artistic, and visually appealing. Use gradients, proper proportions, and rich details. The image should be 1024x1024 pixels.`
-          }
-        ],
-        max_tokens: 2000,
-        temperature: 0.7
-      }),
-    });
 
-    if (response.ok) {
-      const data = await response.json();
-      const svgContent = data.choices?.[0]?.message?.content;
-      
-      if (svgContent && svgContent.includes('<svg')) {
-        // Extract just the SVG part
-        const svgStart = svgContent.indexOf('<svg');
-        const svgEnd = svgContent.lastIndexOf('</svg>') + 6;
-        const cleanSvg = svgContent.substring(svgStart, svgEnd);
-        
-        // Convert SVG to data URL
-        const dataUrl = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
-        
-        console.log(`Successfully created OpenRouter AI illustration for: "${prompt}"`);
-        return {
-          success: true,
-          url: dataUrl,
-          revisedPrompt: `AI-generated illustration: ${prompt}`,
-        };
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      console.log('OpenRouter AI illustration creation failed:', response.status, errorData);
-      throw new Error(`OpenRouter AI illustration error: ${response.status}`);
-    }
-  } catch (error) {
-    console.log('OpenRouter AI illustration creation failed, trying simplified approach:', error);
-  }
-  
-  // Fallback: Create a simpler but still visual SVG
-  try {
-    const openRouterAPI = apiManager.getBestChatAPI();
-    if (!openRouterAPI) {
-      throw new Error('No OpenRouter API available');
-    }
-    const apiKey = openRouterAPI.key;
-    console.log('Creating simplified AI illustration...');
-    
-    // Create a simpler SVG image
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-        'X-Title': 'LineusAPI'
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [
-          {
-            role: 'system',
-            content: `Create a clean, colorful SVG illustration. Use colors, shapes, and artistic elements. Make it visually interesting, not just text. Return ONLY the SVG code.`
-          },
-          {
-            role: 'user',
-            content: `Create a colorful SVG illustration of: ${prompt}. Use shapes, colors, and visual elements - not just text. Make it 1024x1024.`
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.5
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const svgContent = data.choices?.[0]?.message?.content;
-      
-      if (svgContent && svgContent.includes('<svg')) {
-        // Extract just the SVG part
-        const svgStart = svgContent.indexOf('<svg');
-        const svgEnd = svgContent.lastIndexOf('</svg>') + 6;
-        const cleanSvg = svgContent.substring(svgStart, svgEnd);
-        
-        // Convert SVG to data URL
-        const dataUrl = `data:image/svg+xml;base64,${Buffer.from(cleanSvg).toString('base64')}`;
-        
-        console.log(`Successfully created simplified AI illustration for: "${prompt}"`);
-        return {
-          success: true,
-          url: dataUrl,
-          revisedPrompt: `AI illustration: ${prompt}`,
-        };
-      }
-    }
-  } catch (error) {
-    console.log('Simplified AI illustration failed:', error);
-  }
+  // Third try: Use Groq to generate an SVG illustration
+  const groqSvgResult = await tryGroqSvgGeneration(prompt);
+  if (groqSvgResult) return groqSvgResult;
   
   // Final fallback: Create a hand-coded SVG for common prompts
   console.log('Creating hand-crafted visual for:', prompt);
