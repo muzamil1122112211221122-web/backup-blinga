@@ -408,7 +408,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   
   // Settings state
-  const [settingsToggles, setSettingsToggles] = useState({
+  const defaultSettingsToggles = {
     wrapLines: true,
     showPreviews: true,
     starryBg: true,
@@ -421,6 +421,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     personalize: true,
     linkSharing: true,
     sidebarCloseTop: true
+  };
+  const [settingsToggles, setSettingsToggles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('settingsToggles');
+      if (saved) return { ...defaultSettingsToggles, ...JSON.parse(saved) };
+    } catch {}
+    return defaultSettingsToggles;
   });
   const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
   const [luminModels, setLuminModels] = useState<{name: string, provider: string, id: string}[]>([]);
@@ -530,6 +537,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
+
+          // Load user-specific settings from localStorage
+          try {
+            const userSettingsKey = `settingsToggles_${userData.email}`;
+            const saved = localStorage.getItem(userSettingsKey);
+            if (saved) {
+              setSettingsToggles(prev => ({ ...prev, ...JSON.parse(saved) }));
+            }
+          } catch {}
           
           // Load projects in background without blocking UI
           setTimeout(async () => {
@@ -1541,6 +1557,10 @@ IMPORTANT RULES:
     // Update toggles and AI order in parent state
     if (toggles) {
       setSettingsToggles(toggles);
+      // Persist settings - user-specific key if logged in, fallback to generic
+      const settingsKey = user ? `settingsToggles_${user.email}` : 'settingsToggles';
+      localStorage.setItem(settingsKey, JSON.stringify(toggles));
+      localStorage.setItem('settingsToggles', JSON.stringify(toggles));
     }
     if (newAiOrder) {
       setAiOrder([...newAiOrder]); // Spread to ensure reference change triggers useEffect
@@ -1654,6 +1674,10 @@ IMPORTANT RULES:
     } finally {
       queryClient.setQueryData(["/api/auth/user"], null);
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Reset settings to defaults on logout so the next user gets their own settings
+      localStorage.removeItem('settingsToggles');
+      setSettingsToggles(defaultSettingsToggles);
+      setUser(null);
       onShowAuth();
     }
   };
