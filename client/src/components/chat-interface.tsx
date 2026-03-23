@@ -382,8 +382,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [attachedImage, setAttachedImage] = useState<{file: File, preview: string} | null>(null);
-  const [attachedFile, setAttachedFile] = useState<{file: File, name: string, size: string, type: string} | null>(null);
+  const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   // Multi-AI states for Lumin tab
   const [luminMessages, setLuminMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
@@ -976,7 +976,7 @@ IMPORTANT RULES:
 
   const handleSendMessage = async () => {
     const content = inputValue.trim();
-    if (!content && !attachedImage && !attachedFile) return;
+    if (!content && !attachedImages.length && !attachedFiles.length) return;
 
     // Handle voice mode button clicking "start"
     if (content.toLowerCase() === 'start') {
@@ -1017,82 +1017,82 @@ IMPORTANT RULES:
       if (!conversationId) return;
     }
 
-    // Add user message immediately (with image/file if attached)
+    // Build content description for attachments
+    const attachmentDesc = attachedImages.length > 0
+      ? (attachedImages.length === 1 ? "What's in this image?" : `Analyzing ${attachedImages.length} images`)
+      : attachedFiles.length > 0 ? `Files: ${attachedFiles.map(f => f.name).join(', ')}` : "";
+
+    // Add user message immediately (with first image preview if attached)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       conversationId,
       role: 'user',
-      content: content || (attachedImage ? "What's in this image?" : attachedFile ? `File: ${attachedFile.name}` : ""),
+      content: content || attachmentDesc,
       createdAt: new Date(),
-      imageUrl: attachedImage?.preview
+      imageUrl: attachedImages[0]?.preview
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
-    // If there's an attached image, handle it with Gemini analysis
-    if (attachedImage) {
+    // If there are attached images, analyze them all
+    if (attachedImages.length > 0) {
       try {
-        const response = await fetch('/api/analyze-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageData: attachedImage.preview,
-            prompt: content || "Analyze this image in detail. What do you see?"
-          }),
-        });
+        const imagesToAnalyze = [...attachedImages];
+        setAttachedImages([]);
+        setAttachedFiles([]);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            const aiMessage: ChatMessage = {
-              id: (Date.now() + 1).toString(),
-              conversationId,
-              content: result.analysis,
-              role: "assistant",
-              createdAt: new Date()
-            };
-            setMessages(prev => [...prev, aiMessage]);
+        const analyses: string[] = [];
+        for (let i = 0; i < imagesToAnalyze.length; i++) {
+          const img = imagesToAnalyze[i];
+          const prompt = imagesToAnalyze.length > 1
+            ? `Image ${i + 1} of ${imagesToAnalyze.length}: ${content || "Analyze this image in detail."}`
+            : content || "Analyze this image in detail. What do you see?";
+
+          const response = await fetch('/api/analyze-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageData: img.preview, prompt }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              analyses.push(imagesToAnalyze.length > 1 ? `**Image ${i + 1} (${img.file.name}):**\n${result.analysis}` : result.analysis);
+            } else {
+              analyses.push(imagesToAnalyze.length > 1 ? `**Image ${i + 1}:** Could not analyze.` : `Sorry, I couldn't analyze the image: ${result.message || 'Unknown error'}`);
+            }
           } else {
-            setMessages(prev => [...prev, {
-              id: Date.now().toString(),
-              conversationId,
-              role: 'assistant',
-              content: `Sorry, I couldn't analyze the image: ${result.message || 'Unknown error'}`,
-              createdAt: new Date(),
-            }]);
+            analyses.push(imagesToAnalyze.length > 1 ? `**Image ${i + 1}:** Error analyzing.` : 'Sorry, I encountered an error analyzing the image.');
           }
-        } else {
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            conversationId,
-            role: 'assistant',
-            content: 'Sorry, I encountered an error analyzing the image. Please try again.',
-            createdAt: new Date(),
-          }]);
         }
+
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          conversationId,
+          content: analyses.join('\n\n'),
+          role: "assistant",
+          createdAt: new Date()
+        };
+        setMessages(prev => [...prev, aiMessage]);
       } catch (error) {
         console.error('Image analysis error:', error);
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
           conversationId,
           role: 'assistant',
-          content: 'Sorry, I encountered an error processing your image. Please try again.',
+          content: 'Sorry, I encountered an error processing your images. Please try again.',
           createdAt: new Date(),
         }]);
       }
-      
-      // Clear attached image and typing indicator
-      setAttachedImage(null);
-      setAttachedFile(null);
       setIsTyping(false);
       return;
     }
 
-    // If only a file is attached (non-image), just send as text message and clear
-    if (attachedFile) {
-      setAttachedFile(null);
+    // If only files are attached (non-image), clear and continue
+    if (attachedFiles.length > 0) {
+      setAttachedFiles([]);
     }
 
     // Modify content if Forus Integration mode is enabled
@@ -1310,56 +1310,68 @@ IMPORTANT RULES:
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const MAX_ATTACHMENTS = 20;
+
+  const readFileAsDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      console.log('File selected:', file.name, file.type, file.size);
-      
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const currentTotal = attachedImages.length + attachedFiles.length;
+    const remaining = MAX_ATTACHMENTS - currentTotal;
+    if (remaining <= 0) {
+      showToast(`Maximum ${MAX_ATTACHMENTS} attachments allowed.`);
+      event.target.value = '';
+      return;
+    }
+    const toProcess = files.slice(0, remaining);
+    if (files.length > remaining) showToast(`Only ${remaining} more attachment(s) allowed. First ${remaining} selected.`);
+
+    const newImages: Array<{file: File, preview: string}> = [];
+    const newFiles: Array<{file: File, name: string, size: string, type: string}> = [];
+
+    for (const file of toProcess) {
       if (file.type.startsWith('image/')) {
-        // For images, show preview in input area
-        const preview = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        setAttachedImage({ file, preview });
-        setAttachedFile(null);
+        const preview = await readFileAsDataURL(file);
+        newImages.push({ file, preview });
       } else {
-        // For non-image files, show file info card
-        setAttachedFile({
-          file,
-          name: file.name,
-          size: formatFileSize(file.size),
-          type: file.type || 'unknown'
-        });
-        setAttachedImage(null);
+        newFiles.push({ file, name: file.name, size: formatFileSize(file.size), type: file.type || 'unknown' });
       }
     }
+
+    if (newImages.length) setAttachedImages(prev => [...prev, ...newImages]);
+    if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
     event.target.value = '';
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      console.log('Image selected:', file.name, file.type, file.size);
-      if (file.type.startsWith('image/')) {
-        // Create preview like ChatGPT
-        const preview = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        
-        setAttachedImage({ file, preview });
-        showToast(`Image "${file.name}" ready to send with your message`);
-      } else {
-        showToast('Please select an image file.');
-      }
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const remaining = MAX_ATTACHMENTS - attachedImages.length - attachedFiles.length;
+    if (remaining <= 0) {
+      showToast(`Maximum ${MAX_ATTACHMENTS} attachments allowed.`);
+      event.target.value = '';
+      return;
     }
+    const toProcess = files.filter(f => f.type.startsWith('image/')).slice(0, remaining);
+    if (!toProcess.length) { showToast('Please select image files only.'); event.target.value = ''; return; }
+    if (files.length > remaining) showToast(`Only ${remaining} more image(s) allowed. First ${remaining} selected.`);
+
+    const newImages: Array<{file: File, preview: string}> = [];
+    for (const file of toProcess) {
+      const preview = await readFileAsDataURL(file);
+      newImages.push({ file, preview });
+    }
+    setAttachedImages(prev => [...prev, ...newImages]);
     event.target.value = '';
-    setIsAttachmentDialogOpen(false);
   };
 
   // New function to handle image analysis (ChatGPT/Gemini-like multimodal input)
@@ -2670,40 +2682,39 @@ Let's start the self-listen session!`;
       {/* New Unified Message Bar */}
       <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' ? 'hidden' : ''}`}>
         <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 shadow-[0_8px_15px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(255,255,255,0.1)] !border-none !ring-0 !outline-none">
-          {/* Attached image/file preview - ChatGPT style */}
-          {(attachedImage || attachedFile) && (
-            <div className="px-3 pt-3 pb-1 flex items-start gap-2 flex-wrap">
-              {attachedImage && (
-                <div className="relative inline-block group">
+          {/* Attached images/files preview - ChatGPT style */}
+          {(attachedImages.length > 0 || attachedFiles.length > 0) && (
+            <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
+              {attachedImages.map((img, i) => (
+                <div key={i} className="relative inline-block flex-shrink-0 group">
                   <img
-                    src={attachedImage.preview}
-                    alt="Attached"
+                    src={img.preview}
+                    alt={`Attached ${i + 1}`}
                     className="h-20 w-20 object-cover rounded-xl border border-white/10"
                   />
                   <button
-                    onClick={() => setAttachedImage(null)}
+                    onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
                   >
                     <X className="w-3 h-3" />
                   </button>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all" />
                 </div>
-              )}
-              {attachedFile && (
-                <div className="relative flex items-center gap-2 bg-black/10 dark:bg-white/5 border border-white/10 rounded-xl px-3 py-2 pr-8 max-w-[260px] group">
-                  <FileText className="w-6 h-6 text-blue-400 flex-shrink-0" />
+              ))}
+              {attachedFiles.map((f, i) => (
+                <div key={i} className="relative flex-shrink-0 flex items-center gap-2 bg-black/10 dark:bg-white/5 border border-white/10 rounded-xl px-3 py-2 pr-8 w-[200px]">
+                  <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-black dark:text-white truncate">{attachedFile.name}</p>
-                    <p className="text-xs text-zinc-500">{attachedFile.size}</p>
+                    <p className="text-xs font-medium text-black dark:text-white truncate">{f.name}</p>
+                    <p className="text-[10px] text-zinc-500">{f.size}</p>
                   </div>
                   <button
-                    onClick={() => setAttachedFile(null)}
+                    onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
                     className="absolute top-1.5 right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
-              )}
+              ))}
             </div>
           )}
 
@@ -2814,7 +2825,7 @@ Let's start the self-listen session!`;
               </Button>
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() && !attachedImage && !attachedFile}
+                disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
                 className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
                 data-testid="button-send-message"
               >
@@ -2921,6 +2932,7 @@ Let's start the self-listen session!`;
         ref={fileInputRef}
         type="file"
         accept="image/*,.pdf,.doc,.docx,.txt"
+        multiple
         onChange={handleFileUpload}
         style={{ display: 'none' }}
       />
@@ -2928,6 +2940,7 @@ Let's start the self-listen session!`;
         ref={imageInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleImageUpload}
         style={{ display: 'none' }}
       />
