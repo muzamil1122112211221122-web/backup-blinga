@@ -190,30 +190,94 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Generating photorealistic image for: "${prompt}"`);
 
-  // First try: Pollinations AI — free, real photorealistic images up to 2K
+  // First try: Stable Horde — free community-powered photorealistic AI image generation
   try {
-    console.log('Using Pollinations AI for high-quality photorealistic image...');
-    const seed = Math.floor(Math.random() * 999999);
-    const encodedPrompt = encodeURIComponent(`${prompt}, photorealistic, ultra detailed, 4k, high quality`);
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=2048&height=2048&model=flux&nologo=true&seed=${seed}`;
+    console.log('Using Stable Horde for photorealistic image generation...');
+    const enhancedPrompt = `${prompt}, photorealistic, ultra detailed, 8k uhd, high quality, masterpiece, sharp focus`;
 
-    // Fetch the image and convert to base64 to avoid expiring URLs
-    const imgResponse = await fetch(pollinationsUrl, { signal: AbortSignal.timeout(25000) });
-    if (imgResponse.ok) {
-      const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
-      const arrayBuffer = await imgResponse.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
-      console.log(`Pollinations AI image generated successfully (${Math.round(base64.length / 1024)}KB)`);
-      return {
-        success: true,
-        url: `data:${contentType};base64,${base64}`,
-        revisedPrompt: `Photorealistic: ${prompt}`,
-      };
+    const submitResponse = await fetch('https://stablehorde.net/api/v2/generate/async', {
+      method: 'POST',
+      headers: {
+        'apikey': '0000000000',
+        'Content-Type': 'application/json',
+        'Client-Agent': 'forus:1.0:forus-ai'
+      },
+      body: JSON.stringify({
+        prompt: enhancedPrompt,
+        params: {
+          width: 1024,
+          height: 1024,
+          steps: 25,
+          n: 1,
+          sampler_name: 'k_euler_a',
+          cfg_scale: 7.5,
+          karras: true
+        },
+        models: ['Deliberate', 'Realistic Vision', 'Dreamshaper'],
+        r2: true,
+        shared: false
+      }),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (submitResponse.ok) {
+      const submitData = await submitResponse.json();
+      const jobId = submitData.id;
+      console.log(`Stable Horde job submitted: ${jobId}`);
+
+      // Poll for result — up to 90 seconds
+      const startTime = Date.now();
+      while (Date.now() - startTime < 90000) {
+        await new Promise(r => setTimeout(r, 3000));
+
+        const statusResponse = await fetch(`https://stablehorde.net/api/v2/generate/check/${jobId}`, {
+          headers: { 'Client-Agent': 'forus:1.0:forus-ai' },
+          signal: AbortSignal.timeout(8000)
+        });
+
+        if (statusResponse.ok) {
+          const status = await statusResponse.json();
+          if (status.done) {
+            const resultResponse = await fetch(`https://stablehorde.net/api/v2/generate/status/${jobId}`, {
+              headers: { 'Client-Agent': 'forus:1.0:forus-ai' },
+              signal: AbortSignal.timeout(10000)
+            });
+            if (resultResponse.ok) {
+              const result = await resultResponse.json();
+              const generation = result.generations?.[0];
+              if (generation?.img) {
+                // Download the image and convert to base64
+                const imgUrl = generation.img;
+                const imgResponse = await fetch(imgUrl, { signal: AbortSignal.timeout(20000) });
+                if (imgResponse.ok) {
+                  const contentType = imgResponse.headers.get('content-type') || 'image/webp';
+                  const arrayBuffer = await imgResponse.arrayBuffer();
+                  const base64 = Buffer.from(arrayBuffer).toString('base64');
+                  console.log(`Stable Horde image ready (${Math.round(base64.length / 1024)}KB) via ${generation.model}`);
+                  return {
+                    success: true,
+                    url: `data:${contentType};base64,${base64}`,
+                    revisedPrompt: `Photorealistic (${generation.model}): ${prompt}`,
+                  };
+                }
+              }
+            }
+            break;
+          }
+          if (status.faulted) {
+            console.log('Stable Horde job faulted');
+            break;
+          }
+          const waitTime = status.wait_time || '?';
+          console.log(`Stable Horde: waiting... ETA ${waitTime}s`);
+        }
+      }
     } else {
-      console.log('Pollinations AI failed:', imgResponse.status);
+      const err = await submitResponse.json().catch(() => ({}));
+      console.log('Stable Horde submit failed:', submitResponse.status, JSON.stringify(err).substring(0, 200));
     }
   } catch (error) {
-    console.log('Pollinations AI error:', error);
+    console.log('Stable Horde error:', error);
   }
 
   // Second try: Gemini image generation (Imagen 4 / Gemini image models — requires paid plan)
