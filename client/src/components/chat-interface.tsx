@@ -2783,7 +2783,10 @@ Let's start the self-listen session!`;
             <Button
               variant="outline"
               className="h-20 flex flex-col items-center justify-center space-y-2"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                setIsAttachmentDialogOpen(false);
+                setTimeout(() => fileInputRef.current?.click(), 100);
+              }}
               data-testid="attachment-upload-file"
             >
               <FileText className="h-6 w-6" />
@@ -2793,7 +2796,10 @@ Let's start the self-listen session!`;
             <Button
               variant="outline"
               className="h-20 flex flex-col items-center justify-center space-y-2"
-              onClick={() => imageInputRef.current?.click()}
+              onClick={() => {
+                setIsAttachmentDialogOpen(false);
+                setTimeout(() => imageInputRef.current?.click(), 100);
+              }}
               data-testid="attachment-upload-image"
             >
               <Image className="h-6 w-6" />
@@ -2846,6 +2852,22 @@ Let's start the self-listen session!`;
       {showLuminNotification && (
         <LuminNotification onClose={() => setShowLuminNotification(false)} />
       )}
+
+      {/* Hidden file input elements */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf,.doc,.docx,.txt"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        style={{ display: 'none' }}
+      />
     </div>
   );
 }
