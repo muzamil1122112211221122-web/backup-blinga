@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import mathIcon from "@assets/math-symbols-icon-vector_1774278684726.jpg";
-import wordIcon from "@assets/10199730_1774278684725.png";
-import memoryIcon from "@assets/external-Memory-game-table-games-icongeek26-linear-colour-icon_1774278684722.jpg";
-import quizIcon from "@assets/original-fa9d3d38cfcf858b263c26ff6a5ebb9d_1774278684726.webp";
+import mathIcon from "@assets/math-symbols-icon-vector-Photoroom_1774279072726.png";
+import wordIcon from "@assets/external-Memory-game-table-games-icongeek26-linear-colour-icon_1774279072725.png";
+import memoryIcon from "@assets/10199730_1774278684725.png";
+import quizIcon from "@assets/original-fa9d3d38cfcf858b263c26ff6a5ebb9d-Photoroom_1774279072727.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
@@ -710,9 +710,9 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={() => setActiveGame('menu')} />;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full justify-center">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-foreground mb-1">🎮 Forus Games</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-1">Forus Games</h2>
         <p className="text-muted-foreground text-sm">Choose a game, earn points, climb the leaderboard</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
