@@ -795,3 +795,13 @@
 .animate-pop-in {
   animation: pop-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+.hero-btn {
+  transition: filter 0.12s ease;
+}
+.hero-btn:hover {
+  filter: brightness(1.12) drop-shadow(0 0 18px rgba(255,255,255,0.5));
+}
+.hero-btn:active {
+  filter: brightness(0.95);
+}
