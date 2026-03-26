@@ -2,13 +2,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
 import { useLocation } from "wouter";
+import { useState } from "react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
 
   const handleGetStarted = (e: React.MouseEvent) => {
     e.preventDefault();
-    setLocation('/start');
+    setIsNavigating(true);
+    setTimeout(() => setShowOverlay(true), 350);
+    setTimeout(() => setLocation('/start'), 700);
   };
 
   const features = [
@@ -36,6 +41,10 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-br from-black via-gray-900 to-black">
+      {/* Page transition overlay */}
+      <div
+        className={`fixed inset-0 bg-black z-[200] transition-opacity duration-500 pointer-events-none ${showOverlay ? 'opacity-100' : 'opacity-0'}`}
+      />
       {/* Simple background gradient */}
       <div className="absolute inset-0 bg-gradient-radial from-gray-800/20 via-transparent to-transparent"></div>
       
@@ -86,8 +95,8 @@ export default function Landing() {
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 px-16 py-8 text-2xl rounded-full transition-all duration-300 hover:scale-125 flex items-center justify-center space-x-4"
-              style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
+              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 transition-all duration-500 ${isNavigating ? 'scale-0 opacity-0' : 'hover:scale-125'}`}
+              style={{boxShadow: isNavigating ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
