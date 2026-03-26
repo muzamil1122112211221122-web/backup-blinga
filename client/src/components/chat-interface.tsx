@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient } from "@/lib/queryClient";
@@ -706,16 +707,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                 <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
                   <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                        showToast('Code copied to clipboard');
-                      }}
-                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
-                      title="Copy code"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                            showToast('Code copied to clipboard');
+                          }}
+                          className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy code</TooltipContent>
+                    </Tooltip>
                   </div>
                   <SyntaxHighlighter
                     {...props}
@@ -1851,6 +1856,7 @@ Let's start the self-listen session!`;
   const isAnyLuminModelTyping = Object.values(luminIsTyping).some(typing => typing);
 
   return (
+    <TooltipProvider delayDuration={400}>
     <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyLuminModelTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
@@ -1874,15 +1880,20 @@ Let's start the self-listen session!`;
       {/* Header */}
       <header className="bg-card border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline">
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setIsSidebarOpen(true)}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-            data-testid="button-menu"
-          >
-            <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsSidebarOpen(true)}
+                className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+                data-testid="button-menu"
+              >
+                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Open Sidebar</TooltipContent>
+          </Tooltip>
           <Logo size="sm" />
           <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
         </div>
@@ -1924,29 +1935,39 @@ Let's start the self-listen session!`;
           >
             Forus Games
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
-            data-testid="button-theme-toggle"
-          >
-            <div className="relative">
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
-              ) : (
-                <Moon className="h-4 w-4 text-blue-600" />
-              )}
-            </div>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
-            data-testid="button-notifications"
-          >
-            <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
+                data-testid="button-theme-toggle"
+              >
+                <div className="relative">
+                  {theme === 'dark' ? (
+                    <Sun className="h-4 w-4 text-yellow-500" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-blue-600" />
+                  )}
+                </div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+                data-testid="button-notifications"
+              >
+                <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Notifications</TooltipContent>
+          </Tooltip>
         </div>
       </header>
       
@@ -2763,105 +2784,129 @@ Let's start the self-listen session!`;
               {/* Function bar buttons in message bar mode */}
               {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
-                    onClick={adjustForus}
-                    title="Integration Answer"
-                  >
-                    <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                    onClick={() => setIsCustomizeModalOpen(true)}
-                    title="Settings"
-                  >
-                    <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        onClick={adjustForus}
+                      >
+                        <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Integration Answer</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                        onClick={() => setIsCustomizeModalOpen(true)}
+                      >
+                        <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Settings</TooltipContent>
+                  </Tooltip>
                   {selectedModel === 'forus-education' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                      onClick={() => setIsEducationModalOpen(true)}
-                      title="Education"
-                    >
-                      <GraduationCap className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                          onClick={() => setIsEducationModalOpen(true)}
+                        >
+                          <GraduationCap className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Education Settings</TooltipContent>
+                    </Tooltip>
                   )}
                 </>
               )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <Tooltip>
+                <DropdownMenu>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                        data-testid="button-attachment"
+                      >
+                        <img 
+                          src={theme === 'dark' ? attachmentDark : attachmentLight} 
+                          alt="Attachment" 
+                          className="w-5 h-5 brightness-200 contrast-150"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                    <DropdownMenuItem 
+                      className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <FileText className="w-4 h-4 text-zinc-400" />
+                      <span>Upload File</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <Image className="w-4 h-4 text-zinc-400" />
+                      <span>Upload Image</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <TooltipContent>Add Attachment</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
+                    onClick={toggleListening}
+                    disabled={!speechSupported}
+                    data-testid="button-mic"
+                  >
+                    <img 
+                      src={theme === 'dark' ? micDark : micLight} 
+                      alt="Mic" 
+                      className="w-5 h-5 brightness-200 contrast-150"
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                    title="Add attachment"
-                    data-testid="button-attachment"
+                    onClick={handleEnhancePrompt}
+                    disabled={!inputValue.trim() || isEnhancing}
+                    data-testid="button-enhance"
                   >
-                    <img 
-                      src={theme === 'dark' ? attachmentDark : attachmentLight} 
-                      alt="Attachment" 
-                      className="w-5 h-5 brightness-200 contrast-150"
-                    />
+                    {isEnhancing ? (
+                      <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
+                    ) : (
+                      <img 
+                        src={theme === 'dark' ? enhancePromptDark : enhancePromptLight} 
+                        alt="Enhance" 
+                        className="w-5 h-5 brightness-200 contrast-150"
+                      />
+                    )}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                  <DropdownMenuItem 
-                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <FileText className="w-4 h-4 text-zinc-400" />
-                    <span>Upload File</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                    onClick={() => imageInputRef.current?.click()}
-                  >
-                    <Image className="w-4 h-4 text-zinc-400" />
-                    <span>Upload Image</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
-                onClick={toggleListening}
-                disabled={!speechSupported}
-                title="Voice input"
-                data-testid="button-mic"
-              >
-                <img 
-                  src={theme === 'dark' ? micDark : micLight} 
-                  alt="Mic" 
-                  className="w-5 h-5 brightness-200 contrast-150"
-                />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                onClick={handleEnhancePrompt}
-                disabled={!inputValue.trim() || isEnhancing}
-                title="Enhance prompt"
-                data-testid="button-enhance"
-              >
-                {isEnhancing ? (
-                  <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
-                ) : (
-                  <img 
-                    src={theme === 'dark' ? enhancePromptDark : enhancePromptLight} 
-                    alt="Enhance" 
-                    className="w-5 h-5 brightness-200 contrast-150"
-                  />
-                )}
-              </Button>
+                </TooltipTrigger>
+                <TooltipContent>Enhance prompt</TooltipContent>
+              </Tooltip>
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
@@ -2984,5 +3029,6 @@ Let's start the self-listen session!`;
         style={{ display: 'none' }}
       />
     </div>
+    </TooltipProvider>
   );
 }
