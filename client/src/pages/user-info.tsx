@@ -153,7 +153,7 @@ export default function UserInfo() {
       <div className="absolute inset-0 bg-gradient-radial from-gray-800/20 via-transparent to-transparent"></div>
       {stars}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-pop-in">
           <div className="mb-8">
             <Button
               onClick={() => setLocation("/")}
