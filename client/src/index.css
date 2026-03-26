@@ -793,11 +793,11 @@
 }
 
 .animate-pop-in {
-  animation: pop-in 0.12s ease-out forwards;
+  animation: pop-in 0.28s ease-out forwards;
 }
 
 .hero-btn {
-  transition: transform 0.3s ease-out;
+  transition: transform 0.2s ease-out;
 }
 .hero-btn:hover {
   transform: scale(1.1);
