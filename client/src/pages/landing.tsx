@@ -95,7 +95,7 @@ export default function Landing() {
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 transition-all duration-300 ${isNavigating ? 'animate-pop-out' : 'hover:scale-125'}`}
+              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 ${isNavigating ? 'animate-pop-out' : 'transition-transform duration-200 hover:scale-125'}`}
               style={{boxShadow: isNavigating ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
               data-testid="button-hero-start"
             >
