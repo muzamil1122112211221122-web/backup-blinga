@@ -2590,14 +2590,14 @@ Let's start the self-listen session!`;
           <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
               {renderFunctionBtn(
-                <img src="/integration-icon.png" alt="Integration" className="h-7 w-7 btn-icon" />,
+                <img src="/integration-icon.png" alt="Integration" className="h-6 w-6 btn-icon" />,
                 'Integration Answer',
                 adjustForus,
                 forusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
                 'button-forus-integration'
               )}
               {renderFunctionBtn(
-                <img src="/settings-icon.png" alt="Settings" className="h-7 w-7 btn-icon" />,
+                <img src="/settings-icon.png" alt="Settings" className="h-6 w-6 btn-icon" />,
                 'Settings',
                 () => setIsCustomizeModalOpen(true),
                 undefined,
@@ -2770,7 +2770,7 @@ Let's start the self-listen session!`;
                     onClick={adjustForus}
                     title="Integration Answer"
                   >
-                    <img src="/integration-icon.png" alt="Integration" className="w-5 h-5 btn-icon" />
+                    <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'21px',height:'21px'}} />
                   </Button>
                   <Button
                     variant="ghost"
@@ -2779,7 +2779,7 @@ Let's start the self-listen session!`;
                     onClick={() => setIsCustomizeModalOpen(true)}
                     title="Settings"
                   >
-                    <img src="/settings-icon.png" alt="Settings" className="w-5 h-5 btn-icon" />
+                    <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
                   </Button>
                   {selectedModel === 'forus-education' && (
                     <Button
