@@ -2841,7 +2841,7 @@ Let's start the self-listen session!`;
                         data-testid="button-attachment"
                       >
                         <img 
-                          src={theme === 'dark' ? attachmentDark : attachmentLight} 
+                          src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight} 
                           alt="Attachment" 
                           className="w-5 h-5 brightness-200 contrast-150"
                         />
@@ -2879,7 +2879,7 @@ Let's start the self-listen session!`;
                     data-testid="button-mic"
                   >
                     <img 
-                      src={theme === 'dark' ? micDark : micLight} 
+                      src={resolvedTheme === 'dark' ? micDark : micLight} 
                       alt="Mic" 
                       className="w-5 h-5 brightness-200 contrast-150"
                     />
@@ -2901,7 +2901,7 @@ Let's start the self-listen session!`;
                       <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
                     ) : (
                       <img 
-                        src={theme === 'dark' ? enhancePromptDark : enhancePromptLight} 
+                        src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} 
                         alt="Enhance" 
                         className="w-5 h-5 brightness-200 contrast-150"
                       />
