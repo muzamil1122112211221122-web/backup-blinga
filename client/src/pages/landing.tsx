@@ -61,7 +61,7 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <Button 
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
+                className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg"
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -88,7 +88,7 @@ export default function Landing() {
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
+              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-12 py-6 text-xl rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
@@ -221,7 +221,7 @@ export default function Landing() {
           <Button 
             onClick={handleGetStarted}
             size="lg"
-            className="bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+            className="bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
             data-testid="button-cta-start"
           >
             Start Your Journey
