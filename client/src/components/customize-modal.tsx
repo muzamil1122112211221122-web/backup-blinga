@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check } from "lucide-react";
+import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check, Plus, Trash2, Wand2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
+import { useCustomTheme, CustomTheme } from "@/hooks/use-custom-theme";
 
 interface CustomizeModalProps {
   isOpen: boolean;
@@ -58,6 +59,12 @@ export function CustomizeModal({
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
   const picInputRef = useRef<HTMLInputElement>(null);
+
+  const { themes: customThemes, activeThemeId, saveTheme, deleteTheme, applyTheme } = useCustomTheme();
+  const [showThemeForm, setShowThemeForm] = useState(false);
+  const [newThemeName, setNewThemeName] = useState('');
+  const [newPrimaryColor, setNewPrimaryColor] = useState('#6366f1');
+  const [newSecondaryColor, setNewSecondaryColor] = useState('#a855f7');
 
   const [localToggles, setLocalToggles] = useState({
     wrapLines: true,
@@ -278,6 +285,127 @@ export function CustomizeModal({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Theme Maker */}
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 flex items-center gap-2"><Wand2 className="w-4 h-4" /> Theme Maker</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Create and save custom color themes</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs border-zinc-300 dark:border-zinc-700 gap-1"
+                    onClick={() => { setShowThemeForm(v => !v); setNewThemeName(''); setNewPrimaryColor('#6366f1'); setNewSecondaryColor('#a855f7'); }}
+                  >
+                    <Plus className="w-3 h-3" /> New Theme
+                  </Button>
+                </div>
+
+                {showThemeForm && (
+                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 space-y-4">
+                    <Input
+                      placeholder="Theme name..."
+                      value={newThemeName}
+                      onChange={e => setNewThemeName(e.target.value)}
+                      className="h-8 text-sm bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-zinc-500">Primary Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={newPrimaryColor}
+                            onChange={e => setNewPrimaryColor(e.target.value)}
+                            className="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 cursor-pointer p-0.5 bg-white dark:bg-zinc-800"
+                          />
+                          <span className="text-xs font-mono text-zinc-500">{newPrimaryColor}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-zinc-500">Secondary Color</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={newSecondaryColor}
+                            onChange={e => setNewSecondaryColor(e.target.value)}
+                            className="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 cursor-pointer p-0.5 bg-white dark:bg-zinc-800"
+                          />
+                          <span className="text-xs font-mono text-zinc-500">{newSecondaryColor}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview */}
+                    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-2 bg-white dark:bg-zinc-800">
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-2">Preview</p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 px-3 rounded-lg text-white text-xs flex items-center font-medium" style={{ backgroundColor: newPrimaryColor }}>Button</div>
+                        <div className="h-8 px-3 rounded-lg text-white text-xs flex items-center font-medium" style={{ backgroundColor: newSecondaryColor }}>Secondary</div>
+                        <div className="h-8 w-8 rounded-full" style={{ backgroundColor: newPrimaryColor }} />
+                        <div className="h-2 flex-1 rounded-full" style={{ backgroundColor: newSecondaryColor, opacity: 0.4 }} />
+                      </div>
+                      <div className="h-1.5 w-full rounded-full" style={{ background: `linear-gradient(to right, ${newPrimaryColor}, ${newSecondaryColor})` }} />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 text-xs text-white"
+                        style={{ backgroundColor: newPrimaryColor }}
+                        onClick={() => {
+                          if (!newThemeName.trim()) return;
+                          const theme: CustomTheme = {
+                            id: Date.now().toString(),
+                            name: newThemeName.trim(),
+                            primaryColor: newPrimaryColor,
+                            secondaryColor: newSecondaryColor,
+                          };
+                          saveTheme(theme);
+                          setShowThemeForm(false);
+                          setIsDirty(true);
+                        }}
+                      >
+                        Save Theme
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setShowThemeForm(false)}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {customThemes.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-zinc-500">Saved Themes</p>
+                    {customThemes.map(t => (
+                      <div key={t.id} className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${activeThemeId === t.id ? 'border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                        onClick={() => { applyTheme(activeThemeId === t.id ? null : t.id); setIsDirty(true); }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex gap-1">
+                            <div className="w-4 h-4 rounded-full border border-white dark:border-zinc-700 shadow-sm" style={{ backgroundColor: t.primaryColor }} />
+                            <div className="w-4 h-4 rounded-full border border-white dark:border-zinc-700 shadow-sm -ml-2" style={{ backgroundColor: t.secondaryColor }} />
+                          </div>
+                          <span className="text-sm text-zinc-800 dark:text-zinc-200">{t.name}</span>
+                          {activeThemeId === t.id && <Check className="w-3 h-3 text-green-500" />}
+                        </div>
+                        <button
+                          className="text-zinc-400 hover:text-red-500 transition-colors p-1 rounded"
+                          onClick={e => { e.stopPropagation(); deleteTheme(t.id); setIsDirty(true); }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {activeThemeId && (
+                      <button className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" onClick={() => { applyTheme(null); setIsDirty(true); }}>
+                        ✕ Remove custom theme
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
