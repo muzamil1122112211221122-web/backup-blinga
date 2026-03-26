@@ -1872,7 +1872,7 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className="bg-card backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(255,255,255,0.3), inset 0 -8px 20px rgba(255,255,255,0.08)'}}>
+      <header className="bg-card border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), inset 0 -3px 0 rgba(255,255,255,0.3), inset 0 -8px 20px rgba(255,255,255,0.08)'}}>
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Button 
             variant="ghost" 
