@@ -69,7 +69,7 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <Button 
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg"
+                className={`bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg hero-btn ${isNavigating ? 'animate-pop-out' : ''}`}
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -91,7 +91,7 @@ export default function Landing() {
             Experience next-generation AI conversations with multiple models, voice integration,
             and real-time chat capabilities all in one beautiful interface.
           </p>
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-4">
             <Button 
               onClick={handleGetStarted}
               size="lg"
@@ -102,6 +102,9 @@ export default function Landing() {
               <MessageCircle className="w-6 h-6" />
               <span>Begin Experience</span>
             </Button>
+            <p className="text-lg font-semibold tracking-wide bg-gradient-to-b from-white to-black bg-clip-text text-transparent select-none">
+              Forus is for us!
+            </p>
           </div>
 
         </div>
@@ -229,7 +232,7 @@ export default function Landing() {
           <Button 
             onClick={handleGetStarted}
             size="lg"
-            className="bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+            className={`bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl hero-btn ${isNavigating ? 'animate-pop-out' : ''}`}
             data-testid="button-cta-start"
           >
             Start Your Journey
