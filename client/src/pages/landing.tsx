@@ -61,7 +61,7 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <Button 
                 onClick={handleGetStarted}
-                className="bg-gradient-to-r from-black via-gray-600 to-white text-white hover:opacity-90 border border-white/30 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
+                className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 shadow-lg"
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -88,7 +88,7 @@ export default function Landing() {
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-gradient-to-r from-black via-gray-600 to-white text-white hover:opacity-90 border border-white/30 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
+              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-12 py-6 text-xl rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
@@ -210,12 +210,12 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-black via-gray-700 to-white py-20">
+      <section className="bg-gradient-to-r from-white via-gray-400 to-gray-700 py-20">
         <div className="container mx-auto px-6 text-center">
-          <h3 className="text-4xl font-bold text-white mb-4">
+          <h3 className="text-4xl font-bold text-gray-900 mb-4">
             Ready to Get Started?
           </h3>
-          <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
             Join thousands of users already experiencing the future of AI conversations
           </p>
           <Button 
