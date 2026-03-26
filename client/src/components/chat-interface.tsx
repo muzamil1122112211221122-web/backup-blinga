@@ -350,6 +350,9 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
+  const resolvedTheme = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -1945,7 +1948,7 @@ Let's start the self-listen session!`;
                 data-testid="button-theme-toggle"
               >
                 <div className="relative">
-                  {theme === 'dark' ? (
+                  {resolvedTheme === 'dark' ? (
                     <Sun className="h-4 w-4 text-yellow-500" />
                   ) : (
                     <Moon className="h-4 w-4 text-blue-600" />
