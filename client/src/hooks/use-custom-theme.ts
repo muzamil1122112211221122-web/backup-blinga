@@ -26,7 +26,7 @@ export function hexToHsl(hex: string): string {
       case b: h = ((r - g) / d + 4) / 6; break;
     }
   }
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
 }
 
 function applyThemeColors(theme: CustomTheme | null) {
