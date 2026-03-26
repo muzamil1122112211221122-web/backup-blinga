@@ -50,13 +50,12 @@ export default function Landing() {
       
       {/* Content overlay */}
       <div className="relative z-10 min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/90 border-b border-white/20">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      {/* Floating Island Header */}
+      <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
+        <header className="flex items-center justify-between bg-black/75 backdrop-blur-lg border border-white/20 rounded-full px-6 py-3 shadow-2xl w-full max-w-3xl">
             <div className="flex items-center space-x-3">
-              <img src="/forus-logo.png" alt="Forus" className="w-8 h-8 object-contain" />
-              <h1 className="text-2xl font-bold text-white">Forus Heavy API</h1>
+              <img src="/forus-logo.png" alt="Forus" className="w-7 h-7 object-contain" />
+              <h1 className="text-xl font-bold text-white">Forus Heavy API</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button 
@@ -68,12 +67,11 @@ export default function Landing() {
                 <span>Begin Experience</span>
               </Button>
             </div>
-          </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20">
+      <section className="container mx-auto px-6 pt-36 pb-20">
         <div className="text-center max-w-4xl mx-auto">
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Chat with the
@@ -88,7 +86,7 @@ export default function Landing() {
             <Button 
               onClick={handleGetStarted}
               size="lg"
-              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-12 py-6 text-xl rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl flex items-center justify-center space-x-4"
+              className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 border border-white/30 px-16 py-8 text-2xl rounded-full transition-all duration-300 hover:scale-125 shadow-2xl hover:shadow-2xl flex items-center justify-center space-x-4"
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
