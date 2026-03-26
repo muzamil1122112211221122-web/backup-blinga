@@ -2557,7 +2557,7 @@ Let's start the self-listen session!`;
       {/* Tool Buttons - Separate Section */}
       {(() => {
         const isCircle = functionBarStyle === 'circle';
-        const squareShadow = 'shadow-[0_15px_40px_-5px_rgba(0,0,0,0.4),0_8px_20px_-2px_rgba(0,0,0,0.3)] dark:shadow-[0_10px_30px_-5px_rgba(255,255,255,0.25),0_4px_15px_-2px_rgba(255,255,255,0.15)]';
+        const squareShadow = 'glossy-outline';
         const renderFunctionBtn = (icon: React.ReactNode, label: string, onClick: () => void, activeStyle?: string, testId?: string) => {
           if (isCircle) {
             return (
@@ -2688,7 +2688,7 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' ? 'hidden' : ''}`}>
-        <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 shadow-[0_8px_15px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_20px_rgba(255,255,255,0.1)] !border-none !ring-0 !outline-none">
+        <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 glossy-outline !border-none !ring-0 !outline-none">
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
             <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
