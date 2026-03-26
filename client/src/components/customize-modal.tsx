@@ -204,7 +204,7 @@ export function CustomizeModal({
         <div className="flex-1 p-8 overflow-y-auto relative bg-white dark:bg-[#0d0d0d]">
           {activeSection === 'appearance' && (
             <div className="space-y-8">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Button 
                   variant="outline" 
                   className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'light' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
@@ -220,6 +220,14 @@ export function CustomizeModal({
                 >
                   <Moon className="w-5 h-5 mb-1" />
                   <span className="text-xs">Dark</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'system' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
+                  onClick={() => { setLocalTheme('system'); setTheme('system'); setIsDirty(true); }}
+                >
+                  <Laptop className="w-5 h-5 mb-1" />
+                  <span className="text-xs">System</span>
                 </Button>
               </div>
 
