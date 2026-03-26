@@ -1872,54 +1872,54 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className="bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between rounded-b-3xl shadow-sm">
+      <header className="bg-gradient-to-r from-gray-700 via-gray-800 to-gray-600 dark:from-gray-800 dark:via-gray-900 dark:to-gray-700 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)'}}>
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => setIsSidebarOpen(true)}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
             data-testid="button-menu"
           >
             <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <Logo size="sm" />
-          <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
+          <span className="font-semibold text-white text-sm sm:text-base">Forus Heavy API</span>
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Button
-            variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setActiveTab('ask')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all ${activeTab === 'ask' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             data-testid="tab-ask"
           >
             Ask
           </Button>
           <Button
-            variant={activeTab === 'lumin' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setActiveTab('lumin')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all ${activeTab === 'lumin' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             data-testid="tab-lumin"
           >
             Lumin(Coders & Content Creator Heaven)
           </Button>
           <Button
-            variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setActiveTab('philosopher')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all ${activeTab === 'philosopher' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             data-testid="tab-philosopher"
           >
             Philosophers & {user?.displayName || user?.username || 'You'}
           </Button>
           <Button
-            variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setActiveTab('forus-games')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all ${activeTab === 'forus-games' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
             data-testid="tab-forus-games"
           >
             Forus Games
@@ -1928,21 +1928,21 @@ Let's start the self-listen session!`;
             variant="ghost" 
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
+            className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 hover:shadow-lg transition-all duration-300"
             data-testid="button-theme-toggle"
           >
             <div className="relative">
               {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
+                <Sun className="h-4 w-4 text-yellow-400" />
               ) : (
-                <Moon className="h-4 w-4 text-blue-600" />
+                <Moon className="h-4 w-4 text-white" />
               )}
             </div>
           </Button>
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+            className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
             data-testid="button-notifications"
           >
             <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
