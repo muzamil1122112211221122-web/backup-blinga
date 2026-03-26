@@ -52,7 +52,7 @@ export default function Landing() {
       <div className="relative z-10 min-h-screen">
       {/* Floating Island Header */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
-        <header className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-8 py-3 w-full max-w-5xl" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -1px 0 rgba(255,255,255,0.55), inset 0 -3px 10px rgba(255,255,255,0.08)'}}>
+        <header className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-8 py-3 w-full max-w-5xl" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)'}}>
             <div className="flex items-center space-x-3">
               <img src="/forus-logo.png" alt="Forus" className="w-7 h-7 object-contain" />
               <h1 className="text-xl font-bold text-white">Forus Heavy API</h1>
@@ -87,7 +87,7 @@ export default function Landing() {
               onClick={handleGetStarted}
               size="lg"
               className="bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 hover:opacity-90 px-16 py-8 text-2xl rounded-full transition-all duration-300 hover:scale-125 flex items-center justify-center space-x-4"
-              style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(255,255,255,0.8), inset 0 -4px 12px rgba(255,255,255,0.12)'}}
+              style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
