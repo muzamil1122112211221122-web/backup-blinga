@@ -1945,7 +1945,7 @@ Let's start the self-listen session!`;
                 variant="ghost" 
                 size="icon"
                 onClick={() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light')}
-                className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
+                className={`relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl border border-border hover:shadow-lg transition-all duration-300 ${theme === 'dark' ? 'bg-zinc-800' : theme === 'light' ? 'bg-yellow-50' : 'bg-zinc-100 dark:bg-zinc-800'}`}
                 data-testid="button-theme-toggle"
               >
                 <div className="relative">
