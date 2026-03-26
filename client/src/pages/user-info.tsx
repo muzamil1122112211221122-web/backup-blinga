@@ -392,7 +392,7 @@ export default function UserInfo() {
           )}
 
           <div className="text-center mt-8">
-            <p className="text-lg text-gray-300 italic">Forus from Planet M</p>
+            <p className="text-lg text-gray-300 italic">Forus is for us!</p>
           </div>
         </div>
       </div>

@@ -1961,7 +1961,7 @@ Let's start the self-listen session!`;
             <h2 className="text-3xl font-bold mb-3 text-foreground">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Forus Heavy API'}
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">Forus from Planet M</p>
+            <p className="text-lg text-muted-foreground mb-8">Forus is for us!</p>
             
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
