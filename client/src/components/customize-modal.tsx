@@ -53,6 +53,7 @@ export function CustomizeModal({
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
   const originalTheme = useRef<string>(theme);
+  const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'square');
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
@@ -83,6 +84,9 @@ export function CustomizeModal({
       setLocalAiOrder([...aiOrder]);
       setLocalTheme(theme);
       originalTheme.current = theme;
+      const savedStyle = localStorage.getItem('functionBarStyle') || 'square';
+      setFunctionBarStyle(savedStyle);
+      originalFunctionBarStyle.current = savedStyle;
       setIsDirty(false);
       setShowExitDialog(false);
     }
@@ -96,8 +100,7 @@ export function CustomizeModal({
 
   const handleFunctionBarStyleChange = (val: string) => {
     setFunctionBarStyle(val);
-    localStorage.setItem('functionBarStyle', val);
-    window.dispatchEvent(new Event('functionBarStyleChanged'));
+    setIsDirty(true);
   };
 
   const moveOrder = (index: number, direction: 'up' | 'down') => {
@@ -121,6 +124,8 @@ export function CustomizeModal({
 
   const handleSave = () => {
     setTheme(localTheme);
+    localStorage.setItem('functionBarStyle', functionBarStyle);
+    window.dispatchEvent(new Event('functionBarStyleChanged'));
     onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
@@ -129,6 +134,7 @@ export function CustomizeModal({
 
   const handleDontSave = () => {
     setTheme(originalTheme.current);
+    setFunctionBarStyle(originalFunctionBarStyle.current);
     setIsDirty(false);
     setShowExitDialog(false);
     onClose();
@@ -249,7 +255,7 @@ export function CustomizeModal({
                       }`}
                     >
                       {opt.value === 'square' && (
-                        <div className="w-8 h-8 bg-zinc-400 rounded-none" />
+                        <div className="w-8 h-8 bg-zinc-400 rounded" />
                       )}
                       {opt.value === 'circle' && (
                         <div className="w-8 h-8 bg-zinc-400 rounded-full" />
