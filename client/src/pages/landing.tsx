@@ -52,10 +52,10 @@ export default function Landing() {
       <div className="relative z-10 min-h-screen">
       {/* Floating Island Header */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
-        <header className="flex items-center justify-between bg-gradient-to-r from-white via-gray-100 to-gray-300 backdrop-blur-lg rounded-full px-8 py-3 shadow-2xl w-full max-w-5xl">
+        <header className="flex items-center justify-between bg-gradient-to-r from-black via-gray-900 to-black backdrop-blur-lg border border-white/10 rounded-full px-8 py-3 shadow-2xl w-full max-w-5xl">
             <div className="flex items-center space-x-3">
               <img src="/forus-logo.png" alt="Forus" className="w-7 h-7 object-contain" />
-              <h1 className="text-xl font-bold text-gray-900">Forus Heavy API</h1>
+              <h1 className="text-xl font-bold text-white">Forus Heavy API</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button 
@@ -71,7 +71,7 @@ export default function Landing() {
       </div>
 
       {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center px-6">
+      <section className="container mx-auto px-6 pt-36 pb-20">
         <div className="text-center max-w-4xl mx-auto">
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
             Chat with the
