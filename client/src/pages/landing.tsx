@@ -12,8 +12,8 @@ export default function Landing() {
   const handleGetStarted = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsNavigating(true);
-    setTimeout(() => setShowOverlay(true), 350);
-    setTimeout(() => setLocation('/start'), 700);
+    setTimeout(() => setShowOverlay(true), 150);
+    setTimeout(() => setLocation('/start'), 400);
   };
 
   const features = [
