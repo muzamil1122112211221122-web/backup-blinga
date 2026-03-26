@@ -2590,7 +2590,7 @@ Let's start the self-listen session!`;
           <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
               {renderFunctionBtn(
-                <img src="/integration-icon.png" alt="Integration" className="h-6 w-6 btn-icon" />,
+                <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Integration Answer',
                 adjustForus,
                 forusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
@@ -2770,7 +2770,7 @@ Let's start the self-listen session!`;
                     onClick={adjustForus}
                     title="Integration Answer"
                   >
-                    <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'21px',height:'21px'}} />
+                    <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
                   </Button>
                   <Button
                     variant="ghost"
