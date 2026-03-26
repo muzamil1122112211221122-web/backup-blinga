@@ -249,10 +249,10 @@ export function CustomizeModal({
                       }`}
                     >
                       {opt.value === 'square' && (
-                        <div className="w-8 h-8 bg-zinc-300 dark:bg-zinc-600 rounded-sm" />
+                        <div className="w-8 h-8 bg-zinc-400 rounded-none" />
                       )}
                       {opt.value === 'circle' && (
-                        <div className="w-8 h-8 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
+                        <div className="w-8 h-8 bg-zinc-400 rounded-full" />
                       )}
                       {opt.value === 'message-bar' && (
                         <div className="w-8 h-8 flex items-center justify-center gap-0.5">
