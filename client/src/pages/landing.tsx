@@ -102,7 +102,7 @@ export default function Landing() {
               <MessageCircle className="w-6 h-6" />
               <span>Begin Experience</span>
             </Button>
-            <p className="text-lg font-semibold tracking-wide bg-gradient-to-b from-white to-black bg-clip-text text-transparent select-none">
+            <p className="text-lg font-semibold tracking-wide bg-gradient-to-r from-white to-black bg-clip-text text-transparent select-none">
               Forus is for us!
             </p>
           </div>
