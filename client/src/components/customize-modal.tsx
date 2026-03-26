@@ -235,9 +235,9 @@ export function CustomizeModal({
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'square', label: 'Square', preview: 'rounded-sm', innerPreview: 'rounded-sm' },
-                    { value: 'circle', label: 'Circle', preview: 'rounded-full', innerPreview: 'rounded-full' },
-                    { value: 'message-bar', label: 'In Message Bar', preview: null },
+                    { value: 'square', label: 'Square' },
+                    { value: 'circle', label: 'Circle' },
+                    { value: 'message-bar', label: 'In Message Bar' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -248,11 +248,17 @@ export function CustomizeModal({
                           : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
                       }`}
                     >
-                      {opt.preview ? (
-                        <div className={`w-8 h-8 bg-zinc-300 dark:bg-zinc-600 ${opt.preview} flex items-center justify-center`}>
-                          <div className={`w-3 h-3 bg-zinc-500 dark:bg-zinc-400 ${'innerPreview' in opt ? opt.innerPreview : 'rounded-sm'}`} />
+                      {opt.value === 'square' && (
+                        <div className="w-8 h-8 bg-zinc-300 dark:bg-zinc-600 rounded flex items-center justify-center">
+                          <div className="w-3 h-3 bg-zinc-500 dark:bg-zinc-400 rounded-sm" />
                         </div>
-                      ) : (
+                      )}
+                      {opt.value === 'circle' && (
+                        <div className="w-8 h-8 bg-zinc-300 dark:bg-zinc-600 rounded-full flex items-center justify-center">
+                          <div className="w-3 h-3 bg-zinc-500 dark:bg-zinc-400 rounded-full" />
+                        </div>
+                      )}
+                      {opt.value === 'message-bar' && (
                         <div className="w-8 h-8 flex items-center justify-center gap-0.5">
                           <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
                           <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
