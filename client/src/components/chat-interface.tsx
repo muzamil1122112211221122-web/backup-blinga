@@ -2688,7 +2688,7 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' ? 'hidden' : ''}`}>
-        <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 glossy-outline !border-none !ring-0 !outline-none">
+        <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 glossy-outline !border-none !outline-none">
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
             <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
