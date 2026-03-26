@@ -49,6 +49,9 @@ export function CustomizeModal({
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [localTheme, setLocalTheme] = useState<string>(theme);
+  const [functionBarStyle, setFunctionBarStyle] = useState<string>(
+    () => localStorage.getItem('functionBarStyle') || 'square'
+  );
   const originalTheme = useRef<string>(theme);
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
@@ -89,6 +92,12 @@ export function CustomizeModal({
   const handleToggle = (key: string) => {
     setLocalToggles(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
     setIsDirty(true);
+  };
+
+  const handleFunctionBarStyleChange = (val: string) => {
+    setFunctionBarStyle(val);
+    localStorage.setItem('functionBarStyle', val);
+    window.dispatchEvent(new Event('functionBarStyleChanged'));
   };
 
   const moveOrder = (index: number, direction: 'up' | 'down') => {
@@ -216,6 +225,42 @@ export function CustomizeModal({
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Conversation Previews in History</span>
                   <Switch checked={localToggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Function Bar Style</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose how the quick-action buttons appear</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'square', label: 'Square', preview: 'rounded-lg' },
+                    { value: 'circle', label: 'Circle', preview: 'rounded-full' },
+                    { value: 'message-bar', label: 'In Message Bar', preview: null },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleFunctionBarStyleChange(opt.value)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                        functionBarStyle === opt.value
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      {opt.preview ? (
+                        <div className={`w-8 h-8 bg-zinc-300 dark:bg-zinc-600 ${opt.preview} flex items-center justify-center`}>
+                          <div className="w-3 h-3 bg-zinc-500 dark:bg-zinc-400 rounded-sm" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 flex items-center justify-center gap-0.5">
+                          <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
+                          <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
+                        </div>
+                      )}
+                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
