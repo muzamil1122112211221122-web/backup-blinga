@@ -52,7 +52,7 @@ export default function Landing() {
       <div className="relative z-10 min-h-screen">
       {/* Floating Island Header */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
-        <header className="flex items-center justify-between bg-gradient-to-r from-black via-gray-900 to-black backdrop-blur-lg border border-white/10 rounded-full px-8 py-3 shadow-2xl w-full max-w-5xl">
+        <header className="flex items-center justify-between bg-gradient-to-r from-black via-gray-900 to-gray-500 backdrop-blur-lg border border-white/10 rounded-full px-8 py-3 shadow-2xl w-full max-w-5xl">
             <div className="flex items-center space-x-3">
               <img src="/forus-logo.png" alt="Forus" className="w-7 h-7 object-contain" />
               <h1 className="text-xl font-bold text-white">Forus Heavy API</h1>
