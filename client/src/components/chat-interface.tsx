@@ -92,6 +92,7 @@ import {
   GraduationCap,
   Moon,
   Sun,
+  Monitor,
   ToggleLeft,
   Square,
   ChevronLeft
@@ -1943,20 +1944,22 @@ Let's start the self-listen session!`;
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={() => setTheme(theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light')}
                 className="relative text-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl bg-gradient-to-br from-yellow-100 to-blue-100 dark:from-gray-800 dark:to-gray-900 border border-border hover:shadow-lg transition-all duration-300"
                 data-testid="button-theme-toggle"
               >
                 <div className="relative">
-                  {resolvedTheme === 'dark' ? (
+                  {theme === 'dark' ? (
+                    <Moon className="h-4 w-4 text-blue-400" />
+                  ) : theme === 'light' ? (
                     <Sun className="h-4 w-4 text-yellow-500" />
                   ) : (
-                    <Moon className="h-4 w-4 text-blue-600" />
+                    <Monitor className="h-4 w-4 text-foreground" />
                   )}
                 </div>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}</TooltipContent>
+            <TooltipContent>{theme === 'light' ? 'Switch to Dark' : theme === 'dark' ? 'Switch to System' : 'Switch to Light'}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
