@@ -235,8 +235,8 @@ export function CustomizeModal({
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'square', label: 'Square', preview: 'rounded-lg' },
-                    { value: 'circle', label: 'Circle', preview: 'rounded-full' },
+                    { value: 'square', label: 'Square', preview: 'rounded-sm', innerPreview: 'rounded-sm' },
+                    { value: 'circle', label: 'Circle', preview: 'rounded-full', innerPreview: 'rounded-full' },
                     { value: 'message-bar', label: 'In Message Bar', preview: null },
                   ].map(opt => (
                     <button
@@ -250,7 +250,7 @@ export function CustomizeModal({
                     >
                       {opt.preview ? (
                         <div className={`w-8 h-8 bg-zinc-300 dark:bg-zinc-600 ${opt.preview} flex items-center justify-center`}>
-                          <div className="w-3 h-3 bg-zinc-500 dark:bg-zinc-400 rounded-sm" />
+                          <div className={`w-3 h-3 bg-zinc-500 dark:bg-zinc-400 ${'innerPreview' in opt ? opt.innerPreview : 'rounded-sm'}`} />
                         </div>
                       ) : (
                         <div className="w-8 h-8 flex items-center justify-center gap-0.5">

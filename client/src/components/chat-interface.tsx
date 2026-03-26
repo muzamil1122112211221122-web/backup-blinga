@@ -2564,7 +2564,7 @@ Let's start the self-listen session!`;
                 data-testid={testId}
                 className="flex flex-col items-center gap-1.5 group"
               >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${squareShadow} ${activeStyle || 'text-muted-foreground bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.35] ${squareShadow} ${activeStyle || 'text-muted-foreground bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
                   {icon}
                 </div>
                 <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{label}</span>
