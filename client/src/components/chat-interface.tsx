@@ -2228,16 +2228,18 @@ Let's start the self-listen session!`;
           // Nomad Tab - Multi-AI Interface
           (() => {
             const nomadConfigMap: {[key: string]: {name: string, logo: React.ReactNode, color: string}} = {
-              'gpt-4o': { name: 'ChatGPT 5', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/chatgpt-logo.png" alt="ChatGPT 5" className="w-full h-full object-contain dark:filter dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#10a37f' },
+              'gpt-4o': { name: 'ChatGPT 5', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/chatgpt-logo.png" alt="ChatGPT 5" className="w-full h-full object-contain dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#10a37f' },
               'claude-3.5-sonnet': { name: 'Claude Sonnet 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/claude-logo.png" alt="Claude Sonnet 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#f97316' },
               'gemini-pro': { name: 'Gemini 2.5 Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/gemini-logo.png" alt="Gemini 2.5 Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#14b8a6' },
               'perplexity': { name: 'Perplexity Sonar Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/perplexity-logo.png" alt="Perplexity Sonar Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#38bdf8' },
-              'grok-4': { name: 'Grok 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/grok-logo.png" alt="Grok 4" className="w-full h-full object-contain filter brightness-0 dark:brightness-0 dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6b7280' },
+              'grok-4': { name: 'Grok 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/grok-logo.png" alt="Grok 4" className="w-full h-full object-contain brightness-0 dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6b7280' },
               'deepseek-r1': { name: 'Deepseek v3', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/deepseek-logo.png" alt="Deepseek v3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
               'forus-ai': { name: 'Forus Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#a855f7' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => id === 'gpt-4o' ? 'chatgpt' : id === 'claude-3.5-sonnet' ? 'claude' : id === 'gemini-pro' ? 'gemini' : id === 'grok-4' ? 'grok' : id === 'deepseek-r1' ? 'deepseek' : id === 'forus-ai' ? 'forus' : id;
+            // Theme-aware filter: dark-colored logos (ChatGPT, Grok) need to invert in dark mode
+            const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
             return (
             /* min-h-full ensures grid background stretches to bottom even with little content */
             <div className="w-full min-h-full flex flex-col">
@@ -2265,8 +2267,12 @@ Let's start the self-listen session!`;
                           className="w-8 h-8 rounded-full border-2 flex items-center justify-center bg-card hover:scale-110 transition-all overflow-hidden p-1"
                           style={{ borderColor: cfg.color }}
                         >
-                          <img src={`/${m.id === 'gpt-4o' ? 'chatgpt' : m.id === 'claude-3.5-sonnet' ? 'claude' : m.id === 'gemini-pro' ? 'gemini' : m.id === 'perplexity' ? 'perplexity' : m.id === 'grok-4' ? 'grok' : m.id === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
-                            alt={cfg.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                          <img
+                            src={`/${modelSlug(m.id)}-logo.png`}
+                            alt={cfg.name}
+                            className={`w-full h-full object-contain ${iconFilter(m.id)}`}
+                            onError={(e) => { e.currentTarget.style.display='none'; }}
+                          />
                         </button>
                       );
                     })}
@@ -2294,9 +2300,9 @@ Let's start the self-listen session!`;
                           >
                             <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
                               <img
-                                src={`/${model === 'gpt-4o' ? 'chatgpt' : model === 'claude-3.5-sonnet' ? 'claude' : model === 'gemini-pro' ? 'gemini' : model === 'perplexity' ? 'perplexity' : model === 'grok-4' ? 'grok' : model === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
+                                src={`/${modelSlug(model)}-logo.png`}
                                 alt={config.name}
-                                className={`w-full h-full object-contain${model === 'forus-ai' ? ' rounded-full' : ''}${model === 'grok-4' ? ' filter brightness-0 dark:brightness-0 dark:invert' : ''}${model === 'gpt-4o' ? ' dark:filter dark:invert' : ''}`}
+                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
                             </div>
@@ -2370,23 +2376,44 @@ Let's start the self-listen session!`;
                 const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
                 const msgs = nomadMessages[model] || [];
                 return (
-                  <div className="flex-1 px-4 pb-4">
-                    <div className="bg-card border-2 rounded-xl p-4 h-full flex flex-col" style={{ borderColor: config.color }}>
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border flex-shrink-0">
-                        <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center">
-                          <img src={`/${model === 'gpt-4o' ? 'chatgpt' : model === 'claude-3.5-sonnet' ? 'claude' : model === 'gemini-pro' ? 'gemini' : model === 'perplexity' ? 'perplexity' : model === 'grok-4' ? 'grok' : model === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
-                            alt={config.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                  <div className="flex-1 px-4 pb-4 flex flex-col">
+                    {/* Typing indicator */}
+                    {nomadIsTyping[model] && (
+                      <div className="flex space-x-1 px-2 py-3">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
+                      </div>
+                    )}
+                    {/* Messages — same layout as Ask tab */}
+                    <div className="flex-1 space-y-6 max-w-4xl mx-auto w-full">
+                      {msgs.map(message => (
+                        <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          {message.role === 'user' ? (
+                            /* User bubble — identical to Ask tab */
+                            <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
+                              <p className="text-foreground text-sm">{message.content}</p>
+                            </div>
+                          ) : (
+                            /* AI bubble — model icon + bubble, identical style to Ask tab */
+                            <div className="flex space-x-3 max-w-4xl w-full">
+                              <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
+                                <img
+                                  src={`/${modelSlug(model)}-logo.png`}
+                                  alt={config.name}
+                                  className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                  onError={(e) => { e.currentTarget.style.display='none'; }}
+                                />
+                              </div>
+                              <div className="rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border bg-card border-border">
+                                <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <h3 className="font-semibold text-foreground">{config.name}</h3>
-                        {nomadIsTyping[model] && <div className="flex space-x-1 ml-2"><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div></div>}
-                      </div>
-                      <div className="flex-1 overflow-y-auto space-y-3">
-                        {msgs.map(message => (
-                          <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary text-secondary-foreground ml-8' : 'bg-muted text-foreground'}`}>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                          </div>
-                        ))}
-                      </div>
+                      ))}
                     </div>
                   </div>
                 );
