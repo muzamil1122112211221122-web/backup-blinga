@@ -2219,7 +2219,7 @@ Let's start the self-listen session!`;
               <div className="flex flex-wrap gap-4 mb-8">
                 {luminModels.map((modelObj) => {
                   const model = modelObj.id;
-                  const configMap: {[key: string]: {name: string, logo: any, gradient: string}} = {
+                  const configMap: {[key: string]: {name: string, logo: any, color: string}} = {
                     'gpt-4o': { 
                       name: 'ChatGPT 5', 
                       logo: (
@@ -2232,7 +2232,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-green-400 to-blue-500' 
+                      color: '#10a37f'
                     },
                     'claude-3.5-sonnet': { 
                       name: 'Claude Sonnet 4', 
@@ -2246,7 +2246,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-orange-400 to-orange-600' 
+                      color: '#f97316'
                     }, 
                     'gemini-pro': { 
                       name: 'Gemini 2.5 Pro', 
@@ -2260,7 +2260,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-teal-400 to-emerald-500' 
+                      color: '#14b8a6'
                     },
                     'perplexity': { 
                       name: 'Perplexity Sonar Pro', 
@@ -2274,7 +2274,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-sky-300 to-blue-400' 
+                      color: '#38bdf8'
                     },
                     'grok-4': { 
                       name: 'Grok 4', 
@@ -2288,7 +2288,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-gray-400 to-black' 
+                      color: '#6b7280'
                     },
                     'deepseek-r1': { 
                       name: 'Deepseek v3', 
@@ -2302,7 +2302,7 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-blue-400 to-cyan-500' 
+                      color: '#3b82f6'
                     },
                     'forus-ai': { 
                       name: 'Forus Pro', 
@@ -2316,15 +2316,19 @@ Let's start the self-listen session!`;
                           />
                         </div>
                       ), 
-                      gradient: 'from-purple-400 to-pink-500' 
+                      color: '#a855f7'
                     }
                   };
-                  const config = configMap[model] || { name: model, logo: null, gradient: 'from-gray-400 to-gray-600' };
+                  const config = configMap[model] || { name: model, logo: null, color: '#6b7280' };
+                  const isActive = activeAIModels.has(model);
                   return (
-                    <div key={model} className={`relative overflow-hidden bg-gradient-to-r ${config.gradient} p-[1px] rounded-2xl transition-all duration-300 ${
-                      activeAIModels.has(model) ? 'shadow-lg scale-105' : 'hover:scale-102'
-                    }`}>
-                      <div className="bg-background dark:bg-background/95 backdrop-blur-sm rounded-2xl p-4 flex items-center space-x-3">
+                    <div
+                      key={model}
+                      className={`rounded-2xl border-2 transition-all duration-300 bg-background dark:bg-background/95 p-4 flex items-center space-x-3 ${
+                        isActive ? 'shadow-lg scale-105' : 'hover:scale-102 border-zinc-200 dark:border-zinc-700'
+                      }`}
+                      style={isActive ? { borderColor: config.color } : undefined}
+                    >
                         <button
                           onClick={() => {
                             const newActive = new Set(activeAIModels);
@@ -2336,22 +2340,20 @@ Let's start the self-listen session!`;
                             setActiveAIModels(newActive);
                           }}
                           className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
-                            activeAIModels.has(model) 
-                              ? `bg-gradient-to-r ${config.gradient} shadow-md` 
-                              : 'bg-gray-300 dark:bg-gray-600'
+                            isActive ? 'shadow-md' : 'bg-gray-300 dark:bg-gray-600'
                           }`}
+                          style={isActive ? { backgroundColor: config.color } : undefined}
                         >
                           <div className={`w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 absolute top-0.5 flex items-center justify-center ${
-                            activeAIModels.has(model) ? 'translate-x-6' : 'translate-x-0.5'
+                            isActive ? 'translate-x-6' : 'translate-x-0.5'
                           }`}>
-                            {activeAIModels.has(model) && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
+                            {isActive && <div className="w-2 h-2 bg-white/70 rounded-full"></div>}
                           </div>
                         </button>
                         <div className="flex items-center space-x-3">
                           {config.logo}
                           <span className="text-sm font-semibold text-foreground">{config.name}</span>
                         </div>
-                      </div>
                     </div>
                   );
                 })}
