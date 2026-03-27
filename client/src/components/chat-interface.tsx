@@ -787,7 +787,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setInputValue("");
 
     // Add user message only to nomadMessages for each active model (NOT to shared messages state)
-    const modelsToCall = nomadModels.filter(m => activeAIModels.has(m.id));
+    // If solo mode is active, only send to that one model
+    const modelsToCall = nomadSoloModel
+      ? nomadModels.filter(m => m.id === nomadSoloModel)
+      : nomadModels.filter(m => activeAIModels.has(m.id));
     setNomadMessages(prev => {
       const updated = { ...prev };
       for (const model of modelsToCall) {
@@ -2234,14 +2237,16 @@ Let's start the self-listen session!`;
               'forus-ai': { name: 'Forus Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#a855f7' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
+            const modelSlug = (id: string) => id === 'gpt-4o' ? 'chatgpt' : id === 'claude-3.5-sonnet' ? 'claude' : id === 'gemini-pro' ? 'gemini' : id === 'grok-4' ? 'grok' : id === 'deepseek-r1' ? 'deepseek' : id === 'forus-ai' ? 'forus' : id;
             return (
-            <div className="w-full min-h-full">
-              <div className="max-w-7xl mx-auto px-2 py-4">
-                <h2 className="text-2xl font-bold text-foreground mb-5 flex items-center">
+            /* min-h-full ensures grid background stretches to bottom even with little content */
+            <div className="w-full min-h-full flex flex-col">
+              <div className="px-4 pt-4 pb-2">
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                   Nomad - Multi-AI
                 </h2>
 
-                {/* Solo mode: back + minimized other model icons */}
+                {/* Solo mode: back button + other model pills */}
                 {nomadSoloModel && (
                   <div className="flex gap-2 mb-4 items-center flex-wrap">
                     <button
@@ -2257,137 +2262,143 @@ Let's start the self-listen session!`;
                           key={m.id}
                           onClick={() => setNomadSoloModel(m.id)}
                           title={cfg.name}
-                          className="w-10 h-10 rounded-full border-2 flex items-center justify-center bg-card/80 hover:scale-110 transition-all"
+                          className="w-8 h-8 rounded-full border-2 flex items-center justify-center bg-card hover:scale-110 transition-all overflow-hidden p-1"
                           style={{ borderColor: cfg.color }}
                         >
-                          {cfg.logo}
+                          <img src={`/${m.id === 'gpt-4o' ? 'chatgpt' : m.id === 'claude-3.5-sonnet' ? 'claude' : m.id === 'gemini-pro' ? 'gemini' : m.id === 'perplexity' ? 'perplexity' : m.id === 'grok-4' ? 'grok' : m.id === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
+                            alt={cfg.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
                         </button>
                       );
                     })}
                   </div>
                 )}
+              </div>
 
-                {/* Unified column layout: toggle row + response columns share the same columns with full-height dividers */}
-                {!nomadSoloModel && (
-                  <div className="flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
-                    {nomadModels.map((modelObj, idx) => {
-                      const model = modelObj.id;
-                      const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
-                      const isActive = activeAIModels.has(model);
-                      const isLast = idx === nomadModels.length - 1;
-                      const msgs = nomadMessages[model] || [];
-                      return (
-                        <React.Fragment key={model}>
-                          {/* Each column: toggle + messages stacked */}
-                          <div className="flex-shrink-0 flex flex-col" style={{ minWidth: 220, width: 260 }}>
-                            {/* Toggle card */}
-                            <div
-                              className={`mx-3 mt-2 mb-3 rounded-2xl border-2 transition-all duration-300 bg-card/80 p-4 flex flex-col items-center gap-2`}
-                              style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.2)' }}
-                            >
-                              {config.logo}
-                              <span className="text-[12px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
-                              <div className="flex items-center gap-2">
-                                {/* Toggle switch */}
-                                <button
-                                  onClick={() => {
-                                    const newActive = new Set(activeAIModels);
-                                    if (newActive.has(model)) newActive.delete(model);
-                                    else newActive.add(model);
-                                    setActiveAIModels(newActive);
-                                  }}
-                                  className={`relative w-10 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                  style={isActive ? { backgroundColor: config.color } : undefined}
-                                >
-                                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-all duration-300 absolute top-0.5 ${isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                                </button>
-                                {/* Solo focus icon button */}
-                                <button
-                                  onClick={() => setNomadSoloModel(model)}
-                                  title={`Chat only with ${config.name}`}
-                                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-accent transition-all"
-                                  style={{ color: config.color }}
-                                >
-                                  <Target className="w-4 h-4" />
-                                </button>
-                              </div>
+              {/* === MULTI-MODEL COLUMN LAYOUT === */}
+              {!nomadSoloModel && (
+                <div className="flex flex-nowrap flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
+                  {nomadModels.map((modelObj, idx) => {
+                    const model = modelObj.id;
+                    const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
+                    const isActive = activeAIModels.has(model);
+                    const isLast = idx === nomadModels.length - 1;
+                    const msgs = nomadMessages[model] || [];
+                    return (
+                      <React.Fragment key={model}>
+                        {/* Column */}
+                        <div className="flex-shrink-0 flex flex-col" style={{ width: 230 }}>
+                          {/* Toggle card — compact mid size */}
+                          <div
+                            className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1.5"
+                            style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.25)' }}
+                          >
+                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                              <img
+                                src={`/${model === 'gpt-4o' ? 'chatgpt' : model === 'claude-3.5-sonnet' ? 'claude' : model === 'gemini-pro' ? 'gemini' : model === 'perplexity' ? 'perplexity' : model === 'grok-4' ? 'grok' : model === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
+                                alt={config.name}
+                                className={`w-full h-full object-contain${model === 'forus-ai' ? ' rounded-full' : ''}${model === 'grok-4' ? ' filter brightness-0 dark:brightness-0 dark:invert' : ''}${model === 'gpt-4o' ? ' dark:filter dark:invert' : ''}`}
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
                             </div>
+                            <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  const newActive = new Set(activeAIModels);
+                                  if (newActive.has(model)) newActive.delete(model);
+                                  else newActive.add(model);
+                                  setActiveAIModels(newActive);
+                                }}
+                                className={`relative w-9 h-4.5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                style={isActive ? { backgroundColor: config.color, width: 36, height: 18 } : { width: 36, height: 18 }}
+                              >
+                                <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[1px] ${isActive ? 'translate-x-[17px]' : 'translate-x-[1px]'}`} />
+                              </button>
+                              <button
+                                onClick={() => setNomadSoloModel(model)}
+                                title={`Chat only with ${config.name}`}
+                                className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
+                                style={{ color: config.color }}
+                              >
+                                <Target className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
 
-                            {/* Messages for this model */}
-                            {msgs.length > 0 && (
-                              <div className="mx-3 flex-1 space-y-3 pb-4 overflow-y-auto max-h-[60vh]">
-                                {msgs.map(message => (
-                                  <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary/80 text-secondary-foreground ml-4 flex items-start gap-2' : 'bg-card/80 border border-border/50 text-foreground'}`}>
-                                    {message.role === 'user' ? (
-                                      <span>{message.content}</span>
-                                    ) : (
-                                      <div className="flex items-start gap-2">
-                                        <div className="flex-shrink-0 w-7 h-7 mt-0.5">{config.logo}</div>
-                                        <div className="min-w-0 flex-1">
-                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {nomadIsTyping[model] && (
-                                  <div className="flex space-x-1 p-3">
-                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
-                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
+                          {/* Messages */}
+                          <div className="mx-3 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto">
+                            {msgs.map(message => (
+                              <div
+                                key={message.id}
+                                className={`p-2.5 rounded-lg text-sm ${
+                                  message.role === 'user'
+                                    ? 'bg-secondary text-secondary-foreground ml-3'
+                                    : 'bg-card border border-border text-foreground'
+                                }`}
+                              >
+                                {message.role === 'user' ? (
+                                  <p className="text-sm">{message.content}</p>
+                                ) : (
+                                  <div className="text-sm prose prose-sm max-w-none dark:prose-invert break-words">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                                   </div>
                                 )}
                               </div>
-                            )}
-                            {nomadIsTyping[model] && msgs.length === 0 && (
-                              <div className="mx-3 flex space-x-1 p-3">
+                            ))}
+                            {nomadIsTyping[model] && (
+                              <div className="flex space-x-1 p-2">
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
                               </div>
                             )}
                           </div>
-                          {/* Full-height vertical divider between columns */}
-                          {!isLast && (
-                            <div className="flex-shrink-0 w-px self-stretch" style={{ background: 'rgba(128,128,128,0.5)', minHeight: '100%' }} />
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </div>
-                )}
+                        </div>
+                        {/* Full-height divider */}
+                        {!isLast && (
+                          <div className="flex-shrink-0 w-px" style={{ background: 'rgba(128,128,128,0.5)', alignSelf: 'stretch' }} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
 
-                {/* Solo mode: full-width single column */}
-                {nomadSoloModel && (() => {
-                  const model = nomadSoloModel;
-                  const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
-                  const msgs = nomadMessages[model] || [];
-                  return (
-                    <div className="bg-card/80 border-2 rounded-xl p-4" style={{ borderColor: config.color }}>
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/50">
-                        <div className="w-8 h-8 flex-shrink-0">{config.logo}</div>
+              {/* === SOLO MODE === */}
+              {nomadSoloModel && (() => {
+                const model = nomadSoloModel;
+                const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
+                const msgs = nomadMessages[model] || [];
+                return (
+                  <div className="flex-1 px-4 pb-4">
+                    <div className="bg-card border-2 rounded-xl p-4 h-full flex flex-col" style={{ borderColor: config.color }}>
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border flex-shrink-0">
+                        <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center">
+                          <img src={`/${model === 'gpt-4o' ? 'chatgpt' : model === 'claude-3.5-sonnet' ? 'claude' : model === 'gemini-pro' ? 'gemini' : model === 'perplexity' ? 'perplexity' : model === 'grok-4' ? 'grok' : model === 'deepseek-r1' ? 'deepseek' : 'forus'}-logo.png`}
+                            alt={config.name} className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                        </div>
                         <h3 className="font-semibold text-foreground">{config.name}</h3>
                         {nomadIsTyping[model] && <div className="flex space-x-1 ml-2"><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div></div>}
                       </div>
-                      <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                      <div className="flex-1 overflow-y-auto space-y-3">
                         {msgs.map(message => (
-                          <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary/80 text-secondary-foreground ml-8' : 'bg-muted/60 text-foreground'}`}>
+                          <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary text-secondary-foreground ml-8' : 'bg-muted text-foreground'}`}>
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                           </div>
                         ))}
                       </div>
                     </div>
-                  );
-                })()}
-
-                {/* Empty State */}
-                {!hasMessages && !nomadSoloModel && (
-                  <div className="text-center py-16">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Multi-AI Paradise Awaits</h3>
-                    <p className="text-muted-foreground mb-6">Toggle models above, then send a message to compare all AIs at once</p>
                   </div>
-                )}
-              </div>
+                );
+              })()}
+
+              {/* Empty State */}
+              {!hasMessages && !nomadSoloModel && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Multi-AI Paradise Awaits</h3>
+                  <p className="text-muted-foreground">Toggle models above, then send a message to compare all AIs at once</p>
+                </div>
+              )}
             </div>
             );
           })()
