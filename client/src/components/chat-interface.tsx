@@ -1989,7 +1989,14 @@ Let's start the self-listen session!`;
       </header>
       
       {/* Chat Messages Area */}
-      <div className={`flex-1 overflow-y-auto p-4 ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`} data-testid="chat-messages">
+      <div
+        className={`flex-1 overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`}
+        data-testid="chat-messages"
+        style={activeTab === 'nomad' ? {
+          backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
+        } : undefined}
+      >
         {activeTab === 'ask' ? (
           messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
@@ -2226,18 +2233,15 @@ Let's start the self-listen session!`;
               'deepseek-r1': { name: 'Deepseek v3', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/deepseek-logo.png" alt="Deepseek v3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
               'forus-ai': { name: 'Forus Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#a855f7' },
             };
-            const activeModelsList = nomadModels.filter(m => activeAIModels.has(m.id));
+            const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             return (
-            <div className="max-w-7xl mx-auto relative" style={{
-              backgroundImage: 'linear-gradient(rgba(128,128,128,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.08) 1px, transparent 1px)',
-              backgroundSize: '32px 32px',
-            }}>
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
+            <div className="w-full min-h-full">
+              <div className="max-w-7xl mx-auto px-2 py-4">
+                <h2 className="text-2xl font-bold text-foreground mb-5 flex items-center">
                   Nomad - Multi-AI
                 </h2>
 
-                {/* Solo mode: minimized icons sidebar */}
+                {/* Solo mode: back + minimized other model icons */}
                 {nomadSoloModel && (
                   <div className="flex gap-2 mb-4 items-center flex-wrap">
                     <button
@@ -2253,68 +2257,99 @@ Let's start the self-listen session!`;
                           key={m.id}
                           onClick={() => setNomadSoloModel(m.id)}
                           title={cfg.name}
-                          className="w-9 h-9 rounded-full border-2 flex items-center justify-center bg-card hover:scale-110 transition-all"
+                          className="w-10 h-10 rounded-full border-2 flex items-center justify-center bg-card/80 hover:scale-110 transition-all"
                           style={{ borderColor: cfg.color }}
                         >
-                          <div className="w-5 h-5">{cfg.logo}</div>
+                          {cfg.logo}
                         </button>
                       );
                     })}
                   </div>
                 )}
 
-                {/* Premium AI Model Toggles - single row */}
+                {/* Unified column layout: toggle row + response columns share the same columns with full-height dividers */}
                 {!nomadSoloModel && (
-                  <div className="flex flex-nowrap overflow-x-auto gap-0 mb-6 pb-2" style={{scrollbarWidth: 'thin'}}>
+                  <div className="flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'thin' }}>
                     {nomadModels.map((modelObj, idx) => {
                       const model = modelObj.id;
                       const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
                       const isActive = activeAIModels.has(model);
                       const isLast = idx === nomadModels.length - 1;
+                      const msgs = nomadMessages[model] || [];
                       return (
                         <React.Fragment key={model}>
-                          <div
-                            className={`rounded-2xl border-2 transition-all duration-300 bg-card p-3 flex-shrink-0 flex flex-col items-center gap-1.5 min-w-[100px]`}
-                            style={{ borderColor: isActive ? config.color : 'transparent', opacity: 1 }}
-                          >
-                            <div className="relative">
+                          {/* Each column: toggle + messages stacked */}
+                          <div className="flex-shrink-0 flex flex-col" style={{ minWidth: 220, width: 260 }}>
+                            {/* Toggle card */}
+                            <div
+                              className={`mx-3 mt-2 mb-3 rounded-2xl border-2 transition-all duration-300 bg-card/80 p-4 flex flex-col items-center gap-2`}
+                              style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.2)' }}
+                            >
                               {config.logo}
-                              {/* toggle dot overlay */}
-                              <div
-                                onClick={() => {
-                                  const newActive = new Set(activeAIModels);
-                                  if (newActive.has(model)) newActive.delete(model);
-                                  else newActive.add(model);
-                                  setActiveAIModels(newActive);
-                                }}
-                                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card cursor-pointer transition-colors ${isActive ? 'bg-green-400' : 'bg-gray-400'}`}
-                              />
+                              <span className="text-[12px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
+                              <div className="flex items-center gap-2">
+                                {/* Toggle switch */}
+                                <button
+                                  onClick={() => {
+                                    const newActive = new Set(activeAIModels);
+                                    if (newActive.has(model)) newActive.delete(model);
+                                    else newActive.add(model);
+                                    setActiveAIModels(newActive);
+                                  }}
+                                  className={`relative w-10 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                  style={isActive ? { backgroundColor: config.color } : undefined}
+                                >
+                                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-all duration-300 absolute top-0.5 ${isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                </button>
+                                {/* Solo focus icon button */}
+                                <button
+                                  onClick={() => setNomadSoloModel(model)}
+                                  title={`Chat only with ${config.name}`}
+                                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-accent transition-all"
+                                  style={{ color: config.color }}
+                                >
+                                  <Target className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
-                            <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
-                            <div className="flex flex-col gap-1 w-full items-center">
-                              <button
-                                onClick={() => {
-                                  const newActive = new Set(activeAIModels);
-                                  if (newActive.has(model)) newActive.delete(model);
-                                  else newActive.add(model);
-                                  setActiveAIModels(newActive);
-                                }}
-                                className={`relative w-10 h-5 rounded-full transition-all duration-300 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                style={isActive ? { backgroundColor: config.color } : undefined}
-                              >
-                                <div className={`w-4 h-4 bg-white rounded-full shadow transition-all duration-300 absolute top-0.5 ${isActive ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                              </button>
-                              <button
-                                onClick={() => setNomadSoloModel(model)}
-                                className="text-[10px] px-2 py-0.5 rounded-full border transition-all hover:bg-accent whitespace-nowrap"
-                                style={{ borderColor: config.color, color: config.color }}
-                              >
-                                Chat only
-                              </button>
-                            </div>
+
+                            {/* Messages for this model */}
+                            {msgs.length > 0 && (
+                              <div className="mx-3 flex-1 space-y-3 pb-4 overflow-y-auto max-h-[60vh]">
+                                {msgs.map(message => (
+                                  <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary/80 text-secondary-foreground ml-4 flex items-start gap-2' : 'bg-card/80 border border-border/50 text-foreground'}`}>
+                                    {message.role === 'user' ? (
+                                      <span>{message.content}</span>
+                                    ) : (
+                                      <div className="flex items-start gap-2">
+                                        <div className="flex-shrink-0 w-7 h-7 mt-0.5">{config.logo}</div>
+                                        <div className="min-w-0 flex-1">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {nomadIsTyping[model] && (
+                                  <div className="flex space-x-1 p-3">
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {nomadIsTyping[model] && msgs.length === 0 && (
+                              <div className="mx-3 flex space-x-1 p-3">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
+                              </div>
+                            )}
                           </div>
+                          {/* Full-height vertical divider between columns */}
                           {!isLast && (
-                            <div className="flex-shrink-0 w-px self-stretch mx-1" style={{ background: 'rgba(128,128,128,0.5)' }} />
+                            <div className="flex-shrink-0 w-px self-stretch" style={{ background: 'rgba(128,128,128,0.5)', minHeight: '100%' }} />
                           )}
                         </React.Fragment>
                       );
@@ -2322,96 +2357,34 @@ Let's start the self-listen session!`;
                   </div>
                 )}
 
-                {/* Responses area */}
-                {Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0) ? (
-                  <div className="mb-6">
-                    {nomadSoloModel ? (
-                      /* Solo mode: full-width single column */
-                      (() => {
-                        const model = nomadSoloModel;
-                        const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
-                        return (
-                          <div className="bg-card border-2 rounded-xl p-4" style={{ borderColor: config.color }}>
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                {config.logo}
-                                <h3 className="font-semibold text-foreground">{config.name}</h3>
-                              </div>
-                              <div className={`w-2 h-2 rounded-full ${nomadIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
-                            </div>
-                            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                              {(nomadMessages[model] || []).map(message => (
-                                <div key={message.id} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-secondary text-secondary-foreground ml-8' : 'bg-muted text-muted-foreground'}`}>
-                                  <div className="text-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown></div>
-                                </div>
-                              ))}
-                              {nomadIsTyping[model] && (
-                                <div className="flex space-x-1 p-3">
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      /* Multi mode: horizontal scroll with dividers */
-                      <div className="flex gap-0 overflow-x-auto pb-4 snap-x snap-mandatory" style={{scrollbarWidth: 'thin'}}>
-                        {activeModelsList.map((modelObj, idx) => {
-                          const model = modelObj.id;
-                          const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
-                          const isLast = idx === activeModelsList.length - 1;
-                          return (
-                            <React.Fragment key={model}>
-                              <div className="bg-card border border-border rounded-xl p-4 min-w-80 max-w-96 flex-shrink-0 snap-start">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-6 h-6">{config.logo}</div>
-                                    <h3 className="font-semibold text-foreground text-sm">{config.name}</h3>
-                                  </div>
-                                  <div className={`w-2 h-2 rounded-full ${nomadIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
-                                </div>
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
-                                  {(nomadMessages[model] || []).map(message => (
-                                    <div key={message.id} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-secondary text-secondary-foreground ml-4' : 'bg-muted text-muted-foreground'}`}>
-                                      <div className="text-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown></div>
-                                    </div>
-                                  ))}
-                                  {nomadIsTyping[model] && (
-                                    <div className="flex space-x-1 p-3">
-                                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
-                                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {!isLast && (
-                                <div className="flex-shrink-0 w-px self-stretch mx-2" style={{ background: 'rgba(128,128,128,0.5)' }} />
-                              )}
-                            </React.Fragment>
-                          );
-                        })}
+                {/* Solo mode: full-width single column */}
+                {nomadSoloModel && (() => {
+                  const model = nomadSoloModel;
+                  const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
+                  const msgs = nomadMessages[model] || [];
+                  return (
+                    <div className="bg-card/80 border-2 rounded-xl p-4" style={{ borderColor: config.color }}>
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/50">
+                        <div className="w-8 h-8 flex-shrink-0">{config.logo}</div>
+                        <h3 className="font-semibold text-foreground">{config.name}</h3>
+                        {nomadIsTyping[model] && <div className="flex space-x-1 ml-2"><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div><div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div></div>}
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Empty State for Nomad */
-                  <div className="text-center py-12">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Multi-AI Paradise Awaits</h3>
-                    <p className="text-muted-foreground mb-6">Select AI models above and start chatting to see responses from multiple AIs simultaneously</p>
-                    <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20 rounded-full">
-                        <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
-                        Perfect for comparing different AI perspectives
-                      </span>
-                      <span className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-100 to-green-100 dark:from-blue-900/20 dark:to-green-900/20 rounded-full">
-                        <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-green-500 rounded-full animate-pulse"></div>
-                        Ideal for coders and content creators
-                      </span>
+                      <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                        {msgs.map(message => (
+                          <div key={message.id} className={`p-3 rounded-lg text-sm ${message.role === 'user' ? 'bg-secondary/80 text-secondary-foreground ml-8' : 'bg-muted/60 text-foreground'}`}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  );
+                })()}
+
+                {/* Empty State */}
+                {!hasMessages && !nomadSoloModel && (
+                  <div className="text-center py-16">
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Multi-AI Paradise Awaits</h3>
+                    <p className="text-muted-foreground mb-6">Toggle models above, then send a message to compare all AIs at once</p>
                   </div>
                 )}
               </div>
