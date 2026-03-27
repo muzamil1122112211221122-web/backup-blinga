@@ -2798,7 +2798,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
                         onClick={adjustForus}
                       >
                         <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
@@ -2811,7 +2811,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                         onClick={() => setIsCustomizeModalOpen(true)}
                       >
                         <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
@@ -2825,7 +2825,7 @@ Let's start the self-listen session!`;
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                          className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                           onClick={() => setIsEducationModalOpen(true)}
                         >
                           <GraduationCap className="w-4 h-4" />
@@ -2843,7 +2843,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                         data-testid="button-attachment"
                       >
                         <img 
@@ -2879,7 +2879,7 @@ Let's start the self-listen session!`;
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/5'} rounded-full transition-all`}
+                    className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
                     onClick={toggleListening}
                     disabled={!speechSupported}
                     data-testid="button-mic"
@@ -2898,7 +2898,7 @@ Let's start the self-listen session!`;
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                    className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                     onClick={handleEnhancePrompt}
                     disabled={!inputValue.trim() || isEnhancing}
                     data-testid="button-enhance"
