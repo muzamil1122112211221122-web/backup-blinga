@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useTheme } from "@/components/theme-provider";
 import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
@@ -13,12 +12,6 @@ import chatIcon from "@assets/chats_button_1766857136554.png";
 import voiceIcon from "@assets/voice_button_1766857136553.png";
 import imagineIcon from "@assets/imagine_button_1766857136552.png";
 import historyIcon from "@assets/history_button_1766857136551.png";
-
-import searchIconCopy from "@assets/search_button_-_Copy_1766857136547.png";
-import chatIconCopy from "@assets/chats_button_-_Copy_1766857136548.png";
-import voiceIconCopy from "@assets/voice_button_-_Copy_1766857136548.png";
-import imagineIconCopy from "@assets/imagine_button_-_Copy_1766857136549.png";
-import historyIconCopy from "@assets/history_button_-_Copy_1766857136550.png";
 
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
@@ -98,9 +91,6 @@ export function Sidebar({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { theme } = useTheme();
-
-  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -205,7 +195,7 @@ export function Sidebar({
         <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
-            <img src={isDark ? searchIconCopy : searchIcon} className="absolute left-3 top-1/2 -translate-y-1/2 h-[22px] w-[22px] object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" alt="Search" />
+            <img src={searchIcon} className="btn-icon absolute left-3 top-1/2 -translate-y-1/2 h-[22px] w-[22px] object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" alt="Search" />
             <input
               type="text"
               placeholder="Search"
@@ -222,7 +212,7 @@ export function Sidebar({
               onClick={() => onNewProject?.(false)}
               className="flex-1 flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
             >
-              <img src={isDark ? chatIconCopy : chatIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
+              <img src={chatIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
               <span className="text-[15px] font-medium">Chat</span>
             </button>
             <Button
@@ -240,13 +230,13 @@ export function Sidebar({
           </div>
 
           <button className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <img src={isDark ? voiceIconCopy : voiceIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
+            <img src={voiceIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
           <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
-              <img src={isDark ? imagineIconCopy : imagineIcon} className="h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
+              <img src={imagineIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
               <span className="text-[15px] font-medium">Imagine</span>
             </div>
             <div className="h-1.5 w-1.5 rounded-full bg-blue-500/80 mr-1" />
@@ -256,7 +246,7 @@ export function Sidebar({
         {/* History */}
         <div className="flex-1 overflow-y-auto mt-3 px-3">
           <div className="flex items-center space-x-3 px-3 mb-2 text-zinc-900 dark:text-zinc-100 font-semibold">
-            <img src={isDark ? historyIconCopy : historyIcon} className="h-[22px] w-[22px] object-contain" alt="History" />
+            <img src={historyIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70" alt="History" />
             <span className="text-[15px]">History</span>
           </div>
 
