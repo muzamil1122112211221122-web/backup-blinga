@@ -2211,7 +2211,6 @@ Let's start the self-listen session!`;
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
-                <Brain className="h-6 w-6 mr-2" />
                 Nomad - Multi-AI
               </h2>
               
