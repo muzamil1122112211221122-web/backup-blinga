@@ -1921,7 +1921,7 @@ Let's start the self-listen session!`;
             className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
             data-testid="tab-nomad"
           >
-            Nomad(Coders & Content Creator Heaven)
+            Nomad
           </Button>
           <Button
             variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
