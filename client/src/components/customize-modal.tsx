@@ -6,10 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check, Plus, Trash2, Wand2 } from "lucide-react";
+import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
-import { useCustomTheme, CustomTheme } from "@/hooks/use-custom-theme";
 
 interface CustomizeModalProps {
   isOpen: boolean;
@@ -59,13 +58,6 @@ export function CustomizeModal({
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
   const picInputRef = useRef<HTMLInputElement>(null);
-
-  const { themes: customThemes, activeThemeId, saveTheme, deleteTheme, applyTheme } = useCustomTheme();
-  const [showThemeForm, setShowThemeForm] = useState(false);
-  const [newThemeName, setNewThemeName] = useState('');
-  const [newPrimaryColor, setNewPrimaryColor] = useState('#6366f1');
-  const [newSecondaryColor, setNewSecondaryColor] = useState('#a855f7');
-  const themeFormRef = useRef<HTMLDivElement>(null);
 
   const [localToggles, setLocalToggles] = useState({
     wrapLines: true,
@@ -288,123 +280,6 @@ export function CustomizeModal({
                 </div>
               </div>
 
-              {/* Theme Maker */}
-              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-5 space-y-3" ref={themeFormRef}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 flex items-center gap-2">
-                    <Wand2 className="w-4 h-4" /> Theme Maker
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs border-zinc-300 dark:border-zinc-700 gap-1 px-2"
-                    onClick={() => {
-                      setShowThemeForm(v => !v);
-                      setNewThemeName('');
-                      setNewPrimaryColor('#6366f1');
-                      setNewSecondaryColor('#a855f7');
-                      setTimeout(() => themeFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-                    }}
-                  >
-                    <Plus className="w-3 h-3" /> New
-                  </Button>
-                </div>
-
-                {showThemeForm && (() => {
-                  const PRESETS = [
-                    ['#6366f1','#a855f7'], ['#3b82f6','#06b6d4'], ['#10b981','#84cc16'],
-                    ['#f59e0b','#f97316'], ['#ef4444','#ec4899'], ['#8b5cf6','#6366f1'],
-                    ['#06b6d4','#3b82f6'], ['#f43f5e','#f97316'], ['#14b8a6','#06b6d4'],
-                    ['#a855f7','#ec4899'],
-                  ];
-                  return (
-                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/80 p-3 space-y-3">
-                      <Input
-                        placeholder={`Theme ${customThemes.length + 1}`}
-                        value={newThemeName}
-                        onChange={e => setNewThemeName(e.target.value)}
-                        className="h-8 text-sm bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-                      />
-
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div className="space-y-1.5">
-                          <p className="text-[11px] text-zinc-500 font-medium">Primary</p>
-                          <div className="grid grid-cols-5 gap-1">
-                            {PRESETS.map(([p]) => (
-                              <button key={p} onClick={() => setNewPrimaryColor(p)}
-                                className={`w-full aspect-square rounded-md transition-all ${newPrimaryColor === p ? 'ring-2 ring-offset-1 ring-zinc-400 scale-110' : 'hover:scale-105'}`}
-                                style={{ backgroundColor: p }} />
-                            ))}
-                          </div>
-                          <label className="flex items-center gap-1.5 cursor-pointer group">
-                            <div className="w-7 h-7 rounded-md border-2 border-zinc-300 dark:border-zinc-600 flex items-center justify-center overflow-hidden relative">
-                              <div className="w-full h-full" style={{ backgroundColor: newPrimaryColor }} />
-                              <input type="color" value={newPrimaryColor} onChange={e => setNewPrimaryColor(e.target.value)}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                            </div>
-                            <span className="text-[11px] font-mono text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">{newPrimaryColor} ✎</span>
-                          </label>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <p className="text-[11px] text-zinc-500 font-medium">Secondary</p>
-                          <div className="grid grid-cols-5 gap-1">
-                            {PRESETS.map(([, s]) => (
-                              <button key={s} onClick={() => setNewSecondaryColor(s)}
-                                className={`w-full aspect-square rounded-md transition-all ${newSecondaryColor === s ? 'ring-2 ring-offset-1 ring-zinc-400 scale-110' : 'hover:scale-105'}`}
-                                style={{ backgroundColor: s }} />
-                            ))}
-                          </div>
-                          <label className="flex items-center gap-1.5 cursor-pointer group">
-                            <div className="w-7 h-7 rounded-md border-2 border-zinc-300 dark:border-zinc-600 flex items-center justify-center overflow-hidden relative">
-                              <div className="w-full h-full" style={{ backgroundColor: newSecondaryColor }} />
-                              <input type="color" value={newSecondaryColor} onChange={e => setNewSecondaryColor(e.target.value)}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                            </div>
-                            <span className="text-[11px] font-mono text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300">{newSecondaryColor} ✎</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="h-6 w-full rounded-lg overflow-hidden" style={{ background: `linear-gradient(to right, ${newPrimaryColor}, ${newSecondaryColor})` }} />
-
-                      <div className="flex gap-2 pt-0.5">
-                        <Button size="sm" className="flex-1 h-8 text-xs text-white font-medium" style={{ backgroundColor: newPrimaryColor }}
-                          onClick={() => {
-                            const name = newThemeName.trim() || `Theme ${customThemes.length + 1}`;
-                            saveTheme({ id: Date.now().toString(), name, primaryColor: newPrimaryColor, secondaryColor: newSecondaryColor });
-                            setShowThemeForm(false);
-                            setIsDirty(true);
-                          }}>
-                          Save Theme
-                        </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs px-3" onClick={() => setShowThemeForm(false)}>Cancel</Button>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {customThemes.length > 0 && (
-                  <div className="space-y-1.5">
-                    {customThemes.map(t => (
-                      <div key={t.id}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg border transition-all cursor-pointer ${activeThemeId === t.id ? 'border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
-                        onClick={() => { applyTheme(activeThemeId === t.id ? null : t.id); setIsDirty(true); }}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-5 h-5 rounded-full shadow-sm" style={{ background: `linear-gradient(135deg, ${t.primaryColor}, ${t.secondaryColor})` }} />
-                          <span className="text-sm text-zinc-800 dark:text-zinc-200">{t.name}</span>
-                          {activeThemeId === t.id && <Check className="w-3 h-3 text-green-500" />}
-                        </div>
-                        <button className="text-zinc-400 hover:text-red-500 transition-colors p-1 rounded"
-                          onClick={e => { e.stopPropagation(); deleteTheme(t.id); setIsDirty(true); }}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 

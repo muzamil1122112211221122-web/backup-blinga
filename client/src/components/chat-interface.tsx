@@ -40,7 +40,6 @@ import { LuminNotification } from "./lumin-notification";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
-import { useCustomTheme } from "../hooks/use-custom-theme";
 import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableModel, WebSocketMessage } from "../types/chat";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from 'react-markdown';
@@ -354,7 +353,6 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
-  const { themes: customThemes, activeThemeId, applyTheme: applyCustomTheme } = useCustomTheme();
   const resolvedTheme = theme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : theme;
@@ -1965,56 +1963,6 @@ Let's start the self-listen session!`;
             </TooltipTrigger>
             <TooltipContent>{theme === 'light' ? 'Switch to Dark' : theme === 'dark' ? 'Switch to System' : 'Switch to Light'}</TooltipContent>
           </Tooltip>
-
-          {customThemes.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 sm:h-10 sm:w-10 rounded-2xl border border-border transition-all duration-300 ${activeThemeId ? 'ring-2 ring-offset-1 ring-offset-background' : ''}`}
-                  style={activeThemeId ? { ringColor: customThemes.find(t => t.id === activeThemeId)?.primaryColor } : {}}
-                  title="Custom themes"
-                >
-                  <div className="flex gap-0.5">
-                    {activeThemeId ? (
-                      <>
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: customThemes.find(t => t.id === activeThemeId)?.primaryColor }} />
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: customThemes.find(t => t.id === activeThemeId)?.secondaryColor }} />
-                      </>
-                    ) : (
-                      <Palette className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[180px] bg-white dark:bg-[#1a1a1a] border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl p-1">
-                <div className="px-2 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Custom Themes</div>
-                {customThemes.map(t => (
-                  <DropdownMenuItem
-                    key={t.id}
-                    className={`flex items-center gap-2.5 px-2 py-2 rounded-lg cursor-pointer text-sm ${activeThemeId === t.id ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
-                    onClick={() => applyCustomTheme(activeThemeId === t.id ? null : t.id)}
-                  >
-                    <div className="flex gap-0.5 flex-shrink-0">
-                      <div className="w-3.5 h-3.5 rounded-full border border-white dark:border-zinc-700 shadow-sm" style={{ backgroundColor: t.primaryColor }} />
-                      <div className="w-3.5 h-3.5 rounded-full border border-white dark:border-zinc-700 shadow-sm -ml-1.5" style={{ backgroundColor: t.secondaryColor }} />
-                    </div>
-                    <span className="text-zinc-800 dark:text-zinc-200">{t.name}</span>
-                    {activeThemeId === t.id && <Check className="w-3 h-3 text-green-500 ml-auto" />}
-                  </DropdownMenuItem>
-                ))}
-                {activeThemeId && (
-                  <DropdownMenuItem
-                    className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer text-xs text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
-                    onClick={() => applyCustomTheme(null)}
-                  >
-                    <X className="w-3 h-3" /> Remove custom theme
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
 
           <Tooltip>
             <TooltipTrigger asChild>
