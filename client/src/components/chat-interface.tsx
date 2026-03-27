@@ -2212,7 +2212,7 @@ Let's start the self-listen session!`;
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                 <Brain className="h-6 w-6 mr-2" />
-                Nomad - Multi-AI Paradise (Coders & Content Creator Heaven)
+                Nomad - Multi-AI
               </h2>
               
               {/* Premium AI Model Toggles with Authentic Logos */}
@@ -2325,9 +2325,9 @@ Let's start the self-listen session!`;
                     <div
                       key={model}
                       className={`rounded-2xl border-2 transition-all duration-300 bg-background dark:bg-background/95 p-4 flex items-center space-x-3 ${
-                        isActive ? 'shadow-lg scale-105' : 'hover:scale-102 border-zinc-200 dark:border-zinc-700'
+                        isActive ? 'shadow-lg scale-105' : 'opacity-60 hover:opacity-100 hover:scale-102'
                       }`}
-                      style={isActive ? { borderColor: config.color } : undefined}
+                      style={{ borderColor: config.color }}
                     >
                         <button
                           onClick={() => {
