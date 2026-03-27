@@ -36,7 +36,7 @@ import { CustomizeModal } from "./customize-modal";
 import { ImageGenerationDialog } from "./image-generation-dialog";
 import { EducationModal } from "./education-modal";
 import { VoiceModeModal } from "./voice-mode-modal";
-import { LuminNotification } from "./lumin-notification";
+import { NomadNotification } from "./nomad-notification";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
@@ -365,7 +365,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'lumin' | 'philosopher' | 'forus-games'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'forus-games'>('ask');
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
@@ -414,11 +414,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
-  // Multi-AI states for Lumin tab
-  const [luminMessages, setLuminMessages] = useState<{[model: string]: ChatMessage[]}>({});
+  // Multi-AI states for Nomad tab
+  const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
-  const [luminIsTyping, setLuminIsTyping] = useState<{[model: string]: boolean}>({});
-  const [showLuminNotification, setShowLuminNotification] = useState(true);
+  const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
+  const [showNomadNotification, setShowNomadNotification] = useState(true);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   
   // Settings state
@@ -444,10 +444,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return defaultSettingsToggles;
   });
   const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
-  const [luminModels, setLuminModels] = useState<{name: string, provider: string, id: string}[]>([]);
+  const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
 
   useEffect(() => {
-    // Sync luminModels with aiOrder
+    // Sync nomadModels with aiOrder
     const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
       'gpt-4o': { name: 'ChatGPT 5', provider: 'openai', id: 'gpt-4o' },
       'claude-3.5-sonnet': { name: 'Claude Sonnet 4', provider: 'anthropic', id: 'claude-3.5-sonnet' },
@@ -458,11 +458,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'forus-ai': { name: 'Forus Pro', provider: 'forus', id: 'forus-ai' }
     };
 
-    const newLuminModels = aiOrder
+    const newNomadModels = aiOrder
       .map(id => modelMap[id])
       .filter(Boolean);
     
-    setLuminModels(newLuminModels);
+    setNomadModels(newNomadModels);
   }, [aiOrder]);
 
   useEffect(() => {
@@ -774,10 +774,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     );
   };
 
-  const handleLuminSendMessage = async (content: string) => {
+  const handleNomadSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      conversationId: 'lumin',
+      conversationId: 'nomad',
       role: 'user',
       content,
       createdAt: new Date(),
@@ -787,10 +787,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setInputValue("");
     
     // Send to each selected model in order
-    const modelsToCall = luminModels.filter(m => activeAIModels.has(m.id));
+    const modelsToCall = nomadModels.filter(m => activeAIModels.has(m.id));
     
     for (const model of modelsToCall) {
-      setLuminIsTyping(prev => ({ ...prev, [model.id]: true }));
+      setNomadIsTyping(prev => ({ ...prev, [model.id]: true }));
       
       try {
         const response = await fetch('/api/test-ai', {
@@ -798,7 +798,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: content,
-            conversationId: 'lumin',
+            conversationId: 'nomad',
             model: model.id,
             provider: model.provider
           }),
@@ -808,7 +808,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           const result = await response.json();
           const aiMessage: ChatMessage = {
             id: `${Date.now()}-${model.id}`,
-            conversationId: 'lumin',
+            conversationId: 'nomad',
             role: 'assistant',
             content: result.response,
             createdAt: new Date(),
@@ -817,7 +817,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               modelName: model.name
             }
           };
-          setLuminMessages(prev => ({
+          setNomadMessages(prev => ({
             ...prev,
             [model.id]: [...(prev[model.id] || []), aiMessage]
           }));
@@ -825,7 +825,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       } catch (error) {
         console.error(`Error calling ${model.name}:`, error);
       } finally {
-        setLuminIsTyping(prev => ({ ...prev, [model.id]: false }));
+        setNomadIsTyping(prev => ({ ...prev, [model.id]: false }));
       }
     }
   };
@@ -1042,9 +1042,9 @@ IMPORTANT RULES:
       setTimeout(() => projectStatusBar.classList.remove('animate-bounce'), 1000);
     }
 
-    // Handle Lumin multi-AI mode
-    if (activeTab === 'lumin' && activeAIModels.size > 0) {
-      await handleLuminSendMessage(content);
+    // Handle Nomad multi-AI mode
+    if (activeTab === 'nomad' && activeAIModels.size > 0) {
+      await handleNomadSendMessage(content);
       return;
     }
 
@@ -1858,12 +1858,12 @@ Let's start the self-listen session!`;
 
 
 
-  // Check if any Lumin model is typing for thinking animation
-  const isAnyLuminModelTyping = Object.values(luminIsTyping).some(typing => typing);
+  // Check if any Nomad model is typing for thinking animation
+  const isAnyNomadModelTyping = Object.values(nomadIsTyping).some(typing => typing);
 
   return (
     <TooltipProvider delayDuration={400}>
-    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyLuminModelTyping) ? 'ai-thinking' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -1915,13 +1915,13 @@ Let's start the self-listen session!`;
             Ask
           </Button>
           <Button
-            variant={activeTab === 'lumin' ? 'secondary' : 'ghost'}
+            variant={activeTab === 'nomad' ? 'secondary' : 'ghost'}
             size="sm"
-            onClick={() => setActiveTab('lumin')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'lumin' ? 'bg-secondary' : ''}`}
-            data-testid="tab-lumin"
+            onClick={() => setActiveTab('nomad')}
+            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
+            data-testid="tab-nomad"
           >
-            Lumin(Coders & Content Creator Heaven)
+            Nomad(Coders & Content Creator Heaven)
           </Button>
           <Button
             variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
@@ -2206,18 +2206,18 @@ Let's start the self-listen session!`;
             <div ref={messagesEndRef} />
           </div>
         )
-        ) : activeTab === 'lumin' ? (
-          // Lumin Tab - Multi-AI Interface
+        ) : activeTab === 'nomad' ? (
+          // Nomad Tab - Multi-AI Interface
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
                 <Brain className="h-6 w-6 mr-2" />
-                Lumin - Multi-AI Paradise (Coders & Content Creator Heaven)
+                Nomad - Multi-AI Paradise (Coders & Content Creator Heaven)
               </h2>
               
               {/* Premium AI Model Toggles with Authentic Logos */}
               <div className="flex flex-wrap gap-4 mb-8">
-                {luminModels.map((modelObj) => {
+                {nomadModels.map((modelObj) => {
                   const model = modelObj.id;
                   const configMap: {[key: string]: {name: string, logo: any, color: string}} = {
                     'gpt-4o': { 
@@ -2360,10 +2360,10 @@ Let's start the self-listen session!`;
               </div>
               
               {/* Multi-AI Responses - Horizontal Scrolling */}
-              {Object.keys(luminMessages).length > 0 && (
+              {Object.keys(nomadMessages).length > 0 && (
                 <div className="mb-6">
                   <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory" style={{scrollbarWidth: 'thin'}}>
-                    {luminModels.filter(m => activeAIModels.has(m.id)).map(modelObj => {
+                    {nomadModels.filter(m => activeAIModels.has(m.id)).map(modelObj => {
                       const model = modelObj.id;
                       const getModelConfig = (model: string) => {
                         switch(model) {
@@ -2414,11 +2414,11 @@ Let's start the self-listen session!`;
                               <h3 className="font-semibold text-foreground">{config.name}</h3>
                             </div>
                             <div className={`w-2 h-2 rounded-full ${
-                              luminIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
+                              nomadIsTyping[model] ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
                             }`} />
                           </div>
                           <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {(luminMessages[model] || []).map(message => (
+                            {(nomadMessages[model] || []).map(message => (
                               <div key={message.id} className={`p-3 rounded-lg ${
                                 message.role === 'user' 
                                   ? 'bg-secondary text-secondary-foreground ml-4' 
@@ -2431,7 +2431,7 @@ Let's start the self-listen session!`;
                                 </div>
                               </div>
                             ))}
-                            {luminIsTyping[model] && (
+                            {nomadIsTyping[model] && (
                               <div className="flex space-x-1 p-3">
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
                                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
@@ -2446,8 +2446,8 @@ Let's start the self-listen session!`;
                 </div>
               )}
               
-              {/* Empty State for Lumin */}
-              {Object.keys(luminMessages).length === 0 && (
+              {/* Empty State for Nomad */}
+              {Object.keys(nomadMessages).length === 0 && (
                 <div className="text-center py-12">
                   <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -3017,9 +3017,9 @@ Let's start the self-listen session!`;
         onTogglePlaying={() => {}}
       />
 
-      {/* Lumin Notification - Show in both tabs */}
-      {showLuminNotification && (
-        <LuminNotification onClose={() => setShowLuminNotification(false)} />
+      {/* Nomad Notification - Show in both tabs */}
+      {showNomadNotification && (
+        <NomadNotification onClose={() => setShowNomadNotification(false)} />
       )}
 
       {/* Hidden file input elements */}

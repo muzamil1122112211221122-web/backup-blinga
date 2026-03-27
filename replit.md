@@ -3,9 +3,9 @@
 Forus Heavy API is a real-time chat application built with React, Express.js, and WebSockets. The application provides an AI-powered conversational interface with support for multiple AI models, customizable conversation presets, and real-time communication. The frontend uses modern React with TypeScript and Tailwind CSS for styling, while the backend implements a RESTful API with WebSocket support for live chat functionality.
 
 ## Recent Updates (August 21, 2025)
-- **✓ Lumin Multi-AI Interface Perfected**: Fixed all connection errors, added authentic AI provider logos (ChatGPT, Claude, Gemini, Perplexity), implemented scrollable message history, and robust error handling with /api/test-ai endpoint
+- **✓ Nomad Multi-AI Interface Perfected**: Fixed all connection errors, added authentic AI provider logos (ChatGPT, Claude, Gemini, Perplexity), implemented scrollable message history, and robust error handling with /api/test-ai endpoint
 - **✓ Authentic AI Provider Logos**: Integrated official logo assets for ChatGPT, Claude, Gemini, and Perplexity with proper gradient backgrounds and invert filters for professional appearance
-- **✓ Enhanced Lumin Functionality**: Removed Llama model, added Perplexity support, fixed TypeScript errors with proper ChatMessage conversationId, and implemented comprehensive multi-AI message sending
+- **✓ Enhanced Nomad Functionality**: Removed Llama model, added Perplexity support, fixed TypeScript errors with proper ChatMessage conversationId, and implemented comprehensive multi-AI message sending
 - **✓ Advanced Multi-API Integration**: Implemented intelligent API manager with Groq as primary, 10 OpenRouter keys for load balancing, OpenAI as fallback, and Gemini for image generation
 - **✓ Smart API Load Balancing**: Automatic failover system with credit monitoring, rate limit detection, and intelligent key rotation for maximum reliability
 - **✓ Comprehensive API Testing**: Built-in testing system to verify all API connections with detailed diagnostics and recommendations

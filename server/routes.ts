@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversation = { model: 'forus-prime', preset: 'custom' } as any;
       }
 
-      // Override conversation model with Lumin model if specified
+      // Override conversation model with Nomad model if specified
       if (model && provider) {
         // Create a temporary config object for AI processing, not a full Conversation
         const conversationConfig = { 
@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Force all Lumin models to use working Groq API for reliable responses
+      // Force all Nomad models to use working Groq API for reliable responses
       try {
         let aiResponse;
         
@@ -1163,11 +1163,11 @@ Then provide your final answer. Always show your thinking process like DeepSeek 
 
   const systemPrompt = getModelPersonality(model);
 
-  // Use reliable Groq API for all Lumin models to ensure consistent responses
+  // Use reliable Groq API for all Nomad models to ensure consistent responses
   try {
-    console.log(`Lumin requesting ${model} via ${provider} - routing to Groq for reliability`);
+    console.log(`Nomad requesting ${model} via ${provider} - routing to Groq for reliability`);
     
-    // Always use Groq for Lumin since it's fast and reliable
+    // Always use Groq for Nomad since it's fast and reliable
     const groqApi = apiManager['apis'].find(api => api.provider === 'groq' && api.isWorking);
     if (groqApi) {
       const groqModel = mapToGroqModel(model);

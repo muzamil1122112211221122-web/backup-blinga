@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface LuminNotificationProps {
+interface NomadNotificationProps {
   onClose?: () => void;
 }
 
-export function LuminNotification({ onClose }: LuminNotificationProps) {
+export function NomadNotification({ onClose }: NomadNotificationProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isAnimated, setIsAnimated] = useState(false);
 
@@ -40,8 +40,8 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
           {/* Anime Boy Avatar - High Quality */}
           <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg bg-gradient-to-br from-blue-500 to-purple-600">
             <img 
-              src="/lumin-avatar.png" 
-              alt="Lumin Avatar" 
+              src="/nomad-avatar.png" 
+              alt="Nomad Avatar" 
               className="w-full h-full object-cover select-none"
               style={{
                 imageRendering: 'crisp-edges',
@@ -70,7 +70,7 @@ export function LuminNotification({ onClose }: LuminNotificationProps) {
 
           <div className="flex-1">
             <h3 className="font-semibold text-lg flex items-center space-x-2">
-              <span>Meet Lumin</span>
+              <span>Meet Nomad</span>
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             </h3>
             <p className="text-sm text-white/90">

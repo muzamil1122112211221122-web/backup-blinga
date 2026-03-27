@@ -145,7 +145,7 @@ export function CustomizeModal({
     { id: 'customize', label: 'General', icon: Sliders },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'behavior', label: 'Behavior', icon: Zap },
-    { id: 'data', label: 'Lumin Settings', icon: Database },
+    { id: 'data', label: 'Nomad Settings', icon: Database },
   ];
 
   return (
