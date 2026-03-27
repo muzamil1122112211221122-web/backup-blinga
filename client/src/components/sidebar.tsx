@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
@@ -215,18 +216,22 @@ export function Sidebar({
               <img src={chatIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
               <span className="text-[15px] font-medium">Chat</span>
             </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                onNewProject?.(false);
-              }}
-              className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-              title="New Chat"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNewProject?.(false);
+                  }}
+                  className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>New Chat</TooltipContent>
+            </Tooltip>
           </div>
 
           <button className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
@@ -279,28 +284,38 @@ export function Sidebar({
                                   autoFocus
                                 />
                                 <div className="flex space-x-1">
-                                  <Button
-                                    size="sm"
-                                    className="h-6 px-2 text-[10px]"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEditProject?.(chat.id, editTitle);
-                                      setEditingProject(null);
-                                    }}
-                                  >
-                                    <Check className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingProject(null);
-                                    }}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        className="h-6 px-2 text-[10px]"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onEditProject?.(chat.id, editTitle);
+                                          setEditingProject(null);
+                                        }}
+                                      >
+                                        <Check className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Save</TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingProject(null);
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Cancel</TooltipContent>
+                                  </Tooltip>
                                 </div>
                               </div>
                             ) : (
@@ -311,25 +326,35 @@ export function Sidebar({
                           </div>
                           {hoveredProject === chat.id && editingProject !== chat.id && (
                             <div className="flex items-center space-x-1 ml-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditTitle(chat.title);
-                                  setEditingProject(chat.id);
-                                }}
-                                className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                              >
-                                <PenTool className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDeleteProject(chat.id);
-                                }}
-                                className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditTitle(chat.title);
+                                      setEditingProject(chat.id);
+                                    }}
+                                    className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                  >
+                                    <PenTool className="h-3 w-3" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Rename</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDeleteProject(chat.id);
+                                    }}
+                                    className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete</TooltipContent>
+                              </Tooltip>
                             </div>
                           )}
                         </div>
@@ -400,12 +425,17 @@ export function Sidebar({
                           autoFocus
                           className="h-8 text-sm"
                         />
-                        <button
-                          onClick={handleRenameSubmit}
-                          className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={handleRenameSubmit}
+                              className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Save name</TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   ) : (
@@ -460,12 +490,17 @@ export function Sidebar({
                   <ChevronUp className={`h-4 w-4 text-zinc-400 transition-transform flex-shrink-0 ${profileMenuOpen ? '' : 'rotate-180'}`} />
                 </button>
                 {closeButtonPosition === 'bottom' && (
-                  <button
-                    onClick={onClose}
-                    className="ml-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={onClose}
+                        className="ml-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Close sidebar</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             </div>

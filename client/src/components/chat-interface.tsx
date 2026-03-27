@@ -1916,42 +1916,62 @@ Let's start the self-listen session!`;
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2">
-          <Button
-            variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('ask')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
-            data-testid="tab-ask"
-          >
-            Ask
-          </Button>
-          <Button
-            variant={activeTab === 'nomad' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('nomad')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
-            data-testid="tab-nomad"
-          >
-            Nomad
-          </Button>
-          <Button
-            variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('philosopher')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
-            data-testid="tab-philosopher"
-          >
-            Philosophers & {user?.displayName || user?.username || 'You'}
-          </Button>
-          <Button
-            variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab('forus-games')}
-            className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
-            data-testid="tab-forus-games"
-          >
-            Forus Games
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('ask')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
+                data-testid="tab-ask"
+              >
+                Ask
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Chat with Forus AI</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTab === 'nomad' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('nomad')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
+                data-testid="tab-nomad"
+              >
+                Nomad
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Compare all AIs side by side</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('philosopher')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
+                data-testid="tab-philosopher"
+              >
+                Philosophers & {user?.displayName || user?.username || 'You'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Chat with historical figures</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('forus-games')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
+                data-testid="tab-forus-games"
+              >
+                Forus Games
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Play games with AI</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
