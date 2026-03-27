@@ -2448,7 +2448,6 @@ Let's start the self-listen session!`;
               {/* Empty State for Nomad */}
               {Object.keys(nomadMessages).length === 0 && (
                 <div className="text-center py-12">
-                  <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
                     Multi-AI Paradise Awaits
                   </h3>
