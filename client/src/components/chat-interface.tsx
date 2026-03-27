@@ -2087,39 +2087,47 @@ Let's start the self-listen session!`;
                     {/* User Message Action Buttons */}
                     <div className="flex items-center justify-end mt-3 pt-3 border-t border-border">
                       <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                            copiedMessageId === message.id 
-                              ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
-                              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                          }`}
-                          onClick={() => handleCopyMessage(message.content, message.id)}
-                          data-testid={`button-copy-user-${message.id}`}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150"
-                          onClick={() => {
-                            // Fill input with user message content for re-editing
-                            setInputValue(message.content);
-                            // Focus the input
-                            setTimeout(() => {
-                              const inputElement = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement;
-                              if (inputElement) {
-                                inputElement.focus();
-                                inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
-                              }
-                            }, 100);
-                          }}
-                          data-testid={`button-redo-user-${message.id}`}
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`h-6 w-6 rounded-xl transition-all duration-300 ${
+                                copiedMessageId === message.id 
+                                  ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                              }`}
+                              onClick={() => handleCopyMessage(message.content, message.id)}
+                              data-testid={`button-copy-user-${message.id}`}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150"
+                              onClick={() => {
+                                setInputValue(message.content);
+                                setTimeout(() => {
+                                  const inputElement = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement;
+                                  if (inputElement) {
+                                    inputElement.focus();
+                                    inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+                                  }
+                                }, 100);
+                              }}
+                              data-testid={`button-redo-user-${message.id}`}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Edit message</p></TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>
@@ -2134,70 +2142,95 @@ Let's start the self-listen session!`;
                       <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                         <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                              copiedMessageId === message.id 
-                                ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
-                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                            }`}
-                            onClick={() => handleCopyMessage(message.content, message.id)}
-                            data-testid={`button-copy-${message.id}`}
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                              likedMessages.has(message.id)
-                                ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                            }`}
-                            onClick={() => handleLikeMessage(message.id)}
-                            data-testid={`button-like-${message.id}`}
-                          >
-                            <ThumbsUp className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                              dislikedMessages.has(message.id)
-                                ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                            }`}
-                            onClick={() => handleDislikeMessage(message.id)}
-                            data-testid={`button-dislike-${message.id}`}
-                          >
-                            <ThumbsDown className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-200 ${
-                              isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                            onClick={() => handleSpeakMessage(message.content)}
-                            data-testid={`button-speak-${message.id}`}
-                          >
-                            {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 rounded-xl transition-all duration-150 ${
-                              retryingMessageId === message.id
-                                ? 'text-blue-500 animate-spin'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                            }`}
-                            onClick={() => handleRetryMessage(message.id)}
-                            disabled={retryingMessageId === message.id}
-                            data-testid={`button-retry-${message.id}`}
-                          >
-                            <RefreshCw className="h-3 w-3" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
+                                  copiedMessageId === message.id 
+                                    ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                }`}
+                                onClick={() => handleCopyMessage(message.content, message.id)}
+                                data-testid={`button-copy-${message.id}`}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
+                                  likedMessages.has(message.id)
+                                    ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                }`}
+                                onClick={() => handleLikeMessage(message.id)}
+                                data-testid={`button-like-${message.id}`}
+                              >
+                                <ThumbsUp className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{likedMessages.has(message.id) ? 'Liked' : 'Like'}</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
+                                  dislikedMessages.has(message.id)
+                                    ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                }`}
+                                onClick={() => handleDislikeMessage(message.id)}
+                                data-testid={`button-dislike-${message.id}`}
+                              >
+                                <ThumbsDown className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{dislikedMessages.has(message.id) ? 'Disliked' : 'Dislike'}</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-200 ${
+                                  isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                                onClick={() => handleSpeakMessage(message.content)}
+                                data-testid={`button-speak-${message.id}`}
+                              >
+                                {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{isSpeaking ? 'Stop speaking' : 'Speak'}</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-150 ${
+                                  retryingMessageId === message.id
+                                    ? 'text-blue-500 animate-spin'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                }`}
+                                onClick={() => handleRetryMessage(message.id)}
+                                disabled={retryingMessageId === message.id}
+                                data-testid={`button-retry-${message.id}`}
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Retry</p></TooltipContent>
+                          </Tooltip>
                         </div>
 
                       </div>
@@ -2320,14 +2353,18 @@ Let's start the self-listen session!`;
                               >
                                 <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[1px] ${isActive ? 'translate-x-[17px]' : 'translate-x-[1px]'}`} />
                               </button>
-                              <button
-                                onClick={() => setNomadSoloModel(model)}
-                                title={`Chat only with ${config.name}`}
-                                className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
-                                style={{ color: config.color }}
-                              >
-                                <Target className="w-3.5 h-3.5" />
-                              </button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setNomadSoloModel(model)}
+                                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
+                                    style={{ color: config.color }}
+                                  >
+                                    <Target className="w-3.5 h-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Chat only with {config.name}</p></TooltipContent>
+                              </Tooltip>
                             </div>
                           </div>
 
