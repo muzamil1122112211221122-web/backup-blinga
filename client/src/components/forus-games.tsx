@@ -752,50 +752,52 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const [activeGame, setActiveGame] = useState<GameId>('menu');
   const [pendingGame, setPendingGame] = useState<GameId | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Level>('medium');
+  const [lbTimeFilter, setLbTimeFilter] = useState('All Time');
+  const [lbCatFilter, setLbCatFilter] = useState('All');
 
   const GAMES = [
     {
-      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', desc: 'Solve math problems — 10s per question',
-      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-blue-600',
+      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
+      gradient: 'from-sky-400 via-blue-500 to-blue-800',
       preview: (
-        <div className="flex items-center gap-1.5 font-mono font-bold text-base">
-          <span className="bg-white/20 text-white px-2 py-0.5 rounded-lg">7</span>
-          <span className="text-white/50">×</span>
-          <span className="bg-white/20 text-white px-2 py-0.5 rounded-lg">8</span>
-          <span className="text-white/50">=</span>
-          <span className="bg-yellow-300/30 text-yellow-200 px-2 py-0.5 rounded-lg border border-yellow-300/40">?</span>
+        <div className="flex items-center gap-2 font-mono font-bold text-lg drop-shadow-lg">
+          <span className="bg-white/25 text-white px-2.5 py-1 rounded-xl shadow-inner">7</span>
+          <span className="text-white/60 text-sm">×</span>
+          <span className="bg-white/25 text-white px-2.5 py-1 rounded-xl shadow-inner">8</span>
+          <span className="text-white/60 text-sm">=</span>
+          <span className="bg-yellow-300/40 text-yellow-100 px-2.5 py-1 rounded-xl border border-yellow-300/50 shadow-inner">?</span>
         </div>
       ),
     },
     {
-      id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', desc: 'Unscramble letters — 10s per word',
-      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-emerald-600',
+      id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', category: 'WORD',
+      gradient: 'from-emerald-400 via-green-500 to-green-800',
       preview: (
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {['P','L','N','A','E','T'].map((l, i) => (
-            <div key={i} className={`w-7 h-7 rounded-md text-[11px] font-bold flex items-center justify-center text-white ${ ['bg-blue-500/60','bg-purple-500/60','bg-pink-500/60','bg-red-500/60','bg-orange-500/60','bg-green-500/60'][i] }`}>{l}</div>
+            <div key={i} className={`w-8 h-8 rounded-lg text-[13px] font-extrabold flex items-center justify-center text-white shadow-md ${['bg-blue-500/70','bg-purple-500/70','bg-pink-500/70','bg-red-500/70','bg-orange-500/70','bg-teal-500/70'][i]}`}>{l}</div>
           ))}
         </div>
       ),
     },
     {
-      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', desc: 'Match all pairs before time runs out',
-      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-violet-600',
+      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
+      gradient: 'from-violet-400 via-purple-600 to-purple-900',
       preview: (
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1.5">
           {['🦁','❓','🦊','❓','❓','🐸','❓','🦁'].map((e, i) => (
-            <div key={i} className={`w-7 h-7 rounded-md text-sm flex items-center justify-center ${e === '❓' ? 'bg-white/5 border border-white/10 text-zinc-600 text-xs' : 'bg-white/10 text-base'}`}>{e}</div>
+            <div key={i} className={`w-8 h-8 rounded-lg text-base flex items-center justify-center shadow ${e === '❓' ? 'bg-white/10 border border-white/20 text-zinc-500 text-xs' : 'bg-white/20'}`}>{e}</div>
           ))}
         </div>
       ),
     },
     {
-      id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', desc: 'Answer questions — 10s each',
-      accent: 'text-white', iconBg: 'bg-white/20', cardBg: 'bg-orange-500',
+      id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', category: 'QUIZ',
+      gradient: 'from-orange-400 via-orange-500 to-red-700',
       preview: (
-        <div className="grid grid-cols-2 gap-1 w-full">
+        <div className="grid grid-cols-2 gap-1.5 w-full max-w-[180px]">
           {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
-            <div key={i} className={`text-[10px] font-semibold px-2 py-1 rounded-md flex items-center gap-1 ${i === 0 ? 'bg-green-500/20 border border-green-500/40 text-green-300' : 'bg-white/5 text-zinc-500'}`}>
+            <div key={i} className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow ${i === 0 ? 'bg-green-400/30 border border-green-400/50 text-green-200' : 'bg-white/10 text-white/50'}`}>
               <span className="font-bold">{l}.</span><span>{t}</span>
             </div>
           ))}
@@ -803,6 +805,11 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       ),
     },
   ];
+
+  const lb = loadLeaderboard();
+  const catKey: Record<string, keyof AllLeaderboards | null> = { All: null, Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz' };
+  const key = catKey[lbCatFilter];
+  const topEntries = (key ? lb[key] : [...lb.maths, ...lb.word, ...lb.memory, ...lb.quiz].sort((a, b) => b.score - a.score)).slice(0, 3);
 
   const goBack = () => { setActiveGame('menu'); setPendingGame(null); };
 
@@ -818,44 +825,112 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={goBack} />;
 
   return (
-    <div className="flex flex-col">
-      <div className="text-center mb-5">
-        <h2 className="text-3xl font-extrabold mb-1 bg-gradient-to-r from-white via-zinc-300 to-zinc-600 bg-clip-text text-transparent tracking-tight">
-          Forus Games
-        </h2>
-        <p className="text-zinc-500 text-sm">Pick a game · Choose your level · 10s per turn</p>
+    <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
+      {/* Header */}
+      <div className="mb-3 flex-shrink-0">
+        <h2 className="text-xl font-extrabold text-white leading-tight">Train Your Brain</h2>
+        <p className="text-zinc-400 text-xs mt-0.5">Sharpen your mind with quick, fun challenges every day</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        {GAMES.map(g => (
-          <button key={g.id} onClick={() => setPendingGame(g.id)}
-            className={`group flex flex-col p-4 rounded-2xl ${g.cardBg} hover:brightness-110 active:brightness-95 transition-all duration-200 text-left hover:scale-[1.02] active:scale-[0.98] shadow-lg`}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`w-14 h-14 ${g.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden`}>
-                <img src={g.icon} alt={g.label} className="w-11 h-11 object-contain" />
+      <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+        {/* Left: Game Cards */}
+        <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+          {GAMES.map(g => (
+            <button
+              key={g.id}
+              onClick={() => setPendingGame(g.id)}
+              className={`relative rounded-2xl overflow-hidden text-left bg-gradient-to-br ${g.gradient} hover:brightness-110 active:scale-[0.98] transition-all duration-200 flex-shrink-0 shadow-lg`}
+            >
+              {/* Score badge */}
+              <div className="absolute top-2 right-2 bg-black/50 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-semibold">
+                <span>⚡</span><span>0</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className={`font-bold text-base ${g.accent}`}>{g.label}</div>
-                <div className="text-white/60 text-xs mt-0.5 leading-snug">{g.desc}</div>
-              </div>
-              <div className="text-white/40 group-hover:text-white text-sm transition-colors">→</div>
-            </div>
-            <div className="bg-black/20 rounded-xl px-3 py-2.5 flex items-center justify-center min-h-[48px]">
-              {g.preview}
-            </div>
-          </button>
-        ))}
-      </div>
 
-      <button onClick={() => setActiveGame('leaderboard')}
-        className="w-full flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-yellow-500/15 to-orange-500/15 border border-yellow-500/30 rounded-2xl hover:from-yellow-500/25 hover:to-orange-500/25 transition-all duration-200">
-        <span className="text-2xl">🏆</span>
-        <div className="text-left">
-          <div className="font-semibold text-white text-sm">Leaderboard</div>
-          <div className="text-xs text-zinc-500">Top 10 scores for all games</div>
+              {/* Preview area */}
+              <div className="h-[72px] flex items-center justify-center px-4 py-2">
+                {g.preview}
+              </div>
+
+              {/* Bottom info bar */}
+              <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
+                  <img src={g.icon} alt={g.label} className="w-5 h-5 object-contain" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
+                  <span className="inline-block text-white/70 text-[9px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-full mt-0.5">{g.category}</span>
+                </div>
+                <div className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0 shadow-md hover:bg-zinc-100 transition-colors">
+                  Play
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
-        <div className="ml-auto text-zinc-500">→</div>
-      </button>
+
+        {/* Right: Leaderboard */}
+        <div className="w-[148px] flex-shrink-0 rounded-2xl p-3 flex flex-col overflow-hidden" style={{ background: 'rgba(30,40,100,0.85)', border: '1px solid rgba(99,102,241,0.25)' }}>
+          <span className="text-white font-bold text-sm mb-2">Leaderboard</span>
+
+          {/* Time filters */}
+          <div className="flex flex-wrap gap-1 mb-2">
+            {['Day', 'Week', 'Month', 'All Time'].map(f => (
+              <button key={f} onClick={() => setLbTimeFilter(f)}
+                className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors ${lbTimeFilter === f ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Category filters */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            {['All', 'Memory', 'Math', 'Word', 'Quiz'].map(f => (
+              <button key={f} onClick={() => setLbCatFilter(f)}
+                className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors ${lbCatFilter === f ? 'bg-white text-black' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Podium */}
+          <div className="flex items-end justify-center gap-1 mb-3 px-1">
+            {/* 2nd */}
+            <div className="flex flex-col items-center">
+              {topEntries[1] && <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[36px] truncate text-center">{topEntries[1].name}</div>}
+              <div className="w-8 h-8 rounded-full bg-zinc-400 border-2 border-zinc-300 flex items-center justify-center text-white font-extrabold text-sm shadow-lg">2</div>
+              <div className="w-9 h-9 rounded-t-md mt-1" style={{ background: 'rgba(148,163,184,0.35)' }} />
+            </div>
+            {/* 1st */}
+            <div className="flex flex-col items-center -mt-5">
+              {topEntries[0] ? (
+                <>
+                  <div className="text-[9px] text-white font-bold leading-tight text-center">{topEntries[0].score}</div>
+                  <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[40px] truncate text-center">{topEntries[0].name}</div>
+                </>
+              ) : <div className="text-[8px] text-zinc-600 mb-0.5">—</div>}
+              <div className="w-9 h-9 rounded-full bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-white font-extrabold text-base shadow-xl">1</div>
+              <div className="w-9 h-14 rounded-t-md mt-1" style={{ background: 'rgba(234,179,8,0.35)' }} />
+            </div>
+            {/* 3rd */}
+            <div className="flex flex-col items-center">
+              {topEntries[2] && <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[36px] truncate text-center">{topEntries[2].name}</div>}
+              <div className="w-8 h-8 rounded-full bg-orange-500 border-2 border-orange-300 flex items-center justify-center text-white font-extrabold text-sm shadow-lg">3</div>
+              <div className="w-9 h-7 rounded-t-md mt-1" style={{ background: 'rgba(249,115,22,0.35)' }} />
+            </div>
+          </div>
+
+          {topEntries.length === 0 && (
+            <div className="text-center text-zinc-500 text-[9px] -mt-1 mb-2">No scores yet — be first!</div>
+          )}
+
+          {/* My rank */}
+          <div className="rounded-xl px-2.5 py-2 flex items-center gap-1 mt-auto" style={{ background: 'rgba(49,46,129,0.6)' }}>
+            <span className="text-white text-[10px] font-medium truncate flex-1">#0 {playerName || 'You'}</span>
+            <span className="text-indigo-300 text-[8px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(30,27,75,0.8)' }}>You</span>
+            <span className="text-white text-[10px] font-bold">0</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
