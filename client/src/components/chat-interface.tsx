@@ -111,31 +111,58 @@ import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 
+const wikiImageCache = new Map<string, string>();
+const wikiImagePending = new Map<string, Promise<string | null>>();
+
+function fetchWikiImage(articleTitle: string): Promise<string | null> {
+  if (wikiImageCache.has(articleTitle)) return Promise.resolve(wikiImageCache.get(articleTitle)!);
+  if (wikiImagePending.has(articleTitle)) return wikiImagePending.get(articleTitle)!;
+  const title = articleTitle.replace(/ /g, '_');
+  const p = fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`)
+    .then(r => r.json())
+    .then(data => {
+      const url: string | null = data.thumbnail?.source ?? null;
+      if (url) wikiImageCache.set(articleTitle, url);
+      wikiImagePending.delete(articleTitle);
+      return url;
+    })
+    .catch(() => { wikiImagePending.delete(articleTitle); return null; });
+  wikiImagePending.set(articleTitle, p);
+  return p;
+}
+
+function preloadWikiImages(names: string[], concurrency = 6) {
+  let idx = 0;
+  function next() {
+    if (idx >= names.length) return;
+    const name = names[idx++];
+    if (!wikiImageCache.has(name)) {
+      fetchWikiImage(name).finally(next);
+    } else {
+      next();
+    }
+  }
+  for (let i = 0; i < Math.min(concurrency, names.length); i++) next();
+}
+
 function WikiFace({ name, wikiTitle, className = '' }: { name: string; wikiTitle?: string; className?: string }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
   const articleTitle = wikiTitle || name;
+  const [src, setSrc] = useState<string | null>(wikiImageCache.get(articleTitle) ?? null);
 
   useEffect(() => {
-    setSrc(null);
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        observer.disconnect();
-        const title = articleTitle.replace(/ /g, '_');
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`)
-          .then(r => r.json())
-          .then(data => { if (data.thumbnail?.source) setSrc(data.thumbnail.source); })
-          .catch(() => {});
-      }
-    }, { rootMargin: '200px' });
-    observer.observe(el);
-    return () => observer.disconnect();
+    if (wikiImageCache.has(articleTitle)) {
+      setSrc(wikiImageCache.get(articleTitle)!);
+      return;
+    }
+    let cancelled = false;
+    fetchWikiImage(articleTitle).then(url => {
+      if (!cancelled && url) setSrc(url);
+    });
+    return () => { cancelled = true; };
   }, [articleTitle]);
 
   return (
-    <div ref={ref} className={`rounded-full overflow-hidden flex-shrink-0 ${className}`}>
+    <div className={`rounded-full overflow-hidden flex-shrink-0 ${className}`}>
       {src ? (
         <img src={src} alt={name} className="w-full h-full object-cover object-top" />
       ) : (
@@ -375,6 +402,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     window.addEventListener('functionBarStyleChanged', handler);
     return () => window.removeEventListener('functionBarStyleChanged', handler);
   }, []);
+
+  useEffect(() => {
+    preloadWikiImages(HISTORICAL_PERSONALITIES.map(p => p.wikiTitle || p.name));
+  }, []);
+
   const [philosopherMessages, setPhilosopherMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string}>>([]);
   const [philosopherInput, setPhilosopherInput] = useState('');
   const [philosopherIsTyping, setPhilosopherIsTyping] = useState(false);
