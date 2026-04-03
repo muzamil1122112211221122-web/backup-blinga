@@ -3024,7 +3024,7 @@ Let's start the self-listen session!`;
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100"
                   data-testid="button-stop-response"
                 >
-                  <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
+                  <div className="w-4 h-4 rounded-md bg-white dark:bg-zinc-800 flex-shrink-0" />
                 </Button>
               ) : (
                 <Button
