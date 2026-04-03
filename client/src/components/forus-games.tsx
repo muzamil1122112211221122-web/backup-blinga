@@ -758,54 +758,52 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const GAMES = [
     {
       id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
-      bgStyle: { background: 'linear-gradient(135deg, #d946ef 0%, #a855f7 40%, #7c3aed 100%)' },
+      bgStyle: { background: 'linear-gradient(135deg, #e879f9 0%, #c026d3 25%, #9333ea 60%, #6d28d9 100%)' },
+      iconBg: 'rgba(88,28,135,0.85)',
       preview: (
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Subtle grid tile pattern behind */}
-          <div className="absolute inset-0 grid grid-cols-5 grid-rows-3 gap-1.5 p-2 opacity-30">
-            {Array.from({length: 15}).map((_, i) => (
-              <div key={i} className="rounded-lg bg-white/30" />
-            ))}
-          </div>
-          {/* Centered card grid */}
-          <div className="relative grid grid-cols-4 gap-1.5 z-10">
-            {['🦁','','🦊','','','🐸','','🦁'].map((e, i) => (
-              <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-md ${e ? 'bg-white/25' : 'bg-white/10 border border-white/20'}`}>{e}</div>
-            ))}
-          </div>
+        /* Clean grid of card-back tiles — no emojis, pure geometric */
+        <div className="absolute inset-0 grid grid-cols-4 grid-rows-3 gap-[7px] p-3">
+          {Array.from({length: 12}).map((_, i) => (
+            <div key={i} className="rounded-xl" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.12)' }} />
+          ))}
         </div>
       ),
     },
     {
       id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
-      bgStyle: { background: 'linear-gradient(135deg, #bae6fd 0%, #60a5fa 50%, #3b82f6 100%)' },
+      bgStyle: { background: 'linear-gradient(135deg, #e0f2fe 0%, #7dd3fc 35%, #38bdf8 65%, #0284c7 100%)' },
+      iconBg: 'rgba(3,105,161,0.85)',
       preview: (
-        <div className="relative w-full h-full flex flex-col items-center justify-center gap-2">
-          {/* Cloud blobs */}
-          <div className="absolute top-1 left-3 w-10 h-6 rounded-full bg-white/20 blur-sm" />
-          <div className="absolute top-3 left-8 w-14 h-7 rounded-full bg-white/15 blur-sm" />
-          <div className="absolute bottom-2 right-2 w-8 h-5 rounded-full bg-white/20 blur-sm" />
-          {/* Answer input simulation */}
-          <div className="relative z-10 bg-white/25 backdrop-blur-sm rounded-lg px-3 py-1 text-white/60 text-[10px] border border-white/30 mb-1">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 overflow-hidden">
+          {/* Big soft cloud blobs */}
+          <div className="absolute top-[-8px] left-[-10px] w-24 h-16 rounded-full" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(14px)' }} />
+          <div className="absolute top-[4px] left-[20px] w-20 h-12 rounded-full" style={{ background: 'rgba(255,255,255,0.25)', filter: 'blur(10px)' }} />
+          <div className="absolute bottom-[-4px] right-[-8px] w-16 h-10 rounded-full" style={{ background: 'rgba(255,255,255,0.3)', filter: 'blur(12px)' }} />
+          {/* Type answer input */}
+          <div className="relative z-10 rounded-lg px-3 py-1 text-[11px] text-sky-800/70" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.8)' }}>
             Type answer...
           </div>
           {/* Equation */}
-          <div className="relative z-10 flex items-center gap-1.5 font-mono font-bold text-white text-sm drop-shadow">
-            <span className="bg-white/25 px-2 py-0.5 rounded-lg">1</span>
-            <span className="text-white/70">×</span>
-            <span className="bg-white/25 px-2 py-0.5 rounded-lg">4</span>
-          </div>
+          <div className="relative z-10 text-sky-900 font-bold text-[13px]">1 × 4</div>
         </div>
       ),
     },
     {
       id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', category: 'WORD',
-      bgStyle: { background: 'linear-gradient(135deg, #86efac 0%, #4ade80 30%, #16a34a 100%)' },
+      bgStyle: { background: 'linear-gradient(135deg, #86efac 0%, #22c55e 45%, #15803d 100%)' },
+      iconBg: 'rgba(20,83,45,0.85)',
       preview: (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden">
+          {/* Rail track background decoration */}
+          <div className="absolute bottom-0 left-0 right-0 h-3 opacity-30" style={{ background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 8px, transparent 8px, transparent 18px)' }} />
+          <div className="flex gap-1.5 z-10">
+            {['F','O','R','U','S'].map((l, i) => (
+              <div key={i} className="w-8 h-8 rounded-lg text-xs font-extrabold flex items-center justify-center text-white shadow-md" style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.3)' }}>{l}</div>
+            ))}
+          </div>
           <div className="flex gap-1.5 z-10">
             {['W','O','R','D'].map((l, i) => (
-              <div key={i} className={`w-9 h-9 rounded-lg text-sm font-extrabold flex items-center justify-center text-white shadow-md ${['bg-white/30','bg-white/20','bg-white/20','bg-white/30'][i]}`}>{l}</div>
+              <div key={i} className="w-8 h-8 rounded-lg text-xs font-extrabold flex items-center justify-center text-white/50 shadow-md" style={{ background: 'rgba(0,0,0,0.12)', border: '1px solid rgba(255,255,255,0.1)' }}>_</div>
             ))}
           </div>
         </div>
@@ -813,14 +811,18 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
     {
       id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', category: 'QUIZ',
-      bgStyle: { background: 'linear-gradient(135deg, #fb923c 0%, #f97316 40%, #b91c1c 100%)' },
+      bgStyle: { background: 'linear-gradient(135deg, #fbbf24 0%, #f97316 45%, #dc2626 100%)' },
+      iconBg: 'rgba(153,27,27,0.85)',
       preview: (
-        <div className="grid grid-cols-2 gap-1.5 w-full max-w-[160px] z-10">
-          {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
-            <div key={i} className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg flex items-center gap-1 ${i === 0 ? 'bg-green-400/35 border border-green-300/50 text-green-100' : 'bg-white/12 text-white/50'}`}>
-              <span className="font-bold">{l}.</span><span>{t}</span>
-            </div>
-          ))}
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          <div className="grid grid-cols-2 gap-1.5 w-[140px]">
+            {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
+              <div key={i} className="text-[9px] font-semibold px-1.5 py-1 rounded-lg flex items-center gap-0.5"
+                style={{ background: i === 0 ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.15)', border: i === 0 ? '1px solid rgba(74,222,128,0.5)' : '1px solid rgba(255,255,255,0.1)', color: i === 0 ? '#bbf7d0' : 'rgba(255,255,255,0.5)' }}>
+                <span className="font-bold">{l}.</span><span>{t}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ),
     },
@@ -867,22 +869,24 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               }}
             >
               {/* Score badge */}
-              <div className="absolute top-2 right-2 z-20 bg-black/55 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold">
+              <div className="absolute top-2 right-2 z-20 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold tracking-wide">
                 ⚡ 0
               </div>
 
-              {/* Preview area — fills top portion */}
-              <div className="absolute inset-0 bottom-[52px] flex items-center justify-center px-3 py-2 overflow-hidden">
-                {g.preview}
+              {/* Preview area — positioned above the bottom bar */}
+              <div className="absolute inset-0" style={{ bottom: 52 }}>
+                <div className="relative w-full h-full overflow-hidden">
+                  {g.preview}
+                </div>
               </div>
 
               {/* Bottom info bar — frosted glass */}
               <div
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
-                style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,0.15)' }}
+                style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.18)' }}
               >
-                <div className="w-9 h-9 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
-                  <img src={g.icon} alt={g.label} className="w-6 h-6 object-contain" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (g as any).iconBg || 'rgba(0,0,0,0.4)' }}>
+                  <img src={g.icon} alt={g.label} className="w-5 h-5 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
@@ -899,95 +903,86 @@ export function ForusGames({ playerName }: ForusGamesProps) {
           ))}
         </div>
 
-      {/* Leaderboard — full width */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #1a237e 100%)', border: '1px solid rgba(99,102,241,0.35)' }}
-      >
-        {/* Header row */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-white font-extrabold text-base">Leaderboard</span>
-          <div className="flex gap-1">
-            {['Day', 'Week', 'Month', 'All Time'].map(f => (
-              <button key={f} onClick={() => setLbTimeFilter(f)}
-                className={`text-[9px] px-2 py-0.5 rounded-full font-semibold transition-colors ${lbTimeFilter === f ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>
+        {/* Right: Leaderboard panel */}
+        <div
+          className="rounded-2xl overflow-hidden flex-shrink-0 flex flex-col"
+          style={{ width: 168, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
+        >
+          {/* Header */}
+          <div className="px-3 pt-3 pb-1.5">
+            <div className="text-white font-extrabold text-sm mb-2">Leaderboard</div>
+            {/* Time filters */}
+            <div className="flex flex-wrap gap-1">
+              {['Day','Week','Month','All Time'].map(f => (
+                <button key={f} onClick={() => setLbTimeFilter(f)}
+                  className="text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors"
+                  style={{ background: lbTimeFilter === f ? 'rgba(99,102,241,0.8)' : 'transparent', color: lbTimeFilter === f ? '#fff' : '#9ca3af' }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category filters */}
+          <div className="flex flex-wrap gap-1 px-3 pb-2">
+            {['All','Memory','Math','Word','Quiz'].map(f => (
+              <button key={f} onClick={() => setLbCatFilter(f)}
+                className="text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors border"
+                style={{ background: lbCatFilter === f ? '#fff' : 'transparent', color: lbCatFilter === f ? '#000' : '#9ca3af', borderColor: lbCatFilter === f ? '#fff' : '#52525b' }}>
                 {f}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Category filters */}
-        <div className="flex gap-1.5 px-4 pb-3">
-          {['All', 'Memory', 'Math', 'Word', 'Quiz'].map(f => (
-            <button key={f} onClick={() => setLbCatFilter(f)}
-              className={`text-[10px] px-2.5 py-1 rounded-full font-semibold transition-colors border ${lbCatFilter === f ? 'bg-white text-black border-white' : 'text-zinc-400 border-zinc-600 hover:text-zinc-200'}`}>
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Podium */}
-        <div className="flex items-end justify-center gap-5 px-6 pb-1">
-          {/* 2nd place */}
-          <div className="flex flex-col items-center">
-            <div className="text-[10px] text-zinc-300 mb-1 text-center max-w-[56px] truncate font-medium">
-              {topEntries[1]?.name ?? '—'}
+          {/* Podium — compact */}
+          <div className="flex items-end justify-center gap-2 px-2 pb-1 flex-1">
+            {/* 2nd */}
+            <div className="flex flex-col items-center">
+              <div className="text-[8px] text-zinc-400 mb-0.5 truncate max-w-[36px] text-center">{topEntries[1]?.name ?? '—'}</div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #9ca3af, #6b7280)', border: '2px solid rgba(209,213,219,0.7)' }}>2</div>
+              <div className="w-10 rounded-t-lg mt-1"
+                style={{ height: 52, background: 'linear-gradient(to top, rgba(107,114,128,0.6), rgba(148,163,184,0.3))', border: '1px solid rgba(209,213,219,0.2)', borderBottom: 'none' }} />
             </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #9ca3af, #6b7280)', border: '2px solid rgba(209,213,219,0.8)' }}>
-              2
+            {/* 1st */}
+            <div className="flex flex-col items-center">
+              {topEntries[0] ? (
+                <>
+                  <div className="text-white font-extrabold text-xs">{topEntries[0].score}</div>
+                  <div className="text-[8px] text-zinc-300 mb-0.5 truncate max-w-[40px] text-center">{topEntries[0].name}</div>
+                </>
+              ) : (
+                <div className="text-zinc-600 text-[9px] mb-1">Empty</div>
+              )}
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-extrabold text-base shadow-2xl"
+                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', border: '2px solid rgba(253,224,71,0.9)', boxShadow: '0 0 14px rgba(251,191,36,0.55)' }}>1</div>
+              <div className="w-10 rounded-t-lg mt-1"
+                style={{ height: 72, background: 'linear-gradient(to top, rgba(234,179,8,0.65), rgba(251,191,36,0.3))', border: '1px solid rgba(253,224,71,0.25)', borderBottom: 'none' }} />
             </div>
-            <div className="w-16 rounded-t-xl mt-1.5"
-              style={{ height: 64, background: 'linear-gradient(to top, rgba(107,114,128,0.7), rgba(148,163,184,0.4))', border: '1px solid rgba(209,213,219,0.25)', borderBottom: 'none' }} />
+            {/* 3rd */}
+            <div className="flex flex-col items-center">
+              <div className="text-[8px] text-zinc-400 mb-0.5 truncate max-w-[36px] text-center">{topEntries[2]?.name ?? '—'}</div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', border: '2px solid rgba(253,186,116,0.7)' }}>3</div>
+              <div className="w-10 rounded-t-lg mt-1"
+                style={{ height: 36, background: 'linear-gradient(to top, rgba(249,115,22,0.6), rgba(251,146,60,0.3))', border: '1px solid rgba(253,186,116,0.2)', borderBottom: 'none' }} />
+            </div>
           </div>
 
-          {/* 1st place */}
-          <div className="flex flex-col items-center">
-            {topEntries[0] ? (
-              <>
-                <div className="text-white font-extrabold text-sm">{topEntries[0].score}</div>
-                <div className="text-[10px] text-zinc-300 mb-1 max-w-[60px] truncate text-center">{topEntries[0].name}</div>
-              </>
-            ) : (
-              <div className="text-zinc-600 text-xs mb-1">No scores</div>
-            )}
-            <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-xl shadow-2xl"
-              style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', border: '2px solid rgba(253,224,71,0.9)', boxShadow: '0 0 16px rgba(251,191,36,0.5)' }}>
-              1
-            </div>
-            <div className="w-16 rounded-t-xl mt-1.5"
-              style={{ height: 90, background: 'linear-gradient(to top, rgba(234,179,8,0.7), rgba(251,191,36,0.35))', border: '1px solid rgba(253,224,71,0.3)', borderBottom: 'none' }} />
-          </div>
+          {topEntries.length === 0 && (
+            <div className="text-center text-zinc-600 text-[9px] pb-1">Play to appear here!</div>
+          )}
 
-          {/* 3rd place */}
-          <div className="flex flex-col items-center">
-            <div className="text-[10px] text-zinc-300 mb-1 text-center max-w-[56px] truncate font-medium">
-              {topEntries[2]?.name ?? '—'}
-            </div>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', border: '2px solid rgba(253,186,116,0.8)' }}>
-              3
-            </div>
-            <div className="w-16 rounded-t-xl mt-1.5"
-              style={{ height: 44, background: 'linear-gradient(to top, rgba(249,115,22,0.7), rgba(251,146,60,0.35))', border: '1px solid rgba(253,186,116,0.25)', borderBottom: 'none' }} />
+          {/* My rank */}
+          <div className="flex items-center gap-1.5 mx-2 mb-2 mt-1 px-2 py-2 rounded-xl"
+            style={{ background: 'rgba(49,46,129,0.6)', border: '1px solid rgba(99,102,241,0.35)' }}>
+            <span className="text-white text-[10px] font-bold">#0</span>
+            <span className="text-zinc-300 text-[10px] truncate flex-1">{playerName || 'You'}</span>
+            <span className="text-indigo-300 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(30,27,75,0.9)' }}>You</span>
+            <span className="text-white font-bold text-[10px]">0</span>
           </div>
         </div>
-
-        {topEntries.length === 0 && (
-          <div className="text-center text-zinc-500 text-xs py-1">Play a game to appear here!</div>
-        )}
-
-        {/* My rank bar */}
-        <div className="flex items-center justify-between px-4 py-3 mx-3 mb-3 mt-2 rounded-xl"
-          style={{ background: 'rgba(49,46,129,0.55)', border: '1px solid rgba(99,102,241,0.3)' }}>
-          <span className="text-white text-sm font-bold">#0</span>
-          <span className="text-zinc-300 text-sm truncate mx-2 flex-1">{playerName || 'You'}</span>
-          <span className="text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2"
-            style={{ background: 'rgba(30,27,75,0.8)' }}>You</span>
-          <span className="text-white font-bold text-sm">0</span>
-        </div>
-      </div>
 
       </div>
     </div>
