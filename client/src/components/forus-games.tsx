@@ -758,34 +758,38 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const GAMES = [
     {
       id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
-      bgStyle: { background: 'linear-gradient(140deg, #e879f9 0%, #c026d3 30%, #9333ea 65%, #6d28d9 100%)' },
-      iconBg: 'rgba(74,4,78,0.9)',
+      /* Top = bright fuchsia, Bottom = deep violet */
+      bgStyle: { background: 'linear-gradient(to bottom, #f0abfc 0%, #d946ef 30%, #9333ea 70%, #581c87 100%)' },
+      iconBg: 'rgba(74,4,78,0.92)',
+      glowColor: 'rgba(240,171,252,0.7)',
       preview: (
-        /* Full-bleed card-back tile grid — matches reference exactly */
         <div className="absolute inset-0 grid grid-cols-4 gap-[6px] p-[10px]" style={{ gridTemplateRows: 'repeat(3,1fr)' }}>
           {Array.from({length: 12}).map((_, i) => (
-            <div key={i} className="rounded-[10px]" style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.22)' }} />
+            <div key={i} className="rounded-[10px]" style={{ background: 'rgba(255,255,255,0.22)', border: '1.5px solid rgba(255,255,255,0.35)' }} />
           ))}
         </div>
       ),
     },
     {
       id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
-      bgStyle: { background: 'linear-gradient(160deg, #dbeafe 0%, #93c5fd 30%, #60a5fa 60%, #3b82f6 100%)' },
-      iconBg: 'rgba(30,64,175,0.9)',
+      /* Top = pale sky, Bottom = deep blue */
+      bgStyle: { background: 'linear-gradient(to bottom, #e0f2fe 0%, #7dd3fc 30%, #38bdf8 60%, #1e3a8a 100%)' },
+      iconBg: 'rgba(30,58,138,0.92)',
+      glowColor: 'rgba(186,230,253,0.7)',
       preview: (
         <div className="absolute inset-0 overflow-hidden">
-          {/* Large cloud blobs — left side like reference */}
-          <div className="absolute top-[-12px] left-[-18px] w-32 h-20 rounded-full" style={{ background: 'rgba(255,255,255,0.55)', filter: 'blur(18px)' }} />
-          <div className="absolute top-[6px] left-[10px] w-24 h-14 rounded-full" style={{ background: 'rgba(255,255,255,0.4)', filter: 'blur(12px)' }} />
-          <div className="absolute bottom-[-6px] right-[-10px] w-20 h-12 rounded-full" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(14px)' }} />
-          {/* "Type answer..." input — top center like reference */}
-          <div className="absolute top-[10px] left-1/2 -translate-x-1/2 z-10 rounded-full px-3 py-[3px] text-[10px]"
-            style={{ background: 'rgba(255,255,255,0.75)', color: '#64748b', border: '1px solid rgba(255,255,255,0.9)', whiteSpace: 'nowrap' }}>
+          {/* Cloud blobs — fully inside bounds */}
+          <div className="absolute" style={{ top: 0, left: 0, width: 110, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.65)', filter: 'blur(16px)' }} />
+          <div className="absolute" style={{ top: 8, left: 40, width: 90, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.5)', filter: 'blur(12px)' }} />
+          <div className="absolute" style={{ top: 4, right: 0, width: 70, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.4)', filter: 'blur(14px)' }} />
+          {/* "Type answer..." input */}
+          <div className="absolute z-10 rounded-full px-3 py-[3px] text-[10px]"
+            style={{ top: 10, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.82)', color: '#475569', border: '1px solid rgba(255,255,255,0.95)', whiteSpace: 'nowrap' }}>
             Type answer...
           </div>
-          {/* Equation — center */}
-          <div className="absolute bottom-[8px] left-1/2 -translate-x-1/2 z-10 text-blue-900 font-bold text-[15px] whitespace-nowrap">
+          {/* Equation */}
+          <div className="absolute z-10 font-bold text-[16px]"
+            style={{ bottom: 8, left: '50%', transform: 'translateX(-50%)', color: '#1e3a8a', whiteSpace: 'nowrap' }}>
             1 × 4
           </div>
         </div>
@@ -793,8 +797,10 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
     {
       id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', category: 'VOCABULARY',
-      bgStyle: { background: 'linear-gradient(140deg, #a855f7 0%, #9333ea 40%, #7c3aed 75%, #6d28d9 100%)' },
-      iconBg: 'rgba(49,10,80,0.9)',
+      /* Top = bright lavender, Bottom = deep purple */
+      bgStyle: { background: 'linear-gradient(to bottom, #e9d5ff 0%, #c084fc 30%, #9333ea 70%, #3b0764 100%)' },
+      iconBg: 'rgba(49,10,80,0.92)',
+      glowColor: 'rgba(192,132,252,0.7)',
       preview: (
         /* Stacked vocabulary word rows — exactly like reference image 2 */
         <div className="absolute inset-0 flex flex-col justify-center gap-0 px-3 py-2">
@@ -816,8 +822,10 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
     {
       id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', category: 'QUIZ',
-      bgStyle: { background: 'linear-gradient(140deg, #34d399 0%, #10b981 40%, #059669 75%, #065f46 100%)' },
-      iconBg: 'rgba(6,78,59,0.9)',
+      /* Top = bright lime green, Bottom = deep forest */
+      bgStyle: { background: 'linear-gradient(to bottom, #bbf7d0 0%, #4ade80 30%, #16a34a 65%, #14532d 100%)' },
+      iconBg: 'rgba(6,78,59,0.92)',
+      glowColor: 'rgba(134,239,172,0.7)',
       preview: (
         /* Train game scene — green field with tracks */
         <div className="absolute inset-0 overflow-hidden">
@@ -896,6 +904,20 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 </div>
               </div>
 
+              {/* Glowing bottom center outline */}
+              <div className="absolute z-30 pointer-events-none"
+                style={{
+                  bottom: 52,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '60%',
+                  height: 2,
+                  background: (g as any).glowColor || 'rgba(255,255,255,0.7)',
+                  boxShadow: `0 0 12px 5px ${(g as any).glowColor || 'rgba(255,255,255,0.5)'}, 0 0 30px 10px ${(g as any).glowColor?.replace('0.7','0.3') || 'rgba(255,255,255,0.25)'}`,
+                  borderRadius: 9999,
+                }}
+              />
+
               {/* Bottom info bar — frosted glass */}
               <div
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
@@ -919,9 +941,9 @@ export function ForusGames({ playerName }: ForusGamesProps) {
           ))}
         </div>
 
-        {/* Right: Leaderboard panel */}
+        {/* Right: Leaderboard panel — self-start so it doesn't stretch */}
         <div
-          className="rounded-2xl overflow-hidden flex-shrink-0 flex flex-col"
+          className="rounded-2xl overflow-hidden flex-shrink-0 flex flex-col self-start"
           style={{ width: 196, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
         >
           {/* Header + time filters */}
@@ -951,7 +973,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
           </div>
 
           {/* Podium */}
-          <div className="flex items-end justify-center gap-3 px-3 pt-2 pb-1 flex-1">
+          <div className="flex items-end justify-center gap-3 px-3 pt-2 pb-1">
             {/* 2nd place */}
             <div className="flex flex-col items-center">
               <div className="text-[9px] text-zinc-400 mb-1 truncate max-w-[42px] text-center leading-tight">{topEntries[1]?.name ?? '—'}</div>
