@@ -831,9 +831,13 @@
 }
 
 @keyframes nomad-pop-slide-out {
+  /* Phase 1: quick pop up */
   0%   { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0);     }
-  20%  {             transform: translateX(-50%) scale(1.05) translateY(0);     }
-  100% { opacity: 0; transform: translateX(-50%) scale(0.8)  translateY(-50px); }
+  18%  { opacity: 1; transform: translateX(-50%) scale(1.06) translateY(0);     }
+  /* Phase 2: settle */
+  32%  { opacity: 1; transform: translateX(-50%) scale(0.97) translateY(0);     }
+  /* Phase 3: slide upward and fade out */
+  100% { opacity: 0; transform: translateX(-50%) scale(0.85) translateY(-55px); }
 }
 
 .nomad-pop-slide-in {
@@ -841,5 +845,5 @@
 }
 
 .nomad-pop-slide-out {
-  animation: nomad-pop-slide-out 0.4s ease-in forwards;
+  animation: nomad-pop-slide-out 0.55s ease-in-out forwards;
 }
