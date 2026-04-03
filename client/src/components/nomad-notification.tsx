@@ -23,8 +23,8 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
 
   return (
     <div
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 ${
-        isClosing ? "animate-toast-pop-slide-out" : "animate-toast-pop-slide-in"
+      className={`fixed top-4 left-1/2 z-50 ${
+        isClosing ? "nomad-pop-slide-out" : "nomad-pop-slide-in"
       }`}
     >
       <div className="bg-black text-white px-6 py-4 rounded-xl shadow-xl border border-gray-600">
