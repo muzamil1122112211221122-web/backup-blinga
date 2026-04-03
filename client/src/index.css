@@ -709,6 +709,22 @@
   50% { opacity: 0.5; }
 }
 
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.typing-message p:last-child::after,
+.typing-message > *:last-child::after {
+  content: '▋';
+  display: inline;
+  animation: blink-cursor 0.9s step-start infinite;
+  font-size: 0.85em;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+
 
 
 @keyframes logoSpin {

@@ -734,7 +734,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const { displayedText, isTypingComplete } = useTypingAnimation(text, messageId, 10);
 
     return (
-      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">
+      <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>
         <ReactMarkdown 
           remarkPlugins={[remarkGfm]}
           components={{
@@ -800,7 +800,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         >
           {displayedText}
         </ReactMarkdown>
-        {!isTypingComplete && <span className="inline-block animate-pulse text-foreground">|</span>}
       </div>
     );
   };
