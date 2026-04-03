@@ -421,24 +421,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const nomadNotifEnabledRef = React.useRef(true);
-
-  // Keep ref in sync so timers can check the latest value
-  React.useEffect(() => {
-    nomadNotifEnabledRef.current = settingsToggles.nomadNotification ?? true;
-  }, [settingsToggles.nomadNotification]);
-
-  const scheduleNomadNotif = React.useCallback(() => {
-    if (nomadNotifTimerRef.current) clearTimeout(nomadNotifTimerRef.current);
-    const delay = (Math.random() * 2 + 3) * 60 * 1000; // 3–5 min random
-    nomadNotifTimerRef.current = setTimeout(() => {
-      if (nomadNotifEnabledRef.current) setShowNomadNotification(true);
-    }, delay);
-  }, []);
-
-  const handleNomadNotifClose = React.useCallback(() => {
-    setShowNomadNotification(false);
-    scheduleNomadNotif();
-  }, [scheduleNomadNotif]);
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   
@@ -466,6 +448,24 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     } catch {}
     return defaultSettingsToggles;
   });
+  // Keep ref in sync so timers can check the latest toggle value without stale closures
+  React.useEffect(() => {
+    nomadNotifEnabledRef.current = settingsToggles.nomadNotification ?? true;
+  }, [settingsToggles.nomadNotification]);
+
+  const scheduleNomadNotif = React.useCallback(() => {
+    if (nomadNotifTimerRef.current) clearTimeout(nomadNotifTimerRef.current);
+    const delay = (Math.random() * 2 + 3) * 60 * 1000; // 3–5 min random
+    nomadNotifTimerRef.current = setTimeout(() => {
+      if (nomadNotifEnabledRef.current) setShowNomadNotification(true);
+    }, delay);
+  }, []);
+
+  const handleNomadNotifClose = React.useCallback(() => {
+    setShowNomadNotification(false);
+    scheduleNomadNotif();
+  }, [scheduleNomadNotif]);
+
   const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai']);
   const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
 
