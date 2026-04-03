@@ -38,6 +38,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const phaseRef = useRef<Phase>('idle');
   const autoRestartRef = useRef(false);
   const langRef = useRef(selectedLang);
+  const startListeningRef = useRef<((lang: string) => void) | null>(null);
 
   useEffect(() => { langRef.current = selectedLang; }, [selectedLang]);
 
@@ -100,13 +101,13 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
       if (res.ok) {
         // AI reply received — restart listening automatically
         if (autoRestartRef.current && phaseRef.current !== 'idle') {
-          startListening(langRef.current);
+          startListeningRef.current?.(langRef.current);
         } else {
           setPhaseSync('idle');
         }
       } else { setPhaseSync('idle'); }
     } catch { setPhaseSync('idle'); }
-  }, [setPhaseSync, startListening]);
+  }, [setPhaseSync]);
 
   const startListening = useCallback((lang: string) => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -135,6 +136,9 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
     };
     try { recognition.start(); } catch { setPhaseSync('idle'); }
   }, [setPhaseSync, sendToAI]);
+
+  // Keep the ref in sync so sendToAI can call startListening without circular deps
+  useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
 
   const stopAll = useCallback(() => {
     autoRestartRef.current = false;
