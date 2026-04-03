@@ -2012,8 +2012,12 @@ Let's start the self-listen session!`;
       </header>
       
       {/* Chat Messages Area */}
+      <div className="relative flex-1 min-h-0">
+      {activeTab === 'nomad' && (
+        <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
+      )}
       <div
-        className={`flex-1 overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`}
+        className={`h-full overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -2614,6 +2618,7 @@ Let's start the self-listen session!`;
             <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
           </div>
         )}
+      </div>
       </div>
       
       {/* Tool Buttons - Separate Section */}
