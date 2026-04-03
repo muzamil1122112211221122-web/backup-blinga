@@ -831,13 +831,9 @@
 }
 
 @keyframes nomad-pop-slide-out {
-  /* Phase 1: quick pop up */
-  0%   { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0);     }
-  18%  { opacity: 1; transform: translateX(-50%) scale(1.06) translateY(0);     }
-  /* Phase 2: settle */
-  32%  { opacity: 1; transform: translateX(-50%) scale(0.97) translateY(0);     }
-  /* Phase 3: slide upward and fade out */
-  100% { opacity: 0; transform: translateX(-50%) scale(0.85) translateY(-55px); }
+  /* Smooth slide upward and fade — no pop */
+  0%   { opacity: 1; transform: translateX(-50%) scale(1) translateY(0);     }
+  100% { opacity: 0; transform: translateX(-50%) scale(1) translateY(-55px); }
 }
 
 .nomad-pop-slide-in {

@@ -30,36 +30,14 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
     >
       <div className="bg-black text-white px-6 py-4 rounded-xl shadow-xl border border-gray-600">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg bg-gradient-to-br from-blue-500 to-purple-600">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg flex-shrink-0">
             <img
               src="/nomad-avatar.png"
               alt="Nomad Avatar"
-              className="w-full h-full object-cover select-none"
-              style={{
-                imageRendering: "crisp-edges",
-                filter: "contrast(1.2) saturate(1.2) brightness(1.1)",
-                minWidth: "64px",
-                minHeight: "64px",
-                maxWidth: "64px",
-                maxHeight: "64px",
-                objectFit: "cover",
-                objectPosition: "center",
-              }}
+              className="w-full h-full object-cover object-top select-none"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const fallback = e.currentTarget
-                  .nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = "flex";
-              }}
             />
-            <div
-              className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-inner"
-              style={{ display: "none" }}
-            >
-              L
-            </div>
           </div>
 
           <div className="flex-1">
