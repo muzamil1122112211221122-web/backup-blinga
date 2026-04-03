@@ -445,7 +445,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     } catch {}
     return defaultSettingsToggles;
   });
-  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
+  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai']);
   const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
 
   useEffect(() => {
@@ -457,6 +457,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'perplexity': { name: 'Perplexity Sonar Pro', provider: 'perplexity', id: 'perplexity' },
       'grok-4': { name: 'Grok 4', provider: 'x-ai', id: 'grok-4' },
       'deepseek-r1': { name: 'Deepseek v3', provider: 'deepseek', id: 'deepseek-r1' },
+      'doubao': { name: 'Doubao-Seed-2.0 Pro', provider: 'bytedance', id: 'doubao' },
+      'kimi': { name: 'Kimi K2.5', provider: 'moonshot', id: 'kimi' },
+      'qwen': { name: 'Qwen3.6-Plus', provider: 'alibaba', id: 'qwen' },
+      'llama-4': { name: 'Llama 4', provider: 'meta', id: 'llama-4' },
+      'mistral': { name: 'Mistral Small 4', provider: 'mistral', id: 'mistral' },
       'forus-ai': { name: 'Forus Pro', provider: 'forus', id: 'forus-ai' }
     };
 
@@ -2292,11 +2297,23 @@ Let's start the self-listen session!`;
               'perplexity': { name: 'Perplexity Sonar Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/perplexity-logo.png" alt="Perplexity Sonar Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#38bdf8' },
               'grok-4': { name: 'Grok 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/grok-logo.png" alt="Grok 4" className="w-full h-full object-contain brightness-0 dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6b7280' },
               'deepseek-r1': { name: 'Deepseek v3', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/deepseek-logo.png" alt="Deepseek v3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
+              'doubao': { name: 'Doubao-Seed-2.0 Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/doubao-logo.png" alt="Doubao" className="w-full h-full object-contain rounded-lg" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#f59e0b' },
+              'kimi': { name: 'Kimi K2.5', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/kimi-logo.png" alt="Kimi" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#06b6d4' },
+              'qwen': { name: 'Qwen3.6-Plus', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/qwen-logo.png" alt="Qwen" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6366f1' },
+              'llama-4': { name: 'Llama 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/llama-logo.png" alt="Llama 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
+              'mistral': { name: 'Mistral Small 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/mistral-logo.png" alt="Mistral" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#7c3aed' },
               'forus-ai': { name: 'Forus Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#a855f7' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
-            const modelSlug = (id: string) => id === 'gpt-4o' ? 'chatgpt' : id === 'claude-3.5-sonnet' ? 'claude' : id === 'gemini-pro' ? 'gemini' : id === 'grok-4' ? 'grok' : id === 'deepseek-r1' ? 'deepseek' : id === 'forus-ai' ? 'forus' : id;
-            // Theme-aware filter: dark-colored logos (ChatGPT, Grok) need to invert in dark mode
+            const modelSlug = (id: string) => {
+              const slugMap: {[key: string]: string} = {
+                'gpt-4o': 'chatgpt', 'claude-3.5-sonnet': 'claude', 'gemini-pro': 'gemini',
+                'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'forus-ai': 'forus',
+                'doubao': 'doubao', 'kimi': 'kimi', 'qwen': 'qwen', 'llama-4': 'llama', 'mistral': 'mistral'
+              };
+              return slugMap[id] || id;
+            };
+            // Theme-aware filter: dark-colored logos need invert in dark mode
             const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
             return (
             /* min-h-full ensures grid background stretches to bottom even with little content */
