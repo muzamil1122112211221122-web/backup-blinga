@@ -8,15 +8,16 @@ interface UseSpeechRecognitionOptions {
   language?: string;
 }
 
-// Fix common speech-recognition mishearings of the app name "Forus"
+// Fix common speech-recognition mishearings of "Forus" ONLY when context
+// suggests it's the app name — preserves real words like "forest" otherwise.
 function fixTranscript(text: string): string {
+  // Replace only when adjacent to AI/app context words
   return text
-    .replace(/\bforest\b/gi, 'Forus')
-    .replace(/\bforests\b/gi, 'Forus')
-    .replace(/\bforums\b/gi, 'Forus')
-    .replace(/\bforum\b/gi, 'Forus')
-    .replace(/\bPhoebus\b/gi, 'Forus')
-    .replace(/\bFORAS\b/gi, 'Forus');
+    .replace(/\b(forest|forums?|phoebus|foras)\s+(ai|app|assistant)\b/gi, 'Forus $2')
+    .replace(/\b(hey|hi|hello|open|use|ask|tell|to|talk)\s+(forest|forums?|phoebus|foras)\b/gi, '$1 Forus')
+    // Capitalise if already looks like a proper noun usage (all caps or at start of sentence)
+    .replace(/\bFORAS\b/g, 'Forus')
+    .replace(/\bPhoebus\b/g, 'Forus');
 }
 
 export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) {
