@@ -95,6 +95,15 @@ export default {
           "0%, 100%": { opacity: "0.3" },
           "50%": { opacity: "1" },
         },
+        "toast-pop-in": {
+          "0%": { opacity: "0", transform: "scale(0.65) translateY(20px)" },
+          "65%": { opacity: "1", transform: "scale(1.06) translateY(-3px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "toast-pop-out": {
+          "0%": { opacity: "1", transform: "scale(1) translateY(0)" },
+          "100%": { opacity: "0", transform: "scale(0.8) translateY(10px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -103,6 +112,8 @@ export default {
         "spin-reverse": "spin-reverse 8s linear infinite",
         "twinkle": "twinkle 2s ease-in-out infinite",
         "twinkle-delay": "twinkle 3s ease-in-out infinite 1s",
+        "toast-pop-in": "toast-pop-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "toast-pop-out": "toast-pop-out 0.22s ease-in forwards",
       },
     },
   },
