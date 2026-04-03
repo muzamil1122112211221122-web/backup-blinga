@@ -393,6 +393,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'forus-games'>('ask');
+  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'forus-games') => {
+    document.documentElement.classList.add('preload');
+    setActiveTab(tab);
+    requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
+  };
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
@@ -1989,7 +1994,7 @@ Let's start the self-listen session!`;
               <Button
                 variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('ask')}
+                onClick={() => changeTab('ask')}
                 className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
                 data-testid="tab-ask"
               >
@@ -2003,7 +2008,7 @@ Let's start the self-listen session!`;
               <Button
                 variant={activeTab === 'nomad' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('nomad')}
+                onClick={() => changeTab('nomad')}
                 className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
                 data-testid="tab-nomad"
               >
@@ -2017,7 +2022,7 @@ Let's start the self-listen session!`;
               <Button
                 variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('philosopher')}
+                onClick={() => changeTab('philosopher')}
                 className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
                 data-testid="tab-philosopher"
               >
@@ -2031,7 +2036,7 @@ Let's start the self-listen session!`;
               <Button
                 variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveTab('forus-games')}
+                onClick={() => changeTab('forus-games')}
                 className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
                 data-testid="tab-forus-games"
               >
