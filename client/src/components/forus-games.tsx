@@ -757,47 +757,67 @@ export function ForusGames({ playerName }: ForusGamesProps) {
 
   const GAMES = [
     {
-      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
-      gradient: 'from-sky-400 via-blue-500 to-blue-800',
+      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
+      bgStyle: { background: 'linear-gradient(135deg, #d946ef 0%, #a855f7 40%, #7c3aed 100%)' },
       preview: (
-        <div className="flex items-center gap-2 font-mono font-bold text-lg drop-shadow-lg">
-          <span className="bg-white/25 text-white px-2.5 py-1 rounded-xl shadow-inner">7</span>
-          <span className="text-white/60 text-sm">×</span>
-          <span className="bg-white/25 text-white px-2.5 py-1 rounded-xl shadow-inner">8</span>
-          <span className="text-white/60 text-sm">=</span>
-          <span className="bg-yellow-300/40 text-yellow-100 px-2.5 py-1 rounded-xl border border-yellow-300/50 shadow-inner">?</span>
+        <div className="relative w-full h-full flex items-center justify-center">
+          {/* Subtle grid tile pattern behind */}
+          <div className="absolute inset-0 grid grid-cols-5 grid-rows-3 gap-1.5 p-2 opacity-30">
+            {Array.from({length: 15}).map((_, i) => (
+              <div key={i} className="rounded-lg bg-white/30" />
+            ))}
+          </div>
+          {/* Centered card grid */}
+          <div className="relative grid grid-cols-4 gap-1.5 z-10">
+            {['🦁','','🦊','','','🐸','','🦁'].map((e, i) => (
+              <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-md ${e ? 'bg-white/25' : 'bg-white/10 border border-white/20'}`}>{e}</div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
+      bgStyle: { background: 'linear-gradient(135deg, #bae6fd 0%, #60a5fa 50%, #3b82f6 100%)' },
+      preview: (
+        <div className="relative w-full h-full flex flex-col items-center justify-center gap-2">
+          {/* Cloud blobs */}
+          <div className="absolute top-1 left-3 w-10 h-6 rounded-full bg-white/20 blur-sm" />
+          <div className="absolute top-3 left-8 w-14 h-7 rounded-full bg-white/15 blur-sm" />
+          <div className="absolute bottom-2 right-2 w-8 h-5 rounded-full bg-white/20 blur-sm" />
+          {/* Answer input simulation */}
+          <div className="relative z-10 bg-white/25 backdrop-blur-sm rounded-lg px-3 py-1 text-white/60 text-[10px] border border-white/30 mb-1">
+            Type answer...
+          </div>
+          {/* Equation */}
+          <div className="relative z-10 flex items-center gap-1.5 font-mono font-bold text-white text-sm drop-shadow">
+            <span className="bg-white/25 px-2 py-0.5 rounded-lg">1</span>
+            <span className="text-white/70">×</span>
+            <span className="bg-white/25 px-2 py-0.5 rounded-lg">4</span>
+          </div>
         </div>
       ),
     },
     {
       id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', category: 'WORD',
-      gradient: 'from-emerald-400 via-green-500 to-green-800',
+      bgStyle: { background: 'linear-gradient(135deg, #86efac 0%, #4ade80 30%, #16a34a 100%)' },
       preview: (
-        <div className="flex gap-1.5">
-          {['P','L','N','A','E','T'].map((l, i) => (
-            <div key={i} className={`w-8 h-8 rounded-lg text-[13px] font-extrabold flex items-center justify-center text-white shadow-md ${['bg-blue-500/70','bg-purple-500/70','bg-pink-500/70','bg-red-500/70','bg-orange-500/70','bg-teal-500/70'][i]}`}>{l}</div>
-          ))}
-        </div>
-      ),
-    },
-    {
-      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
-      gradient: 'from-violet-400 via-purple-600 to-purple-900',
-      preview: (
-        <div className="grid grid-cols-4 gap-1.5">
-          {['🦁','❓','🦊','❓','❓','🐸','❓','🦁'].map((e, i) => (
-            <div key={i} className={`w-8 h-8 rounded-lg text-base flex items-center justify-center shadow ${e === '❓' ? 'bg-white/10 border border-white/20 text-zinc-500 text-xs' : 'bg-white/20'}`}>{e}</div>
-          ))}
+        <div className="relative w-full h-full flex items-center justify-center">
+          <div className="flex gap-1.5 z-10">
+            {['W','O','R','D'].map((l, i) => (
+              <div key={i} className={`w-9 h-9 rounded-lg text-sm font-extrabold flex items-center justify-center text-white shadow-md ${['bg-white/30','bg-white/20','bg-white/20','bg-white/30'][i]}`}>{l}</div>
+            ))}
+          </div>
         </div>
       ),
     },
     {
       id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', category: 'QUIZ',
-      gradient: 'from-orange-400 via-orange-500 to-red-700',
+      bgStyle: { background: 'linear-gradient(135deg, #fb923c 0%, #f97316 40%, #b91c1c 100%)' },
       preview: (
-        <div className="grid grid-cols-2 gap-1.5 w-full max-w-[180px]">
+        <div className="grid grid-cols-2 gap-1.5 w-full max-w-[160px] z-10">
           {[['A','Paris'],['B','Berlin'],['C','Rome'],['D','Madrid']].map(([l, t], i) => (
-            <div key={i} className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg flex items-center gap-1 shadow ${i === 0 ? 'bg-green-400/30 border border-green-400/50 text-green-200' : 'bg-white/10 text-white/50'}`}>
+            <div key={i} className={`text-[10px] font-semibold px-2 py-1.5 rounded-lg flex items-center gap-1 ${i === 0 ? 'bg-green-400/35 border border-green-300/50 text-green-100' : 'bg-white/12 text-white/50'}`}>
               <span className="font-bold">{l}.</span><span>{t}</span>
             </div>
           ))}
@@ -825,56 +845,59 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={goBack} />;
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+    <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
       {/* Header */}
-      <div>
+      <div className="mb-3 flex-shrink-0">
         <h2 className="text-xl font-extrabold text-white leading-tight">Train Your Brain</h2>
         <p className="text-zinc-400 text-xs mt-0.5">Sharpen your mind with quick, fun challenges every day</p>
       </div>
 
-      {/* Game Cards — 2-column grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {GAMES.map(g => (
-          <button
-            key={g.id}
-            onClick={() => setPendingGame(g.id)}
-            className={`relative rounded-2xl overflow-hidden text-left bg-gradient-to-br ${g.gradient} active:scale-[0.97] transition-all duration-200`}
-            style={{
-              boxShadow: '0 0 0 1.5px rgba(255,255,255,0.18), 0 8px 28px rgba(0,0,0,0.45)',
-            }}
-          >
-            {/* Score badge top-right */}
-            <div className="absolute top-2 right-2 z-10 bg-black/55 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold backdrop-blur-sm">
-              ⚡ 0
-            </div>
-
-            {/* Preview area */}
-            <div className="h-24 flex items-center justify-center px-3 py-3">
-              {g.preview}
-            </div>
-
-            {/* Bottom frosted bar */}
-            <div
-              className="flex items-center gap-2 px-2.5 py-2.5"
-              style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(255,255,255,0.12)' }}
+      <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+        {/* Left: Vertical game card list */}
+        <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          {GAMES.map(g => (
+            <button
+              key={g.id}
+              onClick={() => setPendingGame(g.id)}
+              className="relative rounded-2xl overflow-hidden text-left flex-shrink-0 active:scale-[0.98] transition-all duration-200"
+              style={{
+                ...g.bgStyle,
+                boxShadow: '0 0 0 1.5px rgba(255,255,255,0.2), 0 6px 24px rgba(0,0,0,0.4)',
+                height: 140,
+              }}
             >
-              <div className="w-9 h-9 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0 shadow-inner">
-                <img src={g.icon} alt={g.label} className="w-6 h-6 object-contain" />
+              {/* Score badge */}
+              <div className="absolute top-2 right-2 z-20 bg-black/55 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold">
+                ⚡ 0
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-white font-bold text-[12px] leading-tight truncate">{g.label}</div>
-                <span className="inline-block text-white/80 text-[8px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-full mt-0.5">{g.category}</span>
+
+              {/* Preview area — fills top portion */}
+              <div className="absolute inset-0 bottom-[52px] flex items-center justify-center px-3 py-2 overflow-hidden">
+                {g.preview}
               </div>
+
+              {/* Bottom info bar — frosted glass */}
               <div
-                className="text-black text-[11px] font-extrabold px-3 py-1.5 rounded-full flex-shrink-0"
-                style={{ background: 'rgba(255,255,255,0.95)', boxShadow: '0 0 12px rgba(255,255,255,0.5)' }}
+                className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
+                style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,0.15)' }}
               >
-                Play
+                <div className="w-9 h-9 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
+                  <img src={g.icon} alt={g.label} className="w-6 h-6 object-contain" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
+                  <span className="inline-block text-white/80 text-[9px] font-bold uppercase tracking-wider bg-white/25 px-2 py-0.5 rounded-full mt-0.5">{g.category}</span>
+                </div>
+                <div
+                  className="text-black text-xs font-extrabold px-4 py-2 rounded-full flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.96)', boxShadow: '0 0 14px rgba(255,255,255,0.45)' }}
+                >
+                  Play
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
 
       {/* Leaderboard — full width */}
       <div
@@ -964,6 +987,8 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             style={{ background: 'rgba(30,27,75,0.8)' }}>You</span>
           <span className="text-white font-bold text-sm">0</span>
         </div>
+      </div>
+
       </div>
     </div>
   );
