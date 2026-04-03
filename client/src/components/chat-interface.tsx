@@ -919,7 +919,8 @@ IMPORTANT RULES:
 - Speak in the language patterns, tone, and worldview of your era and personality.
 - React emotionally as ${p.name} would — with their passions, biases, and convictions.
 - Keep responses engaging and personal — not like a textbook, but like a real conversation.
-- If asked about things after your death, react with curiosity or shock as appropriate.`;
+- If asked about things after your death, react with curiosity or shock as appropriate.
+- CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. If the user writes in Arabic, reply in Arabic. Match the user's language perfectly every time.`;
     try {
       const response = await fetch('/api/test-ai', {
         method: 'POST',
@@ -949,7 +950,8 @@ IMPORTANT RULES:
     setInputValue('');
     setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: msgId, role: 'user', content }], gameInput: '', isTyping: true }));
     try {
-      const gameContext = gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Forus Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`;
+      const langRule = " CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. Match the user's language perfectly every time.";
+      const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Forus Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
       const response = await fetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

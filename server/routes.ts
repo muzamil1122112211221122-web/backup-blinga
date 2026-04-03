@@ -88,6 +88,8 @@ function getModelPersonality(model: string): string {
   }
 }
 
+const LANGUAGE_INSTRUCTION = " CRITICAL LANGUAGE RULE: Always detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu or transliterated text. If the user writes in Arabic, reply in Arabic. If the user writes in Hindi, reply in Hindi (Devanagari). Match the user's language perfectly every single time without exception.";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
@@ -347,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
           
-          const systemPrompt = customSystemPrompt || getModelPersonality(model || '');
+          const systemPrompt = (customSystemPrompt || getModelPersonality(model || '')) + LANGUAGE_INSTRUCTION;
           
           try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -1197,7 +1199,7 @@ Then provide your final answer. Always show your thinking process like DeepSeek 
     }
   };
 
-  const systemPrompt = getModelPersonality(model);
+  const systemPrompt = getModelPersonality(model) + LANGUAGE_INSTRUCTION;
 
   // Use reliable Groq API for all Nomad models to ensure consistent responses
   try {
@@ -1602,7 +1604,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
 }
 
 function getSystemPrompt(conversation: any, user?: any): string {
-  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to creative projects to complex problems. Be natural and engaging. Do NOT repeatedly address the user by name in every message; use their name at most once when greeting.";
+  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to creative projects to complex problems. Be natural and engaging. Do NOT repeatedly address the user by name in every message; use their name at most once when greeting." + LANGUAGE_INSTRUCTION;
   
   // Mention the user's name only once subtly
   if (user && (user.displayName || user.username)) {

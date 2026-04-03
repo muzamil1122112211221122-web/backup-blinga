@@ -35,9 +35,9 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
 
-    recognition.continuous = options.continuous ?? true;
+    recognition.continuous = options.continuous ?? false;
     recognition.interimResults = true;
-    recognition.lang = options.language ?? 'en-US';
+    recognition.lang = options.language ?? navigator.language ?? 'en-US';
 
     recognition.onstart = () => {
       setIsListening(true);
