@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Mic, MicOff, X, Globe, MonitorUp } from "lucide-react";
+import { Mic, MicOff, X, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LANGUAGES = [
@@ -98,18 +98,15 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         }),
       });
       if (res.ok) {
-        const data = await res.json();
-        const reply = data.response || data.message || '';
-        speakText(reply, lang, () => {
-          if (autoRestartRef.current && phaseRef.current !== 'idle') {
-            startListening(langRef.current);
-          } else {
-            setPhaseSync('idle');
-          }
-        });
+        // AI reply received — restart listening automatically
+        if (autoRestartRef.current && phaseRef.current !== 'idle') {
+          startListening(langRef.current);
+        } else {
+          setPhaseSync('idle');
+        }
       } else { setPhaseSync('idle'); }
     } catch { setPhaseSync('idle'); }
-  }, [setPhaseSync, speakText]);
+  }, [setPhaseSync, startListening]);
 
   const startListening = useCallback((lang: string) => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -190,7 +187,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         </div>
 
         {/* Language picker — top right */}
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-4 left-4 z-50">
           <button
             onClick={() => setShowLangPicker(p => !p)}
             className="text-white/40 hover:text-white/70 transition-colors p-2"
@@ -203,7 +200,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
                 initial={{ opacity: 0, y: -8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                className="absolute top-10 right-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[130px] backdrop-blur-sm"
+                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[130px] backdrop-blur-sm"
               >
                 {LANGUAGES.map(lang => (
                   <button
@@ -273,11 +270,6 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
 
         {/* Bottom controls */}
         <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-5 z-50">
-          {/* Screen share placeholder */}
-          <button className="w-14 h-14 rounded-full bg-zinc-800/80 border border-white/10 flex items-center justify-center text-white/60 hover:bg-zinc-700/80 transition-colors">
-            <MonitorUp className="w-5 h-5" />
-          </button>
-
           {/* Mic toggle */}
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -291,7 +283,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
             {isActive ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </motion.button>
 
-          {/* End / close — red */}
+          {/* End / close — red, 3px lower */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => { stopAll(); onClose(); }}
