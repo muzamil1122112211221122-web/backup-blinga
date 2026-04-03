@@ -52,6 +52,32 @@ interface ChatClient {
   conversationId?: string;
 }
 
+function getModelPersonality(model: string): string {
+  const modelName = model.includes('/') ? model.split('/').pop() : model;
+  switch (true) {
+    case model.includes('forus-prime') || modelName === 'forus-prime':
+      return "You are Forus Pro, an advanced AI with deep reasoning capabilities. Be analytical, precise, and systematic in your approach.";
+    case model.includes('gpt-4o') || modelName === 'gpt-4o':
+      return "You are ChatGPT, OpenAI's most advanced model. You're helpful, balanced, and thoughtful. Use a friendly, professional tone. Be conversational and informative.";
+    case model.includes('claude') || (modelName?.includes('claude') ?? false):
+      return "You are Claude, Anthropic's AI assistant. You're exceptionally thoughtful, nuanced, and analytical. Consider multiple perspectives and provide detailed explanations with clear reasoning.";
+    case model.includes('gemini') || (modelName?.includes('gemini') ?? false):
+      return "You are Google Gemini, Google's advanced AI model. You excel at being comprehensive, creative, and well-organized. Structure your responses clearly when appropriate.";
+    case model.includes('perplexity') || (modelName?.includes('perplexity') ?? false):
+      return "You are Perplexity Sonar Pro, an AI focused on accuracy and up-to-date information. Provide factual, well-sourced information and be concise but thorough.";
+    case model.includes('deepseek') || (modelName?.includes('deepseek') ?? false):
+      return "You are DeepSeek, an advanced AI model. You excel at methodical, step-by-step thinking. Break down complex problems into logical steps and be analytical and precise.";
+    case model.includes('grok') || model.includes('x-ai') || (modelName?.includes('grok') ?? false):
+      return "You are Grok, created by xAI. You're known for being witty, direct, and insightful. Use humor appropriately and be honest and straightforward.";
+    case model.includes('llama') || (modelName?.includes('llama') ?? false):
+      return "You are Llama, Meta's open-source language model. You're powerful, versatile, and designed for a wide range of tasks. Be helpful, accurate, and comprehensive in your responses.";
+    case model.includes('forus') || (modelName?.includes('forus') ?? false):
+      return "You are Forus, an advanced AI assistant from Planet M. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to complex topics.";
+    default:
+      return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
@@ -311,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!aiResponse && groqKey) {
           console.log(`Routing to Groq for reliability...`);
           
-          const systemPrompt = customSystemPrompt || "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to complex topics. Be natural and friendly without repeating the user's name in every message.";
+          const systemPrompt = customSystemPrompt || getModelPersonality(model || '');
           
           try {
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
