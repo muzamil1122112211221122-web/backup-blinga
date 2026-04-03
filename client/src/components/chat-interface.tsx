@@ -647,91 +647,79 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
-  // Global completed texts cache - shared across all components
+  // Global caches - shared across all component instances to survive re-renders/remounts
   const globalCompletedTexts = useRef<Map<string, string>>(new Map());
-  
-  // Typing animation hook - BULLETPROOF against re-renders
-  const useTypingAnimation = (text: string, messageId: string, speed: number = 20) => {
-    // Create a unique key for this specific message
-    const cacheKey = `${messageId}-${text}`;
-    
-    // Initialize state only once based on cache
-    const [state] = useState(() => {
-      const cached = globalCompletedTexts.current.get(cacheKey);
-      if (cached) {
-        return {
-          displayedText: text,
-          isTypingComplete: true
-        };
-      }
-      return {
-        displayedText: '',
-        isTypingComplete: false
-      };
+  const globalProgressTexts = useRef<Map<string, string>>(new Map()); // tracks in-progress text
+
+  // Typing animation hook - survives remounts by resuming from last known progress
+  const useTypingAnimation = (text: string, messageId: string, speed: number = 35) => {
+    const cacheKey = messageId; // key by messageId only, not text
+
+    const [displayedText, setDisplayedText] = useState(() => {
+      if (globalCompletedTexts.current.has(cacheKey)) return text;
+      return globalProgressTexts.current.get(cacheKey) ?? '';
     });
-    
-    const [displayedText, setDisplayedText] = useState(state.displayedText);
-    const [isTypingComplete, setIsTypingComplete] = useState(state.isTypingComplete);
+    const [isTypingComplete, setIsTypingComplete] = useState(() =>
+      globalCompletedTexts.current.has(cacheKey)
+    );
     const hasInitialized = useRef(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    
+
     useEffect(() => {
-      // If already completed, don't animate
+      // Already done — just show full text
       if (globalCompletedTexts.current.has(cacheKey)) {
         setDisplayedText(text);
         setIsTypingComplete(true);
         return;
       }
-      
-      // Only run animation once per unique message
-      if (hasInitialized.current) {
-        return;
-      }
+
+      // Only start the animation loop once per mount
+      if (hasInitialized.current) return;
       hasInitialized.current = true;
-      
+
       if (!text) {
-        setDisplayedText('');
         setIsTypingComplete(true);
         return;
       }
-      
-      // Start animation
+
       setIsTypingComplete(false);
-      setDisplayedText('');
-      
-      const words = text.split(' ').filter(word => word.trim());
-      let currentIndex = 0;
-      
+
+      const words = text.split(' ').filter(w => w.trim());
+      // Resume from wherever we left off
+      const existingProgress = globalProgressTexts.current.get(cacheKey) ?? '';
+      const existingWordCount = existingProgress ? existingProgress.split(' ').filter(w => w.trim()).length : 0;
+      let currentIndex = existingWordCount;
+
       const typeWords = () => {
         if (currentIndex < words.length) {
-          const currentWords = words.slice(0, currentIndex + 1);
-          setDisplayedText(currentWords.join(' '));
+          const next = words.slice(0, currentIndex + 1).join(' ');
+          setDisplayedText(next);
+          globalProgressTexts.current.set(cacheKey, next); // persist progress
           currentIndex++;
           timeoutRef.current = setTimeout(typeWords, speed);
         } else {
-          // Animation completed - cache it forever
           setIsTypingComplete(true);
           globalCompletedTexts.current.set(cacheKey, text);
+          globalProgressTexts.current.delete(cacheKey);
         }
       };
-      
-      // Start typing
-      timeoutRef.current = setTimeout(typeWords, 50);
-      
+
+      timeoutRef.current = setTimeout(typeWords, currentIndex === 0 ? 50 : 0);
+
       return () => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
       };
-    }, []); // Empty dependency array - never re-run
-    
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     return { displayedText, isTypingComplete };
   };
 
   // Typing Text Component - Completely isolated from parent re-renders
   const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
-    const { displayedText, isTypingComplete } = useTypingAnimation(text, messageId, 10);
+    const { displayedText, isTypingComplete } = useTypingAnimation(text, messageId);
 
     return (
       <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>
