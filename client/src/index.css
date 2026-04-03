@@ -720,6 +720,7 @@
   display: inline;
   animation: blink-cursor 0.9s step-start infinite;
   font-size: 0.85em;
+  font-weight: normal;
   line-height: 1;
   vertical-align: middle;
   margin-left: 1px;
