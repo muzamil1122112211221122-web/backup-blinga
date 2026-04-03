@@ -404,8 +404,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   }, []);
 
   useEffect(() => {
-    preloadWikiImages(HISTORICAL_PERSONALITIES.map(p => p.wikiTitle || p.name));
-  }, []);
+    if (activeTab === 'philosopher') {
+      preloadWikiImages(HISTORICAL_PERSONALITIES.map(p => p.wikiTitle || p.name), 3);
+    }
+  }, [activeTab]);
 
   const [philosopherMessages, setPhilosopherMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string}>>([]);
   const [philosopherInput, setPhilosopherInput] = useState('');
