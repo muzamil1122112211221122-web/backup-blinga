@@ -421,6 +421,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const nomadNotifEnabledRef = React.useRef(true);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   
@@ -1195,7 +1196,17 @@ IMPORTANT RULES:
     await handleDirectApiCall(enhancedContent, conversationId, activeTab);
   };
 
+  const handleStopResponse = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsTyping(false);
+  };
+
   const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     try {
       console.log('Making direct API call...');
       const response = await fetch('/api/test-ai', {
@@ -1208,6 +1219,7 @@ IMPORTANT RULES:
           conversationId: conversationId,
           activeTab: currentTab || activeTab,
         }),
+        signal: controller.signal,
       });
 
       if (response.ok) {
@@ -1252,9 +1264,14 @@ IMPORTANT RULES:
         const error = await response.json();
         console.error('Error details:', error);
       }
-    } catch (error) {
-      console.error('Direct API call error:', error);
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        // User stopped the response — silently ignore
+      } else {
+        console.error('Direct API call error:', error);
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsTyping(false);
     }
   };
@@ -3001,14 +3018,24 @@ Let's start the self-listen session!`;
                 </TooltipTrigger>
                 <TooltipContent>Enhance prompt</TooltipContent>
               </Tooltip>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
-                className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
-                data-testid="button-send-message"
-              >
-                <ArrowUp className="w-5 h-5" />
-              </Button>
+              {isTyping ? (
+                <Button
+                  onClick={handleStopResponse}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100"
+                  data-testid="button-stop-response"
+                >
+                  <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
+                  className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
+                  data-testid="button-send-message"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
           {/* Voice Listening Indicator Overlay moved inside the relative container */}
