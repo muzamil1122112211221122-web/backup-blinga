@@ -2142,7 +2142,7 @@ Let's start the self-listen session!`;
                     </div>
                     
                     {/* User Message Action Buttons */}
-                    <div className="flex items-center justify-end mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center justify-end mt-2">
                       <div className="flex space-x-2">
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -2197,7 +2197,7 @@ Let's start the self-listen session!`;
                         : 'bg-card border-border'
                     }`}>
                       <TypingText text={message.content} messageId={message.id} />
-                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                      <div className="flex items-center justify-between mt-2">
                         <div className="flex space-x-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
