@@ -32,6 +32,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const [selectedLang, setSelectedLang] = useState('en-US');
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [barHeights, setBarHeights] = useState<number[]>(Array(32).fill(4));
+  const [aiReply, setAiReply] = useState<string>('');
 
   const recognitionRef = useRef<any>(null);
   const animFrameRef = useRef<number>();
@@ -99,7 +100,10 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         }),
       });
       if (res.ok) {
-        // AI reply received — restart listening automatically
+        const data = await res.json();
+        const reply = data.response || data.message || '';
+        setAiReply(reply);
+        // Restart listening automatically
         if (autoRestartRef.current && phaseRef.current !== 'idle') {
           startListeningRef.current?.(langRef.current);
         } else {
@@ -157,7 +161,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   }, [phase, selectedLang, startListening, stopAll]);
 
   useEffect(() => {
-    if (!isOpen) { stopAll(); }
+    if (!isOpen) { stopAll(); setAiReply(''); }
   }, [isOpen, stopAll]);
 
   const isActive = phase !== 'idle';
@@ -190,6 +194,14 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
           </div>
         </div>
 
+        {/* Explicit close button — top right */}
+        <button
+          onClick={() => { stopAll(); onClose(); }}
+          className="absolute top-4 right-4 z-[100] w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
         {/* Language picker — top right */}
         <div className="absolute top-4 left-4 z-50">
           <button
@@ -220,8 +232,23 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
           </AnimatePresence>
         </div>
 
-        {/* Main dark area — fills most of the screen */}
-        <div className="flex-1 w-full relative" />
+        {/* Main dark area — fills most of the screen, shows AI reply */}
+        <div className="flex-1 w-full relative flex items-center justify-center px-8">
+          <AnimatePresence mode="wait">
+            {aiReply ? (
+              <motion.p
+                key={aiReply}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-white/80 text-center text-base leading-relaxed max-w-md"
+              >
+                {aiReply}
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
 
         {/* Glow + bar visualizer — bottom of main area */}
         <div className="relative w-full flex flex-col items-center" style={{ marginBottom: '-1px' }}>

@@ -88,7 +88,7 @@ function getModelPersonality(model: string): string {
   }
 }
 
-const LANGUAGE_INSTRUCTION = " CRITICAL LANGUAGE RULE: Always detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu or transliterated text. If the user writes in Arabic, reply in Arabic. If the user writes in Hindi, reply in Hindi (Devanagari). Match the user's language perfectly every single time without exception.";
+const LANGUAGE_INSTRUCTION = " LANGUAGE RULE: Reply in English by default. Only switch to another language if the user writes in a clearly non-Latin script (e.g., Arabic اردو, Devanagari हिन्दी, Chinese 中文). If the user writes in Roman/Latin letters — including Roman Urdu — always reply in English.";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
