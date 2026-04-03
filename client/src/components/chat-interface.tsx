@@ -435,7 +435,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     improveModel: true,
     personalize: true,
     linkSharing: true,
-    sidebarCloseTop: true
+    sidebarCloseTop: true,
+    nomadGrid: true
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -2013,13 +2014,13 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
-      {activeTab === 'nomad' && (
+      {activeTab === 'nomad' && settingsToggles.nomadGrid && (
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
         className={`h-full overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`}
         data-testid="chat-messages"
-        style={activeTab === 'nomad' ? {
+        style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
           backgroundSize: '36px 36px',
         } : undefined}
@@ -2368,8 +2369,12 @@ Let's start the self-listen session!`;
                               <button
                                 onClick={() => {
                                   const newActive = new Set(activeAIModels);
-                                  if (newActive.has(model)) newActive.delete(model);
-                                  else newActive.add(model);
+                                  if (newActive.has(model)) {
+                                    newActive.delete(model);
+                                    setNomadMessages(prev => { const updated = { ...prev }; delete updated[model]; return updated; });
+                                  } else {
+                                    newActive.add(model);
+                                  }
                                   setActiveAIModels(newActive);
                                 }}
                                 className={`relative w-9 h-4.5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}

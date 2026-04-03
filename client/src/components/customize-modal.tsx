@@ -240,6 +240,13 @@ export function CustomizeModal({
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Conversation Previews in History</span>
                   <Switch checked={localToggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
                 </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Nomad Grid Background</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Show an animated grid pattern in the Nomad multi-AI tab</p>
+                  </div>
+                  <Switch checked={localToggles.nomadGrid ?? true} onCheckedChange={() => handleToggle('nomadGrid')} />
+                </div>
               </div>
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
