@@ -5,14 +5,25 @@ interface UseSpeechRecognitionOptions {
   onError?: (error: string) => void;
   onStart?: () => void;
   onEnd?: () => void;
-  continuous?: boolean;
   language?: string;
+}
+
+// Fix common speech-recognition mishearings of the app name "Forus"
+function fixTranscript(text: string): string {
+  return text
+    .replace(/\bforest\b/gi, 'Forus')
+    .replace(/\bforests\b/gi, 'Forus')
+    .replace(/\bforums\b/gi, 'Forus')
+    .replace(/\bforum\b/gi, 'Forus')
+    .replace(/\bPhoebus\b/gi, 'Forus')
+    .replace(/\bFORAS\b/gi, 'Forus');
 }
 
 export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false); // mirror of isListening for use inside event handlers
 
   // Keep callbacks in refs so they never cause the setup effect to re-run
   const onResultRef = useRef(options.onResult);
@@ -35,11 +46,13 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
 
-    recognition.continuous = options.continuous ?? false;
+    // Never continuous — stops naturally after the user finishes speaking
+    recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = options.language ?? navigator.language ?? 'en-US';
+    recognition.lang = options.language ?? 'en-US';
 
     recognition.onstart = () => {
+      isListeningRef.current = true;
       setIsListening(true);
       onStartRef.current?.();
     };
@@ -52,17 +65,23 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
         }
       }
       if (finalTranscript) {
-        onResultRef.current?.(finalTranscript);
+        const fixed = fixTranscript(finalTranscript.trim());
+        onResultRef.current?.(fixed);
+        // Explicitly stop as soon as we have a final result
+        try { recognition.stop(); } catch {}
       }
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') return;
       console.error('Speech recognition error:', event.error);
+      isListeningRef.current = false;
       setIsListening(false);
       onErrorRef.current?.(event.error);
     };
 
     recognition.onend = () => {
+      isListeningRef.current = false;
       setIsListening(false);
       onEndRef.current?.();
     };
@@ -76,39 +95,29 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) 
       recognitionRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty — callbacks are accessed via refs
+  }, []);
 
   const startListening = useCallback(() => {
     const recognition = recognitionRef.current;
-    if (recognition) {
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error('Failed to start speech recognition:', error);
-        onErrorRef.current?.('Failed to start speech recognition');
-      }
+    if (!recognition || isListeningRef.current) return;
+    try { recognition.start(); } catch (e) {
+      console.error('Failed to start speech recognition:', e);
     }
   }, []);
 
   const stopListening = useCallback(() => {
     const recognition = recognitionRef.current;
-    if (recognition) {
-      try { recognition.stop(); } catch {}
-    }
+    if (!recognition) return;
+    try { recognition.stop(); } catch {}
   }, []);
 
   const toggleListening = useCallback(() => {
-    setIsListening(prev => {
-      const recognition = recognitionRef.current;
-      if (!recognition) return prev;
-      if (prev) {
-        try { recognition.stop(); } catch {}
-      } else {
-        try { recognition.start(); } catch {}
-      }
-      return prev; // actual state update comes from onstart/onend callbacks
-    });
-  }, []);
+    if (isListeningRef.current) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  }, [startListening, stopListening]);
 
   return {
     isListening,
@@ -133,42 +142,25 @@ export function useSpeechSynthesis(options: UseSpeechSynthesisOptions = {}) {
 
   useEffect(() => {
     setIsSupported('speechSynthesis' in window);
-
     if ('speechSynthesis' in window) {
-      const updateVoices = () => {
-        setVoices(speechSynthesis.getVoices());
-      };
-
+      const updateVoices = () => setVoices(speechSynthesis.getVoices());
       updateVoices();
       speechSynthesis.onvoiceschanged = updateVoices;
-
-      return () => {
-        speechSynthesis.onvoiceschanged = null;
-      };
+      return () => { speechSynthesis.onvoiceschanged = null; };
     }
   }, []);
 
   const speak = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) {
-      console.warn('Speech synthesis not supported');
-      return;
-    }
-
+    if (!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = options.rate ?? 1;
     utterance.pitch = options.pitch ?? 1;
     utterance.volume = options.volume ?? 1;
-
-    if (options.voice) {
-      utterance.voice = options.voice;
-    }
-
+    if (options.voice) utterance.voice = options.voice;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
     speechSynthesis.speak(utterance);
   }, [options.rate, options.pitch, options.volume, options.voice]);
 
@@ -179,13 +171,7 @@ export function useSpeechSynthesis(options: UseSpeechSynthesisOptions = {}) {
     }
   }, []);
 
-  return {
-    speak,
-    stop,
-    isSpeaking,
-    isSupported,
-    voices,
-  };
+  return { speak, stop, isSpeaking, isSupported, voices };
 }
 
 declare global {
