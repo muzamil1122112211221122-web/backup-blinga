@@ -2403,7 +2403,7 @@ Let's start the self-listen session!`;
                                   <p className="text-sm">{message.content}</p>
                                 ) : (
                                   <div className="text-sm prose prose-sm max-w-none dark:prose-invert break-words">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                    <TypingText text={message.content} messageId={message.id} />
                                   </div>
                                 )}
                               </div>
@@ -2464,7 +2464,7 @@ Let's start the self-listen session!`;
                               </div>
                               <div className="rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border bg-card border-border">
                                 <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                  <TypingText text={message.content} messageId={message.id} />
                                 </div>
                               </div>
                             </div>
@@ -2570,7 +2570,11 @@ Let's start the self-listen session!`;
                         <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border mr-2 mt-1" />
                       )}
                       <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        {msg.role === 'user' ? (
+                          <p>{msg.content}</p>
+                        ) : (
+                          <TypingText text={msg.content} messageId={msg.id} />
+                        )}
                       </div>
                     </div>
                   ))}
