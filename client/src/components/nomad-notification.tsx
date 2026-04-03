@@ -10,7 +10,8 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => handleClose(), 8000);
+    const delay = Math.random() * 1000 + 3000; // 3–4 seconds
+    const timer = setTimeout(() => handleClose(), delay);
     return () => clearTimeout(timer);
   }, []);
 
