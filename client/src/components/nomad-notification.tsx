@@ -18,7 +18,7 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
     setIsClosing(true);
     setTimeout(() => {
       onClose?.();
-    }, 280);
+    }, 450);
   };
 
   return (
