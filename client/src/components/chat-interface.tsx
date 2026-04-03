@@ -2467,7 +2467,7 @@ Let's start the self-listen session!`;
                                 className={`relative w-9 h-4.5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
                                 style={isActive ? { backgroundColor: config.color, width: 36, height: 18 } : { width: 36, height: 18 }}
                               >
-                                <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[1px] ${isActive ? 'translate-x-[17px]' : 'translate-x-[1px]'}`} />
+                                <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                               </button>
                               <Tooltip>
                                 <TooltipTrigger asChild>
