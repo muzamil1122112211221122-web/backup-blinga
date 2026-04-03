@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface NomadNotificationProps {
+interface AppNotificationProps {
+  image: string;
+  title: string;
+  description: string;
+  dotColor?: string;
   onClose?: () => void;
 }
 
-export function NomadNotification({ onClose }: NomadNotificationProps) {
+function AppNotification({ image, title, description, dotColor = "bg-green-400", onClose }: AppNotificationProps) {
   const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
@@ -32,8 +36,8 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-400 shadow-lg flex-shrink-0">
             <img
-              src="/nomad-avatar.png"
-              alt="Nomad Avatar"
+              src={image}
+              alt={title}
               className="w-full h-full object-cover object-top select-none"
               loading="eager"
               decoding="sync"
@@ -42,12 +46,10 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
 
           <div className="flex-1">
             <h3 className="font-semibold text-lg flex items-center space-x-2">
-              <span>Meet Nomad</span>
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>{title}</span>
+              <div className={`w-2 h-2 ${dotColor} rounded-full animate-pulse`}></div>
             </h3>
-            <p className="text-sm text-white/90">
-              Your new multi-AI companion is ready to help
-            </p>
+            <p className="text-sm text-white/90">{description}</p>
           </div>
 
           <Button
@@ -61,5 +63,54 @@ export function NomadNotification({ onClose }: NomadNotificationProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+const NOTIFICATION_VARIANTS = [
+  {
+    id: "nomad",
+    image: "/nomad-avatar.png",
+    title: "Meet Nomad",
+    description: "Your new multi-AI companion is ready to help",
+    dotColor: "bg-green-400",
+  },
+  {
+    id: "philosopher",
+    image: "/philosopher-avatar.png",
+    title: "Meet Philosophers...",
+    description: "Dive deep into ideas with AI-powered philosophy",
+    dotColor: "bg-purple-400",
+  },
+  {
+    id: "forus-games",
+    image: "/forus-games-avatar.png",
+    title: "Meet Forus Games",
+    description: "Challenge yourself and play with AI companions",
+    dotColor: "bg-blue-400",
+  },
+];
+
+interface NomadNotificationProps {
+  enabledVariants?: string[];
+  onClose?: () => void;
+}
+
+export function NomadNotification({ enabledVariants, onClose }: NomadNotificationProps) {
+  const available = enabledVariants && enabledVariants.length > 0
+    ? NOTIFICATION_VARIANTS.filter(v => enabledVariants.includes(v.id))
+    : NOTIFICATION_VARIANTS;
+
+  const [variant] = useState(() => available[Math.floor(Math.random() * available.length)]);
+
+  if (!variant) return null;
+
+  return (
+    <AppNotification
+      image={variant.image}
+      title={variant.title}
+      description={variant.description}
+      dotColor={variant.dotColor}
+      onClose={onClose}
+    />
   );
 }

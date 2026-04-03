@@ -254,6 +254,20 @@ export function CustomizeModal({
                   </div>
                   <Switch checked={localToggles.nomadNotification ?? true} onCheckedChange={() => handleToggle('nomadNotification')} />
                 </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Philosophers Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Philosophers variant in periodic pop-ups</p>
+                  </div>
+                  <Switch checked={localToggles.philosopherNotification ?? true} onCheckedChange={() => handleToggle('philosopherNotification')} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Forus Games Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Forus Games variant in periodic pop-ups</p>
+                  </div>
+                  <Switch checked={localToggles.forusGamesNotification ?? true} onCheckedChange={() => handleToggle('forusGamesNotification')} />
+                </div>
               </div>
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">

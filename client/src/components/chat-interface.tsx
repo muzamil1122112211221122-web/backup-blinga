@@ -439,7 +439,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     linkSharing: true,
     sidebarCloseTop: true,
     nomadGrid: true,
-    nomadNotification: true
+    nomadNotification: true,
+    philosopherNotification: true,
+    forusGamesNotification: true
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -3098,9 +3100,16 @@ Let's start the self-listen session!`;
         onTogglePlaying={() => {}}
       />
 
-      {/* Nomad Notification - recurring, respects settings toggle */}
+      {/* Nomad Notification - recurring, respects settings toggle, rotates between enabled variants */}
       {showNomadNotification && (settingsToggles.nomadNotification ?? true) && (
-        <NomadNotification onClose={handleNomadNotifClose} />
+        <NomadNotification
+          enabledVariants={[
+            "nomad",
+            ...(settingsToggles.philosopherNotification ?? true ? ["philosopher"] : []),
+            ...(settingsToggles.forusGamesNotification ?? true ? ["forus-games"] : []),
+          ]}
+          onClose={handleNomadNotifClose}
+        />
       )}
 
       {/* Hidden file input elements */}
