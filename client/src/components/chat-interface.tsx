@@ -1874,7 +1874,7 @@ Let's start the self-listen session!`;
 
   return (
     <TooltipProvider delayDuration={400}>
-    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping) ? 'ai-thinking' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -2409,10 +2409,18 @@ Let's start the self-listen session!`;
                               </div>
                             ))}
                             {nomadIsTyping[model] && (
-                              <div className="flex space-x-1 p-2">
-                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
-                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
+                              <div className="flex items-start space-x-2">
+                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1">
+                                  <img
+                                    src={`/${modelSlug(model)}-logo.png`}
+                                    alt={config.name}
+                                    className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                    onError={(e) => { e.currentTarget.style.display='none'; }}
+                                  />
+                                </div>
+                                <div className="bg-card rounded-2xl px-3 py-2 border border-border">
+                                  <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -2434,14 +2442,6 @@ Let's start the self-listen session!`;
                 const msgs = nomadMessages[model] || [];
                 return (
                   <div className="flex-1 px-4 pb-4 flex flex-col">
-                    {/* Typing indicator */}
-                    {nomadIsTyping[model] && (
-                      <div className="flex space-x-1 px-2 py-3">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.3s'}}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay:'0.6s'}}></div>
-                      </div>
-                    )}
                     {/* Messages — same layout as Ask tab */}
                     <div className="flex-1 space-y-6 max-w-4xl mx-auto w-full">
                       {msgs.map(message => (
@@ -2471,6 +2471,24 @@ Let's start the self-listen session!`;
                           )}
                         </div>
                       ))}
+                      {/* Typing indicator — after messages, same style as Ask tab */}
+                      {nomadIsTyping[model] && (
+                        <div className="flex justify-start">
+                          <div className="flex space-x-3">
+                            <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
+                              <img
+                                src={`/${modelSlug(model)}-logo.png`}
+                                alt={config.name}
+                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                onError={(e) => { e.currentTarget.style.display='none'; }}
+                              />
+                            </div>
+                            <div className="bg-card rounded-3xl px-4 py-3 border border-border">
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -2579,12 +2597,10 @@ Let's start the self-listen session!`;
                     </div>
                   ))}
                   {philosopherIsTyping && (
-                    <div className="flex justify-start items-center gap-2">
-                      <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border" />
-                      <div className="bg-card border border-border px-4 py-3 rounded-2xl flex space-x-1">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.3s'}}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.6s'}}></div>
+                    <div className="flex justify-start items-start gap-2">
+                      <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border mt-1" />
+                      <div className="bg-card border border-border px-4 py-3 rounded-3xl">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
                       </div>
                     </div>
                   )}
