@@ -104,6 +104,17 @@ export default {
           "0%": { opacity: "1", transform: "scale(1) translateY(0)" },
           "100%": { opacity: "0", transform: "scale(0.8) translateY(10px)" },
         },
+        "toast-pop-slide-in": {
+          "0%": { opacity: "0", transform: "scale(0.5) translateY(-60px)" },
+          "55%": { opacity: "1", transform: "scale(1.07) translateY(6px)" },
+          "75%": { transform: "scale(0.97) translateY(-3px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "toast-pop-slide-out": {
+          "0%": { opacity: "1", transform: "scale(1) translateY(0)" },
+          "30%": { transform: "scale(1.04) translateY(-4px)" },
+          "100%": { opacity: "0", transform: "scale(0.7) translateY(-40px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -114,6 +125,8 @@ export default {
         "twinkle-delay": "twinkle 3s ease-in-out infinite 1s",
         "toast-pop-in": "toast-pop-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "toast-pop-out": "toast-pop-out 0.22s ease-in forwards",
+        "toast-pop-slide-in": "toast-pop-slide-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "toast-pop-slide-out": "toast-pop-slide-out 0.28s cubic-bezier(0.55, 0, 1, 0.45) forwards",
       },
     },
   },
