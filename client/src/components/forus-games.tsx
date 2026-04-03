@@ -825,110 +825,144 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={goBack} />;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
+    <div className="flex flex-col gap-4 overflow-y-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
       {/* Header */}
-      <div className="mb-3 flex-shrink-0">
+      <div>
         <h2 className="text-xl font-extrabold text-white leading-tight">Train Your Brain</h2>
         <p className="text-zinc-400 text-xs mt-0.5">Sharpen your mind with quick, fun challenges every day</p>
       </div>
 
-      <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
-        {/* Left: Game Cards */}
-        <div className="flex-1 flex flex-col gap-2.5 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-          {GAMES.map(g => (
-            <button
-              key={g.id}
-              onClick={() => setPendingGame(g.id)}
-              className={`relative rounded-2xl overflow-hidden text-left bg-gradient-to-br ${g.gradient} hover:brightness-110 active:scale-[0.98] transition-all duration-200 flex-shrink-0 shadow-lg`}
+      {/* Game Cards — 2-column grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {GAMES.map(g => (
+          <button
+            key={g.id}
+            onClick={() => setPendingGame(g.id)}
+            className={`relative rounded-2xl overflow-hidden text-left bg-gradient-to-br ${g.gradient} active:scale-[0.97] transition-all duration-200`}
+            style={{
+              boxShadow: '0 0 0 1.5px rgba(255,255,255,0.18), 0 8px 28px rgba(0,0,0,0.45)',
+            }}
+          >
+            {/* Score badge top-right */}
+            <div className="absolute top-2 right-2 z-10 bg-black/55 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold backdrop-blur-sm">
+              ⚡ 0
+            </div>
+
+            {/* Preview area */}
+            <div className="h-24 flex items-center justify-center px-3 py-3">
+              {g.preview}
+            </div>
+
+            {/* Bottom frosted bar */}
+            <div
+              className="flex items-center gap-2 px-2.5 py-2.5"
+              style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(255,255,255,0.12)' }}
             >
-              {/* Score badge */}
-              <div className="absolute top-2 right-2 bg-black/50 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-semibold">
-                <span>⚡</span><span>0</span>
+              <div className="w-9 h-9 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <img src={g.icon} alt={g.label} className="w-6 h-6 object-contain" />
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-bold text-[12px] leading-tight truncate">{g.label}</div>
+                <span className="inline-block text-white/80 text-[8px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-full mt-0.5">{g.category}</span>
+              </div>
+              <div
+                className="text-black text-[11px] font-extrabold px-3 py-1.5 rounded-full flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.95)', boxShadow: '0 0 12px rgba(255,255,255,0.5)' }}
+              >
+                Play
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
 
-              {/* Preview area */}
-              <div className="h-[72px] flex items-center justify-center px-4 py-2">
-                {g.preview}
-              </div>
+      {/* Leaderboard — full width */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #1a237e 100%)', border: '1px solid rgba(99,102,241,0.35)' }}
+      >
+        {/* Header row */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <span className="text-white font-extrabold text-base">Leaderboard</span>
+          <div className="flex gap-1">
+            {['Day', 'Week', 'Month', 'All Time'].map(f => (
+              <button key={f} onClick={() => setLbTimeFilter(f)}
+                className={`text-[9px] px-2 py-0.5 rounded-full font-semibold transition-colors ${lbTimeFilter === f ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
 
-              {/* Bottom info bar */}
-              <div className="flex items-center gap-2 px-3 pb-3 pt-1">
-                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
-                  <img src={g.icon} alt={g.label} className="w-5 h-5 object-contain" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
-                  <span className="inline-block text-white/70 text-[9px] font-bold uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded-full mt-0.5">{g.category}</span>
-                </div>
-                <div className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0 shadow-md hover:bg-zinc-100 transition-colors">
-                  Play
-                </div>
-              </div>
+        {/* Category filters */}
+        <div className="flex gap-1.5 px-4 pb-3">
+          {['All', 'Memory', 'Math', 'Word', 'Quiz'].map(f => (
+            <button key={f} onClick={() => setLbCatFilter(f)}
+              className={`text-[10px] px-2.5 py-1 rounded-full font-semibold transition-colors border ${lbCatFilter === f ? 'bg-white text-black border-white' : 'text-zinc-400 border-zinc-600 hover:text-zinc-200'}`}>
+              {f}
             </button>
           ))}
         </div>
 
-        {/* Right: Leaderboard */}
-        <div className="w-[148px] flex-shrink-0 rounded-2xl p-3 flex flex-col overflow-hidden" style={{ background: 'rgba(30,40,100,0.85)', border: '1px solid rgba(99,102,241,0.25)' }}>
-          <span className="text-white font-bold text-sm mb-2">Leaderboard</span>
-
-          {/* Time filters */}
-          <div className="flex flex-wrap gap-1 mb-2">
-            {['Day', 'Week', 'Month', 'All Time'].map(f => (
-              <button key={f} onClick={() => setLbTimeFilter(f)}
-                className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors ${lbTimeFilter === f ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>
-                {f}
-              </button>
-            ))}
-          </div>
-
-          {/* Category filters */}
-          <div className="flex flex-wrap gap-1 mb-3">
-            {['All', 'Memory', 'Math', 'Word', 'Quiz'].map(f => (
-              <button key={f} onClick={() => setLbCatFilter(f)}
-                className={`text-[8px] px-1.5 py-0.5 rounded-full font-semibold transition-colors ${lbCatFilter === f ? 'bg-white text-black' : 'text-zinc-400 hover:text-zinc-200'}`}>
-                {f}
-              </button>
-            ))}
-          </div>
-
-          {/* Podium */}
-          <div className="flex items-end justify-center gap-1 mb-3 px-1">
-            {/* 2nd */}
-            <div className="flex flex-col items-center">
-              {topEntries[1] && <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[36px] truncate text-center">{topEntries[1].name}</div>}
-              <div className="w-8 h-8 rounded-full bg-zinc-400 border-2 border-zinc-300 flex items-center justify-center text-white font-extrabold text-sm shadow-lg">2</div>
-              <div className="w-9 h-9 rounded-t-md mt-1" style={{ background: 'rgba(148,163,184,0.35)' }} />
+        {/* Podium */}
+        <div className="flex items-end justify-center gap-5 px-6 pb-1">
+          {/* 2nd place */}
+          <div className="flex flex-col items-center">
+            <div className="text-[10px] text-zinc-300 mb-1 text-center max-w-[56px] truncate font-medium">
+              {topEntries[1]?.name ?? '—'}
             </div>
-            {/* 1st */}
-            <div className="flex flex-col items-center -mt-5">
-              {topEntries[0] ? (
-                <>
-                  <div className="text-[9px] text-white font-bold leading-tight text-center">{topEntries[0].score}</div>
-                  <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[40px] truncate text-center">{topEntries[0].name}</div>
-                </>
-              ) : <div className="text-[8px] text-zinc-600 mb-0.5">—</div>}
-              <div className="w-9 h-9 rounded-full bg-yellow-500 border-2 border-yellow-300 flex items-center justify-center text-white font-extrabold text-base shadow-xl">1</div>
-              <div className="w-9 h-14 rounded-t-md mt-1" style={{ background: 'rgba(234,179,8,0.35)' }} />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #9ca3af, #6b7280)', border: '2px solid rgba(209,213,219,0.8)' }}>
+              2
             </div>
-            {/* 3rd */}
-            <div className="flex flex-col items-center">
-              {topEntries[2] && <div className="text-[7px] text-zinc-400 mb-0.5 max-w-[36px] truncate text-center">{topEntries[2].name}</div>}
-              <div className="w-8 h-8 rounded-full bg-orange-500 border-2 border-orange-300 flex items-center justify-center text-white font-extrabold text-sm shadow-lg">3</div>
-              <div className="w-9 h-7 rounded-t-md mt-1" style={{ background: 'rgba(249,115,22,0.35)' }} />
-            </div>
+            <div className="w-16 rounded-t-xl mt-1.5"
+              style={{ height: 64, background: 'linear-gradient(to top, rgba(107,114,128,0.7), rgba(148,163,184,0.4))', border: '1px solid rgba(209,213,219,0.25)', borderBottom: 'none' }} />
           </div>
 
-          {topEntries.length === 0 && (
-            <div className="text-center text-zinc-500 text-[9px] -mt-1 mb-2">No scores yet — be first!</div>
-          )}
-
-          {/* My rank */}
-          <div className="rounded-xl px-2.5 py-2 flex items-center gap-1 mt-auto" style={{ background: 'rgba(49,46,129,0.6)' }}>
-            <span className="text-white text-[10px] font-medium truncate flex-1">#0 {playerName || 'You'}</span>
-            <span className="text-indigo-300 text-[8px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(30,27,75,0.8)' }}>You</span>
-            <span className="text-white text-[10px] font-bold">0</span>
+          {/* 1st place */}
+          <div className="flex flex-col items-center">
+            {topEntries[0] ? (
+              <>
+                <div className="text-white font-extrabold text-sm">{topEntries[0].score}</div>
+                <div className="text-[10px] text-zinc-300 mb-1 max-w-[60px] truncate text-center">{topEntries[0].name}</div>
+              </>
+            ) : (
+              <div className="text-zinc-600 text-xs mb-1">No scores</div>
+            )}
+            <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-xl shadow-2xl"
+              style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', border: '2px solid rgba(253,224,71,0.9)', boxShadow: '0 0 16px rgba(251,191,36,0.5)' }}>
+              1
+            </div>
+            <div className="w-16 rounded-t-xl mt-1.5"
+              style={{ height: 90, background: 'linear-gradient(to top, rgba(234,179,8,0.7), rgba(251,191,36,0.35))', border: '1px solid rgba(253,224,71,0.3)', borderBottom: 'none' }} />
           </div>
+
+          {/* 3rd place */}
+          <div className="flex flex-col items-center">
+            <div className="text-[10px] text-zinc-300 mb-1 text-center max-w-[56px] truncate font-medium">
+              {topEntries[2]?.name ?? '—'}
+            </div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', border: '2px solid rgba(253,186,116,0.8)' }}>
+              3
+            </div>
+            <div className="w-16 rounded-t-xl mt-1.5"
+              style={{ height: 44, background: 'linear-gradient(to top, rgba(249,115,22,0.7), rgba(251,146,60,0.35))', border: '1px solid rgba(253,186,116,0.25)', borderBottom: 'none' }} />
+          </div>
+        </div>
+
+        {topEntries.length === 0 && (
+          <div className="text-center text-zinc-500 text-xs py-1">Play a game to appear here!</div>
+        )}
+
+        {/* My rank bar */}
+        <div className="flex items-center justify-between px-4 py-3 mx-3 mb-3 mt-2 rounded-xl"
+          style={{ background: 'rgba(49,46,129,0.55)', border: '1px solid rgba(99,102,241,0.3)' }}>
+          <span className="text-white text-sm font-bold">#0</span>
+          <span className="text-zinc-300 text-sm truncate mx-2 flex-1">{playerName || 'You'}</span>
+          <span className="text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2"
+            style={{ background: 'rgba(30,27,75,0.8)' }}>You</span>
+          <span className="text-white font-bold text-sm">0</span>
         </div>
       </div>
     </div>
