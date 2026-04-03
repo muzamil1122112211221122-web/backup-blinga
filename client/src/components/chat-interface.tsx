@@ -1173,14 +1173,9 @@ IMPORTANT RULES:
       setAttachedFiles([]);
     }
 
-    // Modify content if Forus Integration mode is enabled
-    const enhancedContent = forusIntegrationMode 
-      ? `${content}\n\n[Please provide the most comprehensive, detailed, and longest possible answer to this question. Include examples, explanations, and any relevant background information.]`
-      : content;
-
     // Always use direct API call for better reliability
     console.log('Using direct API call for better reliability...');
-    await handleDirectApiCall(enhancedContent, conversationId, activeTab);
+    await handleDirectApiCall(content, conversationId, activeTab);
   };
 
   const handleStopResponse = () => {
@@ -1892,6 +1887,12 @@ Let's start the self-listen session!`;
           ...msg,
           createdAt: new Date(msg.createdAt)
         }));
+        // Pre-seed the animation cache so history messages show instantly (no re-animation)
+        messagesWithDates.forEach((msg: any) => {
+          if (msg.role === 'assistant') {
+            globalCompletedTexts.current.set(msg.id, msg.content);
+          }
+        });
         setMessages(messagesWithDates);
       }
     } catch (error) {
