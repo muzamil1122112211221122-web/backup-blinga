@@ -416,7 +416,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
-  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro']));
+  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
@@ -2290,19 +2290,19 @@ Let's start the self-listen session!`;
         ) : activeTab === 'nomad' ? (
           // Nomad Tab - Multi-AI Interface
           (() => {
-            const nomadConfigMap: {[key: string]: {name: string, logo: React.ReactNode, color: string}} = {
-              'gpt-4o': { name: 'ChatGPT 5', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/chatgpt-logo.png" alt="ChatGPT 5" className="w-full h-full object-contain dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#10a37f' },
-              'claude-3.5-sonnet': { name: 'Claude Sonnet 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/claude-logo.png" alt="Claude Sonnet 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#f97316' },
-              'gemini-pro': { name: 'Gemini 2.5 Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/gemini-logo.png" alt="Gemini 2.5 Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#14b8a6' },
-              'perplexity': { name: 'Perplexity Sonar Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/perplexity-logo.png" alt="Perplexity Sonar Pro" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#38bdf8' },
-              'grok-4': { name: 'Grok 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/grok-logo.png" alt="Grok 4" className="w-full h-full object-contain brightness-0 dark:invert" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6b7280' },
-              'deepseek-r1': { name: 'Deepseek v3', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/deepseek-logo.png" alt="Deepseek v3" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
-              'doubao': { name: 'Doubao-Seed-2.0 Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/doubao-logo.png" alt="Doubao" className="w-full h-full object-contain rounded-lg" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#f59e0b' },
-              'kimi': { name: 'Kimi K2.5', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/kimi-logo.png" alt="Kimi" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#06b6d4' },
-              'qwen': { name: 'Qwen3.6-Plus', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/qwen-logo.png" alt="Qwen" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#6366f1' },
-              'llama-4': { name: 'Llama 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/llama-logo.png" alt="Llama 4" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#3b82f6' },
-              'mistral': { name: 'Mistral Small 4', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/mistral-logo.png" alt="Mistral" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#7c3aed' },
-              'forus-ai': { name: 'Forus Pro', logo: (<div className="w-10 h-10 flex items-center justify-center"><img src="/forus-logo.png" alt="Forus Pro" className="w-full h-full object-contain rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></div>), color: '#a855f7' },
+            const nomadConfigMap: {[key: string]: {name: string, logo: string, color: string, description: string}} = {
+              'gpt-4o': { name: 'ChatGPT 5', logo: '/chatgpt-logo.png', color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
+              'claude-3.5-sonnet': { name: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
+              'gemini-pro': { name: 'Gemini 2.5 Pro', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
+              'perplexity': { name: 'Perplexity Sonar Pro', logo: '/perplexity-logo.png', color: '#38bdf8', description: 'Real-time web search & cited answers' },
+              'grok-4': { name: 'Grok 4', logo: '/grok-logo.png', color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
+              'deepseek-r1': { name: 'Deepseek v3', logo: '/deepseek-logo.png', color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
+              'doubao': { name: 'Doubao-Seed-2.0 Pro', logo: '/doubao-logo.png', color: '#f59e0b', description: 'ByteDance\'s multilingual smart assistant' },
+              'kimi': { name: 'Kimi K2.5', logo: '/kimi-logo.png', color: '#06b6d4', description: 'Moonshot\'s long-context language model' },
+              'qwen': { name: 'Qwen3.6-Plus', logo: '/qwen-logo.png', color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
+              'llama-4': { name: 'Llama 4', logo: '/llama-logo.png', color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
+              'mistral': { name: 'Mistral Small 4', logo: '/mistral-logo.png', color: '#7c3aed', description: 'Fast & efficient European open AI' },
+              'forus-ai': { name: 'Forus Pro', logo: '/forus-logo.png', color: '#a855f7', description: 'Specialized productivity & task AI' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => {
@@ -2333,7 +2333,7 @@ Let's start the self-listen session!`;
                       ← All Models
                     </button>
                     {nomadModels.filter(m => m.id !== nomadSoloModel && activeAIModels.has(m.id)).map(m => {
-                      const cfg = nomadConfigMap[m.id] || { name: m.name, logo: null, color: '#6b7280' };
+                      const cfg = nomadConfigMap[m.id] || { name: m.name, logo: `/${m.id}-logo.png`, color: '#6b7280', description: '' };
                       return (
                         <button
                           key={m.id}
@@ -2343,7 +2343,7 @@ Let's start the self-listen session!`;
                           style={{ borderColor: cfg.color }}
                         >
                           <img
-                            src={`/${modelSlug(m.id)}-logo.png`}
+                            src={cfg.logo}
                             alt={cfg.name}
                             className={`w-full h-full object-contain ${iconFilter(m.id)}`}
                             onError={(e) => { e.currentTarget.style.display='none'; }}
@@ -2360,7 +2360,7 @@ Let's start the self-listen session!`;
                 <div className="flex flex-nowrap flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
                   {nomadModels.map((modelObj, idx) => {
                     const model = modelObj.id;
-                    const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
+                    const config = nomadConfigMap[model] || { name: model, logo: `/${model}-logo.png`, color: '#6b7280', description: '' };
                     const isActive = activeAIModels.has(model);
                     const isLast = idx === nomadModels.length - 1;
                     const msgs = nomadMessages[model] || [];
@@ -2370,19 +2370,20 @@ Let's start the self-listen session!`;
                         <div className="flex-shrink-0 flex flex-col" style={{ width: 230 }}>
                           {/* Toggle card — compact mid size */}
                           <div
-                            className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1.5"
+                            className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1"
                             style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.25)' }}
                           >
                             <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
                               <img
-                                src={`/${modelSlug(model)}-logo.png`}
+                                src={config.logo}
                                 alt={config.name}
                                 className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
                             </div>
                             <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
-                            <div className="flex items-center gap-2">
+                            <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{config.description}</span>
+                            <div className="flex items-center gap-2 mt-0.5">
                               <button
                                 onClick={() => {
                                   const newActive = new Set(activeAIModels);
@@ -2438,7 +2439,7 @@ Let's start the self-listen session!`;
                               <div className="flex items-start space-x-2">
                                 <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1">
                                   <img
-                                    src={`/${modelSlug(model)}-logo.png`}
+                                    src={config.logo}
                                     alt={config.name}
                                     className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
                                     onError={(e) => { e.currentTarget.style.display='none'; }}
@@ -2464,7 +2465,7 @@ Let's start the self-listen session!`;
               {/* === SOLO MODE === */}
               {nomadSoloModel && (() => {
                 const model = nomadSoloModel;
-                const config = nomadConfigMap[model] || { name: model, logo: null, color: '#6b7280' };
+                const config = nomadConfigMap[model] || { name: model, logo: `/${model}-logo.png`, color: '#6b7280', description: '' };
                 const msgs = nomadMessages[model] || [];
                 return (
                   <div className="flex-1 px-4 pb-4 flex flex-col">
@@ -2482,7 +2483,7 @@ Let's start the self-listen session!`;
                             <div className="flex space-x-3 max-w-4xl w-full">
                               <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
                                 <img
-                                  src={`/${modelSlug(model)}-logo.png`}
+                                  src={config.logo}
                                   alt={config.name}
                                   className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
                                   onError={(e) => { e.currentTarget.style.display='none'; }}
@@ -2503,7 +2504,7 @@ Let's start the self-listen session!`;
                           <div className="flex space-x-3">
                             <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
                               <img
-                                src={`/${modelSlug(model)}-logo.png`}
+                                src={config.logo}
                                 alt={config.name}
                                 className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
                                 onError={(e) => { e.currentTarget.style.display='none'; }}
