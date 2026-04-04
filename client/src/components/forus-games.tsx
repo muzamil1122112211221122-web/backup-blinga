@@ -811,16 +811,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       glowColor: '#7dd3fc',
       preview: (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 py-3">
-          {/* Streak + timer row */}
-          <div className="flex gap-2 w-full justify-between">
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
-              <span className="text-yellow-300 text-[9px]">🔥</span>
-              <span className="text-white font-bold text-[8px]">×3</span>
-            </div>
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
-              <span className="text-white font-bold text-[8px]">⏱ 7s</span>
-            </div>
-          </div>
+
           {/* Big equation */}
           <div className="text-white font-extrabold text-2xl tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
             12 × 8
