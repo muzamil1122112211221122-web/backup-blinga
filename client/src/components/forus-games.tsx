@@ -895,7 +895,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               {/* Bottom info bar — frosted glass */}
               <div
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
-                style={{ background: 'rgba(0,0,0,0.38)', borderTop: '1px solid rgba(255,255,255,0.18)' }}
+                style={{ background: 'transparent' }}
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (g as any).iconBg || 'rgba(0,0,0,0.4)' }}>
                   <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full">{g.icon}</div>
