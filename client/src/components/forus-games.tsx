@@ -820,21 +820,19 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       id: 'quiz' as GameId,
       icon: <Gamepad2 size={40} color="#fff" strokeWidth={1.8} />,
       label: 'Forus Quiz', category: 'QUIZ',
-      bgStyle: { background: '#16a34a' },
-      iconBg: '#166534',
+      bgStyle: { background: '#f97316' },
+      iconBg: '#c2410c',
       preview: (
-        <div className="absolute inset-0 overflow-hidden">
-          {[[10,10],[28,18],[52,8],[72,15],[88,9],[16,28],[64,22],[38,30]].map(([x,y],i) => (
-            <div key={i} className="absolute rounded-full" style={{ left: `${x}%`, top: `${y}%`, width: 5, height: 5, background: '#fde047' }} />
-          ))}
-          <div className="absolute left-0 right-0" style={{ top: '58%', bottom: 0, background: '#15803d' }} />
-          {[8,20,32,44,56,68,80,92].map((x,i) => (
-            <div key={i} className="absolute" style={{ left: `${x}%`, top: '58%', width: 5, height: 13, background: '#854d0e', borderRadius: 1 }} />
-          ))}
-          <div className="absolute left-0 right-0" style={{ top: '59%', height: 2, background: '#d1d5db' }} />
-          <div className="absolute left-0 right-0" style={{ top: '64%', height: 2, background: '#d1d5db' }} />
-          <div className="absolute z-10" style={{ left: '28%', top: '36%', width: 32, height: 22, background: '#fbbf24', borderRadius: 4, border: '2px solid #92400e' }}>
-            <div className="absolute inset-0 flex items-center justify-center text-[11px]">🚂</div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 py-2">
+          <div className="text-white font-bold text-[11px] text-center opacity-90 leading-tight">What is 7 × 8?</div>
+          <div className="grid grid-cols-2 gap-1.5 w-full">
+            {[['A', '54'], ['B', '56'], ['C', '58'], ['D', '64']].map(([letter, val]) => (
+              <div key={letter} className="flex items-center gap-1.5 rounded-lg px-2 py-1"
+                style={{ background: letter === 'B' ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)', border: letter === 'B' ? '1.5px solid rgba(255,255,255,0.7)' : '1.5px solid rgba(255,255,255,0.2)' }}>
+                <span className="text-white/70 font-bold text-[9px]">{letter}</span>
+                <span className="text-white font-semibold text-[10px]">{val}</span>
+              </div>
+            ))}
           </div>
         </div>
       ),
