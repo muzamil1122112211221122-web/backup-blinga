@@ -901,10 +901,10 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             <button
               key={g.id}
               onClick={() => setPendingGame(g.id)}
-              className="relative rounded-2xl overflow-hidden text-left flex-shrink-0 active:scale-[0.98] transition-all duration-200"
+              className="relative rounded-2xl overflow-hidden text-left flex-1 active:scale-[0.98] transition-all duration-200"
               style={{
                 ...g.bgStyle,
-                height: 160,
+                minHeight: 150,
                 boxShadow: `inset 0 -3px 0 ${(g as any).glowColor || '#fff'}cc, inset 0 -10px 20px ${(g as any).glowColor || '#fff'}33`,
               }}
             >
