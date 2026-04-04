@@ -780,27 +780,27 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#86198f',
       glowColor: '#f0abfc',
       preview: (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 py-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 py-3">
           {/* Matched pair row */}
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1.5 justify-center">
             {['🦁','🦁','🐬','🐬'].map((emoji, i) => (
-              <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner"
-                style={{ background: i < 2 ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.22)', border: i < 2 ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.35)', boxShadow: i < 2 ? '0 0 10px rgba(255,255,255,0.4)' : 'none' }}>
+              <div key={i} className="w-8 h-8 rounded-lg flex items-center justify-center text-base shadow-inner"
+                style={{ background: i < 2 ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.22)', border: i < 2 ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.35)', boxShadow: i < 2 ? '0 0 8px rgba(255,255,255,0.4)' : 'none' }}>
                 {i < 2 ? emoji : ''}
               </div>
             ))}
           </div>
           {/* Face-down row */}
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1.5 justify-center">
             {['🦊','','🦋',''].map((emoji, i) => (
-              <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              <div key={i} className="w-8 h-8 rounded-lg flex items-center justify-center text-base"
                 style={{ background: emoji ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)', border: emoji ? '2px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.3)' }}>
                 {emoji}
               </div>
             ))}
           </div>
           {/* Stats row */}
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-3 mt-0.5">
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
               <span className="text-white/70 text-[9px]">Pairs</span>
               <span className="text-white font-bold text-[9px]">2/8</span>
@@ -821,23 +821,23 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#0369a1',
       glowColor: '#7dd3fc',
       preview: (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 py-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 py-3">
           {/* Streak + timer row */}
           <div className="flex gap-2 w-full justify-between">
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
-              <span className="text-yellow-300 text-[10px]">🔥</span>
-              <span className="text-white font-bold text-[9px]">×3</span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-yellow-300 text-[9px]">🔥</span>
+              <span className="text-white font-bold text-[8px]">×3</span>
             </div>
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
-              <span className="text-white font-bold text-[9px]">⏱ 7s</span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
+              <span className="text-white font-bold text-[8px]">⏱ 7s</span>
             </div>
           </div>
           {/* Big equation */}
-          <div className="text-white font-extrabold text-3xl tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+          <div className="text-white font-extrabold text-2xl tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
             12 × 8
           </div>
           {/* Answer input */}
-          <div className="w-full rounded-xl px-3 py-1.5 text-center text-sm font-semibold"
+          <div className="w-full rounded-lg px-3 py-1 text-center text-xs font-semibold"
             style={{ background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.55)', color: 'rgba(255,255,255,0.7)' }}>
             Your answer…
           </div>
@@ -852,22 +852,22 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#5b21b6',
       glowColor: '#c4b5fd',
       preview: (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 py-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 py-3">
           {/* Hint */}
-          <div className="text-white/70 text-[10px] font-medium text-center">💡 Shines at night in the sky</div>
+          <div className="text-white/70 text-[9px] font-medium text-center">💡 Shines at night in the sky</div>
           {/* Scrambled letter tiles */}
-          <div className="flex gap-1.5 justify-center">
+          <div className="flex gap-1 justify-center">
             {['T','L','P','A','N','E'].map((letter, i) => (
-              <div key={i} className="w-8 h-9 rounded-lg flex items-center justify-center font-extrabold text-sm"
-                style={{ background: 'rgba(255,255,255,0.9)', color: '#5b21b6', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', border: '1.5px solid rgba(255,255,255,0.6)' }}>
+              <div key={i} className="w-7 h-7 rounded-md flex items-center justify-center font-extrabold text-xs"
+                style={{ background: 'rgba(255,255,255,0.9)', color: '#5b21b6', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', border: '1.5px solid rgba(255,255,255,0.6)' }}>
                 {letter}
               </div>
             ))}
           </div>
           {/* Answer blanks */}
-          <div className="flex gap-1.5 justify-center">
+          <div className="flex gap-1 justify-center">
             {['P','L','A','N','E','T'].map((letter, i) => (
-              <div key={i} className="w-8 h-9 rounded-lg flex items-center justify-center font-extrabold text-sm"
+              <div key={i} className="w-7 h-7 rounded-md flex items-center justify-center font-extrabold text-xs"
                 style={{ background: i < 3 ? 'rgba(255,255,255,0.25)' : 'transparent', color: 'rgba(255,255,255,0.4)', border: '1.5px dashed rgba(255,255,255,0.4)' }}>
                 {i < 3 ? letter : ''}
               </div>
