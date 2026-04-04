@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Calculator, BookOpen, Gamepad2 } from "lucide-react";
+import { Brain, Calculator, BookOpen, Gamepad2, Star } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
@@ -880,11 +880,6 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 height: 140,
               }}
             >
-              {/* Score badge */}
-              <div className="absolute top-2 right-2 z-20 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-full flex items-center gap-0.5 font-bold tracking-wide">
-                ⚡ 0
-              </div>
-
               {/* Preview area — positioned above the bottom bar */}
               <div className="absolute inset-0" style={{ bottom: 52 }}>
                 <div className="relative w-full h-full overflow-hidden">
@@ -903,6 +898,10 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
                   <span className="inline-block text-white/80 text-[9px] font-bold uppercase tracking-wider bg-white/25 px-2 py-0.5 rounded-full mt-0.5">{g.category}</span>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0 mr-1">
+                  <Star size={12} className="text-white/90" fill="rgba(255,255,255,0.9)" />
+                  <span className="text-white font-bold text-xs">0</span>
                 </div>
                 <div
                   className="text-black text-xs font-extrabold px-4 py-2 rounded-full flex-shrink-0"
