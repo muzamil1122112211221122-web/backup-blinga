@@ -895,7 +895,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
                 style={{ background: 'transparent' }}
               >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (g as any).iconBg || 'rgba(0,0,0,0.4)' }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0">
                   <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full">{g.icon}</div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -920,7 +920,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
         {/* Right: Leaderboard panel — self-start so it doesn't stretch */}
         <div
           className="rounded-2xl overflow-hidden flex-shrink-0 flex flex-col self-start"
-          style={{ width: 224, minHeight: 340, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
+          style={{ width: 290, minHeight: 390, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
         >
           {/* Header + time filters */}
           <div className="px-3 pt-3 pb-1">
