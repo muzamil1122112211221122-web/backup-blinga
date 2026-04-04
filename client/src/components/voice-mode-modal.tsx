@@ -86,38 +86,37 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   }, [phase]);
 
   const speakText = useCallback((text: string, lang: string, onDone?: () => void) => {
+    // Cancel any ongoing speech
     speechSynthesis.cancel();
     setPhaseSync('speaking');
 
-    const doSpeak = () => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      utterance.volume = 1;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
-      const voices = availableVoices.length ? availableVoices : speechSynthesis.getVoices();
-      const picked = selectedVoiceName
-        ? voices.find(v => v.name === selectedVoiceName)
-        : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
-      if (picked) utterance.voice = picked;
+    const voices = availableVoices.length ? availableVoices : speechSynthesis.getVoices();
+    const picked = selectedVoiceName
+      ? voices.find(v => v.name === selectedVoiceName)
+      : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
+    if (picked) utterance.voice = picked;
 
-      utterance.onend = () => {
-        setPhaseSync('idle');
-        if (onDone) onDone();
-      };
-      utterance.onerror = () => {
-        setPhaseSync('idle');
-        if (onDone) onDone();
-      };
-
-      utteranceRef.current = utterance;
-      speechSynthesis.speak(utterance);
+    utterance.onend = () => {
+      setPhaseSync('idle');
+      if (onDone) onDone();
+    };
+    utterance.onerror = (e) => {
+      console.warn('Speech error:', e.error);
+      setPhaseSync('idle');
+      if (onDone) onDone();
     };
 
-    // Use requestAnimationFrame to ensure we're in a render cycle
-    // then a small timeout for Chrome's async context restriction
-    requestAnimationFrame(() => setTimeout(doSpeak, 50));
+    utteranceRef.current = utterance;
+    // Chrome requires speak() to be called synchronously or the context must
+    // already be unlocked by a prior synchronous user-gesture call.
+    // toggleMic() primes it — so we can speak directly here.
+    speechSynthesis.speak(utterance);
   }, [setPhaseSync, selectedVoiceName, availableVoices]);
 
   // Chrome bug: speechSynthesis pauses randomly after ~15s
@@ -203,6 +202,13 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
 
   const toggleMic = useCallback(() => {
     if (phase === 'idle') {
+      // Prime / unlock the browser's speech synthesis audio context
+      // with a synchronous call inside this user-gesture handler.
+      // Without this, Chrome silently blocks speak() called from async code.
+      const primer = new SpeechSynthesisUtterance('');
+      primer.volume = 0;
+      speechSynthesis.speak(primer);
+
       autoRestartRef.current = true;
       startListening(selectedLang);
     } else {
