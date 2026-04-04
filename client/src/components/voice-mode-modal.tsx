@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Mic, MicOff, X, Globe } from "lucide-react";
+import { Mic, MicOff, X, Globe, AudioLines } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LANGUAGES = [
@@ -31,6 +31,9 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [selectedLang, setSelectedLang] = useState('en-US');
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const [barHeights, setBarHeights] = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply] = useState<string>('');
 
@@ -42,6 +45,17 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const startListeningRef = useRef<((lang: string) => void) | null>(null);
 
   useEffect(() => { langRef.current = selectedLang; }, [selectedLang]);
+
+  // Load available voices
+  useEffect(() => {
+    const load = () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length) setAvailableVoices(voices);
+    };
+    load();
+    speechSynthesis.onvoiceschanged = load;
+    return () => { speechSynthesis.onvoiceschanged = null; };
+  }, []);
 
   const setPhaseSync = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -75,14 +89,17 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
     const voices = speechSynthesis.getVoices();
-    const match = voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0]));
-    if (match) utterance.voice = match;
+    // Prefer explicitly selected voice, then language-matched fallback
+    const picked = selectedVoiceName
+      ? voices.find(v => v.name === selectedVoiceName)
+      : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
+    if (picked) utterance.voice = picked;
     utterance.rate = 1;
     utterance.onstart = () => setPhaseSync('speaking');
     utterance.onend = () => { if (onDone) onDone(); };
     utterance.onerror = () => { if (onDone) onDone(); };
     speechSynthesis.speak(utterance);
-  }, [setPhaseSync]);
+  }, [setPhaseSync, selectedVoiceName]);
 
   const sendToAI = useCallback(async (transcript: string, lang: string) => {
     setPhaseSync('thinking');
@@ -202,34 +219,82 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
           <X className="w-4 h-4" />
         </button>
 
-        {/* Language picker — top right */}
-        <div className="absolute top-4 left-4 z-50">
-          <button
-            onClick={() => setShowLangPicker(p => !p)}
-            className="text-white/40 hover:text-white/70 transition-colors p-2"
-          >
-            <Globe className="w-5 h-5" />
-          </button>
-          <AnimatePresence>
-            {showLangPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[130px] backdrop-blur-sm"
-              >
-                {LANGUAGES.map(lang => (
+        {/* Language + Voice pickers — top left */}
+        <div className="absolute top-4 left-4 z-50 flex items-center gap-1">
+          {/* Language picker */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowLangPicker(p => !p); setShowVoicePicker(false); }}
+              className="text-white/40 hover:text-white/70 transition-colors p-2"
+            >
+              <Globe className="w-5 h-5" />
+            </button>
+            <AnimatePresence>
+              {showLangPicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[130px] backdrop-blur-sm"
+                >
+                  {LANGUAGES.map(lang => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { setSelectedLang(lang.code); setShowLangPicker(false); if (isActive) stopAll(); }}
+                      className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedLang === lang.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Voice picker */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowVoicePicker(p => !p); setShowLangPicker(false); }}
+              className="text-white/40 hover:text-white/70 transition-colors p-2 flex items-center gap-1"
+              title="Change voice"
+            >
+              <AudioLines className="w-5 h-5" />
+            </button>
+            <AnimatePresence>
+              {showVoicePicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm overflow-y-auto"
+                  style={{ minWidth: 220, maxHeight: 320 }}
+                >
+                  <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Choose Voice</div>
+                  {/* Auto option */}
                   <button
-                    key={lang.code}
-                    onClick={() => { setSelectedLang(lang.code); setShowLangPicker(false); if (isActive) stopAll(); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedLang === lang.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                    onClick={() => { setSelectedVoiceName(''); setShowVoicePicker(false); }}
+                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors flex items-center justify-between gap-2 ${!selectedVoiceName ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
                   >
-                    {lang.label}
+                    <span>Auto (language default)</span>
+                    {!selectedVoiceName && <span className="text-xs text-white/50">✓</span>}
                   </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  {availableVoices.map(v => (
+                    <button
+                      key={v.name}
+                      onClick={() => { setSelectedVoiceName(v.name); setShowVoicePicker(false); }}
+                      className={`text-left px-3 py-2 rounded-xl text-sm transition-colors flex items-center justify-between gap-2 ${selectedVoiceName === v.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="truncate">{v.name}</span>
+                        <span className="text-[10px] text-white/30">{v.lang}</span>
+                      </div>
+                      {selectedVoiceName === v.name && <span className="text-xs text-white/50 flex-shrink-0">✓</span>}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Main dark area — fills most of the screen, shows AI reply */}
