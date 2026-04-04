@@ -16,6 +16,34 @@ const LANGUAGES = [
   { code: 'tr-TR', label: 'Türkçe' },
 ];
 
+// Only show natural-sounding, non-robotic voices
+const QUALITY_KEYWORDS = ['google', 'microsoft', 'natural', 'premium', 'enhanced', 'neural', 'siri', 'alex', 'samantha', 'victoria', 'karen', 'daniel', 'moira', 'tessa', 'fiona'];
+const JUNK_KEYWORDS = ['espeak', 'festival', 'flite', 'mbrola', 'pico', 'svox', 'cmu', 'risk'];
+
+function filterQualityVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  const quality = voices.filter(v => {
+    const n = v.name.toLowerCase();
+    return QUALITY_KEYWORDS.some(k => n.includes(k)) && !JUNK_KEYWORDS.some(k => n.includes(k));
+  });
+  return quality.length ? quality : voices;
+}
+
+// Pick the best default voice for a language
+function pickBestVoice(voices: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | undefined {
+  const langBase = lang.split('-')[0];
+  const pool = filterQualityVoices(voices);
+
+  // Prefer exact lang match, then base lang match
+  const exactMatch = pool.filter(v => v.lang === lang);
+  const baseMatch = pool.filter(v => v.lang.startsWith(langBase));
+  const candidates = exactMatch.length ? exactMatch : (baseMatch.length ? baseMatch : pool);
+
+  // Priority: Google > Microsoft > others, prefer non-local (cloud-based)
+  const google = candidates.find(v => v.name.toLowerCase().includes('google'));
+  const microsoft = candidates.find(v => v.name.toLowerCase().includes('microsoft'));
+  return google || microsoft || candidates[0];
+}
+
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 interface VoiceModeModalProps {
@@ -32,7 +60,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const [selectedLang, setSelectedLang] = useState('en-US');
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showVoicePicker, setShowVoicePicker] = useState(false);
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [allVoices, setAllVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceName, setSelectedVoiceName] = useState<string>('');
   const [barHeights, setBarHeights] = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply] = useState<string>('');
@@ -43,7 +71,10 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   const autoRestartRef = useRef(false);
   const langRef = useRef(selectedLang);
   const startListeningRef = useRef<((lang: string) => void) | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Accumulated transcript from continuous recognition
+  const pendingTranscriptRef = useRef<string>('');
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { langRef.current = selectedLang; }, [selectedLang]);
 
@@ -51,19 +82,21 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   useEffect(() => {
     const load = () => {
       const voices = speechSynthesis.getVoices();
-      if (voices.length) setAvailableVoices(voices);
+      if (voices.length) setAllVoices(voices);
     };
     load();
     speechSynthesis.onvoiceschanged = load;
     return () => { speechSynthesis.onvoiceschanged = null; };
   }, []);
 
+  const qualityVoices = filterQualityVoices(allVoices);
+
   const setPhaseSync = useCallback((p: Phase) => {
     phaseRef.current = p;
     setPhase(p);
   }, []);
 
-  // Animate the bar visualizer
+  // Animate bars
   useEffect(() => {
     if (phase === 'listening' || phase === 'speaking' || phase === 'thinking') {
       const animate = () => {
@@ -86,7 +119,6 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   }, [phase]);
 
   const speakText = useCallback((text: string, lang: string, onDone?: () => void) => {
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
     setPhaseSync('speaking');
 
@@ -96,10 +128,10 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
     utterance.pitch = 1;
     utterance.volume = 1;
 
-    const voices = availableVoices.length ? availableVoices : speechSynthesis.getVoices();
+    const voices = allVoices.length ? allVoices : speechSynthesis.getVoices();
     const picked = selectedVoiceName
       ? voices.find(v => v.name === selectedVoiceName)
-      : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
+      : pickBestVoice(voices, lang);
     if (picked) utterance.voice = picked;
 
     utterance.onend = () => {
@@ -112,14 +144,10 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
       if (onDone) onDone();
     };
 
-    utteranceRef.current = utterance;
-    // Chrome requires speak() to be called synchronously or the context must
-    // already be unlocked by a prior synchronous user-gesture call.
-    // toggleMic() primes it — so we can speak directly here.
     speechSynthesis.speak(utterance);
-  }, [setPhaseSync, selectedVoiceName, availableVoices]);
+  }, [setPhaseSync, selectedVoiceName, allVoices]);
 
-  // Chrome bug: speechSynthesis pauses randomly after ~15s
+  // Chrome: resume if paused mid-speech
   useEffect(() => {
     if (phase !== 'speaking') return;
     const interval = setInterval(() => {
@@ -129,6 +157,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   }, [phase]);
 
   const sendToAI = useCallback(async (transcript: string, lang: string) => {
+    if (!transcript.trim()) return;
     setPhaseSync('thinking');
     const langName = LANGUAGES.find(l => l.code === lang)?.label ?? 'English';
     try {
@@ -140,7 +169,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
           conversationId: 'voice-mode',
           model: 'forus-ai',
           provider: 'openai',
-          systemPrompt: `You are Forus AI, a voice assistant. User speaks ${langName}. CRITICAL: Reply in the EXACT same language/script. Keep it concise — 1–3 sentences max, no markdown, no bullet points.`,
+          systemPrompt: `You are Forus AI, a voice assistant. The user is speaking in ${langName}. CRITICAL RULES: 1) Always reply in the EXACT same language and script as the user used. 2) Keep it concise — 2-3 sentences max. 3) No markdown, no bullet points, no asterisks. Plain spoken sentences only.`,
         }),
       });
       if (res.ok) {
@@ -168,56 +197,91 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
     if (!SR) return;
     if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} }
 
+    pendingTranscriptRef.current = '';
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
     const recognition = new SR();
     recognitionRef.current = recognition;
     recognition.lang = lang;
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;      // Keep listening across multiple sentences
+    recognition.interimResults = true;  // Show activity for interim results
 
     recognition.onstart = () => setPhaseSync('listening');
+
     recognition.onresult = (e: any) => {
-      let t = '';
+      // Accumulate final results only
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) t += e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          pendingTranscriptRef.current += e.results[i][0].transcript + ' ';
+        }
       }
-      if (t.trim()) sendToAI(t.trim(), lang);
+
+      // Reset silence timer — send after 1.5s of silence
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      if (pendingTranscriptRef.current.trim()) {
+        silenceTimerRef.current = setTimeout(() => {
+          const transcript = pendingTranscriptRef.current.trim();
+          pendingTranscriptRef.current = '';
+          if (transcript && phaseRef.current === 'listening') {
+            sendToAI(transcript, lang);
+          }
+        }, 1500);
+      }
     };
+
     recognition.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') setPhaseSync('idle');
+      if (e.error === 'no-speech') return; // ignore — keep listening
+      if (e.error !== 'aborted') setPhaseSync('idle');
     };
+
     recognition.onend = () => {
-      if (phaseRef.current === 'listening') setPhaseSync('idle');
+      // Auto-restart if we're still supposed to be listening
+      if (phaseRef.current === 'listening' && autoRestartRef.current) {
+        try { recognition.start(); } catch {}
+      }
     };
+
     try { recognition.start(); } catch { setPhaseSync('idle'); }
   }, [setPhaseSync, sendToAI]);
 
   useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
 
-  const stopAll = useCallback(() => {
+  const stopAll = useCallback((sendPending = false) => {
     autoRestartRef.current = false;
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
     speechSynthesis.cancel();
     if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
-    setPhaseSync('idle');
-  }, [setPhaseSync]);
+
+    // If the user tapped mic off while speaking, send what was captured
+    if (sendPending && pendingTranscriptRef.current.trim()) {
+      const transcript = pendingTranscriptRef.current.trim();
+      pendingTranscriptRef.current = '';
+      sendToAI(transcript, langRef.current);
+    } else {
+      pendingTranscriptRef.current = '';
+      setPhaseSync('idle');
+    }
+  }, [setPhaseSync, sendToAI]);
 
   const toggleMic = useCallback(() => {
     if (phase === 'idle') {
-      // Prime / unlock the browser's speech synthesis audio context
-      // with a synchronous call inside this user-gesture handler.
-      // Without this, Chrome silently blocks speak() called from async code.
+      // Prime Chrome's audio context synchronously (user gesture required)
       const primer = new SpeechSynthesisUtterance('');
       primer.volume = 0;
       speechSynthesis.speak(primer);
 
       autoRestartRef.current = true;
       startListening(selectedLang);
+    } else if (phase === 'listening') {
+      // Send whatever was heard so far, then stop
+      stopAll(true);
     } else {
-      stopAll();
+      stopAll(false);
     }
   }, [phase, selectedLang, startListening, stopAll]);
 
   useEffect(() => {
-    if (!isOpen) { stopAll(); setAiReply(''); }
+    if (!isOpen) { stopAll(false); setAiReply(''); }
   }, [isOpen, stopAll]);
 
   const isActive = phase !== 'idle';
@@ -233,7 +297,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-between select-none overflow-hidden">
 
-      {/* Top status bar */}
+      {/* Top status */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-center pt-5 z-50">
         <div className="flex items-center gap-2">
           <svg width="18" height="14" viewBox="0 0 18 14" fill="none" className="text-white/80">
@@ -247,9 +311,8 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         </div>
       </div>
 
-      {/* Language + Voice pickers — top left */}
+      {/* Top left: Language + Voice pickers */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-1">
-        {/* Language picker */}
         <div className="relative">
           <button
             onClick={() => { setShowLangPicker(p => !p); setShowVoicePicker(false); }}
@@ -263,12 +326,12 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
                 initial={{ opacity: 0, y: -8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[130px] backdrop-blur-sm"
+                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[140px] backdrop-blur-sm"
               >
                 {LANGUAGES.map(lang => (
                   <button
                     key={lang.code}
-                    onClick={() => { setSelectedLang(lang.code); setShowLangPicker(false); if (isActive) stopAll(); }}
+                    onClick={() => { setSelectedLang(lang.code); setShowLangPicker(false); if (isActive) stopAll(false); }}
                     className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedLang === lang.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
                   >
                     {lang.label}
@@ -279,7 +342,6 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
           </AnimatePresence>
         </div>
 
-        {/* Voice picker */}
         <div className="relative">
           <button
             onClick={() => { setShowVoicePicker(p => !p); setShowLangPicker(false); }}
@@ -295,17 +357,17 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
                 className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm overflow-y-auto"
-                style={{ minWidth: 220, maxHeight: 320 }}
+                style={{ minWidth: 230, maxHeight: 340 }}
               >
-                <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Choose Voice</div>
+                <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Voice</div>
                 <button
                   onClick={() => { setSelectedVoiceName(''); setShowVoicePicker(false); }}
                   className={`text-left px-3 py-2 rounded-xl text-sm transition-colors flex items-center justify-between gap-2 ${!selectedVoiceName ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
                 >
-                  <span>Auto (language default)</span>
-                  {!selectedVoiceName && <span className="text-xs text-white/50">✓</span>}
+                  <span>Auto (best match)</span>
+                  {!selectedVoiceName && <span className="text-white/50 text-xs">✓</span>}
                 </button>
-                {availableVoices.map(v => (
+                {qualityVoices.map(v => (
                   <button
                     key={v.name}
                     onClick={() => { setSelectedVoiceName(v.name); setShowVoicePicker(false); }}
@@ -315,7 +377,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
                       <span className="truncate">{v.name}</span>
                       <span className="text-[10px] text-white/30">{v.lang}</span>
                     </div>
-                    {selectedVoiceName === v.name && <span className="text-xs text-white/50 flex-shrink-0">✓</span>}
+                    {selectedVoiceName === v.name && <span className="text-white/50 text-xs flex-shrink-0">✓</span>}
                   </button>
                 ))}
               </motion.div>
@@ -324,7 +386,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         </div>
       </div>
 
-      {/* AI reply text — center */}
+      {/* AI reply — center */}
       <div className="flex-1 w-full relative flex items-center justify-center px-8">
         <AnimatePresence mode="wait">
           {aiReply ? (
@@ -334,7 +396,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="text-white/80 text-center text-base leading-relaxed max-w-md"
+              className="text-white/85 text-center text-base leading-relaxed max-w-md"
             >
               {aiReply}
             </motion.p>
@@ -342,7 +404,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         </AnimatePresence>
       </div>
 
-      {/* Glow + bar visualizer */}
+      {/* Glow + visualizer */}
       <div className="relative w-full flex flex-col items-center" style={{ marginBottom: '-1px' }}>
         <motion.div
           animate={{ opacity: glowOpacity }}
@@ -386,7 +448,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         </motion.div>
       </div>
 
-      {/* Bottom controls — single row, one mic + one red close */}
+      {/* Bottom controls */}
       <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-5 z-50">
         <motion.button
           whileTap={{ scale: 0.9 }}
@@ -402,7 +464,7 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
 
         <motion.button
           whileTap={{ scale: 0.9 }}
-          onClick={() => { stopAll(); onClose(); }}
+          onClick={() => { stopAll(false); onClose(); }}
           className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors border border-red-400/30"
         >
           <X className="w-6 h-6" />
