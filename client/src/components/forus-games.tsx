@@ -799,17 +799,6 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               </div>
             ))}
           </div>
-          {/* Stats row */}
-          <div className="flex gap-3 mt-0.5">
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
-              <span className="text-white/70 text-[9px]">Pairs</span>
-              <span className="text-white font-bold text-[9px]">2/8</span>
-            </div>
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
-              <span className="text-white/70 text-[9px]">Moves</span>
-              <span className="text-white font-bold text-[9px]">6</span>
-            </div>
-          </div>
         </div>
       ),
     },
