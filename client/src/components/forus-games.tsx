@@ -908,8 +908,8 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
       {/* Header */}
       <div className="mb-3 flex-shrink-0">
-        <h2 className="text-xl font-extrabold text-white leading-tight">Train Your Brain</h2>
-        <p className="text-zinc-400 text-xs mt-0.5">Sharpen your mind with quick, fun challenges every day</p>
+        <h2 className="text-xl font-extrabold text-white leading-tight">Game Zone</h2>
+        <p className="text-zinc-400 text-xs mt-0.5">Pick a challenge and start playing</p>
       </div>
 
       <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
