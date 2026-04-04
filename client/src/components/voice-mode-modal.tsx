@@ -120,15 +120,24 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
         const data = await res.json();
         const reply = data.response || data.message || '';
         setAiReply(reply);
-        // Restart listening automatically
-        if (autoRestartRef.current && phaseRef.current !== 'idle') {
-          startListeningRef.current?.(langRef.current);
+        if (reply) {
+          speakText(reply, lang, () => {
+            if (autoRestartRef.current) {
+              startListeningRef.current?.(langRef.current);
+            } else {
+              setPhaseSync('idle');
+            }
+          });
         } else {
-          setPhaseSync('idle');
+          if (autoRestartRef.current) {
+            startListeningRef.current?.(langRef.current);
+          } else {
+            setPhaseSync('idle');
+          }
         }
       } else { setPhaseSync('idle'); }
     } catch { setPhaseSync('idle'); }
-  }, [setPhaseSync]);
+  }, [setPhaseSync, speakText]);
 
   const startListening = useCallback((lang: string) => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
