@@ -85,21 +85,33 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   }, [phase]);
 
   const speakText = useCallback((text: string, lang: string, onDone?: () => void) => {
-    speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    const voices = speechSynthesis.getVoices();
-    // Prefer explicitly selected voice, then language-matched fallback
-    const picked = selectedVoiceName
-      ? voices.find(v => v.name === selectedVoiceName)
-      : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
-    if (picked) utterance.voice = picked;
-    utterance.rate = 1;
-    utterance.onstart = () => setPhaseSync('speaking');
-    utterance.onend = () => { if (onDone) onDone(); };
-    utterance.onerror = () => { if (onDone) onDone(); };
-    speechSynthesis.speak(utterance);
-  }, [setPhaseSync, selectedVoiceName]);
+    // Cancel any ongoing speech first
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+
+    // Small timeout — required in Chrome/Chromium to unlock audio after async ops
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+
+      // Use loaded voices (already populated by the useEffect)
+      const voices = availableVoices.length ? availableVoices : speechSynthesis.getVoices();
+      const picked = selectedVoiceName
+        ? voices.find(v => v.name === selectedVoiceName)
+        : (voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split('-')[0])));
+      if (picked) utterance.voice = picked;
+
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      utterance.onstart = () => setPhaseSync('speaking');
+      utterance.onend = () => { if (onDone) onDone(); };
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e);
+        if (onDone) onDone();
+      };
+      speechSynthesis.speak(utterance);
+    }, 100);
+  }, [setPhaseSync, selectedVoiceName, availableVoices]);
 
   const sendToAI = useCallback(async (transcript: string, lang: string) => {
     setPhaseSync('thinking');
@@ -189,6 +201,17 @@ export function VoiceModeModal({ isOpen, onClose }: VoiceModeModalProps) {
   useEffect(() => {
     if (!isOpen) { stopAll(); setAiReply(''); }
   }, [isOpen, stopAll]);
+
+  // Chrome bug workaround: speechSynthesis pauses after ~15s without user interaction
+  useEffect(() => {
+    if (phase !== 'speaking') return;
+    const interval = setInterval(() => {
+      if (speechSynthesis.speaking && speechSynthesis.paused) {
+        speechSynthesis.resume();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [phase]);
 
   const isActive = phase !== 'idle';
 
