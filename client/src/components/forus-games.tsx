@@ -164,6 +164,20 @@ function scramble(word: string): string {
   return s.join('');
 }
 function medal(i: number) { return ['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`; }
+function filterByTime(entries: LeaderboardEntry[], filter: string): LeaderboardEntry[] {
+  if (filter === 'All Time') return entries;
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (filter === 'Day') cutoff.setDate(now.getDate() - 1);
+  else if (filter === 'Week') cutoff.setDate(now.getDate() - 7);
+  else if (filter === 'Month') cutoff.setMonth(now.getMonth() - 1);
+  return entries.filter(e => { const d = new Date(e.date); return !isNaN(d.getTime()) && d >= cutoff; });
+}
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 // ─── Level Config ─────────────────────────────────────────────────────────────
 const LEVELS: { id: Level; label: string; emoji: string; color: string }[] = [
@@ -278,7 +292,7 @@ function LeaderboardPanel({ onBack }: { onBack: () => void }) {
                     <span className="text-lg">{medal(i)}</span>
                     <div>
                       <div className="text-sm font-semibold text-white">{e.name}</div>
-                      <div className="text-[10px] text-zinc-500">{e.level ? `${e.level} · ` : ''}{e.date}</div>
+                      <div className="text-[10px] text-zinc-500">{e.level ? `${e.level} · ` : ''}{fmtDate(e.date)}</div>
                     </div>
                   </div>
                   <div className="text-lg font-bold text-white">{e.score}</div>
@@ -361,7 +375,7 @@ function ForusMaths({ playerName, level, onBack }: { playerName: string; level: 
     advanceRound();
   };
 
-  const handleSave = (name: string) => { saveScore('maths', { name, score, date: new Date().toLocaleDateString(), level: lv.label }); setShowSave(false); };
+  const handleSave = (name: string) => { saveScore('maths', { name, score, date: new Date().toISOString(), level: lv.label }); setShowSave(false); };
 
   const restart = () => { setScore(0); setRound(0); setStreak(0); setGameOver(false); setShowSave(false); setFeedback(null); newQuestion(); };
 
@@ -466,7 +480,7 @@ function ForusWord({ playerName, level, onBack }: { playerName: string; level: L
     advanceRound();
   };
 
-  const handleSave = (name: string) => { saveScore('word', { name, score, date: new Date().toLocaleDateString(), level: lv.label }); setShowSave(false); };
+  const handleSave = (name: string) => { saveScore('word', { name, score, date: new Date().toISOString(), level: lv.label }); setShowSave(false); };
 
   const restart = () => {
     const p = shuffleArray(wordList).slice(0, ROUNDS);
@@ -592,7 +606,7 @@ function ForusMemory({ playerName, level, onBack }: { playerName: string; level:
     }
   };
 
-  const handleSave = (name: string) => { saveScore('memory', { name, score, date: new Date().toLocaleDateString(), level: lv.label }); setShowSave(false); };
+  const handleSave = (name: string) => { saveScore('memory', { name, score, date: new Date().toISOString(), level: lv.label }); setShowSave(false); };
 
   const restart = () => {
     const newEmojis = shuffleArray(ALL_EMOJIS).slice(0, pairCount);
@@ -683,7 +697,7 @@ function ForusQuiz({ playerName, level, onBack }: { playerName: string; level: L
     }, 1000);
   };
 
-  const handleSave = (name: string) => { saveScore('quiz', { name, score, date: new Date().toLocaleDateString(), level: lv.label }); setShowSave(false); };
+  const handleSave = (name: string) => { saveScore('quiz', { name, score, date: new Date().toISOString(), level: lv.label }); setShowSave(false); };
   const optLabels = ['A', 'B', 'C', 'D'];
   const q = questions[qIndex];
 
@@ -751,6 +765,11 @@ export function ForusGames({ playerName }: ForusGamesProps) {
   const [selectedLevel, setSelectedLevel] = useState<Level>('medium');
   const [lbTimeFilter, setLbTimeFilter] = useState('All Time');
   const [lbCatFilter, setLbCatFilter] = useState('All');
+  const [lbData, setLbData] = useState<AllLeaderboards>(loadLeaderboard);
+
+  useEffect(() => {
+    if (activeGame === 'menu') setLbData(loadLeaderboard());
+  }, [activeGame]);
 
   const GAMES = [
     {
@@ -843,10 +862,16 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     },
   ];
 
-  const lb = loadLeaderboard();
   const catKey: Record<string, keyof AllLeaderboards | null> = { All: null, Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz' };
-  const key = catKey[lbCatFilter];
-  const topEntries = (key ? lb[key] : [...lb.maths, ...lb.word, ...lb.memory, ...lb.quiz].sort((a, b) => b.score - a.score)).slice(0, 3);
+  const catGameKey = catKey[lbCatFilter];
+  const rawEntries: LeaderboardEntry[] = catGameKey
+    ? lbData[catGameKey]
+    : [...lbData.maths, ...lbData.word, ...lbData.memory, ...lbData.quiz].sort((a, b) => b.score - a.score);
+  const filteredEntries = filterByTime(rawEntries, lbTimeFilter).sort((a, b) => b.score - a.score);
+  const topEntries = filteredEntries.slice(0, 3);
+  const restEntries = filteredEntries.slice(3, 10);
+  const myRankIndex = filteredEntries.findIndex(e => e.name.toLowerCase() === (playerName || '').toLowerCase());
+  const myEntry = myRankIndex >= 0 ? filteredEntries[myRankIndex] : null;
 
   const goBack = () => { setActiveGame('menu'); setPendingGame(null); };
 
@@ -983,18 +1008,43 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             </div>
           </div>
 
-          {topEntries.length === 0 && (
-            <div className="text-center text-zinc-600 text-[9px] pb-1 -mt-1">Play a game to appear!</div>
+          {filteredEntries.length === 0 && (
+            <div className="text-center text-zinc-600 text-[10px] pb-2 -mt-1">Play a game to appear!</div>
+          )}
+
+          {/* Entries list (ranks 4–10) */}
+          {restEntries.length > 0 && (
+            <div className="mx-2.5 mb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: 130, scrollbarWidth: 'thin' }}>
+              {restEntries.map((e, i) => (
+                <div key={i}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
+                  style={{
+                    background: e.name.toLowerCase() === (playerName || '').toLowerCase()
+                      ? 'rgba(99,102,241,0.35)'
+                      : 'rgba(255,255,255,0.04)',
+                    border: e.name.toLowerCase() === (playerName || '').toLowerCase()
+                      ? '1px solid rgba(99,102,241,0.6)'
+                      : '1px solid rgba(255,255,255,0.06)',
+                  }}>
+                  <span className="text-zinc-400 text-[10px] font-bold w-5 text-center">#{i + 4}</span>
+                  <span className="text-zinc-200 text-[10px] truncate flex-1">{e.name}</span>
+                  <span className="text-[9px] text-zinc-500">{fmtDate(e.date)}</span>
+                  <span className="text-white font-bold text-[10px]">{e.score}</span>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* My rank bar */}
-          <div className="flex items-center gap-2 mx-3 mb-3 mt-1 px-3 py-2.5 rounded-xl"
+          <div className="flex items-center gap-2 mx-3 mb-3 mt-auto px-3 py-2.5 rounded-xl"
             style={{ background: 'rgba(49,46,129,0.65)', border: '1px solid rgba(99,102,241,0.4)' }}>
-            <span className="text-white text-xs font-bold">#0</span>
+            <span className="text-white text-xs font-bold">
+              {myEntry ? `#${myRankIndex + 1}` : '—'}
+            </span>
             <span className="text-zinc-300 text-xs truncate flex-1">{playerName || 'You'}</span>
             <span className="text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(30,27,75,0.95)' }}>You</span>
-            <span className="text-white font-bold text-xs">0</span>
+            <span className="text-white font-bold text-xs">{myEntry ? myEntry.score : 0}</span>
           </div>
         </div>
 
