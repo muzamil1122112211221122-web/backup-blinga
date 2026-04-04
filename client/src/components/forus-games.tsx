@@ -920,7 +920,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
         {/* Right: Leaderboard panel — self-start so it doesn't stretch */}
         <div
           className="rounded-2xl overflow-hidden flex-shrink-0 flex flex-col self-start"
-          style={{ width: 196, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
+          style={{ width: 224, minHeight: 340, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
         >
           {/* Header + time filters */}
           <div className="px-3 pt-3 pb-1">
