@@ -966,13 +966,13 @@ export function ForusGames({ playerName }: ForusGamesProps) {
           style={{ width: 320, minHeight: 460, background: 'linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)', border: '1px solid rgba(99,102,241,0.4)' }}
         >
           {/* Header + time filters */}
-          <div className="px-3 pt-3 pb-1">
+          <div className="px-3 pt-3 pb-1.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-extrabold text-[13px]">Leaderboard</span>
+              <span className="text-white font-extrabold text-base">Leaderboard</span>
               <div className="flex gap-0.5">
                 {['Day','Week','Month','All Time'].map(f => (
                   <button key={f} onClick={() => setLbTimeFilter(f)}
-                    className="text-[8px] px-1.5 py-0.5 rounded-full font-semibold"
+                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                     style={{ background: lbTimeFilter === f ? 'rgba(99,102,241,0.85)' : 'transparent', color: lbTimeFilter === f ? '#fff' : '#71717a' }}>
                     {f}
                   </button>
@@ -983,7 +983,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             <div className="flex gap-1 flex-wrap">
               {['All','Memory','Math','Word','Quiz'].map(f => (
                 <button key={f} onClick={() => setLbCatFilter(f)}
-                  className="text-[9px] px-2 py-0.5 rounded-full font-semibold border"
+                  className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold border"
                   style={{ background: lbCatFilter === f ? '#fff' : 'transparent', color: lbCatFilter === f ? '#000' : '#a1a1aa', borderColor: lbCatFilter === f ? '#fff' : '#3f3f46' }}>
                   {f}
                 </button>
@@ -995,47 +995,47 @@ export function ForusGames({ playerName }: ForusGamesProps) {
           <div className="flex items-end justify-center gap-4 px-3 pt-3 pb-2">
             {/* 2nd place */}
             <div className="flex flex-col items-center">
-              <div className="text-[10px] text-zinc-400 mb-1 truncate max-w-[52px] text-center leading-tight">{topEntries[1]?.name ?? '—'}</div>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-base shadow-lg"
+              <div className="text-xs text-zinc-400 mb-1 truncate max-w-[60px] text-center leading-tight">{topEntries[1]?.name ?? '—'}</div>
+              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #d1d5db, #9ca3af)', border: '2px solid rgba(209,213,219,0.85)' }}>2</div>
-              <div className="w-14 rounded-t-xl mt-1.5"
-                style={{ height: 72, background: 'linear-gradient(to top, rgba(156,163,175,0.5), rgba(209,213,219,0.25))', border: '1px solid rgba(209,213,219,0.2)', borderBottom: 'none' }} />
+              <div className="w-16 rounded-t-xl mt-1.5"
+                style={{ height: 80, background: 'linear-gradient(to top, rgba(156,163,175,0.5), rgba(209,213,219,0.25))', border: '1px solid rgba(209,213,219,0.2)', borderBottom: 'none' }} />
             </div>
             {/* 1st place */}
             <div className="flex flex-col items-center">
               {topEntries[0] ? (
                 <>
-                  <div className="text-white font-extrabold text-sm leading-tight">{topEntries[0].score}</div>
-                  <div className="text-[10px] text-zinc-300 mb-1 truncate max-w-[56px] text-center">{topEntries[0].name}</div>
+                  <div className="text-white font-extrabold text-base leading-tight">{topEntries[0].score}</div>
+                  <div className="text-xs text-zinc-300 mb-1 truncate max-w-[64px] text-center">{topEntries[0].name}</div>
                 </>
               ) : (
-                <div className="text-zinc-600 text-[10px] mb-1 text-center">No scores</div>
+                <div className="text-zinc-600 text-xs mb-1 text-center">No scores</div>
               )}
-              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-xl shadow-2xl"
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-extrabold text-2xl shadow-2xl"
                 style={{ background: 'linear-gradient(135deg, #fcd34d, #f59e0b)', border: '2px solid rgba(253,224,71,0.95)', boxShadow: '0 0 18px rgba(251,191,36,0.6)' }}>1</div>
-              <div className="w-14 rounded-t-xl mt-1.5"
-                style={{ height: 104, background: 'linear-gradient(to top, rgba(234,179,8,0.55), rgba(251,191,36,0.25))', border: '1px solid rgba(253,224,71,0.3)', borderBottom: 'none' }} />
+              <div className="w-16 rounded-t-xl mt-1.5"
+                style={{ height: 116, background: 'linear-gradient(to top, rgba(234,179,8,0.55), rgba(251,191,36,0.25))', border: '1px solid rgba(253,224,71,0.3)', borderBottom: 'none' }} />
             </div>
             {/* 3rd place */}
             <div className="flex flex-col items-center">
-              <div className="text-[10px] text-zinc-400 mb-1 truncate max-w-[52px] text-center leading-tight">{topEntries[2]?.name ?? '—'}</div>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold text-base shadow-lg"
+              <div className="text-xs text-zinc-400 mb-1 truncate max-w-[60px] text-center leading-tight">{topEntries[2]?.name ?? '—'}</div>
+              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-lg shadow-lg"
                 style={{ background: 'linear-gradient(135deg, #fb923c, #ea580c)', border: '2px solid rgba(253,186,116,0.85)' }}>3</div>
-              <div className="w-14 rounded-t-xl mt-1.5"
-                style={{ height: 52, background: 'linear-gradient(to top, rgba(249,115,22,0.5), rgba(251,146,60,0.25))', border: '1px solid rgba(253,186,116,0.2)', borderBottom: 'none' }} />
+              <div className="w-16 rounded-t-xl mt-1.5"
+                style={{ height: 60, background: 'linear-gradient(to top, rgba(249,115,22,0.5), rgba(251,146,60,0.25))', border: '1px solid rgba(253,186,116,0.2)', borderBottom: 'none' }} />
             </div>
           </div>
 
           {filteredEntries.length === 0 && (
-            <div className="text-center text-zinc-600 text-[10px] pb-2 -mt-1">Play a game to appear!</div>
+            <div className="text-center text-zinc-600 text-xs pb-2 -mt-1">Play a game to appear!</div>
           )}
 
           {/* Entries list (ranks 4–10) */}
           {restEntries.length > 0 && (
-            <div className="mx-2.5 mb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: 130, scrollbarWidth: 'thin' }}>
+            <div className="mx-2.5 mb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: 140, scrollbarWidth: 'thin' }}>
               {restEntries.map((e, i) => (
                 <div key={i}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl"
                   style={{
                     background: e.name.toLowerCase() === (playerName || '').toLowerCase()
                       ? 'rgba(99,102,241,0.35)'
@@ -1044,25 +1044,25 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                       ? '1px solid rgba(99,102,241,0.6)'
                       : '1px solid rgba(255,255,255,0.06)',
                   }}>
-                  <span className="text-zinc-400 text-[10px] font-bold w-5 text-center">#{i + 4}</span>
-                  <span className="text-zinc-200 text-[10px] truncate flex-1">{e.name}</span>
-                  <span className="text-[9px] text-zinc-500">{fmtDate(e.date)}</span>
-                  <span className="text-white font-bold text-[10px]">{e.score}</span>
+                  <span className="text-zinc-400 text-xs font-bold w-6 text-center">#{i + 4}</span>
+                  <span className="text-zinc-200 text-xs truncate flex-1">{e.name}</span>
+                  <span className="text-[10px] text-zinc-500">{fmtDate(e.date)}</span>
+                  <span className="text-white font-bold text-xs">{e.score}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* My rank bar */}
-          <div className="flex items-center gap-2 mx-3 mb-3 mt-auto px-3 py-2.5 rounded-xl"
+          <div className="flex items-center gap-2 mx-3 mb-3 mt-auto px-3 py-3 rounded-xl"
             style={{ background: 'rgba(49,46,129,0.65)', border: '1px solid rgba(99,102,241,0.4)' }}>
-            <span className="text-white text-xs font-bold">
+            <span className="text-white text-sm font-bold">
               {myEntry ? `#${myRankIndex + 1}` : '—'}
             </span>
-            <span className="text-zinc-300 text-xs truncate flex-1">{playerName || 'You'}</span>
-            <span className="text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full"
+            <span className="text-zinc-300 text-sm truncate flex-1">{playerName || 'You'}</span>
+            <span className="text-indigo-300 text-xs font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(30,27,75,0.95)' }}>You</span>
-            <span className="text-white font-bold text-xs">{myEntry ? myEntry.score : 0}</span>
+            <span className="text-white font-bold text-sm">{myEntry ? myEntry.score : 0}</span>
           </div>
         </div>
 
