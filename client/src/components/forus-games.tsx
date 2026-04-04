@@ -880,6 +880,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               style={{
                 ...g.bgStyle,
                 height: 140,
+                boxShadow: `inset 0 -3px 0 ${(g as any).glowColor || '#fff'}cc, inset 0 -10px 20px ${(g as any).glowColor || '#fff'}33`,
               }}
             >
               {/* Preview area — positioned above the bottom bar */}
@@ -888,18 +889,6 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                   {g.preview}
                 </div>
               </div>
-
-              {/* Color-matched center-bottom outline */}
-              <div className="absolute z-30 pointer-events-none" style={{
-                bottom: 52,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '55%',
-                height: 2,
-                borderRadius: 9999,
-                background: (g as any).glowColor || '#fff',
-                boxShadow: `0 0 8px 3px ${(g as any).glowColor || '#fff'}99, 0 0 20px 6px ${(g as any).glowColor || '#fff'}44`,
-              }} />
 
               {/* Bottom info bar */}
               <div
