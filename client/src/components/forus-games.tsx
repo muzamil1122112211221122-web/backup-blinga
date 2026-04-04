@@ -904,7 +904,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               className="relative rounded-2xl overflow-hidden text-left flex-shrink-0 active:scale-[0.98] transition-all duration-200"
               style={{
                 ...g.bgStyle,
-                height: 135,
+                height: 160,
                 boxShadow: `inset 0 -3px 0 ${(g as any).glowColor || '#fff'}cc, inset 0 -10px 20px ${(g as any).glowColor || '#fff'}33`,
               }}
             >
