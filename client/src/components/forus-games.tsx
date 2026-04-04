@@ -780,10 +780,36 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#86198f',
       glowColor: '#f0abfc',
       preview: (
-        <div className="absolute inset-0 grid grid-cols-4 gap-[7px] p-3" style={{ gridTemplateRows: 'repeat(3,1fr)' }}>
-          {Array.from({length: 12}).map((_, i) => (
-            <div key={i} className="rounded-xl" style={{ background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.35)' }} />
-          ))}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 py-3">
+          {/* Matched pair row */}
+          <div className="flex gap-2 justify-center">
+            {['🦁','🦁','🐬','🐬'].map((emoji, i) => (
+              <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner"
+                style={{ background: i < 2 ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.22)', border: i < 2 ? '2px solid rgba(255,255,255,0.95)' : '1.5px solid rgba(255,255,255,0.35)', boxShadow: i < 2 ? '0 0 10px rgba(255,255,255,0.4)' : 'none' }}>
+                {i < 2 ? emoji : ''}
+              </div>
+            ))}
+          </div>
+          {/* Face-down row */}
+          <div className="flex gap-2 justify-center">
+            {['🦊','','🦋',''].map((emoji, i) => (
+              <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                style={{ background: emoji ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.18)', border: emoji ? '2px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.3)' }}>
+                {emoji}
+              </div>
+            ))}
+          </div>
+          {/* Stats row */}
+          <div className="flex gap-3 mt-1">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-white/70 text-[9px]">Pairs</span>
+              <span className="text-white font-bold text-[9px]">2/8</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-white/70 text-[9px]">Moves</span>
+              <span className="text-white font-bold text-[9px]">6</span>
+            </div>
+          </div>
         </div>
       ),
     },
@@ -795,18 +821,25 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#0369a1',
       glowColor: '#7dd3fc',
       preview: (
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute" style={{ top: 8, left: 6, width: 78, height: 26, background: '#fff', borderRadius: 40, opacity: 0.9 }} />
-          <div className="absolute" style={{ top: 4, left: 42, width: 58, height: 20, background: '#fff', borderRadius: 40, opacity: 0.75 }} />
-          <div className="absolute" style={{ top: 14, right: 10, width: 52, height: 20, background: '#fff', borderRadius: 40, opacity: 0.8 }} />
-          <div className="absolute" style={{ top: 26, right: 32, width: 38, height: 15, background: '#fff', borderRadius: 40, opacity: 0.65 }} />
-          <div className="absolute z-10 rounded-full px-3 py-[3px] text-[10px] font-medium"
-            style={{ top: 10, left: '50%', transform: 'translateX(-50%)', background: '#fff', color: '#64748b', whiteSpace: 'nowrap' }}>
-            Type answer...
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 py-3">
+          {/* Streak + timer row */}
+          <div className="flex gap-2 w-full justify-between">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.2)' }}>
+              <span className="text-yellow-300 text-[10px]">🔥</span>
+              <span className="text-white font-bold text-[9px]">×3</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
+              <span className="text-white font-bold text-[9px]">⏱ 7s</span>
+            </div>
           </div>
-          <div className="absolute z-10 font-extrabold text-[18px] text-white"
-            style={{ bottom: 6, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
-            1 × 4
+          {/* Big equation */}
+          <div className="text-white font-extrabold text-3xl tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+            12 × 8
+          </div>
+          {/* Answer input */}
+          <div className="w-full rounded-xl px-3 py-1.5 text-center text-sm font-semibold"
+            style={{ background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.55)', color: 'rgba(255,255,255,0.7)' }}>
+            Your answer…
           </div>
         </div>
       ),
@@ -819,22 +852,27 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       iconBg: '#5b21b6',
       glowColor: '#c4b5fd',
       preview: (
-        <div className="absolute inset-0 flex flex-col justify-center px-3 py-2">
-          {['Stingy', 'Fair', 'Munificent'].map((word, i) => (
-            <div key={i} className="flex items-center justify-between py-[7px]"
-              style={{ borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.22)' : 'none' }}>
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col gap-[3px]">
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
-                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
-                </div>
-                <span className="text-white font-semibold text-[13px]">{word}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 py-3">
+          {/* Hint */}
+          <div className="text-white/70 text-[10px] font-medium text-center">💡 Shines at night in the sky</div>
+          {/* Scrambled letter tiles */}
+          <div className="flex gap-1.5 justify-center">
+            {['T','L','P','A','N','E'].map((letter, i) => (
+              <div key={i} className="w-8 h-9 rounded-lg flex items-center justify-center font-extrabold text-sm"
+                style={{ background: 'rgba(255,255,255,0.9)', color: '#5b21b6', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', border: '1.5px solid rgba(255,255,255,0.6)' }}>
+                {letter}
               </div>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 8, fontWeight: 700 }}>i</span>
+            ))}
+          </div>
+          {/* Answer blanks */}
+          <div className="flex gap-1.5 justify-center">
+            {['P','L','A','N','E','T'].map((letter, i) => (
+              <div key={i} className="w-8 h-9 rounded-lg flex items-center justify-center font-extrabold text-sm"
+                style={{ background: i < 3 ? 'rgba(255,255,255,0.25)' : 'transparent', color: 'rgba(255,255,255,0.4)', border: '1.5px dashed rgba(255,255,255,0.4)' }}>
+                {i < 3 ? letter : ''}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ),
     },
