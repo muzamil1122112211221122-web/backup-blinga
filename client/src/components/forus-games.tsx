@@ -759,6 +759,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       label: 'Forus Memory', category: 'MEMORY',
       bgStyle: { background: '#c026d3' },
       iconBg: '#86198f',
+      glowColor: '#f0abfc',
       preview: (
         <div className="absolute inset-0 grid grid-cols-4 gap-[7px] p-3" style={{ gridTemplateRows: 'repeat(3,1fr)' }}>
           {Array.from({length: 12}).map((_, i) => (
@@ -773,6 +774,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       label: 'Forus Maths', category: 'MATH',
       bgStyle: { background: '#0ea5e9' },
       iconBg: '#0369a1',
+      glowColor: '#7dd3fc',
       preview: (
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute" style={{ top: 8, left: 6, width: 78, height: 26, background: '#fff', borderRadius: 40, opacity: 0.9 }} />
@@ -796,6 +798,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       label: 'Forus Word', category: 'VOCABULARY',
       bgStyle: { background: '#7c3aed' },
       iconBg: '#5b21b6',
+      glowColor: '#c4b5fd',
       preview: (
         <div className="absolute inset-0 flex flex-col justify-center px-3 py-2">
           {['Stingy', 'Fair', 'Munificent'].map((word, i) => (
@@ -822,6 +825,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       label: 'Forus Quiz', category: 'QUIZ',
       bgStyle: { background: '#f97316' },
       iconBg: '#c2410c',
+      glowColor: '#fdba74',
       preview: (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 py-2">
           <div className="text-white font-bold text-[11px] text-center opacity-90 leading-tight">What is 7 × 8?</div>
@@ -885,7 +889,19 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 </div>
               </div>
 
-              {/* Bottom info bar — frosted glass */}
+              {/* Color-matched center-bottom outline */}
+              <div className="absolute z-30 pointer-events-none" style={{
+                bottom: 52,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '55%',
+                height: 2,
+                borderRadius: 9999,
+                background: (g as any).glowColor || '#fff',
+                boxShadow: `0 0 8px 3px ${(g as any).glowColor || '#fff'}99, 0 0 20px 6px ${(g as any).glowColor || '#fff'}44`,
+              }} />
+
+              {/* Bottom info bar */}
               <div
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
                 style={{ background: 'transparent' }}
