@@ -1,9 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import mathIcon from "@assets/math-symbols-icon-vector-Photoroom_1774279072726.png";
-import wordIcon from "@assets/external-Memory-game-table-games-icongeek26-linear-colour-icon_1774279072725.png";
-import memoryIcon from "@assets/10199730_1774278684725.png";
-import quizIcon from "@assets/16815634_1774279387584.png";
+import { Brain, Calculator, BookOpen, Gamepad2 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
@@ -198,7 +195,7 @@ function StatPill({ children, red }: { children: React.ReactNode; red?: boolean 
 }
 
 // ─── Level Select ─────────────────────────────────────────────────────────────
-function LevelSelect({ game, icon, onSelect, onBack }: { game: string; icon: string; onSelect: (l: Level) => void; onBack: () => void }) {
+function LevelSelect({ game, icon, onSelect, onBack }: { game: string; icon: ReactNode; onSelect: (l: Level) => void; onBack: () => void }) {
   const descs: Record<Level, string> = {
     easy:   'Simple challenges, relaxed pace.',
     medium: 'Balanced — a real test of skill!',
@@ -206,7 +203,7 @@ function LevelSelect({ game, icon, onSelect, onBack }: { game: string; icon: str
   };
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-4">
-      <img src={icon} alt={game} className="w-24 h-24 object-contain mb-4 drop-shadow-xl" />
+      <div className="w-24 h-24 flex items-center justify-center mb-4">{icon}</div>
       <h2 className="text-2xl font-extrabold mb-1 text-white">{game}</h2>
       <p className="text-zinc-400 text-sm mb-6">Choose your difficulty · 10 seconds per turn</p>
       <div className="grid grid-cols-3 gap-3 w-full max-w-sm mb-5">
@@ -757,62 +754,62 @@ export function ForusGames({ playerName }: ForusGamesProps) {
 
   const GAMES = [
     {
-      id: 'memory' as GameId, icon: memoryIcon, label: 'Forus Memory', category: 'MEMORY',
-      /* Bright fuchsia top → near-black violet bottom */
-      bgStyle: { background: 'linear-gradient(to bottom, #f5d0fe 0%, #e879f9 20%, #a855f7 55%, #2e1065 100%)' },
-      iconBg: 'rgba(46,16,101,0.95)',
+      id: 'memory' as GameId,
+      icon: <Brain size={40} color="#fff" strokeWidth={1.8} />,
+      label: 'Forus Memory', category: 'MEMORY',
+      bgStyle: { background: '#c026d3' },
+      iconBg: '#86198f',
       preview: (
-        <div className="absolute inset-0 grid grid-cols-4 gap-[6px] p-[10px]" style={{ gridTemplateRows: 'repeat(3,1fr)' }}>
+        <div className="absolute inset-0 grid grid-cols-4 gap-[7px] p-3" style={{ gridTemplateRows: 'repeat(3,1fr)' }}>
           {Array.from({length: 12}).map((_, i) => (
-            <div key={i} className="rounded-[10px]" style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)' }} />
+            <div key={i} className="rounded-xl" style={{ background: 'rgba(255,255,255,0.2)', border: '1.5px solid rgba(255,255,255,0.35)' }} />
           ))}
         </div>
       ),
     },
     {
-      id: 'maths' as GameId, icon: mathIcon, label: 'Forus Maths', category: 'MATH',
-      /* Near-white sky top → deep navy bottom */
-      bgStyle: { background: 'linear-gradient(to bottom, #f0f9ff 0%, #bae6fd 20%, #38bdf8 55%, #0c1445 100%)' },
-      iconBg: 'rgba(12,20,69,0.95)',
+      id: 'maths' as GameId,
+      icon: <Calculator size={40} color="#fff" strokeWidth={1.8} />,
+      label: 'Forus Maths', category: 'MATH',
+      bgStyle: { background: '#0ea5e9' },
+      iconBg: '#0369a1',
       preview: (
         <div className="absolute inset-0 overflow-hidden">
-          {/* Solid white cloud shapes — no blur, no gradient */}
-          <div className="absolute" style={{ top: 6, left: 4, width: 80, height: 28, background: '#ffffff', borderRadius: 40, opacity: 0.85 }} />
-          <div className="absolute" style={{ top: 2, left: 36, width: 60, height: 22, background: '#ffffff', borderRadius: 40, opacity: 0.7 }} />
-          <div className="absolute" style={{ top: 12, right: 8, width: 55, height: 22, background: '#ffffff', borderRadius: 40, opacity: 0.75 }} />
-          <div className="absolute" style={{ top: 22, right: 30, width: 40, height: 16, background: '#ffffff', borderRadius: 40, opacity: 0.6 }} />
-          {/* "Type answer..." pill */}
-          <div className="absolute z-10 rounded-full px-3 py-[3px] text-[10px]"
-            style={{ top: 10, left: '50%', transform: 'translateX(-50%)', background: '#ffffff', color: '#64748b', whiteSpace: 'nowrap', fontWeight: 500 }}>
+          <div className="absolute" style={{ top: 8, left: 6, width: 78, height: 26, background: '#fff', borderRadius: 40, opacity: 0.9 }} />
+          <div className="absolute" style={{ top: 4, left: 42, width: 58, height: 20, background: '#fff', borderRadius: 40, opacity: 0.75 }} />
+          <div className="absolute" style={{ top: 14, right: 10, width: 52, height: 20, background: '#fff', borderRadius: 40, opacity: 0.8 }} />
+          <div className="absolute" style={{ top: 26, right: 32, width: 38, height: 15, background: '#fff', borderRadius: 40, opacity: 0.65 }} />
+          <div className="absolute z-10 rounded-full px-3 py-[3px] text-[10px] font-medium"
+            style={{ top: 10, left: '50%', transform: 'translateX(-50%)', background: '#fff', color: '#64748b', whiteSpace: 'nowrap' }}>
             Type answer...
           </div>
-          {/* Equation */}
-          <div className="absolute z-10 font-extrabold text-[17px]"
-            style={{ bottom: 6, left: '50%', transform: 'translateX(-50%)', color: '#0c1445', whiteSpace: 'nowrap' }}>
+          <div className="absolute z-10 font-extrabold text-[18px] text-white"
+            style={{ bottom: 6, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
             1 × 4
           </div>
         </div>
       ),
     },
     {
-      id: 'word' as GameId, icon: wordIcon, label: 'Forus Word', category: 'VOCABULARY',
-      /* Bright lavender top → near-black purple bottom */
-      bgStyle: { background: 'linear-gradient(to bottom, #faf5ff 0%, #e9d5ff 20%, #a855f7 55%, #1a0533 100%)' },
-      iconBg: 'rgba(26,5,51,0.95)',
+      id: 'word' as GameId,
+      icon: <BookOpen size={40} color="#fff" strokeWidth={1.8} />,
+      label: 'Forus Word', category: 'VOCABULARY',
+      bgStyle: { background: '#7c3aed' },
+      iconBg: '#5b21b6',
       preview: (
-        <div className="absolute inset-0 flex flex-col justify-center gap-0 px-3 py-2">
+        <div className="absolute inset-0 flex flex-col justify-center px-3 py-2">
           {['Stingy', 'Fair', 'Munificent'].map((word, i) => (
-            <div key={i} className="flex items-center justify-between py-[6px]"
-              style={{ borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
-              <div className="flex items-center gap-1.5">
-                <div className="flex flex-col gap-[2px]">
-                  <div className="w-0.5 h-0.5 rounded-full bg-white/50" />
-                  <div className="w-0.5 h-0.5 rounded-full bg-white/50" />
+            <div key={i} className="flex items-center justify-between py-[7px]"
+              style={{ borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.22)' : 'none' }}>
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-[3px]">
+                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
+                  <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
                 </div>
-                <span className="text-white font-bold text-[13px]">{word}</span>
+                <span className="text-white font-semibold text-[13px]">{word}</span>
               </div>
-              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ border: '1.5px solid rgba(255,255,255,0.4)' }}>
-                <span className="text-white/80 text-[8px] font-bold">i</span>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 8, fontWeight: 700 }}>i</span>
               </div>
             </div>
           ))}
@@ -820,27 +817,23 @@ export function ForusGames({ playerName }: ForusGamesProps) {
       ),
     },
     {
-      id: 'quiz' as GameId, icon: quizIcon, label: 'Forus Quiz', category: 'QUIZ',
-      /* Bright lime top → near-black forest bottom */
-      bgStyle: { background: 'linear-gradient(to bottom, #f0fdf4 0%, #86efac 20%, #22c55e 55%, #052e16 100%)' },
-      iconBg: 'rgba(5,46,22,0.95)',
+      id: 'quiz' as GameId,
+      icon: <Gamepad2 size={40} color="#fff" strokeWidth={1.8} />,
+      label: 'Forus Quiz', category: 'QUIZ',
+      bgStyle: { background: '#16a34a' },
+      iconBg: '#166534',
       preview: (
         <div className="absolute inset-0 overflow-hidden">
-          {/* Yellow star/flower dots */}
           {[[10,10],[28,18],[52,8],[72,15],[88,9],[16,28],[64,22],[38,30]].map(([x,y],i) => (
             <div key={i} className="absolute rounded-full" style={{ left: `${x}%`, top: `${y}%`, width: 5, height: 5, background: '#fde047' }} />
           ))}
-          {/* Ground strip */}
-          <div className="absolute left-0 right-0" style={{ top: '55%', bottom: 0, background: '#15803d' }} />
-          {/* Rail ties */}
+          <div className="absolute left-0 right-0" style={{ top: '58%', bottom: 0, background: '#15803d' }} />
           {[8,20,32,44,56,68,80,92].map((x,i) => (
-            <div key={i} className="absolute" style={{ left: `${x}%`, top: '55%', width: 5, height: 14, background: '#713f12', borderRadius: 1 }} />
+            <div key={i} className="absolute" style={{ left: `${x}%`, top: '58%', width: 5, height: 13, background: '#854d0e', borderRadius: 1 }} />
           ))}
-          {/* Two rails */}
-          <div className="absolute left-0 right-0" style={{ top: '56%', height: 2, background: '#9ca3af' }} />
-          <div className="absolute left-0 right-0" style={{ top: '62%', height: 2, background: '#9ca3af' }} />
-          {/* Train body */}
-          <div className="absolute z-10" style={{ left: '28%', top: '35%', width: 32, height: 22, background: '#fbbf24', borderRadius: 4, border: '2px solid #92400e' }}>
+          <div className="absolute left-0 right-0" style={{ top: '59%', height: 2, background: '#d1d5db' }} />
+          <div className="absolute left-0 right-0" style={{ top: '64%', height: 2, background: '#d1d5db' }} />
+          <div className="absolute z-10" style={{ left: '28%', top: '36%', width: 32, height: 22, background: '#fbbf24', borderRadius: 4, border: '2px solid #92400e' }}>
             <div className="absolute inset-0 flex items-center justify-center text-[11px]">🚂</div>
           </div>
         </div>
@@ -857,7 +850,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
 
   if (pendingGame && pendingGame !== 'menu' && pendingGame !== 'leaderboard') {
     const g = GAMES.find(x => x.id === pendingGame);
-    return <LevelSelect game={g?.label ?? ''} icon={g?.icon ?? ''} onSelect={(l) => { setSelectedLevel(l); setActiveGame(pendingGame); setPendingGame(null); }} onBack={() => setPendingGame(null)} />;
+    return <LevelSelect game={g?.label ?? ''} icon={g?.icon} onSelect={(l) => { setSelectedLevel(l); setActiveGame(pendingGame); setPendingGame(null); }} onBack={() => setPendingGame(null)} />;
   }
 
   if (activeGame === 'maths')  return <ForusMaths  playerName={playerName} level={selectedLevel} onBack={goBack} />;
@@ -884,7 +877,6 @@ export function ForusGames({ playerName }: ForusGamesProps) {
               className="relative rounded-2xl overflow-hidden text-left flex-shrink-0 active:scale-[0.98] transition-all duration-200"
               style={{
                 ...g.bgStyle,
-                boxShadow: '0 0 0 1.5px rgba(255,255,255,0.2), 0 6px 24px rgba(0,0,0,0.4)',
                 height: 140,
               }}
             >
@@ -900,27 +892,13 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 </div>
               </div>
 
-              {/* Pure white glowing center-bottom outline */}
-              <div className="absolute z-30 pointer-events-none"
-                style={{
-                  bottom: 52,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '55%',
-                  height: 2,
-                  background: '#ffffff',
-                  boxShadow: '0 0 10px 4px rgba(255,255,255,0.8), 0 0 24px 10px rgba(255,255,255,0.4)',
-                  borderRadius: 9999,
-                }}
-              />
-
               {/* Bottom info bar — frosted glass */}
               <div
                 className="absolute bottom-0 left-0 right-0 flex items-center gap-2.5 px-3 py-2.5 z-10"
                 style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.18)' }}
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: (g as any).iconBg || 'rgba(0,0,0,0.4)' }}>
-                  <img src={g.icon} alt={g.label} className="w-5 h-5 object-contain" />
+                  <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full">{g.icon}</div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-bold text-sm leading-tight">{g.label}</div>
@@ -928,7 +906,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
                 </div>
                 <div
                   className="text-black text-xs font-extrabold px-4 py-2 rounded-full flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.96)', boxShadow: '0 0 14px rgba(255,255,255,0.45)' }}
+                  style={{ background: 'rgba(255,255,255,0.96)' }}
                 >
                   Play
                 </div>
