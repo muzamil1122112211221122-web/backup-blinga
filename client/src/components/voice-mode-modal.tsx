@@ -83,12 +83,19 @@ const PREF_VOICES: Record<string, string> = {
 const JUNK = ['espeak', 'festival', 'flite', 'mbrola', 'pico', 'svox', 'cmu'];
 
 function pickVoice(voices: SpeechSynthesisVoice[], lang: string, preferred: string) {
-  if (preferred) return voices.find(v => v.name === preferred);
   const base = lang.split('-')[0];
+  // Only honour a manually-selected voice if it belongs to the current language
+  if (preferred) {
+    const pv = voices.find(v => v.name === preferred);
+    if (pv && pv.lang.startsWith(base)) return pv;
+  }
+  // Try the known-good Google voice for this language
   const pref = PREF_VOICES[base];
   if (pref) { const f = voices.find(v => v.name === pref); if (f) return f; }
+  // Fall back to any non-junk voice for this language
   const clean = voices.filter(v => v.lang.startsWith(base) && !JUNK.some(j => v.name.toLowerCase().includes(j)));
   return clean.find(v => /google/i.test(v.name)) ?? clean[0];
+  // If nothing found, return undefined → utt.voice not set → browser uses default for utt.lang
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -314,7 +321,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.5 : 0.25;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
   const label    = phase === 'listening' ? 'Listening...' : phase === 'thinking' ? 'Thinking...' : phase === 'speaking' ? 'Speaking...' : 'Tap mic to start';
-  const displayVoices = voices.filter(v => !JUNK.some(j => v.name.toLowerCase().includes(j)));
+  const langBase = lang.split('-')[0];
+  // Show voices for the current language (+ any English fallbacks so list isn't empty)
+  const displayVoices = voices.filter(v =>
+    !JUNK.some(j => v.name.toLowerCase().includes(j)) &&
+    (v.lang.startsWith(langBase) || v.lang.startsWith('en'))
+  );
 
   if (!isOpen) return null;
 
@@ -348,7 +360,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
                 className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[145px] backdrop-blur-sm z-50">
                 {LANGUAGES.map(l => (
                   <button key={l.code}
-                    onClick={() => { setLang(l.code); langRef.current = l.code; setShowLang(false); if (phaseRef.current !== 'idle') handleClose(); }}
+                    onClick={() => { setLang(l.code); langRef.current = l.code; setSelVoice(''); selVoiceRef.current = ''; setShowLang(false); if (phaseRef.current !== 'idle') handleClose(); }}
                     className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${lang === l.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                     {l.label}
                   </button>
