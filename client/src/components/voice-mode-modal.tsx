@@ -16,100 +16,77 @@ const LANGUAGES = [
   { code: 'tr-TR', label: 'Türkçe' },
 ];
 
-// Preferred Google voice names per language base code
 const PREF_VOICES: Record<string, string> = {
-  'en': 'Google US English',
-  'ur': 'Google हिन्दी',
-  'ar': 'Google العربية',
-  'hi': 'Google हिन्दी',
-  'fr': 'Google français',
-  'es': 'Google español',
-  'de': 'Google Deutsch',
-  'zh': 'Google 普通话（中国大陆）',
-  'pt': 'Google português do Brasil',
-  'tr': 'Google Türkçe',
+  en: 'Google US English',
+  ur: 'Google हिन्दी',
+  ar: 'Google العربية',
+  hi: 'Google हिन्दी',
+  fr: 'Google français',
+  es: 'Google español',
+  de: 'Google Deutsch',
+  zh: 'Google 普通话（中国大陆）',
+  pt: 'Google português do Brasil',
+  tr: 'Google Türkçe',
 };
 
 const JUNK = ['espeak', 'festival', 'flite', 'mbrola', 'pico', 'svox', 'cmu'];
 
-function pickVoice(
-  voices: SpeechSynthesisVoice[],
-  lang: string,
-  preferred: string,
-): SpeechSynthesisVoice | undefined {
+function pickVoice(voices: SpeechSynthesisVoice[], lang: string, preferred: string) {
   if (preferred) return voices.find(v => v.name === preferred);
   const base = lang.split('-')[0];
-  const prefName = PREF_VOICES[base];
-  if (prefName) {
-    const found = voices.find(v => v.name === prefName);
-    if (found) return found;
-  }
-  // Any clean voice for this exact locale
-  const exactClean = voices.filter(v => v.lang === lang && !JUNK.some(j => v.name.toLowerCase().includes(j)));
-  if (exactClean.length) return exactClean.find(v => /google/i.test(v.name)) ?? exactClean[0];
-  // Any clean voice for base language
-  const baseClean = voices.filter(v => v.lang.startsWith(base) && !JUNK.some(j => v.name.toLowerCase().includes(j)));
-  if (baseClean.length) return baseClean.find(v => /google/i.test(v.name)) ?? baseClean[0];
-  return undefined;
+  const pref = PREF_VOICES[base];
+  if (pref) { const f = voices.find(v => v.name === pref); if (f) return f; }
+  const clean = voices.filter(v => v.lang.startsWith(base) && !JUNK.some(j => v.name.toLowerCase().includes(j)));
+  return clean.find(v => /google/i.test(v.name)) ?? clean[0];
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  isListening?: boolean;
-  onToggleListening?: () => void;
-  isPlaying?: boolean;
-  onTogglePlaying?: () => void;
+  isOpen: boolean; onClose: () => void;
+  isListening?: boolean; onToggleListening?: () => void;
+  isPlaying?: boolean; onTogglePlaying?: () => void;
 }
 
 export function VoiceModeModal({ isOpen, onClose }: Props) {
-  /* ── UI state ─────────────────────────────────────────────────── */
-  const [phase, setPhase]               = useState<Phase>('idle');
-  const [selectedLang, setSelectedLang] = useState('en-US');
-  const [showLangPicker, setShowLangPicker] = useState(false);
-  const [showVoicePicker, setShowVoicePicker] = useState(false);
-  const [voices, setVoices]             = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState('');
-  const [bars, setBars]                 = useState<number[]>(Array(32).fill(4));
-  const [aiReply, setAiReply]           = useState('');
-  const [liveText, setLiveText]         = useState('');
+  const [phase, setPhase]       = useState<Phase>('idle');
+  const [lang, setLang]         = useState('en-US');
+  const [showLang, setShowLang] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
+  const [voices, setVoices]     = useState<SpeechSynthesisVoice[]>([]);
+  const [selVoice, setSelVoice] = useState('');
+  const [bars, setBars]         = useState<number[]>(Array(32).fill(4));
+  const [aiReply, setAiReply]   = useState('');
+  const [liveText, setLiveText] = useState('');
 
-  /* ── Refs (avoid stale closures in callbacks) ─────────────────── */
-  const phaseRef         = useRef<Phase>('idle');
-  const langRef          = useRef('en-US');
-  const voicesRef        = useRef<SpeechSynthesisVoice[]>([]);
-  const selectedVoiceRef = useRef('');
-  const inConvRef        = useRef(false);   // are we in an ongoing conversation?
-  const collectedRef     = useRef('');      // all finalized text collected so far
-  const recRef           = useRef<any>(null);
-  const animRef          = useRef<number>();
+  // All mutable conversation state in refs (never go stale in callbacks)
+  const phaseRef    = useRef<Phase>('idle');
+  const langRef     = useRef('en-US');
+  const voicesRef   = useRef<SpeechSynthesisVoice[]>([]);
+  const selVoiceRef = useRef('');
+  const inConvRef   = useRef(false);    // conversation loop active
+  const collectedRef = useRef('');      // *** finalized text from this turn ***
+  const stoppingRef  = useRef(false);   // user manually tapped send
+  const recRef      = useRef<any>(null);
+  const animRef     = useRef<number>();
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
-  /* Keep refs in sync with state */
-  useEffect(() => { langRef.current = selectedLang; }, [selectedLang]);
+  useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => { voicesRef.current = voices; }, [voices]);
-  useEffect(() => { selectedVoiceRef.current = selectedVoice; }, [selectedVoice]);
+  useEffect(() => { selVoiceRef.current = selVoice; }, [selVoice]);
 
-  /* Load voices */
   useEffect(() => {
     const load = () => { const v = speechSynthesis.getVoices(); if (v.length) setVoices(v); };
-    load();
-    speechSynthesis.onvoiceschanged = load;
+    load(); speechSynthesis.onvoiceschanged = load;
     return () => { speechSynthesis.onvoiceschanged = null; };
   }, []);
 
-  /* ── Bar visualiser ──────────────────────────────────────────── */
+  /* Bars */
   useEffect(() => {
-    if (phase === 'idle') {
-      setBars(Array(32).fill(4));
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      return;
-    }
+    if (phase === 'idle') { setBars(Array(32).fill(4)); cancelAnimationFrame(animRef.current!); return; }
     const tick = () => {
-      setBars(prev => prev.map((h, i) => {
+      setBars(p => p.map((h, i) => {
         const dist = Math.abs(i - 16) / 16;
         const maxH = phase === 'thinking' ? 12 : (1 - dist * 0.6) * 60;
         return Math.max(4, Math.min(maxH, h + (Math.random() - 0.5) * 0.8 * maxH));
@@ -117,56 +94,49 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       animRef.current = requestAnimationFrame(tick);
     };
     animRef.current = requestAnimationFrame(tick);
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
-  /* ── SPEAK ───────────────────────────────────────────────────── */
+  /* ── SPEAK ── */
   function speakReply(text: string) {
     speechSynthesis.cancel();
     syncPhase('speaking');
     const utt = new SpeechSynthesisUtterance(text);
-    utt.lang    = langRef.current;
-    utt.rate    = 1; utt.pitch = 1; utt.volume = 1;
-    const v = pickVoice(voicesRef.current, langRef.current, selectedVoiceRef.current);
+    utt.lang = langRef.current; utt.rate = 1; utt.pitch = 1; utt.volume = 1;
+    const v = pickVoice(voicesRef.current, langRef.current, selVoiceRef.current);
     if (v) utt.voice = v;
-    utt.onend   = () => { syncPhase('idle'); if (inConvRef.current) beginListening(); };
-    utt.onerror = () => { syncPhase('idle'); if (inConvRef.current) beginListening(); };
+    const onDone = () => { syncPhase('idle'); if (inConvRef.current) startNewTurn(); };
+    utt.onend = onDone; utt.onerror = onDone;
     speechSynthesis.speak(utt);
   }
 
-  /* Chrome randomly pauses mid-speech */
   useEffect(() => {
     if (phase !== 'speaking') return;
-    const t = setInterval(() => {
-      if (speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume();
-    }, 3000);
+    const t = setInterval(() => { if (speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume(); }, 3000);
     return () => clearInterval(t);
   }, [phase]);
 
-  /* ── AI CALL ─────────────────────────────────────────────────── */
-  async function sendToAI(transcript: string) {
-    const lang = langRef.current;
-    const text = transcript.trim();
-    if (!text) { syncPhase('idle'); return; }
-    setLiveText('');
+  /* ── SEND TO AI ── */
+  async function sendToAI(text: string) {
+    const l = langRef.current;
+    if (!text.trim()) { syncPhase('idle'); return; }
     collectedRef.current = '';
+    setLiveText('');
     syncPhase('thinking');
-    const langName = LANGUAGES.find(l => l.code === lang)?.label ?? 'English';
+    const langName = LANGUAGES.find(x => x.code === l)?.label ?? 'English';
     try {
       const res = await fetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          message: text.trim(),
           conversationId: 'voice-mode',
           model: 'forus-ai',
           provider: 'openai',
           systemPrompt:
-            `You are Forus AI, a voice assistant. The user spoke in ${langName}. ` +
-            `STRICT RULES: ` +
-            `1) Reply in the EXACT same language and script the user used — no exceptions. ` +
-            `2) Maximum 2-3 sentences. ` +
-            `3) No markdown, no asterisks, no bullet points. Plain spoken sentences only.`,
+            `You are Forus AI, a voice assistant. The user is speaking ${langName}. ` +
+            `STRICT: reply in the EXACT same language/script as the user. ` +
+            `Maximum 2-3 sentences. No markdown, no asterisks, no bullets. Plain spoken text only.`,
         }),
       });
       if (res.ok) {
@@ -174,138 +144,119 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         const reply = (data.response || data.message || '').trim();
         setAiReply(reply);
         if (reply) speakReply(reply);
-        else { syncPhase('idle'); if (inConvRef.current) beginListening(); }
-      } else { syncPhase('idle'); }
+        else { syncPhase('idle'); if (inConvRef.current) startNewTurn(); }
+      } else syncPhase('idle');
     } catch { syncPhase('idle'); }
   }
 
-  /* ── RECOGNITION ─────────────────────────────────────────────── */
-  function stopRecognition() {
-    if (recRef.current) {
-      try { recRef.current.abort(); } catch {}
-      recRef.current = null;
-    }
-  }
+  /* ── RECOGNITION ── */
 
-  function beginListening() {
+  // Starts one recognition session. Loops back on natural end.
+  function startNewTurn() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
-    stopRecognition();
 
+    // Tear down existing instance
+    if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
+
+    collectedRef.current = '';
+    stoppingRef.current  = false;
+    setLiveText('');
     syncPhase('listening');
-    setLiveText(collectedRef.current);
 
     const rec = new SR();
     recRef.current = rec;
-    rec.lang            = langRef.current;
-    rec.continuous      = false;  // more reliable in Chrome
-    rec.interimResults  = true;
-
-    let sessionFinal = '';
+    rec.lang = langRef.current;
+    rec.continuous = false;       // more reliable in Chrome than continuous:true
+    rec.interimResults = true;
 
     rec.onresult = (e: any) => {
-      sessionFinal = '';
-      let interim  = '';
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) sessionFinal += e.results[i][0].transcript + ' ';
-        else interim += e.results[i][0].transcript;
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          // *** KEY: update collectedRef immediately on every final result ***
+          // This ensures tapping mic always has the text ready
+          collectedRef.current += t + ' ';
+        } else {
+          interim += t;
+        }
       }
-      // KEY FIX: update collectedRef with finals immediately (not waiting for onend)
-      // so tapping mic gives us all recognized text
-      const running = collectedRef.current + sessionFinal;
-      setLiveText(running + interim);
+      setLiveText(collectedRef.current + interim);
     };
 
     rec.onerror = (e: any) => {
-      if (e.error === 'aborted' || e.error === 'no-speech') {
-        // no-speech: re-try automatically
-        if (e.error === 'no-speech' && phaseRef.current === 'listening' && inConvRef.current) {
-          setTimeout(() => {
-            if (phaseRef.current === 'listening' && inConvRef.current) beginListening();
-          }, 100);
+      if (e.error === 'aborted') return;
+      if (e.error === 'no-speech') {
+        // quietly restart
+        if (phaseRef.current === 'listening' && inConvRef.current && !stoppingRef.current) {
+          setTimeout(() => { if (phaseRef.current === 'listening' && inConvRef.current) startNewTurn(); }, 150);
         }
-        return;
       }
-      console.warn('Recognition error:', e.error);
     };
 
     rec.onend = () => {
-      // Commit this session's finals to collectedRef
-      if (sessionFinal.trim()) collectedRef.current += sessionFinal;
-
-      if (phaseRef.current !== 'listening') return; // phase changed externally
+      // If user manually tapped send, phaseRef is already 'thinking' — skip
+      if (phaseRef.current !== 'listening') return;
       if (!inConvRef.current) return;
 
-      if (collectedRef.current.trim()) {
-        // We have text — send it
-        sendToAI(collectedRef.current);
+      const text = collectedRef.current.trim();
+      if (text) {
+        // Natural pause — send to AI
+        sendToAI(text);
       } else {
-        // No text yet — keep listening
-        setTimeout(() => {
-          if (phaseRef.current === 'listening' && inConvRef.current) beginListening();
-        }, 100);
+        // No speech detected — restart and keep listening
+        setTimeout(() => { if (phaseRef.current === 'listening' && inConvRef.current) startNewTurn(); }, 150);
       }
     };
 
     try { rec.start(); } catch { syncPhase('idle'); }
   }
 
-  /* ── MIC BUTTON ──────────────────────────────────────────────── */
+  /* ── CONTROLS ── */
   function handleMicTap() {
     if (phase === 'idle') {
-      // Prime Chrome audio context (must be sync inside user gesture)
-      const primer = new SpeechSynthesisUtterance(' ');
-      primer.volume = 0;
-      speechSynthesis.speak(primer);
-
-      collectedRef.current = '';
+      // Unlock Chrome speech synthesis (must be in synchronous user-gesture handler)
+      const p = new SpeechSynthesisUtterance(' '); p.volume = 0; speechSynthesis.speak(p);
       inConvRef.current = true;
-      beginListening();
+      startNewTurn();
 
     } else if (phase === 'listening') {
-      // Send whatever has been collected and keep conversation going
-      stopRecognition();
-      const toSend = collectedRef.current.trim();
-      if (toSend) {
-        sendToAI(toSend);
+      // User tapped send — grab collected text immediately and send
+      stoppingRef.current = true;
+      const text = collectedRef.current.trim();
+      if (recRef.current) { try { recRef.current.onend = null; recRef.current.stop(); } catch {} recRef.current = null; }
+      if (text) {
+        sendToAI(text);
       } else {
-        // Nothing captured yet — just stop
+        // Nothing spoken — just stop
         inConvRef.current = false;
         syncPhase('idle');
       }
 
     } else if (phase === 'speaking') {
-      // Interrupt AI and listen again
+      // Interrupt AI and start listening again
       speechSynthesis.cancel();
-      collectedRef.current = '';
-      beginListening();
-
+      startNewTurn();
     }
-    // 'thinking' — ignore
+    // 'thinking' — do nothing
   }
 
-  /* ── CLOSE ───────────────────────────────────────────────────── */
   function handleClose() {
     inConvRef.current = false;
-    stopRecognition();
+    stoppingRef.current = true;
+    if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
     speechSynthesis.cancel();
     collectedRef.current = '';
-    syncPhase('idle');
-    setAiReply('');
-    setLiveText('');
+    syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
   }
 
   useEffect(() => { if (!isOpen) handleClose(); }, [isOpen]); // eslint-disable-line
 
-  /* ── DERIVED ─────────────────────────────────────────────────── */
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.5 : 0.25;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
-  const statusLabel =
-    phase === 'listening' ? 'Listening...' :
-    phase === 'thinking'  ? 'Thinking...'  :
-    phase === 'speaking'  ? 'Speaking...'  : 'Tap mic to start';
-
+  const label    = phase === 'listening' ? 'Listening...' : phase === 'thinking' ? 'Thinking...' : phase === 'speaking' ? 'Speaking...' : 'Tap mic to start';
   const displayVoices = voices.filter(v => !JUNK.some(j => v.name.toLowerCase().includes(j)));
 
   if (!isOpen) return null;
@@ -314,7 +265,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-between select-none overflow-hidden">
 
       {/* Status */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-center pt-5 z-50">
+      <div className="absolute top-0 left-0 right-0 flex justify-center pt-5 z-50">
         <div className="flex items-center gap-2">
           <svg width="18" height="14" viewBox="0 0 18 14" fill="none" className="text-white/80">
             <rect x="0" y="5" width="2" height="4" rx="1" fill="currentColor" opacity="0.6"/>
@@ -323,29 +274,25 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             <rect x="10.5" y="2" width="2" height="10" rx="1" fill="currentColor" opacity="0.8"/>
             <rect x="14" y="5" width="2" height="4" rx="1" fill="currentColor" opacity="0.6"/>
           </svg>
-          <span className="text-white/80 text-sm font-medium tracking-wide">{statusLabel}</span>
+          <span className="text-white/80 text-sm font-medium tracking-wide">{label}</span>
         </div>
       </div>
 
-      {/* Top-left: Language + Voice */}
-      <div className="absolute top-4 left-4 z-50 flex items-center gap-1">
+      {/* Top-left: lang + voice */}
+      <div className="absolute top-4 left-4 z-50 flex gap-1">
         <div className="relative">
-          <button onClick={() => { setShowLangPicker(p => !p); setShowVoicePicker(false); }}
-            className="text-white/40 hover:text-white/70 transition-colors p-2">
+          <button onClick={() => { setShowLang(p => !p); setShowVoice(false); }}
+            className="text-white/40 hover:text-white/70 p-2 transition-colors">
             <Globe className="w-5 h-5" />
           </button>
           <AnimatePresence>
-            {showLangPicker && (
-              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            {showLang && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[145px] backdrop-blur-sm z-50">
                 {LANGUAGES.map(l => (
                   <button key={l.code}
-                    onClick={() => {
-                      setSelectedLang(l.code); langRef.current = l.code;
-                      setShowLangPicker(false);
-                      if (phaseRef.current !== 'idle') { stopRecognition(); speechSynthesis.cancel(); syncPhase('idle'); }
-                    }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${selectedLang === l.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
+                    onClick={() => { setLang(l.code); langRef.current = l.code; setShowLang(false); if (phaseRef.current !== 'idle') handleClose(); }}
+                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${lang === l.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                     {l.label}
                   </button>
                 ))}
@@ -355,30 +302,30 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         </div>
 
         <div className="relative">
-          <button onClick={() => { setShowVoicePicker(p => !p); setShowLangPicker(false); }}
-            className="text-white/40 hover:text-white/70 transition-colors p-2">
+          <button onClick={() => { setShowVoice(p => !p); setShowLang(false); }}
+            className="text-white/40 hover:text-white/70 p-2 transition-colors">
             <AudioLines className="w-5 h-5" />
           </button>
           <AnimatePresence>
-            {showVoicePicker && (
-              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            {showVoice && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm overflow-y-auto z-50"
                 style={{ minWidth: 240, maxHeight: 340 }}>
                 <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Voice</div>
-                <button onClick={() => { setSelectedVoice(''); selectedVoiceRef.current = ''; setShowVoicePicker(false); }}
-                  className={`text-left px-3 py-2 rounded-xl text-sm transition-colors flex items-center justify-between gap-2 ${!selectedVoice ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
+                <button onClick={() => { setSelVoice(''); selVoiceRef.current = ''; setShowVoice(false); }}
+                  className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2 transition-colors ${!selVoice ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                   <span>Auto (best match)</span>
-                  {!selectedVoice && <span className="text-white/50 text-xs">✓</span>}
+                  {!selVoice && <span className="text-xs text-white/50">✓</span>}
                 </button>
                 {displayVoices.map(v => (
                   <button key={v.name}
-                    onClick={() => { setSelectedVoice(v.name); selectedVoiceRef.current = v.name; setShowVoicePicker(false); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors flex items-center justify-between gap-2 ${selectedVoice === v.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
+                    onClick={() => { setSelVoice(v.name); selVoiceRef.current = v.name; setShowVoice(false); }}
+                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2 transition-colors ${selVoice === v.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{v.name}</span>
                       <span className="text-[10px] text-white/30">{v.lang}</span>
                     </div>
-                    {selectedVoice === v.name && <span className="text-white/50 text-xs flex-shrink-0">✓</span>}
+                    {selVoice === v.name && <span className="text-xs text-white/50 flex-shrink-0">✓</span>}
                   </button>
                 ))}
               </motion.div>
@@ -387,7 +334,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         </div>
       </div>
 
-      {/* Centre: transcript + reply */}
+      {/* Centre */}
       <div className="flex-1 w-full flex flex-col items-center justify-center gap-4 px-8">
         <AnimatePresence>
           {liveText && phase === 'listening' && (
@@ -400,7 +347,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         <AnimatePresence mode="wait">
           {aiReply && (
             <motion.p key={aiReply} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
               className="text-white/85 text-center text-base leading-relaxed max-w-md">
               {aiReply}
             </motion.p>
@@ -409,10 +355,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       </div>
 
       {/* Glow + bars */}
-      <div className="relative w-full flex flex-col items-center" style={{ marginBottom: '-1px' }}>
+      <div className="relative w-full flex flex-col items-center" style={{ marginBottom: -1 }}>
         <motion.div animate={{ opacity: glowOp }} transition={{ duration: 0.6 }}
           className="absolute bottom-0 left-0 right-0"
-          style={{ height: `${glowBlur * 2}px`,
+          style={{ height: glowBlur * 2,
             background: `radial-gradient(ellipse 80% 100% at 50% 100%, #fff, #e5e7eb 20%, #9ca3af 45%, transparent 75%)`,
             filter: `blur(${glowBlur * 0.3}px)` }} />
         <div className="relative z-10 flex items-end justify-center gap-[3px] pb-2" style={{ height: 80 }}>
@@ -432,8 +378,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         </motion.div>
       </div>
 
-      {/* Bottom buttons */}
-      <div className="absolute bottom-10 left-0 right-0 flex items-center justify-center gap-5 z-50">
+      {/* Buttons */}
+      <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-5 z-50">
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleMicTap}
           className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-300 ${
             phase === 'listening' ? 'bg-white border-white text-black'
@@ -443,9 +389,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
            : phase === 'speaking' ? <MicOff className="w-5 h-5" />
            : <Mic className="w-5 h-5" />}
         </motion.button>
-
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleClose}
-          className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white transition-colors border border-red-400/30">
+          className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white border border-red-400/30 transition-colors">
           <X className="w-6 h-6" />
         </motion.button>
       </div>
