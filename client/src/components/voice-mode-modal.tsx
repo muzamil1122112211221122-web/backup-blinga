@@ -161,6 +161,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     collectedRef.current = '';
     stoppingRef.current  = false;
+    inConvRef.current    = true;
     setLiveText('');
     syncPhase('listening');
 
@@ -187,26 +188,31 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onerror = (e: any) => {
       if (e.error === 'aborted') return;
-      if (e.error === 'no-speech') {
-        // quietly restart
-        if (phaseRef.current === 'listening' && inConvRef.current && !stoppingRef.current) {
-          setTimeout(() => { if (phaseRef.current === 'listening' && inConvRef.current) startNewTurn(); }, 150);
-        }
+      if (e.error === 'no-speech') return; // onend handles this — don't double-restart
+      if (e.error === 'language-not-supported' || e.error === 'network') {
+        syncPhase('idle');
+        inConvRef.current = false;
+        // Show as AI reply so user sees it clearly
+        setAiReply(`Your browser does not support "${LANGUAGES.find(l => l.code === langRef.current)?.label ?? langRef.current}" speech recognition. Recognition works best in English. You can still switch the reply language for AI responses.`);
+        return;
       }
+      console.warn('Recognition error:', e.error);
     };
 
     rec.onend = () => {
-      // If user manually tapped send, phaseRef is already 'thinking' — skip
+      // If user manually tapped send, phase is already 'thinking' — skip
       if (phaseRef.current !== 'listening') return;
       if (!inConvRef.current) return;
 
       const text = collectedRef.current.trim();
       if (text) {
-        // Natural pause — send to AI
+        // Natural pause after speech — send to AI
         sendToAI(text);
       } else {
-        // No speech detected — restart and keep listening
-        setTimeout(() => { if (phaseRef.current === 'listening' && inConvRef.current) startNewTurn(); }, 150);
+        // No speech at all — go idle. Don't loop.
+        // (Auto-restart only happens after AI finishes speaking, not on silence)
+        syncPhase('idle');
+        inConvRef.current = false;
       }
     };
 
