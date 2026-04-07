@@ -68,15 +68,6 @@ type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 interface HistoryMsg { role: 'user' | 'assistant'; content: string; }
 
 /* ─────────────────────────────────────────────
-   Shared audio element
-───────────────────────────────────────────── */
-let sharedAudio: HTMLAudioElement | null = null;
-function getAudio() {
-  if (!sharedAudio) { sharedAudio = new Audio(); sharedAudio.preload = 'auto'; }
-  return sharedAudio;
-}
-
-/* ─────────────────────────────────────────────
    Component
 ───────────────────────────────────────────── */
 interface Props { isOpen: boolean; onClose: () => void; }
@@ -91,7 +82,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [bars, setBars]           = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]     = useState('');
   const [liveText, setLiveText]   = useState('');
-  const [audioStatus, setAudioStatus] = useState('');   // 'loading' | 'playing' | ''
 
   const phaseRef    = useRef<Phase>('idle');
   const langRef     = useRef('en-US');
@@ -102,7 +92,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const recRef      = useRef<any>(null);
   const animRef     = useRef<number>();
   const historyRef  = useRef<HistoryMsg[]>([]);
-  const ttsAbortRef  = useRef<AbortController | null>(null);
   const interimRef   = useRef('');   // last interim transcript — fallback if final never fires
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
@@ -136,12 +125,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
   /* ── After audio ends — go idle, wait for user to tap mic ── */
   function afterSpeech() {
-    setAudioStatus('');
     syncPhase('idle');
   }
 
-  /* ── Browser speech fallback ── */
+  /* ── Browser speech — instant, no generation delay ── */
   function speakBrowser(text: string) {
+    syncPhase('speaking');
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = langRef.current;
@@ -156,49 +145,9 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     window.speechSynthesis.speak(utt);
   }
 
-  /* ── Gemini TTS → audio element, fallback to browser ── */
-  async function speakReply(text: string, geminiVoice: string) {
-    syncPhase('speaking');
-    setAudioStatus('loading');
-
-    // Abort any previous TTS request
-    ttsAbortRef.current?.abort();
-    const ctrl = new AbortController();
-    ttsAbortRef.current = ctrl;
-
-    // 8-second timeout — if Gemini TTS is slow, use browser speech
-    const timeoutId = setTimeout(() => {
-      ctrl.abort();
-      setAudioStatus('');
-      speakBrowser(text);
-    }, 8000);
-
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        signal: ctrl.signal,
-        body: JSON.stringify({ text, voice: geminiVoice }),
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) { speakBrowser(text); return; }
-
-      const data = await res.json();
-      if (!data.audio) { speakBrowser(text); return; }
-
-      const audio = getAudio();
-      audio.pause(); audio.currentTime = 0;
-      audio.onended = afterSpeech;
-      audio.onerror = () => { speakBrowser(text); };
-      audio.src = `data:${data.mimeType};base64,${data.audio}`;
-      setAudioStatus('playing');
-      await audio.play().catch(() => speakBrowser(text));
-    } catch (e: any) {
-      clearTimeout(timeoutId);
-      if (e?.name === 'AbortError') return;  // intentionally cancelled
-      speakBrowser(text);
-    }
+  /* ── Instant voice — browser speech fires the moment text arrives ── */
+  function speakReply(text: string) {
+    speakBrowser(text);
   }
 
   /* ── Main AI call — uses Gemini via /api/voice-ai ── */
@@ -242,8 +191,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       setAiReply(reply);
       historyRef.current = [...historyRef.current, { role: 'assistant', content: reply }];
 
-      const slot = VOICE_SLOTS.find(s => s.id === selSlotRef.current) ?? VOICE_SLOTS[0];
-      speakReply(reply, slot.geminiVoice);
+      speakReply(reply);
     } catch {
       syncPhase('idle');
       setAiReply('Connection error. Please check your network and try again.');
@@ -330,21 +278,18 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       const text = (collectedRef.current + interimRef.current).trim();
       if (text) sendToAI(text); else { inConvRef.current = false; syncPhase('idle'); }
     } else if (phase === 'speaking') {
-      // Interrupt — stop audio + mic immediately
-      ttsAbortRef.current?.abort();
-      getAudio().pause();
+      // Interrupt — stop speech immediately and listen
       window.speechSynthesis.cancel();
-      setAudioStatus('');
       startNewTurn();
     }
   }
 
   function handleClose() {
     inConvRef.current = false;
-    ttsAbortRef.current?.abort();
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
+    window.speechSynthesis.cancel();
     collectedRef.current = '';
-    syncPhase('idle'); setAiReply(''); setLiveText(''); setAudioStatus('');
+    syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
   }
 
@@ -354,14 +299,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.45 : 0.22;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
 
-  const statusLabel = (() => {
-    if (phase === 'listening') return 'Listening...';
-    if (phase === 'thinking')  return 'Thinking...';
-    if (phase === 'speaking' && audioStatus === 'loading')  return 'Generating voice...';
-    if (phase === 'speaking' && audioStatus === 'playing') return 'Speaking...';
-    if (phase === 'speaking') return 'Speaking...';
-    return 'Tap mic to start';
-  })();
+  const statusLabel =
+    phase === 'listening' ? 'Listening...' :
+    phase === 'thinking'  ? 'Thinking...' :
+    phase === 'speaking'  ? 'Speaking...' :
+    'Tap mic to start';
 
   if (!isOpen) return null;
 
@@ -379,10 +321,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             <rect x="14"   y="5" width="2" height="4"  rx="1" fill="currentColor" opacity="0.6"/>
           </svg>
           <span className="text-white/80 text-sm font-medium tracking-wide">{statusLabel}</span>
-          {audioStatus === 'loading' && (
-            <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }}
-              className="w-2 h-2 rounded-full bg-white/60 inline-block" />
-          )}
         </div>
       </div>
 
