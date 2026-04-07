@@ -133,11 +133,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
-  /* ── After audio ends — restart mic ── */
+  /* ── After audio ends — go idle, wait for user to tap mic ── */
   function afterSpeech() {
     setAudioStatus('');
-    if (inConvRef.current) { syncPhase('idle'); setTimeout(() => startNewTurn(), 600); }
-    else syncPhase('idle');
+    syncPhase('idle');
   }
 
   /* ── Browser speech fallback ── */
