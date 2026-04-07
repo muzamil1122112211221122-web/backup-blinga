@@ -24,44 +24,84 @@ const LANGUAGES = [
 ];
 
 /* ─────────────────────────────────────────────
-   Voice presets — Gemini voice + browser fallback
+   Voice presets — each slot has unique character
+   rate/pitch/names combine to create distinct sounds
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
   {
     id: 'male1', label: 'Male 1', icon: '♂',
-    geminiVoice: 'Charon',          // deep, resonant
-    browserPriority: ['Google UK English Male', 'Microsoft George', 'Daniel', 'Tom', 'Fred'],
+    desc: 'Deep & Calm',
+    rate: 0.88, pitch: 0.72,   // slow, very deep — broadcaster style
+    priority: [
+      'Google UK English Male',
+      'Microsoft George - English (Great Britain)',
+      'Microsoft George',
+      'Daniel (Enhanced)', 'Daniel',
+      'Tom', 'Fred',
+      'Microsoft David - English (United States)',
+    ],
   },
   {
     id: 'male2', label: 'Male 2', icon: '♂',
-    geminiVoice: 'Fenrir',          // neutral, clear
-    browserPriority: ['Microsoft David', 'Alex', 'Aaron', 'Reed', 'Google US English Male'],
+    desc: 'Crisp & Energetic',
+    rate: 1.18, pitch: 1.08,   // faster, brighter — assistant style
+    priority: [
+      'Microsoft Mark - English (United States)',
+      'Microsoft Mark',
+      'Aaron (Enhanced)', 'Aaron',
+      'Alex', 'Reed (Enhanced)', 'Reed',
+      'Google US English',
+    ],
   },
   {
     id: 'female1', label: 'Female 1', icon: '♀',
-    geminiVoice: 'Aoede',           // warm, natural
-    browserPriority: ['Google US English', 'Microsoft Aria', 'Samantha', 'Victoria', 'Karen'],
+    desc: 'Warm & Natural',
+    rate: 1.0, pitch: 1.12,    // natural conversational female
+    priority: [
+      'Google US English',
+      'Microsoft Aria Online Natural - English (United States)',
+      'Microsoft Aria',
+      'Samantha (Enhanced)', 'Samantha',
+      'Victoria (Enhanced)', 'Victoria',
+      'Karen (Enhanced)', 'Karen',
+    ],
   },
   {
     id: 'female2', label: 'Female 2', icon: '♀',
-    geminiVoice: 'Kore',            // clear, articulate
-    browserPriority: ['Google UK English Female', 'Microsoft Hazel', 'Moira', 'Tessa', 'Fiona'],
+    desc: 'Bright & Expressive',
+    rate: 0.94, pitch: 1.32,   // higher pitch, slightly slower — expressive
+    priority: [
+      'Google UK English Female',
+      'Microsoft Hazel - English (Great Britain)',
+      'Microsoft Hazel',
+      'Moira (Enhanced)', 'Moira',
+      'Tessa (Enhanced)', 'Tessa',
+      'Fiona (Enhanced)', 'Fiona',
+    ],
   },
 ];
 
-function resolveVoice(slotId: string, allVoices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const slot = VOICE_SLOTS.find(s => s.id === slotId);
-  if (!slot) return null;
-  for (const name of slot.browserPriority) {
-    const v = allVoices.find(v => v.name === name);
+type VoiceSlot = typeof VOICE_SLOTS[number];
+
+function resolveSlot(slotId: string): VoiceSlot {
+  return VOICE_SLOTS.find(s => s.id === slotId) ?? VOICE_SLOTS[0];
+}
+
+function resolveVoice(slot: VoiceSlot, allVoices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const junk = ['espeak', 'pico', 'flite', 'mbrola'];
+  const clean = allVoices.filter(v => !junk.some(j => v.name.toLowerCase().includes(j)));
+
+  for (const name of slot.priority) {
+    const v = clean.find(v => v.name === name);
     if (v) return v;
   }
-  const junk = ['espeak', 'pico', 'flite', 'mbrola'];
-  const isF = slotId.startsWith('female');
-  const eng = allVoices.filter(v => v.lang.startsWith('en') && !junk.some(j => v.name.toLowerCase().includes(j)));
+
+  // Fallback: search by gender cues in any English voice
+  const eng = clean.filter(v => v.lang.startsWith('en'));
+  const isF = slot.id.startsWith('female');
   return isF
-    ? (eng.find(v => /female|woman|zira|aria|samantha|victoria|karen/i.test(v.name)) ?? eng[0] ?? null)
-    : (eng.find(v => /male|man|david|alex|daniel|george|fred/i.test(v.name)) ?? eng[0] ?? null);
+    ? (eng.find(v => /female|woman|zira|aria|samantha|victoria|karen|hazel|moira|tessa|fiona/i.test(v.name)) ?? eng[0] ?? null)
+    : (eng.find(v => /male|man|david|alex|daniel|george|fred|mark|aaron|reed/i.test(v.name)) ?? eng[0] ?? null);
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -134,8 +174,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = langRef.current;
-    utt.rate = 1.05; utt.pitch = 1; utt.volume = 1;
-    const v = resolveVoice(selSlotRef.current, bVoicesRef.current);
+    utt.volume = 1;
+    const slot = resolveSlot(selSlotRef.current);
+    utt.rate  = slot.rate;
+    utt.pitch = slot.pitch;
+    const v = resolveVoice(slot, bVoicesRef.current);
     if (v) utt.voice = v;
     utt.onend = afterSpeech; utt.onerror = afterSpeech;
     // Chrome keep-alive
@@ -365,7 +408,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
                     onClick={() => { setSelSlot(slot.id); selSlotRef.current = slot.id; setShowVoice(false); }}
                     className={`text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 transition-colors ${selSlot === slot.id ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                     <span className="text-base">{slot.icon}</span>
-                    <span className="flex-1">{slot.label}</span>
+                    <span className="flex-1 flex flex-col leading-tight">
+                      <span>{slot.label}</span>
+                      <span className="text-xs opacity-50">{slot.desc}</span>
+                    </span>
                     {selSlot === slot.id && <span className="text-xs text-white/50">✓</span>}
                   </button>
                 ))}
