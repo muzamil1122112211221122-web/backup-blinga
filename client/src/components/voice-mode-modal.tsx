@@ -24,84 +24,29 @@ const LANGUAGES = [
 ];
 
 /* ─────────────────────────────────────────────
-   Voice presets — each slot has unique character
-   rate/pitch/names combine to create distinct sounds
+   Voice presets — genuine Gemini neural voices
+   4 distinctly different characters
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
-  {
-    id: 'male1', label: 'Male 1', icon: '♂',
-    desc: 'Deep & Calm',
-    rate: 0.88, pitch: 0.72,   // slow, very deep — broadcaster style
-    priority: [
-      'Google UK English Male',
-      'Microsoft George - English (Great Britain)',
-      'Microsoft George',
-      'Daniel (Enhanced)', 'Daniel',
-      'Tom', 'Fred',
-      'Microsoft David - English (United States)',
-    ],
-  },
-  {
-    id: 'male2', label: 'Male 2', icon: '♂',
-    desc: 'Crisp & Energetic',
-    rate: 1.18, pitch: 1.08,   // faster, brighter — assistant style
-    priority: [
-      'Microsoft Mark - English (United States)',
-      'Microsoft Mark',
-      'Aaron (Enhanced)', 'Aaron',
-      'Alex', 'Reed (Enhanced)', 'Reed',
-      'Google US English',
-    ],
-  },
-  {
-    id: 'female1', label: 'Female 1', icon: '♀',
-    desc: 'Warm & Natural',
-    rate: 1.0, pitch: 1.12,    // natural conversational female
-    priority: [
-      'Google US English',
-      'Microsoft Aria Online Natural - English (United States)',
-      'Microsoft Aria',
-      'Samantha (Enhanced)', 'Samantha',
-      'Victoria (Enhanced)', 'Victoria',
-      'Karen (Enhanced)', 'Karen',
-    ],
-  },
-  {
-    id: 'female2', label: 'Female 2', icon: '♀',
-    desc: 'Bright & Expressive',
-    rate: 0.94, pitch: 1.32,   // higher pitch, slightly slower — expressive
-    priority: [
-      'Google UK English Female',
-      'Microsoft Hazel - English (Great Britain)',
-      'Microsoft Hazel',
-      'Moira (Enhanced)', 'Moira',
-      'Tessa (Enhanced)', 'Tessa',
-      'Fiona (Enhanced)', 'Fiona',
-    ],
-  },
+  { id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Resonant',    gemini: 'Charon'  },
+  { id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Authoritative', gemini: 'Orus'   },
+  { id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive', gemini: 'Aoede'  },
+  { id: 'female2', label: 'Female 2', icon: '♀', desc: 'Bright & Clear',       gemini: 'Kore'   },
 ];
 
-type VoiceSlot = typeof VOICE_SLOTS[number];
-
-function resolveSlot(slotId: string): VoiceSlot {
-  return VOICE_SLOTS.find(s => s.id === slotId) ?? VOICE_SLOTS[0];
+/* Browser fallback voices by gender — used if Gemini TTS fails */
+function browserFallback(isF: boolean, all: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const junk = ['espeak', 'pico', 'flite', 'mbrola'];
+  const eng = all.filter(v => v.lang.startsWith('en') && !junk.some(j => v.name.toLowerCase().includes(j)));
+  return isF
+    ? (eng.find(v => /female|woman|aria|samantha|victoria|karen|zira/i.test(v.name)) ?? eng[0] ?? null)
+    : (eng.find(v => /male|man|david|alex|daniel|george|fred/i.test(v.name)) ?? eng[0] ?? null);
 }
 
-function resolveVoice(slot: VoiceSlot, allVoices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const junk = ['espeak', 'pico', 'flite', 'mbrola'];
-  const clean = allVoices.filter(v => !junk.some(j => v.name.toLowerCase().includes(j)));
-
-  for (const name of slot.priority) {
-    const v = clean.find(v => v.name === name);
-    if (v) return v;
-  }
-
-  // Fallback: search by gender cues in any English voice
-  const eng = clean.filter(v => v.lang.startsWith('en'));
-  const isF = slot.id.startsWith('female');
-  return isF
-    ? (eng.find(v => /female|woman|zira|aria|samantha|victoria|karen|hazel|moira|tessa|fiona/i.test(v.name)) ?? eng[0] ?? null)
-    : (eng.find(v => /male|man|david|alex|daniel|george|fred|mark|aaron|reed/i.test(v.name)) ?? eng[0] ?? null);
+/* Split text into sentences — each fetched separately for fast first-play */
+function splitSentences(text: string): string[] {
+  const raw = text.match(/[^.!?…]+(?:[.!?…]+|$)/g) ?? [text];
+  return raw.map(s => s.trim()).filter(Boolean);
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -123,16 +68,18 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [aiReply, setAiReply]     = useState('');
   const [liveText, setLiveText]   = useState('');
 
-  const phaseRef    = useRef<Phase>('idle');
-  const langRef     = useRef('en-US');
-  const selSlotRef  = useRef('male1');
-  const bVoicesRef  = useRef<SpeechSynthesisVoice[]>([]);
-  const inConvRef   = useRef(false);
-  const collectedRef = useRef('');
-  const recRef      = useRef<any>(null);
-  const animRef     = useRef<number>();
-  const historyRef  = useRef<HistoryMsg[]>([]);
-  const interimRef   = useRef('');   // last interim transcript — fallback if final never fires
+  const phaseRef      = useRef<Phase>('idle');
+  const langRef       = useRef('en-US');
+  const selSlotRef    = useRef('male1');
+  const bVoicesRef    = useRef<SpeechSynthesisVoice[]>([]);
+  const inConvRef     = useRef(false);
+  const collectedRef  = useRef('');
+  const recRef        = useRef<any>(null);
+  const animRef       = useRef<number>();
+  const historyRef    = useRef<HistoryMsg[]>([]);
+  const interimRef    = useRef('');   // last interim transcript — fallback if final never fires
+  const speakSessRef  = useRef(0);    // incremented each speak — used to cancel orphaned playback
+  const curAudioRef   = useRef<HTMLAudioElement | null>(null); // currently playing audio el
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
@@ -163,34 +110,97 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
-  /* ── After audio ends — go idle, wait for user to tap mic ── */
+  /* ── After all audio finishes — go idle ── */
   function afterSpeech() {
+    curAudioRef.current = null;
     syncPhase('idle');
   }
 
-  /* ── Browser speech — instant, no generation delay ── */
-  function speakBrowser(text: string) {
-    syncPhase('speaking');
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = langRef.current;
-    utt.volume = 1;
-    const slot = resolveSlot(selSlotRef.current);
-    utt.rate  = slot.rate;
-    utt.pitch = slot.pitch;
-    const v = resolveVoice(slot, bVoicesRef.current);
-    if (v) utt.voice = v;
-    utt.onend = afterSpeech; utt.onerror = afterSpeech;
-    // Chrome keep-alive
-    const ka = setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 5000);
-    utt.onend = () => { clearInterval(ka); afterSpeech(); };
-    utt.onerror = () => { clearInterval(ka); afterSpeech(); };
-    window.speechSynthesis.speak(utt);
+  /* ── Browser speech fallback — used if Gemini TTS chunk fails ── */
+  function speakBrowserFallback(text: string): Promise<void> {
+    return new Promise(resolve => {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = langRef.current;
+      const isF = selSlotRef.current.startsWith('female');
+      const v = browserFallback(isF, bVoicesRef.current);
+      if (v) utt.voice = v;
+      const ka = setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 5000);
+      utt.onend = () => { clearInterval(ka); resolve(); };
+      utt.onerror = () => { clearInterval(ka); resolve(); };
+      window.speechSynthesis.speak(utt);
+    });
   }
 
-  /* ── Instant voice — browser speech fires the moment text arrives ── */
-  function speakReply(text: string) {
-    speakBrowser(text);
+  /* ── Fetch one TTS chunk from Gemini, returns a blob URL or null ── */
+  async function fetchChunk(sentence: string, voice: string, signal: AbortSignal): Promise<string | null> {
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        signal,
+        body: JSON.stringify({ text: sentence, voice }),
+      });
+      if (!res.ok) return null;
+      const { audio, mimeType } = await res.json();
+      if (!audio) return null;
+      const bytes = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: mimeType ?? 'audio/wav' });
+      return URL.createObjectURL(blob);
+    } catch {
+      return null;
+    }
+  }
+
+  /* ── Play a blob URL and wait for it to finish ── */
+  function playUrl(url: string, sess: number): Promise<void> {
+    return new Promise(resolve => {
+      if (speakSessRef.current !== sess) { URL.revokeObjectURL(url); resolve(); return; }
+      const audio = new Audio(url);
+      curAudioRef.current = audio;
+      const done = () => { URL.revokeObjectURL(url); curAudioRef.current = null; resolve(); };
+      audio.onended = done;
+      audio.onerror = done;
+      audio.play().catch(done);
+    });
+  }
+
+  /* ── Sentence-chunked Gemini TTS:
+      Splits reply → fires all TTS requests simultaneously →
+      plays in sentence order, starting as soon as first chunk arrives (~300ms) ── */
+  async function speakReply(text: string) {
+    const sess = ++speakSessRef.current;
+    syncPhase('speaking');
+    window.speechSynthesis.cancel();
+
+    const slot = VOICE_SLOTS.find(s => s.id === selSlotRef.current) ?? VOICE_SLOTS[0];
+    const sentences = splitSentences(text);
+    const ac = new AbortController();
+
+    // Fire all TTS requests simultaneously — shorter sentences resolve faster
+    const promises = sentences.map(s => fetchChunk(s, slot.gemini, ac.signal));
+
+    for (let i = 0; i < sentences.length; i++) {
+      if (speakSessRef.current !== sess) { ac.abort(); return; }
+      const url = await promises[i];
+      if (speakSessRef.current !== sess) { if (url) URL.revokeObjectURL(url); ac.abort(); return; }
+      if (url) {
+        await playUrl(url, sess);
+      } else {
+        // Chunk failed — speak this sentence with browser voice as fallback
+        await speakBrowserFallback(sentences[i]);
+      }
+    }
+
+    if (speakSessRef.current === sess) afterSpeech();
+  }
+
+  /* ── Stop all ongoing speech (Gemini audio + browser synthesis) ── */
+  function stopSpeech() {
+    speakSessRef.current++;          // invalidates any in-flight speakReply loop
+    window.speechSynthesis.cancel();
+    if (curAudioRef.current) { try { curAudioRef.current.pause(); } catch {} curAudioRef.current = null; }
   }
 
   /* ── Main AI call — uses Gemini via /api/voice-ai ── */
@@ -321,8 +331,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       const text = (collectedRef.current + interimRef.current).trim();
       if (text) sendToAI(text); else { inConvRef.current = false; syncPhase('idle'); }
     } else if (phase === 'speaking') {
-      // Interrupt — stop speech immediately and listen
-      window.speechSynthesis.cancel();
+      // Interrupt — stop Gemini audio + browser synth, then listen
+      stopSpeech();
       startNewTurn();
     }
   }
@@ -330,7 +340,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   function handleClose() {
     inConvRef.current = false;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
-    window.speechSynthesis.cancel();
+    stopSpeech();
     collectedRef.current = '';
     syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
