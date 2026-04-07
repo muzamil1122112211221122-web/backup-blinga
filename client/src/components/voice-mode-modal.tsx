@@ -148,8 +148,13 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       const afterDone = () => {
         audio.removeEventListener('ended', afterDone);
         audio.removeEventListener('error', afterDone);
-        if (inConvRef.current) { syncPhase('idle'); startNewTurn(); }
-        else syncPhase('idle');
+        if (inConvRef.current) {
+          syncPhase('idle');
+          // Small pause so mic doesn't catch audio echo from speakers
+          setTimeout(() => startNewTurn(), 700);
+        } else {
+          syncPhase('idle');
+        }
       };
       audio.addEventListener('ended', afterDone);
       audio.addEventListener('error', afterDone);
@@ -171,8 +176,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     utt.lang = langRef.current;
     utt.rate = 1; utt.pitch = 1; utt.volume = 1;
     const onDone = () => {
-      if (inConvRef.current) { syncPhase('idle'); startNewTurn(); }
-      else syncPhase('idle');
+      if (inConvRef.current) {
+        syncPhase('idle');
+        setTimeout(() => startNewTurn(), 700);
+      } else {
+        syncPhase('idle');
+      }
     };
     utt.onend = onDone; utt.onerror = onDone;
     window.speechSynthesis.cancel();
@@ -228,6 +237,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   }
 
   /* ── RECOGNITION ── */
+  const silentRetryRef = useRef(0); // counts consecutive silent ends
+
   function startNewTurn() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
@@ -242,10 +253,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     const rec = new SR();
     recRef.current = rec;
     rec.lang = langRef.current;
-    rec.continuous = false;
+    rec.continuous = true;      // keep the session alive longer so user has time to speak
     rec.interimResults = true;
+    rec.maxAlternatives = 1;
 
     rec.onresult = (e: any) => {
+      silentRetryRef.current = 0; // reset retry count on any speech
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
@@ -260,7 +273,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onerror = (e: any) => {
       if (e.error === 'aborted') return;
-      if (e.error === 'no-speech') return;
+      if (e.error === 'no-speech') {
+        // Don't stop — continuous mode will keep trying
+        return;
+      }
       if (e.error === 'language-not-supported' || e.error === 'network') {
         syncPhase('idle');
         inConvRef.current = false;
@@ -273,12 +289,36 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     rec.onend = () => {
       if (phaseRef.current !== 'listening') return;
       if (!inConvRef.current) return;
+
       const text = collectedRef.current.trim();
       if (text) {
+        silentRetryRef.current = 0;
         sendToAI(text);
       } else {
-        syncPhase('idle');
-        inConvRef.current = false;
+        // Retry up to 3 times on silence before giving up
+        if (silentRetryRef.current < 3) {
+          silentRetryRef.current++;
+          console.log(`[STT] Silent end, retry ${silentRetryRef.current}/3`);
+          setTimeout(() => {
+            if (inConvRef.current && phaseRef.current === 'listening') {
+              try {
+                const rec2 = new SR();
+                recRef.current = rec2;
+                rec2.lang = langRef.current;
+                rec2.continuous = true;
+                rec2.interimResults = true;
+                rec2.onresult = rec.onresult;
+                rec2.onerror = rec.onerror;
+                rec2.onend = rec.onend;
+                rec2.start();
+              } catch { syncPhase('idle'); inConvRef.current = false; }
+            }
+          }, 400);
+        } else {
+          silentRetryRef.current = 0;
+          syncPhase('idle');
+          inConvRef.current = false;
+        }
       }
     };
 
