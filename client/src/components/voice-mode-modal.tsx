@@ -82,9 +82,25 @@ const PREF_VOICES: Record<string, string> = {
 
 const JUNK = ['espeak', 'festival', 'flite', 'mbrola', 'pico', 'svox', 'cmu'];
 
+// Curated voice name chains — first match found in the browser wins
+const VOICE_SLOTS = [
+  { id: 'male1',   label: 'Male 1',   icon: '♂', names: ['Google UK English Male', 'Microsoft George Desktop - English (Great Britain)', 'Daniel', 'Tom', 'Fred'] },
+  { id: 'male2',   label: 'Male 2',   icon: '♂', names: ['Microsoft David Desktop - English (United States)', 'Microsoft David', 'Alex', 'Aaron', 'Jorge'] },
+  { id: 'female1', label: 'Female 1', icon: '♀', names: ['Google US English', 'Microsoft Zira Desktop - English (United States)', 'Samantha', 'Victoria', 'Karen'] },
+  { id: 'female2', label: 'Female 2', icon: '♀', names: ['Google UK English Female', 'Microsoft Hazel Desktop - English (Great Britain)', 'Moira', 'Tessa', 'Fiona'] },
+];
+
+function resolveSlot(slot: typeof VOICE_SLOTS[0], allVoices: SpeechSynthesisVoice[]) {
+  for (const name of slot.names) {
+    const v = allVoices.find(x => x.name === name);
+    if (v) return v;
+  }
+  return null;
+}
+
 function pickVoice(voices: SpeechSynthesisVoice[], lang: string, preferred: string) {
   const base = lang.split('-')[0];
-  // Only honour a manually-selected voice if it belongs to the current language
+  // Preferred voice by name
   if (preferred) {
     const pv = voices.find(v => v.name === preferred);
     if (pv && pv.lang.startsWith(base)) return pv;
@@ -95,7 +111,6 @@ function pickVoice(voices: SpeechSynthesisVoice[], lang: string, preferred: stri
   // Fall back to any non-junk voice for this language
   const clean = voices.filter(v => v.lang.startsWith(base) && !JUNK.some(j => v.name.toLowerCase().includes(j)));
   return clean.find(v => /google/i.test(v.name)) ?? clean[0];
-  // If nothing found, return undefined → utt.voice not set → browser uses default for utt.lang
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -135,7 +150,16 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   useEffect(() => { selVoiceRef.current = selVoice; }, [selVoice]);
 
   useEffect(() => {
-    const load = () => { const v = speechSynthesis.getVoices(); if (v.length) setVoices(v); };
+    const load = () => {
+      const v = speechSynthesis.getVoices();
+      if (!v.length) return;
+      setVoices(v);
+      // Default to first available male voice if nothing selected yet
+      if (!selVoiceRef.current) {
+        const male1 = resolveSlot(VOICE_SLOTS[0], v) ?? resolveSlot(VOICE_SLOTS[1], v);
+        if (male1) { setSelVoice(male1.name); selVoiceRef.current = male1.name; }
+      }
+    };
     load(); speechSynthesis.onvoiceschanged = load;
     return () => { speechSynthesis.onvoiceschanged = null; };
   }, []);
@@ -310,7 +334,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     inConvRef.current = false;
     stoppingRef.current = true;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
-    speechSynthesis.cancel();
+    // Do NOT cancel speechSynthesis — let the AI finish speaking after modal closes
     collectedRef.current = '';
     syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
@@ -321,12 +345,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.5 : 0.25;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
   const label    = phase === 'listening' ? 'Listening...' : phase === 'thinking' ? 'Thinking...' : phase === 'speaking' ? 'Speaking...' : 'Tap mic to start';
-  const langBase = lang.split('-')[0];
-  // Show voices for the current language (+ any English fallbacks so list isn't empty)
-  const displayVoices = voices.filter(v =>
-    !JUNK.some(j => v.name.toLowerCase().includes(j)) &&
-    (v.lang.startsWith(langBase) || v.lang.startsWith('en'))
-  );
+  // Build the 4-slot curated voice menu
+  const voiceMenu = VOICE_SLOTS.map(slot => ({
+    ...slot,
+    resolved: resolveSlot(slot, voices),
+  })).filter(x => x.resolved !== null) as (typeof VOICE_SLOTS[0] & { resolved: SpeechSynthesisVoice })[];
 
   if (!isOpen) return null;
 
@@ -378,23 +401,16 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
           <AnimatePresence>
             {showVoice && (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm overflow-y-auto z-50"
-                style={{ minWidth: 240, maxHeight: 340 }}>
+                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm z-50"
+                style={{ minWidth: 200 }}>
                 <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Voice</div>
-                <button onClick={() => { setSelVoice(''); selVoiceRef.current = ''; setShowVoice(false); }}
-                  className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2 transition-colors ${!selVoice ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
-                  <span>Auto (best match)</span>
-                  {!selVoice && <span className="text-xs text-white/50">✓</span>}
-                </button>
-                {displayVoices.map(v => (
-                  <button key={v.name}
-                    onClick={() => { setSelVoice(v.name); selVoiceRef.current = v.name; setShowVoice(false); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-2 transition-colors ${selVoice === v.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
-                    <div className="flex flex-col min-w-0">
-                      <span className="truncate">{v.name}</span>
-                      <span className="text-[10px] text-white/30">{v.lang}</span>
-                    </div>
-                    {selVoice === v.name && <span className="text-xs text-white/50 flex-shrink-0">✓</span>}
+                {voiceMenu.map(slot => (
+                  <button key={slot.id}
+                    onClick={() => { setSelVoice(slot.resolved.name); selVoiceRef.current = slot.resolved.name; setShowVoice(false); }}
+                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-3 transition-colors ${selVoice === slot.resolved.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
+                    <span className="text-base leading-none">{slot.icon}</span>
+                    <span className="flex-1">{slot.label}</span>
+                    {selVoice === slot.resolved.name && <span className="text-xs text-white/50">✓</span>}
                   </button>
                 ))}
               </motion.div>
