@@ -297,9 +297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       header.writeUInt32LE(pcm.length, 40);
 
       const wav = Buffer.concat([header, pcm]);
-      res.setHeader('Content-Type', 'audio/wav');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.send(wav);
+      // Return as base64 JSON — more reliable across browsers than binary streaming
+      res.json({ audio: wav.toString('base64'), mimeType: 'audio/wav' });
     } catch (err) {
       console.error('TTS endpoint error:', err);
       res.status(500).json({ error: 'TTS failed' });

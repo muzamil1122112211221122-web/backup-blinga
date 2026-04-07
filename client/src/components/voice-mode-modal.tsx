@@ -115,10 +115,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
-  /* ── SPEAK via OpenAI TTS ── */
+  /* ── SPEAK via Gemini TTS (fallback: browser speech) ── */
   async function speakReply(text: string) {
     syncPhase('speaking');
     try {
+      console.log('[TTS] Requesting speech for:', text.substring(0, 60));
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,36 +127,56 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         credentials: 'include',
       });
 
-      if (!res.ok) throw new Error('TTS fetch failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        console.warn('[TTS] Server error, falling back to browser speech:', res.status, errText);
+        speakFallback(text);
+        return;
+      }
 
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
+      const data = await res.json();
+      if (!data.audio) {
+        console.warn('[TTS] No audio in response, falling back to browser speech');
+        speakFallback(text);
+        return;
+      }
+
+      const dataUrl = `data:${data.mimeType};base64,${data.audio}`;
       const audio = getAudio();
+      audio.src = dataUrl;
 
-      // Revoke old object URL when done
-      const prevSrc = audio.src;
-      audio.src = url;
-
-      const onDone = () => {
-        audio.removeEventListener('ended', onDone);
-        audio.removeEventListener('error', onDone);
-        if (prevSrc && prevSrc.startsWith('blob:')) URL.revokeObjectURL(prevSrc);
-        // Only loop back if the conversation is still active
-        if (inConvRef.current) {
-          syncPhase('idle');
-          startNewTurn();
-        } else {
-          syncPhase('idle');
-        }
+      const afterDone = () => {
+        audio.removeEventListener('ended', afterDone);
+        audio.removeEventListener('error', afterDone);
+        if (inConvRef.current) { syncPhase('idle'); startNewTurn(); }
+        else syncPhase('idle');
       };
-      audio.addEventListener('ended', onDone);
-      audio.addEventListener('error', onDone);
-      await audio.play();
+      audio.addEventListener('ended', afterDone);
+      audio.addEventListener('error', afterDone);
+
+      console.log('[TTS] Playing Gemini audio');
+      await audio.play().catch((e) => {
+        console.warn('[TTS] Audio play failed, falling back:', e);
+        speakFallback(text);
+      });
     } catch (err) {
-      console.error('TTS error:', err);
-      syncPhase('idle');
-      if (inConvRef.current) startNewTurn();
+      console.error('[TTS] Fetch error, falling back to browser speech:', err);
+      speakFallback(text);
     }
+  }
+
+  /* ── Browser speech fallback ── */
+  function speakFallback(text: string) {
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = langRef.current;
+    utt.rate = 1; utt.pitch = 1; utt.volume = 1;
+    const onDone = () => {
+      if (inConvRef.current) { syncPhase('idle'); startNewTurn(); }
+      else syncPhase('idle');
+    };
+    utt.onend = onDone; utt.onerror = onDone;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
   }
 
   /* ── SEND TO AI ── */
@@ -279,9 +300,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         syncPhase('idle');
       }
     } else if (phase === 'speaking') {
-      // Interrupt — stop audio but let user speak
+      // Interrupt — stop audio and start listening
       const audio = getAudio();
       audio.pause();
+      audio.src = '';
+      window.speechSynthesis.cancel(); // also cancel fallback if it was playing
       startNewTurn();
     }
   }
