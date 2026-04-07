@@ -311,49 +311,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { message, history = [], lang = 'English' } = req.body;
       if (!message) return res.status(400).json({ error: 'message required' });
 
-      const geminiKey = process.env.GEMINI_API_KEY;
-      if (!geminiKey) {
-        // Fallback to Groq if Gemini key not available
-        return res.status(503).json({ error: 'Gemini not configured' });
-      }
-
-      const systemInstruction =
+      const systemPrompt =
         `You are Forus AI, a voice assistant. The user is speaking ${lang}. ` +
         `STRICT RULES: reply in the EXACT same language/script as the user. ` +
         `Maximum ONE sentence. No markdown, no bullets, no asterisks. ` +
         `Plain spoken words only. Be concise and direct.`;
 
-      // Build content array from history (Gemini format)
-      const contents: any[] = (history as { role: string; content: string }[])
-        .slice(-20)
-        .map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        }));
-      contents.push({ role: 'user', parts: [{ text: message }] });
+      const historyArr = (history as { role: string; content: string }[]).slice(-20);
+      let reply = '';
 
-      const aiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemInstruction }] },
-            contents,
-            generationConfig: { maxOutputTokens: 120, temperature: 0.8 },
-          }),
+      // ── Try Gemini first ──
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (geminiKey) {
+        try {
+          const contents: any[] = historyArr.map((m) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+          }));
+          contents.push({ role: 'user', parts: [{ text: message }] });
+
+          const aiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: { parts: [{ text: systemPrompt }] },
+                contents,
+                generationConfig: { maxOutputTokens: 120, temperature: 0.8 },
+              }),
+            }
+          );
+
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            reply = (aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+            if (reply) console.log('[Voice AI] Gemini:', reply.substring(0, 80));
+          } else {
+            const errText = await aiRes.text();
+            console.warn('[Voice AI] Gemini failed, falling back to Groq. Status:', aiRes.status, errText.substring(0, 100));
+          }
+        } catch (geminiErr: any) {
+          console.warn('[Voice AI] Gemini threw, falling back to Groq:', geminiErr?.message);
         }
-      );
-
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        console.error('[Voice AI] Gemini error:', errText.substring(0, 200));
-        return res.status(500).json({ error: 'Voice AI failed' });
       }
 
-      const aiData = await aiRes.json();
-      const reply = (aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
-      console.log('[Voice AI] Gemini response:', reply.substring(0, 80));
+      // ── Groq fallback ──
+      if (!reply) {
+        const groqKey = process.env.GROQ_API_KEY;
+        if (!groqKey) return res.status(503).json({ error: 'No AI available' });
+
+        const groqMessages: any[] = [
+          { role: 'system', content: systemPrompt },
+          ...historyArr.map((m) => ({ role: m.role, content: m.content })),
+          { role: 'user', content: message },
+        ];
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-8b-instant',   // smallest fast model — avoids 70b rate limits
+            messages: groqMessages,
+            max_tokens: 80,
+            temperature: 0.8,
+          }),
+        });
+
+        if (!groqRes.ok) {
+          const errText = await groqRes.text();
+          console.error('[Voice AI] Groq also failed:', errText.substring(0, 150));
+          return res.status(500).json({ error: 'Voice AI failed' });
+        }
+
+        const groqData = await groqRes.json();
+        reply = (groqData.choices?.[0]?.message?.content ?? '').trim();
+        console.log('[Voice AI] Groq fallback:', reply.substring(0, 80));
+      }
+
+      if (!reply) return res.status(500).json({ error: 'Empty response from AI' });
       res.json({ response: reply });
     } catch (err: any) {
       console.error('[Voice AI] error:', err?.message ?? err);

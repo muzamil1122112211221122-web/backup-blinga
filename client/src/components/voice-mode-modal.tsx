@@ -223,9 +223,20 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         }),
       });
 
+      if (!res.ok) {
+        const errMsg = "Sorry, I couldn't reach the AI right now. Please try again.";
+        setAiReply(errMsg);
+        syncPhase('speaking');
+        speakBrowser(errMsg);
+        return;
+      }
+
       const data = await res.json();
       const reply = (data.response ?? '').trim();
-      if (!reply) { syncPhase('idle'); if (inConvRef.current) startNewTurn(); return; }
+      if (!reply) {
+        syncPhase('idle');
+        return;
+      }
 
       // Show text immediately — user sees response without waiting for audio
       setAiReply(reply);
@@ -235,6 +246,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       speakReply(reply, slot.geminiVoice);
     } catch {
       syncPhase('idle');
+      setAiReply('Connection error. Please check your network and try again.');
     }
   }
 
