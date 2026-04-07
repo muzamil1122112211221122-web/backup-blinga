@@ -102,7 +102,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const recRef      = useRef<any>(null);
   const animRef     = useRef<number>();
   const historyRef  = useRef<HistoryMsg[]>([]);
-  const ttsAbortRef = useRef<AbortController | null>(null);
+  const ttsAbortRef  = useRef<AbortController | null>(null);
+  const interimRef   = useRef('');   // last interim transcript — fallback if final never fires
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
@@ -238,7 +239,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   }
 
   /* ── Speech recognition ── */
-  function startNewTurn(silentRetry = 0) {
+  function startNewTurn() {
     if (!inConvRef.current) return;
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) { setAiReply('Speech recognition requires Chrome or Edge.'); return; }
@@ -249,26 +250,34 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     }
 
     collectedRef.current = '';
+    interimRef.current   = '';
     setLiveText('');
     syncPhase('listening');
 
     const rec = new SR();
     recRef.current = rec;
     rec.lang = langRef.current;
-    rec.continuous = false;
+    rec.continuous     = true;   // stay open — don't cut off mid-sentence
     rec.interimResults = true;
 
     rec.onresult = (e: any) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) collectedRef.current += e.results[i][0].transcript + ' ';
-        else interim += e.results[i][0].transcript;
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          collectedRef.current += t + ' ';
+          interimRef.current = '';   // final arrived — clear interim cache
+        } else {
+          interim += t;
+          interimRef.current = interim;  // always keep latest interim as fallback
+        }
       }
       setLiveText(collectedRef.current + interim);
     };
 
     rec.onerror = (e: any) => {
-      if (e.error === 'aborted' || e.error === 'no-speech') return;
+      if (e.error === 'aborted') return;
+      if (e.error === 'no-speech') return;   // continuous mode — keep waiting
       if (e.error === 'not-allowed') {
         syncPhase('idle'); inConvRef.current = false;
         setAiReply('Microphone access denied. Allow mic permissions and try again.');
@@ -279,13 +288,16 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onend = () => {
       if (phaseRef.current !== 'listening' || !inConvRef.current) return;
-      const text = collectedRef.current.trim();
+
+      // Use final text, or fall back to any interim text that was captured
+      const text = (collectedRef.current + interimRef.current).trim();
       if (text) {
         sendToAI(text);
-      } else if (silentRetry < 3) {
-        setTimeout(() => startNewTurn(silentRetry + 1), 300);
       } else {
-        syncPhase('idle'); inConvRef.current = false; setAiReply('');
+        // Genuinely heard nothing — stop and go idle
+        syncPhase('idle');
+        inConvRef.current = false;
+        setAiReply('');
       }
     };
 
@@ -302,8 +314,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       inConvRef.current = true;
       startNewTurn();
     } else if (phase === 'listening') {
-      const text = collectedRef.current.trim();
       if (recRef.current) { try { recRef.current.onend = null; recRef.current.stop(); } catch {} recRef.current = null; }
+      const text = (collectedRef.current + interimRef.current).trim();
       if (text) sendToAI(text); else { inConvRef.current = false; syncPhase('idle'); }
     } else if (phase === 'speaking') {
       // Interrupt — stop audio + mic immediately
