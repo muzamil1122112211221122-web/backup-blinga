@@ -305,6 +305,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dedicated fast voice AI endpoint — uses Gemini directly, keeps responses very short
+  app.post('/api/voice-ai', requireAuth, async (req, res) => {
+    try {
+      const { message, history = [], lang = 'English' } = req.body;
+      if (!message) return res.status(400).json({ error: 'message required' });
+
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) {
+        // Fallback to Groq if Gemini key not available
+        return res.status(503).json({ error: 'Gemini not configured' });
+      }
+
+      const systemInstruction =
+        `You are Forus AI, a voice assistant. The user is speaking ${lang}. ` +
+        `STRICT RULES: reply in the EXACT same language/script as the user. ` +
+        `Maximum ONE sentence. No markdown, no bullets, no asterisks. ` +
+        `Plain spoken words only. Be concise and direct.`;
+
+      // Build content array from history (Gemini format)
+      const contents: any[] = (history as { role: string; content: string }[])
+        .slice(-20)
+        .map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+      contents.push({ role: 'user', parts: [{ text: message }] });
+
+      const aiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemInstruction }] },
+            contents,
+            generationConfig: { maxOutputTokens: 120, temperature: 0.8 },
+          }),
+        }
+      );
+
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        console.error('[Voice AI] Gemini error:', errText.substring(0, 200));
+        return res.status(500).json({ error: 'Voice AI failed' });
+      }
+
+      const aiData = await aiRes.json();
+      const reply = (aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+      console.log('[Voice AI] Gemini response:', reply.substring(0, 80));
+      res.json({ response: reply });
+    } catch (err: any) {
+      console.error('[Voice AI] error:', err?.message ?? err);
+      res.status(500).json({ error: 'Voice AI failed' });
+    }
+  });
+
   // Test AI endpoint (bypass WebSocket)
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
