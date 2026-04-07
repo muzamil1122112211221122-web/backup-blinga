@@ -305,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dedicated fast voice AI endpoint — uses Gemini directly, keeps responses very short
+  // Voice AI — streams tokens via SSE so TTS can fire per-sentence during generation
   app.post('/api/voice-ai', requireAuth, async (req, res) => {
     try {
       const { message, history = [], lang = 'English' } = req.body;
@@ -318,13 +318,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Plain spoken words only. Be concise and direct.`;
 
       const historyArr = (history as { role: string; content: string }[]).slice(-20);
-      let reply = '';
+      const wantsStream = req.headers.accept === 'text/event-stream';
 
-      // ── Try Gemini first ──
+      if (wantsStream) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+      }
+
+      // ── Groq streaming (primary — fast tokens, reliable streaming) ──
+      const groqKey = process.env.GROQ_API_KEY;
+      if (groqKey) {
+        try {
+          const groqMessages: any[] = [
+            { role: 'system', content: systemPrompt },
+            ...historyArr.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: message },
+          ];
+
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+            body: JSON.stringify({
+              model: 'llama-3.1-8b-instant',
+              messages: groqMessages,
+              max_tokens: 120,
+              temperature: 0.8,
+              stream: wantsStream,
+            }),
+          });
+
+          if (!groqRes.ok) throw new Error(`Groq ${groqRes.status}`);
+
+          if (wantsStream && groqRes.body) {
+            // Pipe Groq SSE → client SSE token-by-token
+            const reader = (groqRes.body as any).getReader();
+            const dec = new TextDecoder();
+            let fullText = '';
+            let buf = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += dec.decode(value, { stream: true });
+              const lines = buf.split('\n');
+              buf = lines.pop() ?? '';
+              for (const line of lines) {
+                const t = line.trim();
+                if (!t.startsWith('data: ')) continue;
+                const d = t.slice(6);
+                if (d === '[DONE]') { res.write('data: [DONE]\n\n'); continue; }
+                try {
+                  const delta = JSON.parse(d).choices?.[0]?.delta?.content;
+                  if (delta) { fullText += delta; res.write(`data: ${JSON.stringify({ delta })}\n\n`); }
+                } catch {}
+              }
+            }
+            console.log('[Voice AI] Groq stream:', fullText.substring(0, 80));
+            res.end();
+            return;
+          } else if (!wantsStream) {
+            const data = await groqRes.json();
+            const reply = (data.choices?.[0]?.message?.content ?? '').trim();
+            console.log('[Voice AI] Groq:', reply.substring(0, 80));
+            if (reply) { res.json({ response: reply }); return; }
+          }
+        } catch (err: any) {
+          console.warn('[Voice AI] Groq failed:', err?.message);
+        }
+      }
+
+      // ── Gemini fallback (non-streaming) ──
       const geminiKey = process.env.GEMINI_API_KEY;
       if (geminiKey) {
         try {
-          const contents: any[] = historyArr.map((m) => ({
+          const contents: any[] = historyArr.map(m => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }],
           }));
@@ -345,58 +414,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (aiRes.ok) {
             const aiData = await aiRes.json();
-            reply = (aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
-            if (reply) console.log('[Voice AI] Gemini:', reply.substring(0, 80));
-          } else {
-            const errText = await aiRes.text();
-            console.warn('[Voice AI] Gemini failed, falling back to Groq. Status:', aiRes.status, errText.substring(0, 100));
+            const reply = (aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+            console.log('[Voice AI] Gemini fallback:', reply.substring(0, 80));
+            if (reply) {
+              if (wantsStream) {
+                res.write(`data: ${JSON.stringify({ delta: reply })}\n\n`);
+                res.write('data: [DONE]\n\n');
+                res.end();
+              } else {
+                res.json({ response: reply });
+              }
+              return;
+            }
           }
-        } catch (geminiErr: any) {
-          console.warn('[Voice AI] Gemini threw, falling back to Groq:', geminiErr?.message);
+        } catch (gErr: any) {
+          console.warn('[Voice AI] Gemini fallback failed:', gErr?.message);
         }
       }
 
-      // ── Groq fallback ──
-      if (!reply) {
-        const groqKey = process.env.GROQ_API_KEY;
-        if (!groqKey) return res.status(503).json({ error: 'No AI available' });
-
-        const groqMessages: any[] = [
-          { role: 'system', content: systemPrompt },
-          ...historyArr.map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user', content: message },
-        ];
-
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`,
-          },
-          body: JSON.stringify({
-            model: 'llama-3.1-8b-instant',   // smallest fast model — avoids 70b rate limits
-            messages: groqMessages,
-            max_tokens: 80,
-            temperature: 0.8,
-          }),
-        });
-
-        if (!groqRes.ok) {
-          const errText = await groqRes.text();
-          console.error('[Voice AI] Groq also failed:', errText.substring(0, 150));
-          return res.status(500).json({ error: 'Voice AI failed' });
-        }
-
-        const groqData = await groqRes.json();
-        reply = (groqData.choices?.[0]?.message?.content ?? '').trim();
-        console.log('[Voice AI] Groq fallback:', reply.substring(0, 80));
-      }
-
-      if (!reply) return res.status(500).json({ error: 'Empty response from AI' });
-      res.json({ response: reply });
+      if (wantsStream) { res.write('data: [ERROR]\n\n'); res.end(); }
+      else res.status(503).json({ error: 'No AI available' });
     } catch (err: any) {
       console.error('[Voice AI] error:', err?.message ?? err);
-      res.status(500).json({ error: 'Voice AI failed' });
+      if (!res.headersSent) res.status(500).json({ error: 'Voice AI failed' });
+      else res.end();
     }
   });
 

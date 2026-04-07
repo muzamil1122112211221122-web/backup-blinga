@@ -43,11 +43,6 @@ function browserFallback(isF: boolean, all: SpeechSynthesisVoice[]): SpeechSynth
     : (eng.find(v => /male|man|david|alex|daniel|george|fred/i.test(v.name)) ?? eng[0] ?? null);
 }
 
-/* Split text into sentences — each fetched separately for fast first-play */
-function splitSentences(text: string): string[] {
-  const raw = text.match(/[^.!?…]+(?:[.!?…]+|$)/g) ?? [text];
-  return raw.map(s => s.trim()).filter(Boolean);
-}
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 interface HistoryMsg { role: 'user' | 'assistant'; content: string; }
@@ -166,36 +161,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     });
   }
 
-  /* ── Sentence-chunked Gemini TTS:
-      Splits reply → fires all TTS requests simultaneously →
-      plays in sentence order, starting as soon as first chunk arrives (~300ms) ── */
-  async function speakReply(text: string) {
-    const sess = ++speakSessRef.current;
-    syncPhase('speaking');
-    window.speechSynthesis.cancel();
-
-    const slot = VOICE_SLOTS.find(s => s.id === selSlotRef.current) ?? VOICE_SLOTS[0];
-    const sentences = splitSentences(text);
-    const ac = new AbortController();
-
-    // Fire all TTS requests simultaneously — shorter sentences resolve faster
-    const promises = sentences.map(s => fetchChunk(s, slot.gemini, ac.signal));
-
-    for (let i = 0; i < sentences.length; i++) {
-      if (speakSessRef.current !== sess) { ac.abort(); return; }
-      const url = await promises[i];
-      if (speakSessRef.current !== sess) { if (url) URL.revokeObjectURL(url); ac.abort(); return; }
-      if (url) {
-        await playUrl(url, sess);
-      } else {
-        // Chunk failed — speak this sentence with browser voice as fallback
-        await speakBrowserFallback(sentences[i]);
-      }
-    }
-
-    if (speakSessRef.current === sess) afterSpeech();
-  }
-
   /* ── Stop all ongoing speech (Gemini audio + browser synthesis) ── */
   function stopSpeech() {
     speakSessRef.current++;          // invalidates any in-flight speakReply loop
@@ -203,7 +168,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     if (curAudioRef.current) { try { curAudioRef.current.pause(); } catch {} curAudioRef.current = null; }
   }
 
-  /* ── Main AI call — uses Gemini via /api/voice-ai ── */
+  /* ── Main AI call — streaming SSE, TTS fires per-sentence during generation ── */
   async function sendToAI(text: string) {
     if (!text.trim()) { syncPhase('idle'); return; }
     syncPhase('thinking');
@@ -213,10 +178,24 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     historyRef.current = [...historyRef.current, { role: 'user', content: text.trim() }];
     if (historyRef.current.length > 30) historyRef.current = historyRef.current.slice(-30);
 
+    const sess = ++speakSessRef.current;
+    const slot = VOICE_SLOTS.find(s => s.id === selSlotRef.current) ?? VOICE_SLOTS[0];
+    const ac = new AbortController();
+
+    // TTS promises fired immediately as each sentence is detected during streaming
+    const ttsPending: Promise<string | null>[] = [];
+    const sentenceTexts: string[] = [];   // parallel array — for browser fallback
+
+    function fireSentence(s: string) {
+      if (!s.trim()) return;
+      sentenceTexts.push(s.trim());
+      ttsPending.push(fetchChunk(s.trim(), slot.gemini, ac.signal));
+    }
+
     try {
       const res = await fetch('/api/voice-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
         credentials: 'include',
         body: JSON.stringify({
           message: text.trim(),
@@ -225,29 +204,74 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         }),
       });
 
-      if (!res.ok) {
-        const errMsg = "Sorry, I couldn't reach the AI right now. Please try again.";
-        setAiReply(errMsg);
-        syncPhase('speaking');
-        speakBrowser(errMsg);
+      if (!res.ok || !res.body) {
+        const errMsg = "Sorry, I couldn't reach the AI right now.";
+        setAiReply(errMsg); speakBrowserFallback(errMsg);
         return;
       }
 
-      const data = await res.json();
-      const reply = (data.response ?? '').trim();
-      if (!reply) {
-        syncPhase('idle');
-        return;
+      // Read SSE stream — buffer into sentences, fire TTS as each completes
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let sseBuf = '';
+      let accumulated = '';
+      let remainder = '';   // text after last sentence boundary
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuf += dec.decode(value, { stream: true });
+        const lines = sseBuf.split('\n');
+        sseBuf = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const d = line.slice(6).trim();
+          if (d === '[DONE]' || d === '[ERROR]' || !d) continue;
+          try {
+            const { delta } = JSON.parse(d);
+            if (delta) {
+              accumulated += delta;
+              remainder += delta;
+              setAiReply(accumulated);
+              // Fire TTS the instant a sentence ends
+              let m: RegExpMatchArray | null;
+              while ((m = remainder.match(/^(.*?[.!?…])\s*/s)) !== null) {
+                fireSentence(m[1]);
+                remainder = remainder.slice(m[0].length);
+              }
+            }
+          } catch {}
+        }
       }
 
-      // Show text immediately — user sees response without waiting for audio
-      setAiReply(reply);
-      historyRef.current = [...historyRef.current, { role: 'assistant', content: reply }];
+      // Flush any trailing text (sentence with no final punctuation)
+      if (remainder.trim()) fireSentence(remainder);
 
-      speakReply(reply);
+      if (!accumulated.trim()) { syncPhase('idle'); return; }
+
+      historyRef.current = [...historyRef.current, { role: 'assistant', content: accumulated }];
+      if (historyRef.current.length > 30) historyRef.current = historyRef.current.slice(-30);
+
+      if (ttsPending.length === 0) { syncPhase('idle'); return; }
+
+      // Play TTS chunks in order — each await resolves immediately if already ready
+      syncPhase('speaking');
+      for (let i = 0; i < ttsPending.length; i++) {
+        if (speakSessRef.current !== sess) { ac.abort(); return; }
+        const url = await ttsPending[i];
+        if (speakSessRef.current !== sess) { if (url) URL.revokeObjectURL(url); ac.abort(); return; }
+        if (url) {
+          await playUrl(url, sess);
+        } else {
+          // Gemini TTS failed (quota) — browser voice fallback for this sentence
+          await speakBrowserFallback(sentenceTexts[i]);
+        }
+      }
+
+      if (speakSessRef.current === sess) afterSpeech();
     } catch {
       syncPhase('idle');
-      setAiReply('Connection error. Please check your network and try again.');
     }
   }
 
