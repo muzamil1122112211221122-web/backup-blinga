@@ -48,72 +48,27 @@ const LANGUAGES = [
   { code: 'ca-ES',  label: 'Català' },
 ];
 
-const PREF_VOICES: Record<string, string> = {
-  en: 'Google US English',
-  ur: 'Google हिन्दी',
-  ar: 'Google العربية',
-  hi: 'Google हिन्दी',
-  fr: 'Google français',
-  es: 'Google español',
-  de: 'Google Deutsch',
-  zh: 'Google 普通话（中国大陆）',
-  pt: 'Google português do Brasil',
-  tr: 'Google Türkçe',
-  ru: 'Google русский',
-  ja: 'Google 日本語',
-  ko: 'Google 한국의',
-  it: 'Google italiano',
-  nl: 'Google Nederlands',
-  pl: 'Google polski',
-  sv: 'Google svenska',
-  da: 'Google dansk',
-  fi: 'Google suomi',
-  nb: 'Google norsk',
-  el: 'Google ελληνικά',
-  id: 'Google Bahasa Indonesia',
-  ms: 'Google Bahasa Melayu',
-  th: 'Google ภาษาไทย',
-  vi: 'Google Tiếng Việt',
-  bn: 'Google বাংলা',
-  ta: 'Google தமிழ்',
-  uk: 'Google українська',
-  he: 'Google עברית',
-};
-
-const JUNK = ['espeak', 'festival', 'flite', 'mbrola', 'pico', 'svox', 'cmu'];
-
-// Curated voice name chains — first match found in the browser wins
-const VOICE_SLOTS = [
-  { id: 'male1',   label: 'Male 1',   icon: '♂', names: ['Google UK English Male', 'Microsoft George Desktop - English (Great Britain)', 'Daniel', 'Tom', 'Fred'] },
-  { id: 'male2',   label: 'Male 2',   icon: '♂', names: ['Microsoft David Desktop - English (United States)', 'Microsoft David', 'Alex', 'Aaron', 'Jorge'] },
-  { id: 'female1', label: 'Female 1', icon: '♀', names: ['Google US English', 'Microsoft Zira Desktop - English (United States)', 'Samantha', 'Victoria', 'Karen'] },
-  { id: 'female2', label: 'Female 2', icon: '♀', names: ['Google UK English Female', 'Microsoft Hazel Desktop - English (Great Britain)', 'Moira', 'Tessa', 'Fiona'] },
+// 4 curated Gemini TTS voices: 2 male, 2 female
+const VOICE_PRESETS = [
+  { id: 'Charon',  label: 'Male 1',    icon: '♂', description: 'Deep & authoritative' },
+  { id: 'Fenrir',  label: 'Male 2',    icon: '♂', description: 'Bold & precise' },
+  { id: 'Aoede',   label: 'Female 1',  icon: '♀', description: 'Warm & breezy' },
+  { id: 'Kore',    label: 'Female 2',  icon: '♀', description: 'Bright & natural' },
 ];
 
-function resolveSlot(slot: typeof VOICE_SLOTS[0], allVoices: SpeechSynthesisVoice[]) {
-  for (const name of slot.names) {
-    const v = allVoices.find(x => x.name === name);
-    if (v) return v;
+// Persistent audio element — lives outside the modal so it keeps playing after modal closes
+let persistentAudio: HTMLAudioElement | null = null;
+function getAudio(): HTMLAudioElement {
+  if (!persistentAudio) {
+    persistentAudio = new Audio();
+    persistentAudio.autoplay = false;
   }
-  return null;
-}
-
-function pickVoice(voices: SpeechSynthesisVoice[], lang: string, preferred: string) {
-  const base = lang.split('-')[0];
-  // Preferred voice by name
-  if (preferred) {
-    const pv = voices.find(v => v.name === preferred);
-    if (pv && pv.lang.startsWith(base)) return pv;
-  }
-  // Try the known-good Google voice for this language
-  const pref = PREF_VOICES[base];
-  if (pref) { const f = voices.find(v => v.name === pref); if (f) return f; }
-  // Fall back to any non-junk voice for this language
-  const clean = voices.filter(v => v.lang.startsWith(base) && !JUNK.some(j => v.name.toLowerCase().includes(j)));
-  return clean.find(v => /google/i.test(v.name)) ?? clean[0];
+  return persistentAudio;
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
+
+interface HistoryMessage { role: 'user' | 'assistant'; content: string; }
 
 interface Props {
   isOpen: boolean; onClose: () => void;
@@ -126,45 +81,26 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [lang, setLang]         = useState('en-US');
   const [showLang, setShowLang] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
-  const [voices, setVoices]     = useState<SpeechSynthesisVoice[]>([]);
-  const [selVoice, setSelVoice] = useState('');
+  const [selVoice, setSelVoice] = useState('Charon');
   const [bars, setBars]         = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]   = useState('');
   const [liveText, setLiveText] = useState('');
 
-  // All mutable conversation state in refs (never go stale in callbacks)
-  const phaseRef    = useRef<Phase>('idle');
-  const langRef     = useRef('en-US');
-  const voicesRef   = useRef<SpeechSynthesisVoice[]>([]);
-  const selVoiceRef = useRef('');
-  const inConvRef   = useRef(false);    // conversation loop active
-  const collectedRef = useRef('');      // *** finalized text from this turn ***
-  const stoppingRef  = useRef(false);   // user manually tapped send
-  const recRef      = useRef<any>(null);
-  const animRef     = useRef<number>();
+  const phaseRef      = useRef<Phase>('idle');
+  const langRef       = useRef('en-US');
+  const selVoiceRef   = useRef('Charon');
+  const inConvRef     = useRef(false);
+  const collectedRef  = useRef('');
+  const recRef        = useRef<any>(null);
+  const animRef       = useRef<number>();
+  const historyRef    = useRef<HistoryMessage[]>([]);
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
   useEffect(() => { langRef.current = lang; }, [lang]);
-  useEffect(() => { voicesRef.current = voices; }, [voices]);
   useEffect(() => { selVoiceRef.current = selVoice; }, [selVoice]);
 
-  useEffect(() => {
-    const load = () => {
-      const v = speechSynthesis.getVoices();
-      if (!v.length) return;
-      setVoices(v);
-      // Default to first available male voice if nothing selected yet
-      if (!selVoiceRef.current) {
-        const male1 = resolveSlot(VOICE_SLOTS[0], v) ?? resolveSlot(VOICE_SLOTS[1], v);
-        if (male1) { setSelVoice(male1.name); selVoiceRef.current = male1.name; }
-      }
-    };
-    load(); speechSynthesis.onvoiceschanged = load;
-    return () => { speechSynthesis.onvoiceschanged = null; };
-  }, []);
-
-  /* Bars */
+  /* Bars animation */
   useEffect(() => {
     if (phase === 'idle') { setBars(Array(32).fill(4)); cancelAnimationFrame(animRef.current!); return; }
     const tick = () => {
@@ -179,24 +115,48 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
-  /* ── SPEAK ── */
-  function speakReply(text: string) {
-    speechSynthesis.cancel();
+  /* ── SPEAK via OpenAI TTS ── */
+  async function speakReply(text: string) {
     syncPhase('speaking');
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = langRef.current; utt.rate = 1; utt.pitch = 1; utt.volume = 1;
-    const v = pickVoice(voicesRef.current, langRef.current, selVoiceRef.current);
-    if (v) utt.voice = v;
-    const onDone = () => { syncPhase('idle'); if (inConvRef.current) startNewTurn(); };
-    utt.onend = onDone; utt.onerror = onDone;
-    speechSynthesis.speak(utt);
-  }
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: selVoiceRef.current }),
+        credentials: 'include',
+      });
 
-  useEffect(() => {
-    if (phase !== 'speaking') return;
-    const t = setInterval(() => { if (speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume(); }, 3000);
-    return () => clearInterval(t);
-  }, [phase]);
+      if (!res.ok) throw new Error('TTS fetch failed');
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const audio = getAudio();
+
+      // Revoke old object URL when done
+      const prevSrc = audio.src;
+      audio.src = url;
+
+      const onDone = () => {
+        audio.removeEventListener('ended', onDone);
+        audio.removeEventListener('error', onDone);
+        if (prevSrc && prevSrc.startsWith('blob:')) URL.revokeObjectURL(prevSrc);
+        // Only loop back if the conversation is still active
+        if (inConvRef.current) {
+          syncPhase('idle');
+          startNewTurn();
+        } else {
+          syncPhase('idle');
+        }
+      };
+      audio.addEventListener('ended', onDone);
+      audio.addEventListener('error', onDone);
+      await audio.play();
+    } catch (err) {
+      console.error('TTS error:', err);
+      syncPhase('idle');
+      if (inConvRef.current) startNewTurn();
+    }
+  }
 
   /* ── SEND TO AI ── */
   async function sendToAI(text: string) {
@@ -206,15 +166,22 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     setLiveText('');
     syncPhase('thinking');
     const langName = LANGUAGES.find(x => x.code === l)?.label ?? 'English';
+
+    // Add user message to history
+    const userMsg: HistoryMessage = { role: 'user', content: text.trim() };
+    historyRef.current = [...historyRef.current, userMsg];
+
     try {
       const res = await fetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           message: text.trim(),
           conversationId: 'voice-mode',
           model: 'forus-ai',
           provider: 'openai',
+          history: historyRef.current.slice(0, -1), // send history excluding current message
           systemPrompt:
             `You are Forus AI, a voice assistant. The user is speaking ${langName}. ` +
             `STRICT: reply in the EXACT same language/script as the user. ` +
@@ -225,24 +192,28 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         const data = await res.json();
         const reply = (data.response || data.message || '').trim();
         setAiReply(reply);
-        if (reply) speakReply(reply);
-        else { syncPhase('idle'); if (inConvRef.current) startNewTurn(); }
+        if (reply) {
+          // Add assistant reply to history
+          historyRef.current = [...historyRef.current, { role: 'assistant', content: reply }];
+          // Keep history to last 40 messages (20 turns)
+          if (historyRef.current.length > 40) historyRef.current = historyRef.current.slice(-40);
+          speakReply(reply);
+        } else {
+          syncPhase('idle');
+          if (inConvRef.current) startNewTurn();
+        }
       } else syncPhase('idle');
     } catch { syncPhase('idle'); }
   }
 
   /* ── RECOGNITION ── */
-
-  // Starts one recognition session. Loops back on natural end.
   function startNewTurn() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
 
-    // Tear down existing instance
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
 
     collectedRef.current = '';
-    stoppingRef.current  = false;
     inConvRef.current    = true;
     setLiveText('');
     syncPhase('listening');
@@ -250,7 +221,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     const rec = new SR();
     recRef.current = rec;
     rec.lang = langRef.current;
-    rec.continuous = false;       // more reliable in Chrome than continuous:true
+    rec.continuous = false;
     rec.interimResults = true;
 
     rec.onresult = (e: any) => {
@@ -258,8 +229,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const t = e.results[i][0].transcript;
         if (e.results[i].isFinal) {
-          // *** KEY: update collectedRef immediately on every final result ***
-          // This ensures tapping mic always has the text ready
           collectedRef.current += t + ' ';
         } else {
           interim += t;
@@ -270,29 +239,23 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onerror = (e: any) => {
       if (e.error === 'aborted') return;
-      if (e.error === 'no-speech') return; // onend handles this — don't double-restart
+      if (e.error === 'no-speech') return;
       if (e.error === 'language-not-supported' || e.error === 'network') {
         syncPhase('idle');
         inConvRef.current = false;
-        // Show as AI reply so user sees it clearly
-        setAiReply(`Your browser does not support "${LANGUAGES.find(l => l.code === langRef.current)?.label ?? langRef.current}" speech recognition. Recognition works best in English. You can still switch the reply language for AI responses.`);
+        setAiReply(`Your browser does not support "${LANGUAGES.find(l => l.code === langRef.current)?.label ?? langRef.current}" speech recognition. Recognition works best in English.`);
         return;
       }
       console.warn('Recognition error:', e.error);
     };
 
     rec.onend = () => {
-      // If user manually tapped send, phase is already 'thinking' — skip
       if (phaseRef.current !== 'listening') return;
       if (!inConvRef.current) return;
-
       const text = collectedRef.current.trim();
       if (text) {
-        // Natural pause after speech — send to AI
         sendToAI(text);
       } else {
-        // No speech at all — go idle. Don't loop.
-        // (Auto-restart only happens after AI finishes speaking, not on silence)
         syncPhase('idle');
         inConvRef.current = false;
       }
@@ -304,37 +267,29 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   /* ── CONTROLS ── */
   function handleMicTap() {
     if (phase === 'idle') {
-      // Unlock Chrome speech synthesis (must be in synchronous user-gesture handler)
-      const p = new SpeechSynthesisUtterance(' '); p.volume = 0; speechSynthesis.speak(p);
       inConvRef.current = true;
       startNewTurn();
-
     } else if (phase === 'listening') {
-      // User tapped send — grab collected text immediately and send
-      stoppingRef.current = true;
       const text = collectedRef.current.trim();
       if (recRef.current) { try { recRef.current.onend = null; recRef.current.stop(); } catch {} recRef.current = null; }
       if (text) {
         sendToAI(text);
       } else {
-        // Nothing spoken — just stop
         inConvRef.current = false;
         syncPhase('idle');
       }
-
     } else if (phase === 'speaking') {
-      // Interrupt AI and start listening again
-      speechSynthesis.cancel();
+      // Interrupt — stop audio but let user speak
+      const audio = getAudio();
+      audio.pause();
       startNewTurn();
     }
-    // 'thinking' — do nothing
   }
 
   function handleClose() {
     inConvRef.current = false;
-    stoppingRef.current = true;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
-    // Do NOT cancel speechSynthesis — let the AI finish speaking after modal closes
+    // Audio keeps playing — do NOT stop it so AI response continues after modal closes
     collectedRef.current = '';
     syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
@@ -345,11 +300,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.5 : 0.25;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
   const label    = phase === 'listening' ? 'Listening...' : phase === 'thinking' ? 'Thinking...' : phase === 'speaking' ? 'Speaking...' : 'Tap mic to start';
-  // Build the 4-slot curated voice menu
-  const voiceMenu = VOICE_SLOTS.map(slot => ({
-    ...slot,
-    resolved: resolveSlot(slot, voices),
-  })).filter(x => x.resolved !== null) as (typeof VOICE_SLOTS[0] & { resolved: SpeechSynthesisVoice })[];
 
   if (!isOpen) return null;
 
@@ -380,10 +330,11 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
           <AnimatePresence>
             {showLang && (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[145px] backdrop-blur-sm z-50">
+                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[145px] backdrop-blur-sm z-50 overflow-y-auto"
+                style={{ maxHeight: 340 }}>
                 {LANGUAGES.map(l => (
                   <button key={l.code}
-                    onClick={() => { setLang(l.code); langRef.current = l.code; setSelVoice(''); selVoiceRef.current = ''; setShowLang(false); if (phaseRef.current !== 'idle') handleClose(); }}
+                    onClick={() => { setLang(l.code); langRef.current = l.code; setShowLang(false); }}
                     className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${lang === l.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
                     {l.label}
                   </button>
@@ -402,15 +353,18 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             {showVoice && (
               <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm z-50"
-                style={{ minWidth: 200 }}>
+                style={{ minWidth: 210 }}>
                 <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Voice</div>
-                {voiceMenu.map(slot => (
-                  <button key={slot.id}
-                    onClick={() => { setSelVoice(slot.resolved.name); selVoiceRef.current = slot.resolved.name; setShowVoice(false); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center justify-between gap-3 transition-colors ${selVoice === slot.resolved.name ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
-                    <span className="text-base leading-none">{slot.icon}</span>
-                    <span className="flex-1">{slot.label}</span>
-                    {selVoice === slot.resolved.name && <span className="text-xs text-white/50">✓</span>}
+                {VOICE_PRESETS.map(v => (
+                  <button key={v.id}
+                    onClick={() => { setSelVoice(v.id); selVoiceRef.current = v.id; setShowVoice(false); }}
+                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 transition-colors ${selVoice === v.id ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
+                    <span className="text-base">{v.icon}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span>{v.label}</span>
+                      <span className="text-[10px] text-white/30">{v.description}</span>
+                    </div>
+                    {selVoice === v.id && <span className="ml-auto text-xs text-white/50">✓</span>}
                   </button>
                 ))}
               </motion.div>

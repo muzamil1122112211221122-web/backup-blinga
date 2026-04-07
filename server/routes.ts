@@ -238,11 +238,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gemini TTS endpoint — returns WAV audio
+  app.post('/api/tts', requireAuth, async (req, res) => {
+    try {
+      const { text, voice = 'Charon' } = req.body;
+      if (!text) return res.status(400).json({ error: 'Text is required' });
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) return res.status(503).json({ error: 'TTS not configured' });
+
+      const ttsRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text }] }],
+            generationConfig: {
+              response_modalities: ['AUDIO'],
+              speech_config: {
+                voice_config: { prebuilt_voice_config: { voice_name: voice } }
+              }
+            }
+          })
+        }
+      );
+
+      if (!ttsRes.ok) {
+        const err = await ttsRes.text();
+        console.error('Gemini TTS error:', err);
+        return res.status(500).json({ error: 'TTS failed', details: err });
+      }
+
+      const data = await ttsRes.json();
+      const audioB64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!audioB64) {
+        console.error('Gemini TTS: no audio data in response', JSON.stringify(data).substring(0, 300));
+        return res.status(500).json({ error: 'No audio in response' });
+      }
+
+      // Wrap raw PCM (16-bit, 24 kHz, mono) in a WAV container
+      const pcm = Buffer.from(audioB64, 'base64');
+      const sampleRate = 24000;
+      const numChannels = 1;
+      const bitsPerSample = 16;
+      const header = Buffer.alloc(44);
+      header.write('RIFF', 0);
+      header.writeUInt32LE(36 + pcm.length, 4);
+      header.write('WAVE', 8);
+      header.write('fmt ', 12);
+      header.writeUInt32LE(16, 16);
+      header.writeUInt16LE(1, 20);
+      header.writeUInt16LE(numChannels, 22);
+      header.writeUInt32LE(sampleRate, 24);
+      header.writeUInt32LE(sampleRate * numChannels * bitsPerSample / 8, 28);
+      header.writeUInt16LE(numChannels * bitsPerSample / 8, 32);
+      header.writeUInt16LE(bitsPerSample, 34);
+      header.write('data', 36);
+      header.writeUInt32LE(pcm.length, 40);
+
+      const wav = Buffer.concat([header, pcm]);
+      res.setHeader('Content-Type', 'audio/wav');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.send(wav);
+    } catch (err) {
+      console.error('TTS endpoint error:', err);
+      res.status(500).json({ error: 'TTS failed' });
+    }
+  });
+
   // Test AI endpoint (bypass WebSocket)
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, conversationId, model, provider, systemPrompt: customSystemPrompt } = req.body;
+      const { message, conversationId, model, provider, systemPrompt: customSystemPrompt, history } = req.body;
       const user = req.user;
       
       if (!message) {
@@ -352,7 +420,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const systemPrompt = (customSystemPrompt || getModelPersonality(model || '')) + LANGUAGE_INSTRUCTION;
           
           try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            // Build conversation history: frontend-supplied history takes priority,
+          // otherwise fall back to stored messages for this conversationId
+          let historyMessages: { role: string; content: string }[] = [];
+          if (history && Array.isArray(history) && history.length > 0) {
+            historyMessages = history.slice(-20); // last 20 turns from frontend
+          } else if (conversationId) {
+            const storedConv = await storage.getConversation(conversationId);
+            if (storedConv) {
+              const storedMsgs = await storage.getConversationMessages(conversationId);
+              historyMessages = storedMsgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
+            }
+          }
+
+          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${groqKey}`,
@@ -362,6 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 model: "llama-3.3-70b-versatile",
                 messages: [
                   { role: 'system', content: systemPrompt },
+                  ...historyMessages,
                   { role: 'user', content: message }
                 ],
                 temperature: 0.7,
