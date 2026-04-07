@@ -6,12 +6,12 @@ import { useState } from "react";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigatingBtn, setNavigatingBtn] = useState<string | null>(null);
   const [showOverlay, setShowOverlay] = useState(false);
 
-  const handleGetStarted = (e: React.MouseEvent) => {
+  const handleGetStarted = (e: React.MouseEvent, btnId: string) => {
     e.preventDefault();
-    setIsNavigating(true);
+    setNavigatingBtn(btnId);
     setTimeout(() => setShowOverlay(true), 180);
     setTimeout(() => setLocation('/start'), 350);
   };
@@ -68,8 +68,8 @@ export default function Landing() {
             </div>
             <div className="flex items-center space-x-3">
               <Button 
-                onClick={handleGetStarted}
-                className={`bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg hero-btn ${isNavigating ? 'animate-pop-out' : ''}`}
+                onClick={(e) => handleGetStarted(e, 'header')}
+                className={`bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg hero-btn ${navigatingBtn === 'header' ? 'animate-pop-out' : ''}`}
                 data-testid="button-start-chat"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -93,10 +93,10 @@ export default function Landing() {
           </p>
           <div className="flex flex-col items-center gap-4">
             <Button 
-              onClick={handleGetStarted}
+              onClick={(e) => handleGetStarted(e, 'hero')}
               size="lg"
-              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 will-change-transform hero-btn ${isNavigating ? 'animate-pop-out' : ''}`}
-              style={{boxShadow: isNavigating ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
+              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 will-change-transform hero-btn ${navigatingBtn === 'hero' ? 'animate-pop-out' : ''}`}
+              style={{boxShadow: navigatingBtn === 'hero' ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
               data-testid="button-hero-start"
             >
               <MessageCircle className="w-6 h-6" />
@@ -230,9 +230,9 @@ export default function Landing() {
             Join thousands of users already experiencing the future of AI conversations
           </p>
           <Button 
-            onClick={handleGetStarted}
+            onClick={(e) => handleGetStarted(e, 'cta')}
             size="lg"
-            className={`bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl hero-btn ${isNavigating ? 'animate-pop-out' : ''}`}
+            className={`bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl hero-btn ${navigatingBtn === 'cta' ? 'animate-pop-out' : ''}`}
             data-testid="button-cta-start"
           >
             Start Your Journey
