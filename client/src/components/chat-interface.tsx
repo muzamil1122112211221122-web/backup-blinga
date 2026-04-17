@@ -758,7 +758,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   // Typing Text Component - Completely isolated from parent re-renders
   const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
-    const { displayedText, isTypingComplete } = useTypingAnimation(text, messageId);
+    // Skip word-by-word animation for messages that embed images — base64 data URLs
+    // can be huge and the partial text breaks the markdown until fully revealed,
+    // hiding the image. Show the full content immediately for these.
+    const hasEmbeddedImage = /!\[[^\]]*\]\([^)]+\)/.test(text);
+    const animation = useTypingAnimation(text, messageId);
+    const displayedText = hasEmbeddedImage ? text : animation.displayedText;
+    const isTypingComplete = hasEmbeddedImage ? true : animation.isTypingComplete;
 
     return (
       <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>

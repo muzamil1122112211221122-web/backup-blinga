@@ -202,18 +202,18 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
 
     const imgResponse = await fetch(url, { signal: AbortSignal.timeout(45000) });
     if (imgResponse.ok) {
-      const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+      const contentType = imgResponse.headers.get('content-type') || '';
       const arrayBuffer = await imgResponse.arrayBuffer();
-      if (arrayBuffer.byteLength > 1024) {
+      if (contentType.startsWith('image/') && arrayBuffer.byteLength > 1024) {
         const base64 = Buffer.from(arrayBuffer).toString('base64');
-        console.log(`Pollinations image ready (${Math.round(base64.length / 1024)}KB)`);
+        console.log(`Pollinations image ready (${Math.round(base64.length / 1024)}KB, ${contentType})`);
         return {
           success: true,
           url: `data:${contentType};base64,${base64}`,
           revisedPrompt: `Photorealistic: ${prompt}`,
         };
       }
-      console.log('Pollinations returned suspiciously small payload, falling through');
+      console.log(`Pollinations returned non-image or tiny payload (type=${contentType}, bytes=${arrayBuffer.byteLength}), falling through`);
     } else {
       console.log('Pollinations failed:', imgResponse.status);
     }
@@ -606,59 +606,95 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
 }> {
   console.log(`Analyzing image with prompt: "${prompt}"`);
   
-  // Use Gemini Vision as primary method
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using Gemini Vision for image analysis...');
-      
-      // Ensure the base64 data doesn't have data URL prefix
-      const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  mimeType: 'image/jpeg',
-                  data: cleanBase64
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            maxOutputTokens: 1500,
-            temperature: 0.3
-          }
-        }),
-      });
+  // Detect MIME type from data URL prefix (defaults to png)
+  const mimeMatch = base64Image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+  const detectedMime = mimeMatch ? mimeMatch[1] : 'image/png';
+  const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
+  const dataUrl = `data:${detectedMime};base64,${cleanBase64}`;
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Gemini vision analysis successful');
-        
-        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-          const textPart = data.candidates[0].content.parts.find((part: any) => part.text);
-          if (textPart && textPart.text) {
-            return {
-              success: true,
-              analysis: textPart.text
-            };
+  // Try Groq vision models first (Llama 4 has its own quota independent of Gemini)
+  if (process.env.GROQ_API_KEY) {
+    const groqVisionModels = [
+      'meta-llama/llama-4-scout-17b-16e-instruct',
+      'meta-llama/llama-4-maverick-17b-128e-instruct',
+    ];
+    for (const model of groqVisionModels) {
+      try {
+        console.log(`Using Groq ${model} for image analysis (mime: ${detectedMime})...`);
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image_url', image_url: { url: dataUrl } },
+              ],
+            }],
+            max_tokens: 1500,
+            temperature: 0.3,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content?.trim();
+          if (text) {
+            console.log(`Groq ${model} vision analysis successful`);
+            return { success: true, analysis: text };
           }
+          console.log(`Groq ${model} returned no text, trying next`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.log(`Groq ${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
         }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.log('Gemini vision analysis failed:', response.status, errorData);
-        throw new Error(`Gemini Vision error: ${response.status}`);
+      } catch (err) {
+        console.log(`Groq ${model} error:`, err instanceof Error ? err.message : err);
       }
-    } catch (error) {
-      console.log('Gemini vision analysis failed:', error);
+    }
+  }
+
+  // Use Gemini Vision as fallback — try current models in order
+  if (process.env.GEMINI_API_KEY) {
+    const visionModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    for (const model of visionModels) {
+      try {
+        console.log(`Using ${model} for image analysis (mime: ${detectedMime})...`);
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              role: 'user',
+              parts: [
+                { text: prompt },
+                { inlineData: { mimeType: detectedMime, data: cleanBase64 } }
+              ]
+            }],
+            generationConfig: { maxOutputTokens: 1500, temperature: 0.3 }
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const textPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.text);
+          if (textPart?.text) {
+            console.log(`${model} vision analysis successful`);
+            return { success: true, analysis: textPart.text };
+          }
+          console.log(`${model} returned no text, trying next model`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.log(`${model} failed:`, response.status, JSON.stringify(errorData).substring(0, 200));
+        }
+      } catch (error) {
+        console.log(`${model} error:`, error instanceof Error ? error.message : error);
+      }
     }
   } else {
     console.log('No Gemini API key found, skipping Gemini vision analysis');
