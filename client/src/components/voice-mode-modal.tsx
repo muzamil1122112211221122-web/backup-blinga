@@ -386,10 +386,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   function handleMicTap() {
     if (phase === 'thinking') return;
     if (phase === 'idle') {
-      // Unlock both SpeechSynthesis AND AudioContext on user gesture
-      const u = new SpeechSynthesisUtterance(' '); u.volume = 0;
-      window.speechSynthesis.speak(u);
-      getAudioCtx().resume();   // must call inside user gesture to unlock
+      // Unlock AudioContext on user gesture (no SpeechSynthesis call — it causes a browser pop sound)
+      getAudioCtx().resume();
       inConvRef.current = true;
       startNewTurn();
     } else if (phase === 'listening') {
@@ -407,7 +405,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     inConvRef.current = false;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
     stopSpeech();
-    if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch {} audioCtxRef.current = null; }
+    // Suspend then close — avoids the abrupt audio click/pop that hard-close causes
+    if (audioCtxRef.current) {
+      const ctx = audioCtxRef.current;
+      audioCtxRef.current = null;
+      try { ctx.suspend().then(() => ctx.close()).catch(() => {}); } catch {}
+    }
     collectedRef.current = '';
     syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
