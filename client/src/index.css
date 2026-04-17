@@ -714,16 +714,15 @@
   50% { opacity: 0; }
 }
 
-.typing-message p:last-child::after,
-.typing-message > *:last-child::after {
+.typing-message::after {
   content: '▋';
-  display: inline;
+  display: inline-block;
   animation: blink-cursor 0.9s step-start infinite;
   font-size: 0.85em;
   font-weight: normal;
   line-height: 1;
-  vertical-align: middle;
-  margin-left: 1px;
+  vertical-align: baseline;
+  margin-left: 2px;
 }
 
 
