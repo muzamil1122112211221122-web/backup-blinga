@@ -24,21 +24,23 @@ const LANGUAGES = [
 ];
 
 /* ─────────────────────────────────────────────
-   Voice presets — Microsoft Edge neural voices
-   High quality, no API key, ~300ms latency
+   Voice presets — Amazon Polly neural voices
+   via StreamElements (free, no API key)
+   Genuinely distinct: British vs American,
+   deep vs light, male vs female
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
   {
-    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Authoritative',  voice: 'en-US-GuyNeural',
+    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep British',          voice: 'Brian',
   },
   {
-    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Conversational', voice: 'en-US-DavisNeural',
+    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'American Smooth',       voice: 'Matthew',
   },
   {
-    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive',  voice: 'en-US-JennyNeural',
+    id: 'female1', label: 'Female 1', icon: '♀', desc: 'British Natural',       voice: 'Emma',
   },
   {
-    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Warm & Emotive',        voice: 'en-US-AriaNeural',
+    id: 'female2', label: 'Female 2', icon: '♀', desc: 'American Clear',        voice: 'Joanna',
   },
 ];
 

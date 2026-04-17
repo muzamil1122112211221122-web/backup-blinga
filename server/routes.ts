@@ -238,28 +238,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Edge TTS endpoint — Microsoft neural voices, no API key, ~300ms latency
+  // TTS endpoint — Amazon Polly voices via StreamElements (free, no key, distinct voices)
   app.post('/api/tts', requireAuth, async (req, res) => {
     try {
-      const { text, voice = 'en-US-GuyNeural' } = req.body;
+      const { text, voice = 'Brian' } = req.body;
       if (!text) return res.status(400).json({ error: 'Text is required' });
 
-      const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
-      const tts = new MsEdgeTTS();
-      await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
-
-      const chunks: Buffer[] = [];
-      await new Promise<void>((resolve, reject) => {
-        const stream = tts.toStream(text);
-        stream.on('data', (chunk: Buffer) => chunks.push(chunk));
-        stream.on('end', () => resolve());
-        stream.on('error', (err: Error) => reject(err));
+      const url = `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`;
+      const ttsRes = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
       });
 
-      const audio = Buffer.concat(chunks);
-      res.json({ audio: audio.toString('base64'), mimeType: 'audio/mp3' });
+      if (!ttsRes.ok) {
+        console.error('StreamElements TTS error:', ttsRes.status, await ttsRes.text());
+        return res.status(500).json({ error: 'TTS failed' });
+      }
+
+      const arrayBuf = await ttsRes.arrayBuffer();
+      const audio = Buffer.from(arrayBuf);
+      res.json({ audio: audio.toString('base64'), mimeType: 'audio/mpeg' });
     } catch (err) {
-      console.error('Edge TTS error:', err);
+      console.error('TTS endpoint error:', err);
       res.status(500).json({ error: 'TTS failed' });
     }
   });
