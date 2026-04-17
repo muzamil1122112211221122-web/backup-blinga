@@ -2949,6 +2949,19 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="w-9 h-9 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                        onClick={() => setIsVoiceModeModalOpen(true)}
+                      >
+                        <AudioLines className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Voice Mode</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                         onClick={() => setIsCustomizeModalOpen(true)}
                       >
