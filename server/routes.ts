@@ -238,69 +238,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Gemini TTS endpoint — returns WAV audio
+  // Edge TTS endpoint — Microsoft neural voices, no API key, ~300ms latency
   app.post('/api/tts', requireAuth, async (req, res) => {
     try {
-      const { text, voice = 'Charon' } = req.body;
+      const { text, voice = 'en-US-GuyNeural' } = req.body;
       if (!text) return res.status(400).json({ error: 'Text is required' });
-      const geminiKey = process.env.GEMINI_API_KEY;
-      if (!geminiKey) return res.status(503).json({ error: 'TTS not configured' });
 
-      const ttsRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text }] }],
-            generationConfig: {
-              response_modalities: ['AUDIO'],
-              speech_config: {
-                voice_config: { prebuilt_voice_config: { voice_name: voice } }
-              }
-            }
-          })
-        }
-      );
+      const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
+      const tts = new MsEdgeTTS();
+      await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
 
-      if (!ttsRes.ok) {
-        const err = await ttsRes.text();
-        console.error('Gemini TTS error:', err);
-        return res.status(500).json({ error: 'TTS failed', details: err });
-      }
+      const chunks: Buffer[] = [];
+      await new Promise<void>((resolve, reject) => {
+        const stream = tts.toStream(text);
+        stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        stream.on('end', () => resolve());
+        stream.on('error', (err: Error) => reject(err));
+      });
 
-      const data = await ttsRes.json();
-      const audioB64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!audioB64) {
-        console.error('Gemini TTS: no audio data in response', JSON.stringify(data).substring(0, 300));
-        return res.status(500).json({ error: 'No audio in response' });
-      }
-
-      // Wrap raw PCM (16-bit, 24 kHz, mono) in a WAV container
-      const pcm = Buffer.from(audioB64, 'base64');
-      const sampleRate = 24000;
-      const numChannels = 1;
-      const bitsPerSample = 16;
-      const header = Buffer.alloc(44);
-      header.write('RIFF', 0);
-      header.writeUInt32LE(36 + pcm.length, 4);
-      header.write('WAVE', 8);
-      header.write('fmt ', 12);
-      header.writeUInt32LE(16, 16);
-      header.writeUInt16LE(1, 20);
-      header.writeUInt16LE(numChannels, 22);
-      header.writeUInt32LE(sampleRate, 24);
-      header.writeUInt32LE(sampleRate * numChannels * bitsPerSample / 8, 28);
-      header.writeUInt16LE(numChannels * bitsPerSample / 8, 32);
-      header.writeUInt16LE(bitsPerSample, 34);
-      header.write('data', 36);
-      header.writeUInt32LE(pcm.length, 40);
-
-      const wav = Buffer.concat([header, pcm]);
-      // Return as base64 JSON — more reliable across browsers than binary streaming
-      res.json({ audio: wav.toString('base64'), mimeType: 'audio/wav' });
+      const audio = Buffer.concat(chunks);
+      res.json({ audio: audio.toString('base64'), mimeType: 'audio/mp3' });
     } catch (err) {
-      console.error('TTS endpoint error:', err);
+      console.error('Edge TTS error:', err);
       res.status(500).json({ error: 'TTS failed' });
     }
   });

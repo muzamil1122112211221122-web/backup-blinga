@@ -24,68 +24,23 @@ const LANGUAGES = [
 ];
 
 /* ─────────────────────────────────────────────
-   Voice presets — genuine Gemini neural voices
-   4 distinctly different characters
+   Voice presets — Microsoft Edge neural voices
+   High quality, no API key, ~300ms latency
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
   {
-    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Resonant',      gemini: 'Charon',
-    // Microsoft David is a deep US English male — primary browser fallback
-    browserNames: [
-      'Microsoft David - English (United States)', 'Microsoft David',
-      'Microsoft George - English (Great Britain)', 'Microsoft George',
-      'Google UK English Male',
-    ],
+    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Authoritative',  voice: 'en-US-GuyNeural',
   },
   {
-    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Authoritative',  gemini: 'Orus',
-    // Microsoft Mark / James for a different male character
-    browserNames: [
-      'Microsoft Mark - English (United States)', 'Microsoft Mark',
-      'Microsoft James - English (Great Britain)', 'Microsoft James',
-      'Alex', 'Google US English',
-    ],
+    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Conversational', voice: 'en-US-DavisNeural',
   },
   {
-    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Warm & Breathy',        gemini: 'Zephyr',
-    browserNames: [
-      'Microsoft Aria Online Natural - English (United States)',
-      'Microsoft Aria - English (United States)', 'Microsoft Aria',
-      'Microsoft Zira - English (United States)', 'Microsoft Zira',
-      'Samantha (Enhanced)', 'Samantha',
-    ],
+    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive',  voice: 'en-US-JennyNeural',
   },
   {
-    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Smooth & Youthful',     gemini: 'Leda',
-    browserNames: [
-      'Microsoft Jenny Online Natural - English (United States)',
-      'Microsoft Jenny - English (United States)', 'Microsoft Jenny',
-      'Microsoft Hazel - English (Great Britain)', 'Microsoft Hazel',
-      'Google UK English Female',
-      'Moira (Enhanced)', 'Moira',
-    ],
+    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Warm & Emotive',        voice: 'en-US-AriaNeural',
   },
 ];
-
-/* Per-slot browser fallback — prefers the names listed in the slot definition */
-function browserFallback(slotId: string, all: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const junk = ['espeak', 'pico', 'flite', 'mbrola'];
-  const clean = all.filter(v => !junk.some(j => v.name.toLowerCase().includes(j)));
-  const slot = VOICE_SLOTS.find(s => s.id === slotId);
-  if (slot) {
-    for (const name of slot.browserNames) {
-      const v = clean.find(v => v.name === name);
-      if (v) return v;
-    }
-  }
-  // Generic gender fallback
-  const eng = clean.filter(v => v.lang.startsWith('en'));
-  const isF = slotId.startsWith('female');
-  return isF
-    ? (eng.find(v => /aria|zira|jenny|hazel|samantha|victoria|karen|moira/i.test(v.name)) ?? eng[0] ?? null)
-    : (eng.find(v => /david|mark|george|james|alex|daniel|fred/i.test(v.name)) ?? eng[0] ?? null);
-}
-
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
 interface HistoryMsg { role: 'user' | 'assistant'; content: string; }
@@ -100,7 +55,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [lang, setLang]           = useState('en-US');
   const [showLang, setShowLang]   = useState(false);
   const [showVoice, setShowVoice] = useState(false);
-  const [bVoices, setBVoices]     = useState<SpeechSynthesisVoice[]>([]);
   const [selSlot, setSelSlot]     = useState('male1');
   const [bars, setBars]           = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]     = useState('');
@@ -109,7 +63,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const phaseRef      = useRef<Phase>('idle');
   const langRef       = useRef('en-US');
   const selSlotRef    = useRef('male1');
-  const bVoicesRef    = useRef<SpeechSynthesisVoice[]>([]);
   const inConvRef     = useRef(false);
   const collectedRef  = useRef('');
   const recRef        = useRef<any>(null);
@@ -124,15 +77,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
   useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => { selSlotRef.current = selSlot; }, [selSlot]);
-  useEffect(() => { bVoicesRef.current = bVoices; }, [bVoices]);
-
-  // Load browser voices (used as fallback)
-  useEffect(() => {
-    const load = () => { const v = window.speechSynthesis.getVoices(); if (v.length) setBVoices(v); };
-    load();
-    window.speechSynthesis.onvoiceschanged = load;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, []);
 
   // Waveform animation
   useEffect(() => {
@@ -162,17 +106,15 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     syncPhase('idle');
   }
 
-  /* ── Browser speech fallback — used if Gemini TTS chunk fails ── */
+  /* ── Browser speech — last resort if Edge TTS fails due to network error ── */
   function speakBrowserFallback(text: string): Promise<void> {
     return new Promise(resolve => {
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = langRef.current;
-      const v = browserFallback(selSlotRef.current, bVoicesRef.current);
-      if (v) utt.voice = v;
-      const ka = setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 5000);
-      utt.onend = () => { clearInterval(ka); resolve(); };
-      utt.onerror = () => { clearInterval(ka); resolve(); };
+      utt.rate = 1.05; utt.pitch = 1;
+      utt.onend = () => resolve();
+      utt.onerror = () => resolve();
       window.speechSynthesis.speak(utt);
     });
   }
@@ -255,7 +197,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     function fireSentence(s: string) {
       if (!s.trim()) return;
       sentenceTexts.push(s.trim());
-      ttsPending.push(fetchChunk(s.trim(), slot.gemini, ac.signal));
+      ttsPending.push(fetchChunk(s.trim(), slot.voice, ac.signal));
       notifyConsumer?.();   // wake the playback loop if it's waiting
     }
 
