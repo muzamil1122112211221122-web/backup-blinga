@@ -2723,9 +2723,9 @@ Let's start the self-listen session!`;
               <button
                 onClick={onClick}
                 data-testid={testId}
-                className="flex flex-col items-center gap-1.5 group"
+                className="flex flex-col items-center gap-1.5 group w-[5rem]"
               >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-muted-foreground bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
                   {icon}
                 </div>
                 <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{label}</span>
@@ -2735,7 +2735,7 @@ Let's start the self-listen session!`;
           return (
             <Button
               variant="ghost"
-              className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative ${squareShadow} ${activeStyle || 'text-muted-foreground bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}
+              className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative min-w-[5rem] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}
               onClick={onClick}
               data-testid={testId}
             >
@@ -2749,7 +2749,7 @@ Let's start the self-listen session!`;
 
         return (
           <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
+            <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Integration Answer',
