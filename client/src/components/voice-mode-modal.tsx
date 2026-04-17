@@ -28,19 +28,64 @@ const LANGUAGES = [
    4 distinctly different characters
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
-  { id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Resonant',    gemini: 'Charon'  },
-  { id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Authoritative', gemini: 'Orus'   },
-  { id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive', gemini: 'Aoede'  },
-  { id: 'female2', label: 'Female 2', icon: '♀', desc: 'Bright & Clear',       gemini: 'Kore'   },
+  {
+    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep & Resonant',      gemini: 'Charon',
+    // Microsoft David is a deep US English male — primary browser fallback
+    browserNames: [
+      'Microsoft David - English (United States)', 'Microsoft David',
+      'Microsoft George - English (Great Britain)', 'Microsoft George',
+      'Google UK English Male',
+    ],
+  },
+  {
+    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'Warm & Authoritative',  gemini: 'Orus',
+    // Microsoft Mark / James for a different male character
+    browserNames: [
+      'Microsoft Mark - English (United States)', 'Microsoft Mark',
+      'Microsoft James - English (Great Britain)', 'Microsoft James',
+      'Alex', 'Google US English',
+    ],
+  },
+  {
+    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive',  gemini: 'Aoede',
+    // Microsoft Aria — neural, warm natural sound
+    browserNames: [
+      'Microsoft Aria Online Natural - English (United States)',
+      'Microsoft Aria - English (United States)', 'Microsoft Aria',
+      'Microsoft Zira - English (United States)', 'Microsoft Zira',
+      'Samantha (Enhanced)', 'Samantha',
+    ],
+  },
+  {
+    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Bright & Clear',        gemini: 'Kore',
+    // Microsoft Jenny / Hazel for a brighter female character
+    browserNames: [
+      'Microsoft Jenny Online Natural - English (United States)',
+      'Microsoft Jenny - English (United States)', 'Microsoft Jenny',
+      'Microsoft Hazel - English (Great Britain)', 'Microsoft Hazel',
+      'Google UK English Female',
+      'Moira (Enhanced)', 'Moira',
+    ],
+  },
 ];
 
-/* Browser fallback voices by gender — used if Gemini TTS fails */
-function browserFallback(isF: boolean, all: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+/* Per-slot browser fallback — prefers the names listed in the slot definition */
+function browserFallback(slotId: string, all: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const junk = ['espeak', 'pico', 'flite', 'mbrola'];
-  const eng = all.filter(v => v.lang.startsWith('en') && !junk.some(j => v.name.toLowerCase().includes(j)));
+  const clean = all.filter(v => !junk.some(j => v.name.toLowerCase().includes(j)));
+  const slot = VOICE_SLOTS.find(s => s.id === slotId);
+  if (slot) {
+    for (const name of slot.browserNames) {
+      const v = clean.find(v => v.name === name);
+      if (v) return v;
+    }
+  }
+  // Generic gender fallback
+  const eng = clean.filter(v => v.lang.startsWith('en'));
+  const isF = slotId.startsWith('female');
   return isF
-    ? (eng.find(v => /female|woman|aria|samantha|victoria|karen|zira/i.test(v.name)) ?? eng[0] ?? null)
-    : (eng.find(v => /male|man|david|alex|daniel|george|fred/i.test(v.name)) ?? eng[0] ?? null);
+    ? (eng.find(v => /aria|zira|jenny|hazel|samantha|victoria|karen|moira/i.test(v.name)) ?? eng[0] ?? null)
+    : (eng.find(v => /david|mark|george|james|alex|daniel|fred/i.test(v.name)) ?? eng[0] ?? null);
 }
 
 
@@ -117,8 +162,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = langRef.current;
-      const isF = selSlotRef.current.startsWith('female');
-      const v = browserFallback(isF, bVoicesRef.current);
+      const v = browserFallback(selSlotRef.current, bVoicesRef.current);
       if (v) utt.voice = v;
       const ka = setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 5000);
       utt.onend = () => { clearInterval(ka); resolve(); };
