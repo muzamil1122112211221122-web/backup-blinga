@@ -88,7 +88,7 @@ import {
   TrendingUp,
   Brain,
   X,
-  Radio,
+  AudioLines,
   GraduationCap,
   Moon,
   Sun,
@@ -2758,6 +2758,13 @@ Let's start the self-listen session!`;
                 'button-forus-integration'
               )}
               {renderFunctionBtn(
+                <AudioLines className="h-6 w-6" />,
+                'Voice Mode',
+                () => setIsVoiceModeModalOpen(true),
+                undefined,
+                'button-voice-mode-fn'
+              )}
+              {renderFunctionBtn(
                 <img src="/settings-icon.png" alt="Settings" className="h-6 w-6 btn-icon" />,
                 'Settings',
                 () => setIsCustomizeModalOpen(true),
@@ -3023,20 +3030,6 @@ Let's start the self-listen session!`;
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                    onClick={() => setIsVoiceModeModalOpen(true)}
-                    data-testid="button-voice-mode"
-                  >
-                    <Radio className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Voice mode</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
