@@ -78,6 +78,16 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => { selSlotRef.current = selSlot; }, [selSlot]);
 
+  // Add/remove body class so CSS can instantly hide the message bar with no React timing gap
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('voice-mode-active');
+    } else {
+      document.body.classList.remove('voice-mode-active');
+    }
+    return () => { document.body.classList.remove('voice-mode-active'); };
+  }, [isOpen]);
+
   // Waveform animation
   useEffect(() => {
     if (phase === 'idle') { setBars(Array(32).fill(4)); cancelAnimationFrame(animRef.current!); return; }

@@ -835,6 +835,14 @@
   box-shadow: 0 6px 18px rgba(180,180,180,0.18), inset 0 -3px 0 rgba(255,255,255,0.55), inset 0 -8px 18px rgba(255,255,255,0.10) !important;
 }
 
+/* Hide message bar and function bar immediately when voice mode is active.
+   CSS class is set directly on document.body, so this takes effect in the
+   same style-recalculation pass as the portal paint — no React timing gap. */
+body.voice-mode-active .macos-function-bar,
+body.voice-mode-active [data-message-bar] {
+  display: none !important;
+}
+
 /* Nomad notification: slide down first, then pop bounce */
 @keyframes nomad-pop-slide-in {
   /* Phase 1 (0–50%): slide down from above into final position */
