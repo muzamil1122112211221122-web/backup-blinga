@@ -2748,7 +2748,7 @@ Let's start the self-listen session!`;
         };
 
         return (
-          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-3 sm:gap-5 lg:gap-7 p-3 sm:p-4 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
@@ -2846,7 +2846,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* New Unified Message Bar */}
-      <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' ? 'hidden' : ''}`}>
+      <div className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 glossy-outline !border-none !outline-none">
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
