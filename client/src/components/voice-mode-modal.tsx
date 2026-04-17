@@ -47,8 +47,7 @@ const VOICE_SLOTS = [
     ],
   },
   {
-    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Natural & Expressive',  gemini: 'Aoede',
-    // Microsoft Aria — neural, warm natural sound
+    id: 'female1', label: 'Female 1', icon: '♀', desc: 'Warm & Breathy',        gemini: 'Zephyr',
     browserNames: [
       'Microsoft Aria Online Natural - English (United States)',
       'Microsoft Aria - English (United States)', 'Microsoft Aria',
@@ -57,8 +56,7 @@ const VOICE_SLOTS = [
     ],
   },
   {
-    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Bright & Clear',        gemini: 'Kore',
-    // Microsoft Jenny / Hazel for a brighter female character
+    id: 'female2', label: 'Female 2', icon: '♀', desc: 'Smooth & Youthful',     gemini: 'Leda',
     browserNames: [
       'Microsoft Jenny Online Natural - English (United States)',
       'Microsoft Jenny - English (United States)', 'Microsoft Jenny',
@@ -231,7 +229,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     if (curSourceRef.current) { try { curSourceRef.current.stop(); } catch {} curSourceRef.current = null; }
   }
 
-  /* ── Main AI call — streaming SSE, TTS fires per-sentence during generation ── */
+  /* ── Main AI call — streaming SSE; TTS fires per-sentence AND playback starts
+         immediately on the first ready chunk while generation still continues ── */
   async function sendToAI(text: string) {
     if (!text.trim()) { syncPhase('idle'); return; }
     syncPhase('thinking');
@@ -245,16 +244,58 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     const slot = VOICE_SLOTS.find(s => s.id === selSlotRef.current) ?? VOICE_SLOTS[0];
     const ac = new AbortController();
 
-    // TTS promises fired immediately as each sentence is detected during streaming
-    const ttsPending: Promise<string | null>[] = [];
-    const sentenceTexts: string[] = [];   // parallel array — for browser fallback
+    // Queue of TTS promises — producer (SSE reader) pushes, consumer (playback loop) pops
+    const ttsPending: Promise<ArrayBuffer | null>[] = [];
+    const sentenceTexts: string[] = [];
+    let streamDone = false;   // set true when SSE loop exits
+
+    // Notify the playback consumer when a new item is added
+    let notifyConsumer: (() => void) | null = null;
 
     function fireSentence(s: string) {
       if (!s.trim()) return;
       sentenceTexts.push(s.trim());
       ttsPending.push(fetchChunk(s.trim(), slot.gemini, ac.signal));
+      notifyConsumer?.();   // wake the playback loop if it's waiting
     }
 
+    // ── Playback consumer — runs concurrently with SSE reader ──
+    const playbackDone = (async () => {
+      let i = 0;
+      // Wait for first sentence before switching to 'speaking'
+      await new Promise<void>(r => {
+        if (ttsPending.length > 0) { r(); return; }
+        notifyConsumer = r;
+      });
+      notifyConsumer = null;
+      if (speakSessRef.current !== sess) return;
+      syncPhase('speaking');
+
+      while (true) {
+        if (i >= ttsPending.length) {
+          if (streamDone) break;   // nothing left and stream finished
+          // Wait for next sentence
+          await new Promise<void>(r => {
+            if (i < ttsPending.length || streamDone) { r(); return; }
+            notifyConsumer = r;
+          });
+          notifyConsumer = null;
+          continue;
+        }
+        if (speakSessRef.current !== sess) { ac.abort(); return; }
+        const buf = await ttsPending[i];
+        if (speakSessRef.current !== sess) { ac.abort(); return; }
+        if (buf) {
+          await playBuffer(buf, sess);
+        } else {
+          await speakBrowserFallback(sentenceTexts[i]);
+        }
+        i++;
+      }
+      if (speakSessRef.current === sess) afterSpeech();
+    })();
+
+    // ── SSE producer ──
     try {
       const res = await fetch('/api/voice-ai', {
         method: 'POST',
@@ -268,17 +309,17 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       });
 
       if (!res.ok || !res.body) {
+        streamDone = true; notifyConsumer?.();
         const errMsg = "Sorry, I couldn't reach the AI right now.";
         setAiReply(errMsg); speakBrowserFallback(errMsg);
         return;
       }
 
-      // Read SSE stream — buffer into sentences, fire TTS as each completes
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let sseBuf = '';
       let accumulated = '';
-      let remainder = '';   // text after last sentence boundary
+      let remainder = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -297,7 +338,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
               accumulated += delta;
               remainder += delta;
               setAiReply(accumulated);
-              // Fire TTS the instant a sentence ends
               let m: RegExpMatchArray | null;
               while ((m = remainder.match(/^(.*?[.!?…])\s*/s)) !== null) {
                 fireSentence(m[1]);
@@ -308,34 +348,20 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         }
       }
 
-      // Flush any trailing text (sentence with no final punctuation)
       if (remainder.trim()) fireSentence(remainder);
 
       if (!accumulated.trim()) { syncPhase('idle'); return; }
-
       historyRef.current = [...historyRef.current, { role: 'assistant', content: accumulated }];
       if (historyRef.current.length > 30) historyRef.current = historyRef.current.slice(-30);
 
-      if (ttsPending.length === 0) { syncPhase('idle'); return; }
-
-      // Play TTS chunks in order — each await resolves immediately if already ready
-      syncPhase('speaking');
-      for (let i = 0; i < ttsPending.length; i++) {
-        if (speakSessRef.current !== sess) { ac.abort(); return; }
-        const buf = await ttsPending[i];
-        if (speakSessRef.current !== sess) { ac.abort(); return; }
-        if (buf) {
-          await playBuffer(buf, sess);
-        } else {
-          // Gemini TTS failed (quota) — browser voice fallback for this sentence
-          await speakBrowserFallback(sentenceTexts[i]);
-        }
-      }
-
-      if (speakSessRef.current === sess) afterSpeech();
     } catch {
       syncPhase('idle');
+    } finally {
+      streamDone = true;
+      notifyConsumer?.();   // wake consumer so it can exit the while loop
     }
+
+    await playbackDone;
   }
 
   /* ── Speech recognition ── */
