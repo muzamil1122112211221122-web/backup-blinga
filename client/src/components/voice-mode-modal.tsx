@@ -24,23 +24,21 @@ const LANGUAGES = [
 ];
 
 /* ─────────────────────────────────────────────
-   Voice presets — Amazon Polly neural voices
-   via StreamElements (free, no API key)
-   Genuinely distinct: British vs American,
-   deep vs light, male vs female
+   Voice presets — Edge neural voices
+   Distinct accents: American / British / Australian
 ───────────────────────────────────────────── */
 const VOICE_SLOTS = [
   {
-    id: 'male1',   label: 'Male 1',   icon: '♂', desc: 'Deep British',          voice: 'Brian',
+    id: 'male1',   label: 'Guy',     icon: '♂', desc: 'American Deep',          voice: 'en-US-GuyNeural',
   },
   {
-    id: 'male2',   label: 'Male 2',   icon: '♂', desc: 'American Smooth',       voice: 'Matthew',
+    id: 'male2',   label: 'Ryan',    icon: '♂', desc: 'British Accent',         voice: 'en-GB-RyanNeural',
   },
   {
-    id: 'female1', label: 'Female 1', icon: '♀', desc: 'British Natural',       voice: 'Emma',
+    id: 'female1', label: 'Natasha', icon: '♀', desc: 'Australian Accent',      voice: 'en-AU-NatashaNeural',
   },
   {
-    id: 'female2', label: 'Female 2', icon: '♀', desc: 'American Clear',        voice: 'Joanna',
+    id: 'female2', label: 'Jenny',   icon: '♀', desc: 'American Natural',       voice: 'en-US-JennyNeural',
   },
 ];
 

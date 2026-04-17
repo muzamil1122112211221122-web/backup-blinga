@@ -238,27 +238,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TTS endpoint — Amazon Polly voices via StreamElements (free, no key, distinct voices)
+  // Microsoft Edge TTS — neural voices, free, no API key
+  // Uses { audioStream } from toStream() — the correct v2 API
   app.post('/api/tts', requireAuth, async (req, res) => {
     try {
-      const { text, voice = 'Brian' } = req.body;
+      const { text, voice = 'en-US-GuyNeural' } = req.body;
       if (!text) return res.status(400).json({ error: 'Text is required' });
 
-      const url = `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`;
-      const ttsRes = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
+      const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
+      const tts = new MsEdgeTTS();
+      await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+
+      const chunks: Buffer[] = [];
+      const { audioStream } = tts.toStream(text);
+      await new Promise<void>((resolve, reject) => {
+        audioStream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        audioStream.on('end', () => resolve());
+        audioStream.on('error', (err: Error) => reject(err));
       });
 
-      if (!ttsRes.ok) {
-        console.error('StreamElements TTS error:', ttsRes.status, await ttsRes.text());
-        return res.status(500).json({ error: 'TTS failed' });
-      }
-
-      const arrayBuf = await ttsRes.arrayBuffer();
-      const audio = Buffer.from(arrayBuf);
-      res.json({ audio: audio.toString('base64'), mimeType: 'audio/mpeg' });
+      const audio = Buffer.concat(chunks);
+      if (!audio.length) return res.status(500).json({ error: 'No audio returned' });
+      res.json({ audio: audio.toString('base64'), mimeType: 'audio/mp3' });
     } catch (err) {
-      console.error('TTS endpoint error:', err);
+      console.error('Edge TTS error:', err);
       res.status(500).json({ error: 'TTS failed' });
     }
   });
