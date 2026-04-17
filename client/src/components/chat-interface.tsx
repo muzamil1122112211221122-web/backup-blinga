@@ -2233,10 +2233,10 @@ Let's start the self-listen session!`;
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
                     <Logo size="sm" className="flex-shrink-0 mt-1" />
-                    <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border ${
+                    <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble ${
                       message.content.includes('```') 
-                        ? 'bg-[#1e1e1e] border-zinc-700 shadow-xl' 
-                        : 'bg-card border-border'
+                        ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' 
+                        : ''
                     }`}>
                       <TypingText text={message.content} messageId={message.id} />
                       <div className="flex items-center justify-between mt-2">

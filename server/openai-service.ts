@@ -190,7 +190,38 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Generating photorealistic image for: "${prompt}"`);
 
-  // First try: Stable Horde — free community-powered photorealistic AI image generation
+  // First try: Pollinations.ai — free, no-auth, fast (2-5s), returns real photographic images
+  try {
+    console.log('Using Pollinations.ai for fast photorealistic image generation...');
+    const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
+      .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
+    const seed = Math.floor(Math.random() * 1_000_000);
+    const enhancedPrompt = `${prompt}, photorealistic, ultra detailed, 8k, sharp focus, masterpiece`;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}` +
+      `?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true&enhance=true`;
+
+    const imgResponse = await fetch(url, { signal: AbortSignal.timeout(45000) });
+    if (imgResponse.ok) {
+      const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+      const arrayBuffer = await imgResponse.arrayBuffer();
+      if (arrayBuffer.byteLength > 1024) {
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        console.log(`Pollinations image ready (${Math.round(base64.length / 1024)}KB)`);
+        return {
+          success: true,
+          url: `data:${contentType};base64,${base64}`,
+          revisedPrompt: `Photorealistic: ${prompt}`,
+        };
+      }
+      console.log('Pollinations returned suspiciously small payload, falling through');
+    } else {
+      console.log('Pollinations failed:', imgResponse.status);
+    }
+  } catch (error) {
+    console.log('Pollinations error:', error instanceof Error ? error.message : error);
+  }
+
+  // Second try: Stable Horde — free community-powered photorealistic AI image generation
   try {
     console.log('Using Stable Horde for photorealistic image generation...');
     const enhancedPrompt = `${prompt}, photorealistic, ultra detailed, 8k uhd, high quality, masterpiece, sharp focus`;
