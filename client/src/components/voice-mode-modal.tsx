@@ -119,7 +119,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const historyRef    = useRef<HistoryMsg[]>([]);
   const interimRef    = useRef('');   // last interim transcript — fallback if final never fires
   const speakSessRef  = useRef(0);    // incremented each speak — used to cancel orphaned playback
-  const curAudioRef   = useRef<HTMLAudioElement | null>(null); // currently playing audio el
+  const curSourceRef  = useRef<AudioBufferSourceNode | null>(null); // currently playing node
+  const audioCtxRef   = useRef<AudioContext | null>(null); // shared, stays unlocked after first tap
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
@@ -150,9 +151,16 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return () => cancelAnimationFrame(animRef.current!);
   }, [phase]);
 
+  /* ── Lazily get (or create + resume) the shared AudioContext ── */
+  function getAudioCtx(): AudioContext {
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+    if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+    return audioCtxRef.current;
+  }
+
   /* ── After all audio finishes — go idle ── */
   function afterSpeech() {
-    curAudioRef.current = null;
+    curSourceRef.current = null;
     syncPhase('idle');
   }
 
@@ -171,8 +179,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     });
   }
 
-  /* ── Fetch one TTS chunk from Gemini, returns a blob URL or null ── */
-  async function fetchChunk(sentence: string, voice: string, signal: AbortSignal): Promise<string | null> {
+  /* ── Fetch one TTS chunk — returns raw WAV bytes or null ── */
+  async function fetchChunk(sentence: string, voice: string, signal: AbortSignal): Promise<ArrayBuffer | null> {
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
@@ -182,34 +190,45 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         body: JSON.stringify({ text: sentence, voice }),
       });
       if (!res.ok) return null;
-      const { audio, mimeType } = await res.json();
+      const { audio } = await res.json();
       if (!audio) return null;
-      const bytes = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
-      const blob = new Blob([bytes], { type: mimeType ?? 'audio/wav' });
-      return URL.createObjectURL(blob);
+      // Decode base64 → ArrayBuffer
+      const bin = atob(audio);
+      const buf = new ArrayBuffer(bin.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+      return buf;
     } catch {
       return null;
     }
   }
 
-  /* ── Play a blob URL and wait for it to finish ── */
-  function playUrl(url: string, sess: number): Promise<void> {
-    return new Promise(resolve => {
-      if (speakSessRef.current !== sess) { URL.revokeObjectURL(url); resolve(); return; }
-      const audio = new Audio(url);
-      curAudioRef.current = audio;
-      const done = () => { URL.revokeObjectURL(url); curAudioRef.current = null; resolve(); };
-      audio.onended = done;
-      audio.onerror = done;
-      audio.play().catch(done);
+  /* ── Play an ArrayBuffer through the shared AudioContext (autoplay-safe) ── */
+  function playBuffer(buf: ArrayBuffer, sess: number): Promise<void> {
+    return new Promise(async resolve => {
+      if (speakSessRef.current !== sess) { resolve(); return; }
+      try {
+        const ctx = getAudioCtx();
+        const decoded = await ctx.decodeAudioData(buf);
+        if (speakSessRef.current !== sess) { resolve(); return; }
+        const src = ctx.createBufferSource();
+        src.buffer = decoded;
+        src.connect(ctx.destination);
+        curSourceRef.current = src;
+        src.onended = () => { curSourceRef.current = null; resolve(); };
+        src.start(0);
+      } catch {
+        curSourceRef.current = null;
+        resolve();
+      }
     });
   }
 
-  /* ── Stop all ongoing speech (Gemini audio + browser synthesis) ── */
+  /* ── Stop all ongoing speech (AudioContext source + browser synthesis) ── */
   function stopSpeech() {
-    speakSessRef.current++;          // invalidates any in-flight speakReply loop
+    speakSessRef.current++;          // invalidates any in-flight sendToAI loop
     window.speechSynthesis.cancel();
-    if (curAudioRef.current) { try { curAudioRef.current.pause(); } catch {} curAudioRef.current = null; }
+    if (curSourceRef.current) { try { curSourceRef.current.stop(); } catch {} curSourceRef.current = null; }
   }
 
   /* ── Main AI call — streaming SSE, TTS fires per-sentence during generation ── */
@@ -303,10 +322,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       syncPhase('speaking');
       for (let i = 0; i < ttsPending.length; i++) {
         if (speakSessRef.current !== sess) { ac.abort(); return; }
-        const url = await ttsPending[i];
-        if (speakSessRef.current !== sess) { if (url) URL.revokeObjectURL(url); ac.abort(); return; }
-        if (url) {
-          await playUrl(url, sess);
+        const buf = await ttsPending[i];
+        if (speakSessRef.current !== sess) { ac.abort(); return; }
+        if (buf) {
+          await playBuffer(buf, sess);
         } else {
           // Gemini TTS failed (quota) — browser voice fallback for this sentence
           await speakBrowserFallback(sentenceTexts[i]);
@@ -389,9 +408,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   function handleMicTap() {
     if (phase === 'thinking') return;
     if (phase === 'idle') {
-      // Unlock audio on first tap
+      // Unlock both SpeechSynthesis AND AudioContext on user gesture
       const u = new SpeechSynthesisUtterance(' '); u.volume = 0;
       window.speechSynthesis.speak(u);
+      getAudioCtx().resume();   // must call inside user gesture to unlock
       inConvRef.current = true;
       startNewTurn();
     } else if (phase === 'listening') {
@@ -409,6 +429,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     inConvRef.current = false;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
     stopSpeech();
+    if (audioCtxRef.current) { try { audioCtxRef.current.close(); } catch {} audioCtxRef.current = null; }
     collectedRef.current = '';
     syncPhase('idle'); setAiReply(''); setLiveText('');
     onClose();
