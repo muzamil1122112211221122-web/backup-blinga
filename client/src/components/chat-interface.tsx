@@ -10,6 +10,13 @@ import { queryClient } from "@/lib/queryClient";
 import { ForusGames } from "./forus-games";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
+// Module-scope animation caches — survive component remounts and parent re-renders.
+// Without these at module scope, defining TypingText inside the parent component
+// would cause every parent re-render to remount all message bubbles and re-trigger
+// their typing animations (the "cursor on every message" bug).
+const globalCompletedTextsModule = new Map<string, string>();
+const globalProgressTextsModule = new Map<string, string>();
+
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
     ['#ef4444', '#dc2626'], // Red gradient
@@ -386,6 +393,47 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  // Track message IDs whose typing animation hasn't finished yet.
+  // The Stop button stays visible while either the network is in-flight (isTyping)
+  // OR the on-screen typing animation is still revealing words.
+  const [pendingAnimationIds, setPendingAnimationIds] = useState<Set<string>>(new Set());
+  const handleAnimationComplete = useCallback((id: string) => {
+    setPendingAnimationIds(prev => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+  const isAnimatingResponse = pendingAnimationIds.size > 0;
+  // When a new assistant message appears, mark it as "pending animation".
+  // Also reconcile: prune any pending IDs that no longer exist in messages
+  // (covers project switches, new chats, and any path that replaces the
+  // messages array wholesale — without this, the Stop button could get stuck
+  // visible because TypingText unmounts before firing onAnimationComplete).
+  useEffect(() => {
+    const liveIds = new Set(messages.map(m => m.id));
+    setPendingAnimationIds(prev => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach(id => {
+        if (liveIds.has(id)) next.add(id);
+        else changed = true;
+      });
+      if (messages.length) {
+        const last = messages[messages.length - 1];
+        if (
+          last.role === 'assistant' &&
+          !globalCompletedTextsModule.has(last.id) &&
+          !next.has(last.id)
+        ) {
+          next.add(last.id);
+          changed = true;
+        }
+      }
+      return changed || next.size !== prev.size ? next : prev;
+    });
+  }, [messages]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>("forus-prime");
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
@@ -686,9 +734,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Text-to-speech
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
 
-  // Global caches - shared across all component instances to survive re-renders/remounts
-  const globalCompletedTexts = useRef<Map<string, string>>(new Map());
-  const globalProgressTexts = useRef<Map<string, string>>(new Map()); // tracks in-progress text
+  // Module-scoped caches (defined outside component) survive component remounts.
+  // Refs here just expose them with a stable identity for in-component reads.
+  const globalCompletedTexts = useRef<Map<string, string>>(globalCompletedTextsModule);
+  const globalProgressTexts = useRef<Map<string, string>>(globalProgressTextsModule);
 
   // Typing animation hook - survives remounts by resuming from last known progress
   const useTypingAnimation = (text: string, messageId: string, speed: number = 35) => {
@@ -757,7 +806,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   };
 
   // Typing Text Component - Completely isolated from parent re-renders
-  const TypingText = ({ text, messageId }: { text: string; messageId: string }) => {
+  const TypingText = ({ text, messageId, onAnimationComplete }: { text: string; messageId: string; onAnimationComplete?: (id: string) => void }) => {
     // Skip word-by-word animation for messages that embed images — base64 data URLs
     // can be huge and the partial text breaks the markdown until fully revealed,
     // hiding the image. Show the full content immediately for these.
@@ -765,6 +814,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const animation = useTypingAnimation(text, messageId);
     const displayedText = hasEmbeddedImage ? text : animation.displayedText;
     const isTypingComplete = hasEmbeddedImage ? true : animation.isTypingComplete;
+
+    // Notify parent when animation finishes so it can hide the Stop button
+    useEffect(() => {
+      if (isTypingComplete && onAnimationComplete) {
+        onAnimationComplete(messageId);
+      }
+    }, [isTypingComplete, messageId]);
 
     return (
       <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>
@@ -1231,6 +1287,13 @@ IMPORTANT RULES:
       abortControllerRef.current = null;
     }
     setIsTyping(false);
+    // Force any in-progress typing animation to "complete" — copy current
+    // progress text into completed cache so the cursor disappears immediately.
+    pendingAnimationIds.forEach(id => {
+      const progress = globalProgressTextsModule.get(id);
+      if (progress) globalCompletedTextsModule.set(id, progress);
+    });
+    setPendingAnimationIds(new Set());
   };
 
   const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
@@ -2244,7 +2307,7 @@ Let's start the self-listen session!`;
                         ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' 
                         : ''
                     }`}>
-                      <TypingText text={message.content} messageId={message.id} />
+                      <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex space-x-2">
                           <Tooltip>
@@ -2505,7 +2568,7 @@ Let's start the self-listen session!`;
                                   <p className="text-sm">{message.content}</p>
                                 ) : (
                                   <div className="text-sm prose prose-sm max-w-none dark:prose-invert break-words">
-                                    <TypingText text={message.content} messageId={message.id} />
+                                    <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
                                   </div>
                                 )}
                               </div>
@@ -2566,7 +2629,7 @@ Let's start the self-listen session!`;
                               </div>
                               <div className="rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border bg-card border-border">
                                 <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                                  <TypingText text={message.content} messageId={message.id} />
+                                  <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
                                 </div>
                               </div>
                             </div>
@@ -2693,7 +2756,7 @@ Let's start the self-listen session!`;
                         {msg.role === 'user' ? (
                           <p>{msg.content}</p>
                         ) : (
-                          <TypingText text={msg.content} messageId={msg.id} />
+                          <TypingText text={msg.content} messageId={msg.id} onAnimationComplete={handleAnimationComplete} />
                         )}
                       </div>
                     </div>
@@ -3073,7 +3136,7 @@ Let's start the self-listen session!`;
                 </TooltipTrigger>
                 <TooltipContent>Enhance prompt</TooltipContent>
               </Tooltip>
-              {isTyping ? (
+              {(isTyping || isAnimatingResponse) ? (
                 <Button
                   onClick={handleStopResponse}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100"

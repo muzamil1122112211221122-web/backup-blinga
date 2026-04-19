@@ -714,7 +714,14 @@
   50% { opacity: 0; }
 }
 
-.typing-message::after {
+/* Place the blinking cursor INSIDE the last text element so it sits right after
+   the last visible word, not at the bottom of the entire message block.
+   We walk: outer div -> last child (e.g. <p>) -> last descendant text. The
+   simplest CSS approximation is to attach ::after to the last child of the
+   typing container. ReactMarkdown wraps text in <p>, so the cursor will land
+   inline at the end of the last paragraph. */
+.typing-message > *:last-child::after,
+.typing-message:not(:has(*))::after {
   content: '▋';
   display: inline-block;
   animation: blink-cursor 0.9s step-start infinite;
