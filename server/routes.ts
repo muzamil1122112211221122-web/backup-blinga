@@ -521,14 +521,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // otherwise fall back to stored messages for this conversationId
           let historyMessages: { role: string; content: string }[] = [];
           if (history && Array.isArray(history) && history.length > 0) {
-            historyMessages = history.slice(-20); // last 20 turns from frontend
+            historyMessages = history.slice(-10); // last 10 turns from frontend
           } else if (conversationId) {
             const storedConv = await storage.getConversation(conversationId);
             if (storedConv) {
               const storedMsgs = await storage.getConversationMessages(conversationId);
-              historyMessages = storedMsgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
+              historyMessages = storedMsgs.slice(-10).map(m => ({ role: m.role, content: m.content }));
             }
           }
+          // Trim individual messages to keep total context within Groq limits
+          historyMessages = historyMessages.map(m => ({
+            role: m.role,
+            content: typeof m.content === 'string' && m.content.length > 4000
+              ? m.content.substring(0, 4000) + '...'
+              : m.content,
+          }));
 
           const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
@@ -571,7 +578,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fallback to main AI service if Groq failed or no model specified
         if (!aiResponse) {
           console.log('Using main AI service fallback');
-          const fallbackConversation = { model: model || 'forus-prime', preset: 'custom' };
+          // CRITICAL: include conversation.id so callAIService can load history for memory
+          const fallbackConversation = {
+            ...(conversation as any),
+            id: conversationId,
+            model: model || (conversation as any)?.model || 'forus-prime',
+            preset: 'custom',
+          };
           aiResponse = await callAIService(message, fallbackConversation, user);
         }
 

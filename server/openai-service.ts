@@ -612,6 +612,13 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
   const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
   const dataUrl = `data:${detectedMime};base64,${cleanBase64}`;
 
+  // System prompt that pushes the model to IDENTIFY the subject by name before describing
+  const visionSystemPrompt = `You are an expert visual analyst. When you receive an image:
+1. FIRST, identify the subject by name if recognizable — the brand or company a logo belongs to (e.g. "This is the Perplexity AI logo"), the name of a famous person, the title of an artwork, the make/model of a product, the name of a landmark or place, the species of an animal or plant.
+2. THEN describe its visual features (colors, shapes, composition, style, text shown).
+3. THEN add any relevant context (what the brand does, what the person is known for, the historical/cultural significance).
+Be confident in identification. If you're uncertain, say "this looks like..." or "this resembles..." rather than refusing. Never say you cannot recognize logos, faces, or trademarks — describe what you see and offer your best identification.`;
+
   // Try Groq vision models first (Llama 4 has its own quota independent of Gemini)
   if (process.env.GROQ_API_KEY) {
     const groqVisionModels = [
@@ -629,15 +636,18 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
           },
           body: JSON.stringify({
             model,
-            messages: [{
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                { type: 'image_url', image_url: { url: dataUrl } },
-              ],
-            }],
+            messages: [
+              { role: 'system', content: visionSystemPrompt },
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: prompt },
+                  { type: 'image_url', image_url: { url: dataUrl } },
+                ],
+              },
+            ],
             max_tokens: 1500,
-            temperature: 0.3,
+            temperature: 0.4,
           }),
           signal: AbortSignal.timeout(30000),
         });
@@ -669,6 +679,7 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            systemInstruction: { parts: [{ text: visionSystemPrompt }] },
             contents: [{
               role: 'user',
               parts: [
@@ -676,7 +687,7 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
                 { inlineData: { mimeType: detectedMime, data: cleanBase64 } }
               ]
             }],
-            generationConfig: { maxOutputTokens: 1500, temperature: 0.3 }
+            generationConfig: { maxOutputTokens: 1500, temperature: 0.4 }
           }),
         });
 
