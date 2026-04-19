@@ -88,7 +88,7 @@ function getModelPersonality(model: string): string {
   }
 }
 
-const LANGUAGE_INSTRUCTION = " LANGUAGE RULE: Reply in English by default. Only switch to another language if the user writes in a clearly non-Latin script (e.g., Arabic اردو, Devanagari हिन्दी, Chinese 中文). If the user writes in Roman/Latin letters — including Roman Urdu — always reply in English.";
+const LANGUAGE_INSTRUCTION = " LANGUAGE RULE: Reply in English by default. Only switch to another language if the user writes in a clearly non-Latin script (e.g., Arabic اردو, Devanagari हिन्दी, Chinese 中文). If the user writes in Roman/Latin letters — including Roman Urdu — always reply in English. CAPABILITIES RULE: This app fully supports image analysis, image generation, and voice mode. NEVER tell the user you cannot analyze images, see images, or look at uploaded pictures. If the user asks 'can you analyze this image?' or anything similar, answer YES and invite them to upload it using the attachment button — do not refuse or claim you lack vision. The app will route uploaded images to a vision model automatically.";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);

@@ -612,6 +612,13 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
   const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
   const dataUrl = `data:${detectedMime};base64,${cleanBase64}`;
 
+  // Recognition hints (AI model logos + historical figures known in this app)
+  let recognitionHint = '';
+  try {
+    const { buildRecognitionHint } = await import('./recognition-registry');
+    recognitionHint = '\n\n' + buildRecognitionHint();
+  } catch {}
+
   // Vision system prompt — natural, detailed, accurate
   const visionSystemPrompt = `You are a sharp-eyed visual analyst. Write a natural, flowing, detailed response in plain paragraphs — never numbered steps, headings, or bullet lists unless the user asks for them.
 
@@ -625,7 +632,7 @@ Then write your answer as a rich, natural description that:
 - Adds useful context about what the subject is or does, when you've identified it
 - Reads like a knowledgeable friend talking, not a checklist
 
-Keep it engaging and informative. Accuracy first, but never sacrifice the rich description.`;
+Keep it engaging and informative. Accuracy first, but never sacrifice the rich description.${recognitionHint}`;
 
   // Try Groq vision models first (Llama 4 has its own quota independent of Gemini)
   if (process.env.GROQ_API_KEY) {
