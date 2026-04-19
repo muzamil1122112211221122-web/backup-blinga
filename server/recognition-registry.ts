@@ -187,17 +187,208 @@ export const HISTORICAL_FIGURES: string[] = [
   'Margaret Thatcher (1925–2013, British Prime Minister)',
 ];
 
+// ===== CURRENT FAMOUS PEOPLE =====
+
+export const HOLLYWOOD_ACTORS: string[] = [
+  'Tom Cruise', 'Leonardo DiCaprio', 'Brad Pitt', 'Johnny Depp', 'Will Smith',
+  'Robert Downey Jr.', 'Chris Hemsworth', 'Chris Evans', 'Chris Pratt', 'Mark Ruffalo',
+  'Scarlett Johansson', 'Jennifer Lawrence', 'Emma Stone', 'Emma Watson', 'Anne Hathaway',
+  'Angelina Jolie', 'Meryl Streep', 'Jennifer Aniston', 'Julia Roberts', 'Sandra Bullock',
+  'Tom Hanks', 'Denzel Washington', 'Morgan Freeman', 'Samuel L. Jackson', 'Hugh Jackman',
+  'Ryan Reynolds', 'Ryan Gosling', 'Matthew McConaughey', 'Christian Bale', 'Joaquin Phoenix',
+  'Keanu Reeves', 'Dwayne "The Rock" Johnson', 'Jason Statham', 'Vin Diesel', 'Arnold Schwarzenegger',
+  'Sylvester Stallone', 'Robert De Niro', 'Al Pacino', 'Anthony Hopkins', 'Daniel Day-Lewis',
+  'Timothée Chalamet', 'Zendaya', 'Tom Holland', 'Margot Robbie', 'Florence Pugh',
+  'Cillian Murphy', 'Pedro Pascal', 'Henry Cavill', 'Benedict Cumberbatch', 'Idris Elba',
+  'Daniel Craig', 'Christopher Nolan', 'Steven Spielberg', 'Quentin Tarantino', 'Martin Scorsese',
+  'Will Ferrell', 'Adam Sandler', 'Jim Carrey', 'Eddie Murphy', 'Kevin Hart',
+];
+
+export const BOLLYWOOD_ACTORS: string[] = [
+  'Shah Rukh Khan', 'Salman Khan', 'Aamir Khan', 'Akshay Kumar', 'Hrithik Roshan',
+  'Ranbir Kapoor', 'Ranveer Singh', 'Vicky Kaushal', 'Varun Dhawan', 'Sidharth Malhotra',
+  'Tiger Shroff', 'Kartik Aaryan', 'Ayushmann Khurrana', 'Rajkummar Rao', 'Pankaj Tripathi',
+  'Nawazuddin Siddiqui', 'Irrfan Khan', 'Anil Kapoor', 'Anupam Kher', 'Amitabh Bachchan',
+  'Abhishek Bachchan', 'Saif Ali Khan', 'Ajay Devgn', 'Sanjay Dutt', 'Govinda',
+  'Deepika Padukone', 'Priyanka Chopra', 'Alia Bhatt', 'Katrina Kaif', 'Kareena Kapoor',
+  'Kajol', 'Madhuri Dixit', 'Aishwarya Rai Bachchan', 'Anushka Sharma', 'Vidya Balan',
+  'Kangana Ranaut', 'Sonam Kapoor', 'Shraddha Kapoor', 'Kriti Sanon', 'Disha Patani',
+  'Janhvi Kapoor', 'Sara Ali Khan', 'Ananya Panday', 'Tara Sutaria', 'Kiara Advani',
+  'Allu Arjun', 'Prabhas', 'Mahesh Babu', 'Ram Charan', 'Jr. NTR',
+  'Yash (KGF)', 'Rajinikanth', 'Kamal Haasan', 'Vijay (Thalapathy)', 'Dhanush',
+  'Fahadh Faasil', 'Mohanlal', 'Mammootty', 'Samantha Ruth Prabhu', 'Rashmika Mandanna',
+  'Pooja Hegde', 'Nayanthara', 'Trisha Krishnan', 'Sai Pallavi',
+];
+
+export const PAKISTANI_CELEBRITIES: string[] = [
+  'Fawad Khan', 'Imran Abbas', 'Humayun Saeed', 'Mahira Khan', 'Ayeza Khan',
+  'Sajal Aly', 'Hania Aamir', 'Iqra Aziz', 'Mawra Hocane', 'Saba Qamar',
+  'Sanam Saeed', 'Yumna Zaidi', 'Maya Ali', 'Ayesha Omar', 'Ahad Raza Mir',
+  'Bilal Abbas Khan', 'Feroze Khan', 'Danish Taimoor', 'Wahaj Ali', 'Imran Ashraf',
+  'Atif Aslam', 'Ali Zafar', 'Rahat Fateh Ali Khan', 'Strings (band)', 'Junoon (band)',
+  'Coke Studio Pakistan', 'Asim Azhar', 'Shae Gill', 'Aima Baig', 'Momina Mustehsan',
+];
+
+export const PAKISTANI_POLITICIANS: string[] = [
+  'Imran Khan (PTI, former Prime Minister of Pakistan)',
+  'Shehbaz Sharif (current Prime Minister of Pakistan, PML-N)',
+  'Nawaz Sharif (3-time former PM of Pakistan, PML-N)',
+  'Bilawal Bhutto Zardari (PPP Chairman, former Foreign Minister)',
+  'Asif Ali Zardari (current President of Pakistan, PPP)',
+  'Maryam Nawaz Sharif (Chief Minister of Punjab, Pakistan)',
+  'Asim Munir (Chief of Army Staff, Pakistan)',
+  'Fazlur Rehman (JUI-F leader)',
+  'Sirajul Haq (Jamaat-e-Islami leader)',
+  'Pervez Musharraf (former President of Pakistan)',
+  'Benazir Bhutto (former Prime Minister of Pakistan)',
+];
+
+export const INDIAN_POLITICIANS: string[] = [
+  'Narendra Modi (current Prime Minister of India, BJP)',
+  'Amit Shah (Home Minister of India, BJP)',
+  'Rahul Gandhi (Congress Leader of Opposition)',
+  'Sonia Gandhi (Congress)', 'Priyanka Gandhi Vadra (Congress)',
+  'Arvind Kejriwal (AAP Convenor, former CM Delhi)',
+  'Yogi Adityanath (Chief Minister of Uttar Pradesh, BJP)',
+  'Mamata Banerjee (Chief Minister of West Bengal, TMC)',
+  'M. K. Stalin (Chief Minister of Tamil Nadu, DMK)',
+  'Nitish Kumar (Chief Minister of Bihar, JDU)',
+  'Droupadi Murmu (current President of India)',
+  'Jagdeep Dhankhar (Vice President of India)',
+  'Nirmala Sitharaman (Finance Minister of India)',
+  'S. Jaishankar (External Affairs Minister of India)',
+  'Rajnath Singh (Defence Minister of India)',
+  'Akhilesh Yadav (Samajwadi Party)', 'Mayawati (BSP)',
+];
+
+export const WORLD_LEADERS_CURRENT: string[] = [
+  'Donald Trump (47th President of the United States)',
+  'Kamala Harris (former US Vice President)',
+  'Joe Biden (46th President of the United States)',
+  'Vladimir Putin (President of Russia)',
+  'Xi Jinping (President of China)',
+  'Volodymyr Zelenskyy (President of Ukraine)',
+  'Emmanuel Macron (President of France)',
+  'Olaf Scholz (former Chancellor of Germany)',
+  'Friedrich Merz (Chancellor of Germany)',
+  'Keir Starmer (Prime Minister of the United Kingdom)',
+  'Rishi Sunak (former PM of the United Kingdom)',
+  'King Charles III (King of the United Kingdom)',
+  'Justin Trudeau (former PM of Canada)', 'Mark Carney (PM of Canada)',
+  'Anthony Albanese (PM of Australia)',
+  'Fumio Kishida (former PM of Japan)', 'Shigeru Ishiba (PM of Japan)',
+  'Yoon Suk-yeol (former President of South Korea)',
+  'Recep Tayyip Erdoğan (President of Turkey)',
+  'Mohammed bin Salman / MBS (Crown Prince of Saudi Arabia)',
+  'Sheikh Mohammed bin Zayed / MBZ (President of UAE)',
+  'Benjamin Netanyahu (Prime Minister of Israel)',
+  'Pope Francis', 'Pope Leo XIV',
+  'Javier Milei (President of Argentina)',
+  'Luiz Inácio Lula da Silva (President of Brazil)',
+  'Claudia Sheinbaum (President of Mexico)',
+  'Cyril Ramaphosa (President of South Africa)',
+];
+
+export const TECH_BUSINESS_LEADERS: string[] = [
+  'Elon Musk (CEO of Tesla, SpaceX, owner of X/Twitter)',
+  'Jeff Bezos (founder of Amazon, Blue Origin)',
+  'Mark Zuckerberg (CEO of Meta/Facebook)',
+  'Bill Gates (co-founder of Microsoft)',
+  'Sundar Pichai (CEO of Google/Alphabet)',
+  'Satya Nadella (CEO of Microsoft)',
+  'Tim Cook (CEO of Apple)',
+  'Sam Altman (CEO of OpenAI)',
+  'Dario Amodei (CEO of Anthropic)',
+  'Demis Hassabis (CEO of Google DeepMind)',
+  'Jensen Huang (CEO of NVIDIA)',
+  'Larry Page', 'Sergey Brin (Google co-founders)',
+  'Larry Ellison (Oracle)', 'Michael Dell (Dell)',
+  'Warren Buffett (Berkshire Hathaway)', 'Charlie Munger',
+  "Mukesh Ambani (Reliance Industries, India's richest)",
+  'Gautam Adani (Adani Group)',
+  'Ratan Tata (Tata Group)',
+  'Anand Mahindra (Mahindra Group)',
+  'N. R. Narayana Murthy (Infosys co-founder)',
+  'Azim Premji (Wipro)',
+  'Bernard Arnault (LVMH)',
+  'Jack Ma (Alibaba founder)', 'Pony Ma (Tencent)',
+  'Masayoshi Son (SoftBank)',
+  'Richard Branson (Virgin)',
+  'Oprah Winfrey', 'Rihanna (Fenty Beauty)', 'Kylie Jenner (Kylie Cosmetics)',
+];
+
+export const MUSICIANS_CURRENT: string[] = [
+  'Taylor Swift', 'Beyoncé', 'Jay-Z', 'Drake', 'Kendrick Lamar',
+  'Eminem', 'Kanye West', 'Travis Scott', 'The Weeknd', 'Bad Bunny',
+  'Billie Eilish', 'Olivia Rodrigo', 'Ariana Grande', 'Dua Lipa', 'Lady Gaga',
+  'Rihanna', 'Bruno Mars', 'Ed Sheeran', 'Justin Bieber', 'Harry Styles',
+  'Adele', 'Sabrina Carpenter', 'Chappell Roan', 'BTS', 'BLACKPINK',
+  'Jung Kook', 'Jimin', 'Lisa (BLACKPINK)', 'IU',
+  'Arijit Singh', 'AR Rahman', 'Diljit Dosanjh', 'Karan Aujla', 'Sidhu Moose Wala',
+  'Honey Singh', 'Badshah', 'Neha Kakkar', 'Shreya Ghoshal',
+];
+
+export const ATHLETES_CURRENT: string[] = [
+  'Lionel Messi', 'Cristiano Ronaldo', 'Neymar', 'Kylian Mbappé', 'Erling Haaland',
+  'Vinícius Júnior', 'Jude Bellingham', 'Mohamed Salah', 'Robert Lewandowski',
+  'LeBron James', 'Stephen Curry', 'Kevin Durant', 'Giannis Antetokounmpo',
+  'Luka Dončić', 'Nikola Jokić', 'Jayson Tatum', 'Michael Jordan', 'Kobe Bryant',
+  'Tom Brady', 'Patrick Mahomes', 'Travis Kelce',
+  'Roger Federer', 'Rafael Nadal', 'Novak Djokovic', 'Carlos Alcaraz', 'Jannik Sinner',
+  'Serena Williams', 'Coco Gauff', 'Iga Świątek',
+  'Tiger Woods', 'Rory McIlroy', 'Scottie Scheffler',
+  'Max Verstappen', 'Lewis Hamilton', 'Charles Leclerc', 'Lando Norris',
+  'Conor McGregor', 'Khabib Nurmagomedov', 'Jon Jones', 'Israel Adesanya',
+  'Floyd Mayweather', 'Canelo Álvarez', 'Tyson Fury', 'Anthony Joshua', 'Mike Tyson',
+  'Virat Kohli', 'Rohit Sharma', 'MS Dhoni', 'Sachin Tendulkar', 'Jasprit Bumrah',
+  'Hardik Pandya', 'Shubman Gill', 'KL Rahul', 'Rishabh Pant',
+  'Babar Azam', 'Shaheen Afridi', 'Mohammad Rizwan', 'Shadab Khan', 'Naseem Shah',
+  'Wasim Akram', 'Shahid Afridi', 'Shoaib Akhtar',
+  'Pat Cummins', 'Steve Smith', 'David Warner', 'Joe Root', 'Ben Stokes',
+  'Kane Williamson', 'AB de Villiers',
+  'Simone Biles', 'Usain Bolt', 'Michael Phelps',
+];
+
+export const INTERNET_CELEBRITIES: string[] = [
+  'MrBeast (Jimmy Donaldson)', 'PewDiePie', 'Logan Paul', 'Jake Paul', 'KSI',
+  'Kim Kardashian', 'Kourtney Kardashian', 'Khloé Kardashian', 'Kris Jenner', 'Kendall Jenner',
+  'Andrew Tate', 'Joe Rogan', 'Lex Fridman', 'Gary Vaynerchuk', 'Alex Hormozi',
+  'iShowSpeed', 'Mark Rober', 'CarryMinati (Ajey Nagar)', 'Bhuvan Bam', 'Ashish Chanchlani',
+  'Amit Bhadana', 'Sandeep Maheshwari', 'Ranveer Allahbadia (BeerBiceps)',
+];
+
 export function buildRecognitionHint(): string {
   return [
     'KNOWN SUBJECTS HINT — the user may upload images of any of the following. If the visual evidence (text in the image, distinctive shape, recognisable face) clearly matches one of these, name it. If it does NOT clearly match, do NOT force a match — describe honestly.',
     '',
     'AI MODEL LOGOS in this app:',
-    NOMAD_AI_LOGOS.map(s => '- ' + s).join('
-'),
+    NOMAD_AI_LOGOS.map(s => '- ' + s).join('\n'),
     '',
     'HISTORICAL FIGURES the user may upload portraits of:',
-    HISTORICAL_FIGURES.map(s => '- ' + s).join('
-'),
-  ].join('
-');
+    HISTORICAL_FIGURES.map(s => '- ' + s).join('\n'),
+    '',
+    'CURRENT WORLD LEADERS & POLITICIANS:',
+    [...WORLD_LEADERS_CURRENT, ...INDIAN_POLITICIANS, ...PAKISTANI_POLITICIANS].map(s => '- ' + s).join('\n'),
+    '',
+    'BUSINESS / TECH LEADERS & BILLIONAIRES:',
+    TECH_BUSINESS_LEADERS.map(s => '- ' + s).join('\n'),
+    '',
+    'HOLLYWOOD ACTORS & FILMMAKERS:',
+    HOLLYWOOD_ACTORS.map(s => '- ' + s).join('\n'),
+    '',
+    'BOLLYWOOD & INDIAN FILM CELEBRITIES (Hindi, Telugu, Tamil, Malayalam):',
+    BOLLYWOOD_ACTORS.map(s => '- ' + s).join('\n'),
+    '',
+    'PAKISTANI ACTORS, MUSICIANS & TV STARS:',
+    PAKISTANI_CELEBRITIES.map(s => '- ' + s).join('\n'),
+    '',
+    'GLOBAL & DESI MUSICIANS:',
+    MUSICIANS_CURRENT.map(s => '- ' + s).join('\n'),
+    '',
+    'CURRENT ATHLETES (football, cricket, NBA, tennis, F1, MMA, boxing, etc.):',
+    ATHLETES_CURRENT.map(s => '- ' + s).join('\n'),
+    '',
+    'INTERNET CELEBRITIES & INFLUENCERS:',
+    INTERNET_CELEBRITIES.map(s => '- ' + s).join('\n'),
+  ].join('\n');
 }
