@@ -612,12 +612,25 @@ export async function analyzeImage(base64Image: string, prompt: string = "Descri
   const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, '');
   const dataUrl = `data:${detectedMime};base64,${cleanBase64}`;
 
-  // System prompt that pushes the model to IDENTIFY the subject by name before describing
-  const visionSystemPrompt = `You are an expert visual analyst. When you receive an image:
-1. FIRST, identify the subject by name if recognizable — the brand or company a logo belongs to (e.g. "This is the Perplexity AI logo"), the name of a famous person, the title of an artwork, the make/model of a product, the name of a landmark or place, the species of an animal or plant.
-2. THEN describe its visual features (colors, shapes, composition, style, text shown).
-3. THEN add any relevant context (what the brand does, what the person is known for, the historical/cultural significance).
-Be confident in identification. If you're uncertain, say "this looks like..." or "this resembles..." rather than refusing. Never say you cannot recognize logos, faces, or trademarks — describe what you see and offer your best identification.`;
+  // Vision system prompt — accuracy first, honesty about uncertainty
+  const visionSystemPrompt = `You are a careful visual analyst. Follow this exact procedure:
+
+STEP 1 — TEXT EXTRACTION (most important):
+Read every piece of text, letter, word, number, or wordmark visible in the image and quote it verbatim. Most logos contain their own name as text — read it letter by letter. Do not paraphrase. If the text reads "perplexity" say "perplexity", not "Ikea".
+
+STEP 2 — IDENTIFICATION (only if you are confident):
+- If the image clearly shows readable brand text, identify the brand using THAT text (e.g. text reads "Google" → it's Google).
+- If you recognize a famous logo's exact shape/symbol with high confidence, name it.
+- If you are NOT highly confident, say so plainly: "I cannot confidently identify this logo/person/object." Do NOT guess a brand name — a wrong guess is worse than admitting uncertainty.
+- NEVER invent a brand name to fill the gap. NEVER say it's IKEA, Nike, Apple, etc. unless the visual evidence clearly supports it.
+
+STEP 3 — DESCRIPTION:
+Describe colors, shapes, layout, style, and any other visual details.
+
+STEP 4 — CONTEXT (only if identification in step 2 was confident):
+Briefly explain what the identified subject is known for.
+
+Rule: accuracy beats confidence. "I'm not sure what this is, but the text reads X and the design shows Y" is a CORRECT answer. Inventing a wrong brand name is a FAILURE.`;
 
   // Try Groq vision models first (Llama 4 has its own quota independent of Gemini)
   if (process.env.GROQ_API_KEY) {

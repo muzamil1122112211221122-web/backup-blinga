@@ -694,12 +694,15 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
         });
       }
 
-      // Remove data URL prefix if present
-      const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
-      
+      // Pass the full data URL through; analyzeImage detects MIME from the prefix.
+      // If caller already stripped the prefix, default to image/png.
+      const fullDataUrl = imageData.startsWith('data:')
+        ? imageData
+        : `data:image/png;base64,${imageData}`;
+
       console.log('Analyzing image with prompt:', prompt.trim());
-      
-      const result = await analyzeImage(base64Data, prompt.trim());
+
+      const result = await analyzeImage(fullDataUrl, prompt.trim());
       
       if (result.success) {
         res.json({
