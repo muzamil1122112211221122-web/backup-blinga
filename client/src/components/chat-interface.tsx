@@ -2028,7 +2028,7 @@ Let's start the self-listen session!`;
 
   return (
     <TooltipProvider delayDuration={400}>
-    <div className={`min-h-screen flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}>
+    <div className={`h-screen overflow-hidden flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -2972,10 +2972,79 @@ Let's start the self-listen session!`;
 
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
-            <div className="flex items-center px-3 py-2 gap-2">
-              {/* Model selector */}
+            <div className="flex items-center px-2 py-2 gap-1">
+              {/* LEFT: Attachment + function-bar buttons */}
+              <Tooltip>
+                <DropdownMenu>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                        data-testid="button-attachment"
+                      >
+                        <img src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight} alt="Attachment" className="w-4 h-4 brightness-200 contrast-150" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => fileInputRef.current?.click()}>
+                      <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => imageInputRef.current?.click()}>
+                      <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <TooltipContent>Add Attachment</TooltipContent>
+              </Tooltip>
+              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`} onClick={adjustForus}>
+                        <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'18px',height:'18px'}} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Integration Answer</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={() => setIsVoiceModeModalOpen(true)}>
+                        <AudioLines className="w-3.5 h-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Voice Mode</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={() => setIsCustomizeModalOpen(true)}>
+                        <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'17px',height:'17px'}} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Settings</TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+              {/* Divider */}
+              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0 mx-0.5" />
+              {/* Textarea — grows to fill space */}
+              <Textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
+                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 min-h-0"
+                style={{ height: '22px', lineHeight: '1.5', overflow: 'hidden' }}
+                data-testid="input-message"
+              />
+              {/* Divider */}
+              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0 mx-0.5" />
+              {/* RIGHT: Model selector + mic + send */}
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[130px]">
+                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[120px]">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
@@ -2989,55 +3058,30 @@ Let's start the self-listen session!`;
                   ))}
                 </SelectContent>
               </Select>
-              {/* Divider */}
-              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
-              {/* Textarea — grows to fill space */}
-              <Textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
-                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 min-h-0"
-                style={{ height: '22px', lineHeight: '1.5', overflow: 'hidden' }}
-                data-testid="input-message"
-              />
-              {/* Right-side action buttons */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
-                      onClick={toggleListening}
-                      disabled={!speechSupported}
-                      data-testid="button-mic"
-                    >
-                      <img src={resolvedTheme === 'dark' ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
-                </Tooltip>
-                {(isTyping || isAnimatingResponse) ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
-                    onClick={handleStopResponse}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0"
-                    data-testid="button-stop-response"
+                    variant="ghost"
+                    size="icon"
+                    className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                    onClick={toggleListening}
+                    disabled={!speechSupported}
+                    data-testid="button-mic"
                   >
-                    <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
+                    <img src={resolvedTheme === 'dark' ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
                   </Button>
-                ) : (
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
-                    className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
-                    data-testid="button-send-message"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
+                </TooltipTrigger>
+                <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+              </Tooltip>
+              {(isTyping || isAnimatingResponse) ? (
+                <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0" data-testid="button-stop-response">
+                  <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
+                </Button>
+              ) : (
+                <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0" data-testid="button-send-message">
+                  <ArrowUp className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           ) : (
             /* ── Default: two-row layout (unchanged) ── */
