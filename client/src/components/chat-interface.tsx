@@ -2970,207 +2970,276 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          <div className={messageBarStyle === 'compact' ? 'px-1 pt-1 pb-0' : 'p-1.5 sm:p-2'}>
-            <Textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
-              className={`w-full bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 leading-normal ${
-                messageBarStyle === 'compact'
-                  ? 'min-h-[10px] max-h-[60px] text-[13px] !py-1 !px-2'
-                  : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px] leading-relaxed p-2'
-              }`}
-              style={messageBarStyle === 'compact' ? { height: '30px', lineHeight: '1.4' } : undefined}
-              data-testid="input-message"
-            />
-          </div>
-
-          <div className="flex items-center justify-between px-2 pb-1.5">
-            <div className="flex items-center">
+          {messageBarStyle === 'compact' ? (
+            /* ── Compact: single-row pill layout ── */
+            <div className="flex items-center px-3 py-2 gap-2">
+              {/* Model selector */}
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
+                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[130px]">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                <SelectContent className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
                   {MODEL_OPTIONS.map((modelOption) => (
                     <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                       <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          modelOption.provider === 'openai' ? 'bg-emerald-500' :
-                          modelOption.provider === 'anthropic' ? 'bg-orange-500' :
-                          modelOption.provider === 'google' ? 'bg-blue-500' :
-                          'bg-zinc-500'
-                        }`}></div>
+                        <div className={`w-1.5 h-1.5 rounded-full ${modelOption.provider === 'openai' ? 'bg-emerald-500' : modelOption.provider === 'anthropic' ? 'bg-orange-500' : modelOption.provider === 'google' ? 'bg-blue-500' : 'bg-zinc-500'}`}></div>
                         {modelOption.name}
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="flex items-center space-x-1.5 sm:space-x-2">
-              {/* Function bar buttons in message bar mode */}
-              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
-                <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
-                        onClick={adjustForus}
-                      >
-                        <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Integration Answer</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-9 h-9 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                        onClick={() => setIsVoiceModeModalOpen(true)}
-                      >
-                        <AudioLines className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Voice Mode</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                        onClick={() => setIsCustomizeModalOpen(true)}
-                      >
-                        <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Settings</TooltipContent>
-                  </Tooltip>
-                  {selectedModel === 'forus-education' && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                          onClick={() => setIsEducationModalOpen(true)}
-                        >
-                          <GraduationCap className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Education Settings</TooltipContent>
-                    </Tooltip>
-                  )}
-                </>
-              )}
-              <Tooltip>
-                <DropdownMenu>
+              {/* Divider */}
+              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
+              {/* Textarea — grows to fill space */}
+              <Textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
+                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 min-h-0"
+                style={{ height: '22px', lineHeight: '1.5', overflow: 'hidden' }}
+                data-testid="input-message"
+              />
+              {/* Right-side action buttons */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Tooltip>
                   <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                      onClick={toggleListening}
+                      disabled={!speechSupported}
+                      data-testid="button-mic"
+                    >
+                      <img src={resolvedTheme === 'dark' ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                </Tooltip>
+                {(isTyping || isAnimatingResponse) ? (
+                  <Button
+                    onClick={handleStopResponse}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0"
+                    data-testid="button-stop-response"
+                  >
+                    <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
+                    className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0"
+                    data-testid="button-send-message"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* ── Default: two-row layout (unchanged) ── */
+            <>
+              <div className="p-1.5 sm:p-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
+                  className="w-full min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2"
+                  data-testid="input-message"
+                />
+              </div>
+
+              <div className="flex items-center justify-between px-2 pb-1.5">
+                <div className="flex items-center">
+                  <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
+                    <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
+                      <SelectValue placeholder="Model" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                      {MODEL_OPTIONS.map((modelOption) => (
+                        <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-1.5 h-1.5 rounded-full ${
+                              modelOption.provider === 'openai' ? 'bg-emerald-500' :
+                              modelOption.provider === 'anthropic' ? 'bg-orange-500' :
+                              modelOption.provider === 'google' ? 'bg-blue-500' :
+                              'bg-zinc-500'
+                            }`}></div>
+                            {modelOption.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-1.5 sm:space-x-2">
+                  {/* Function bar buttons in message bar mode */}
+                  {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
+                            onClick={adjustForus}
+                          >
+                            <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Integration Answer</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-9 h-9 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            onClick={() => setIsVoiceModeModalOpen(true)}
+                          >
+                            <AudioLines className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Voice Mode</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            onClick={() => setIsCustomizeModalOpen(true)}
+                          >
+                            <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Settings</TooltipContent>
+                      </Tooltip>
+                      {selectedModel === 'forus-education' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                              onClick={() => setIsEducationModalOpen(true)}
+                            >
+                              <GraduationCap className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Education Settings</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </>
+                  )}
+                  <Tooltip>
+                    <DropdownMenu>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            data-testid="button-attachment"
+                          >
+                            <img
+                              src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight}
+                              alt="Attachment"
+                              className="w-5 h-5 brightness-200 contrast-150"
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                        <DropdownMenuItem
+                          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <FileText className="w-4 h-4 text-zinc-400" />
+                          <span>Upload File</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          <Image className="w-4 h-4 text-zinc-400" />
+                          <span>Upload Image</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <TooltipContent>Add Attachment</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                        data-testid="button-attachment"
+                        className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
+                        onClick={toggleListening}
+                        disabled={!speechSupported}
+                        data-testid="button-mic"
                       >
-                        <img 
-                          src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight} 
-                          alt="Attachment" 
+                        <img
+                          src={resolvedTheme === 'dark' ? micDark : micLight}
+                          alt="Mic"
                           className="w-5 h-5 brightness-200 contrast-150"
                         />
                       </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                    <DropdownMenuItem 
-                      className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                      onClick={() => fileInputRef.current?.click()}
+                    </TooltipTrigger>
+                    <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                        onClick={handleEnhancePrompt}
+                        disabled={!inputValue.trim() || isEnhancing}
+                        data-testid="button-enhance"
+                      >
+                        {isEnhancing ? (
+                          <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
+                        ) : (
+                          <img
+                            src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight}
+                            alt="Enhance"
+                            className="w-5 h-5 brightness-200 contrast-150"
+                          />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Enhance prompt</TooltipContent>
+                  </Tooltip>
+                  {(isTyping || isAnimatingResponse) ? (
+                    <Button
+                      onClick={handleStopResponse}
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100"
+                      data-testid="button-stop-response"
                     >
-                      <FileText className="w-4 h-4 text-zinc-400" />
-                      <span>Upload File</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                      onClick={() => imageInputRef.current?.click()}
+                      <div className="w-4 h-4 rounded-md bg-white dark:bg-zinc-800 flex-shrink-0" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
+                      className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
+                      data-testid="button-send-message"
                     >
-                      <Image className="w-4 h-4 text-zinc-400" />
-                      <span>Upload Image</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <TooltipContent>Add Attachment</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
-                    onClick={toggleListening}
-                    disabled={!speechSupported}
-                    data-testid="button-mic"
-                  >
-                    <img 
-                      src={resolvedTheme === 'dark' ? micDark : micLight} 
-                      alt="Mic" 
-                      className="w-5 h-5 brightness-200 contrast-150"
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                    onClick={handleEnhancePrompt}
-                    disabled={!inputValue.trim() || isEnhancing}
-                    data-testid="button-enhance"
-                  >
-                    {isEnhancing ? (
-                      <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
-                    ) : (
-                      <img 
-                        src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} 
-                        alt="Enhance" 
-                        className="w-5 h-5 brightness-200 contrast-150"
-                      />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Enhance prompt</TooltipContent>
-              </Tooltip>
-              {(isTyping || isAnimatingResponse) ? (
-                <Button
-                  onClick={handleStopResponse}
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100"
-                  data-testid="button-stop-response"
-                >
-                  <div className="w-4 h-4 rounded-md bg-white dark:bg-zinc-800 flex-shrink-0" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
-                  className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
-                  data-testid="button-send-message"
-                >
-                  <ArrowUp className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-          </div>
+                      <ArrowUp className="w-5 h-5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
           {/* Voice Listening Indicator Overlay moved inside the relative container */}
           {isListening && (
             <div className="absolute inset-x-0 -top-8 flex justify-center">
