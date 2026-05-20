@@ -55,9 +55,13 @@ export function CustomizeModal({
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
     () => localStorage.getItem('messageBarStyle') || 'compact'
   );
+  const [chatBg, setChatBg] = useState<string>(
+    () => localStorage.getItem('chatBg') || 'plain'
+  );
   const originalTheme = useRef<string>(theme);
   const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'square');
   const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'compact');
+  const originalChatBg = useRef<string>(localStorage.getItem('chatBg') || 'plain');
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
@@ -116,6 +120,11 @@ export function CustomizeModal({
     setIsDirty(true);
   };
 
+  const handleChatBgChange = (val: string) => {
+    setChatBg(val);
+    setIsDirty(true);
+  };
+
   const moveOrder = (index: number, direction: 'up' | 'down') => {
     const newOrder = [...localAiOrder];
     if (direction === 'up' && index > 0) {
@@ -141,6 +150,8 @@ export function CustomizeModal({
     window.dispatchEvent(new Event('functionBarStyleChanged'));
     localStorage.setItem('messageBarStyle', messageBarStyle);
     window.dispatchEvent(new Event('messageBarStyleChanged'));
+    localStorage.setItem('chatBg', chatBg);
+    window.dispatchEvent(new Event('chatBgChanged'));
     onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
@@ -151,6 +162,7 @@ export function CustomizeModal({
     setTheme(originalTheme.current);
     setFunctionBarStyle(originalFunctionBarStyle.current);
     setMessageBarStyle(originalMessageBarStyle.current);
+    setChatBg(originalChatBg.current);
     setIsDirty(false);
     setShowExitDialog(false);
     onClose();
@@ -355,6 +367,46 @@ export function CustomizeModal({
                       )}
                       {opt.value === 'compact' && (
                         <div className="w-24 h-4 bg-zinc-300 dark:bg-zinc-600 rounded-lg" />
+                      )}
+                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Chat Background</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose the background style for the chat area</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'plain', label: 'Plain' },
+                    { value: 'stars', label: 'Stars' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleChatBgChange(opt.value)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                        chatBg === opt.value
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      {opt.value === 'plain' && (
+                        <div className="w-24 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" />
+                      )}
+                      {opt.value === 'stars' && (
+                        <div className="w-24 h-10 bg-zinc-900 rounded-lg relative overflow-hidden border border-zinc-700">
+                          {[...Array(8)].map((_, i) => (
+                            <div key={i} className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-80" style={{
+                              left: `${10 + (i * 12) % 90}%`,
+                              top: `${15 + (i * 17) % 70}%`,
+                              animation: `twinkle ${1.2 + (i * 0.3) % 1.5}s ease-in-out infinite`,
+                              animationDelay: `${(i * 0.2) % 1.5}s`
+                            }} />
+                          ))}
+                        </div>
                       )}
                       <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
                     </button>

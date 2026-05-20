@@ -714,6 +714,11 @@
   50% { opacity: 0; }
 }
 
+@keyframes twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.4); }
+}
+
 /* Place the blinking cursor INSIDE the last text element so it sits right after
    the last visible word, not at the bottom of the entire message block.
    We walk: outer div -> last child (e.g. <p>) -> last descendant text. The

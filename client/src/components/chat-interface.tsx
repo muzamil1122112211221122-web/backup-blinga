@@ -441,6 +441,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'forus-games'>('ask');
+  const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
+  useEffect(() => {
+    const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
+    window.addEventListener('chatBgChanged', handler);
+    return () => window.removeEventListener('chatBgChanged', handler);
+  }, []);
 
   const starterHeadings = [
     "Try asking me something like:",
@@ -2239,6 +2245,39 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
+      {/* Twinkling stars background */}
+      {chatBg === 'stars' && activeTab === 'ask' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {[
+            {l:'5%',t:'8%',d:'0s',dur:'2.1s'},{l:'15%',t:'22%',d:'0.4s',dur:'1.8s'},
+            {l:'28%',t:'6%',d:'0.8s',dur:'2.4s'},{l:'42%',t:'35%',d:'0.2s',dur:'1.6s'},
+            {l:'55%',t:'12%',d:'1.1s',dur:'2.0s'},{l:'68%',t:'28%',d:'0.6s',dur:'1.9s'},
+            {l:'78%',t:'5%',d:'0.3s',dur:'2.3s'},{l:'88%',t:'18%',d:'0.9s',dur:'1.7s'},
+            {l:'10%',t:'45%',d:'1.3s',dur:'2.1s'},{l:'23%',t:'55%',d:'0.5s',dur:'1.8s'},
+            {l:'37%',t:'65%',d:'0.7s',dur:'2.2s'},{l:'50%',t:'48%',d:'1.0s',dur:'1.5s'},
+            {l:'63%',t:'70%',d:'0.2s',dur:'2.0s'},{l:'75%',t:'52%',d:'1.4s',dur:'1.9s'},
+            {l:'85%',t:'40%',d:'0.6s',dur:'2.4s'},{l:'92%',t:'60%',d:'0.3s',dur:'1.7s'},
+            {l:'7%',t:'75%',d:'1.2s',dur:'2.1s'},{l:'18%',t:'82%',d:'0.8s',dur:'1.6s'},
+            {l:'32%',t:'88%',d:'0.4s',dur:'2.3s'},{l:'47%',t:'78%',d:'1.1s',dur:'1.8s'},
+            {l:'60%',t:'85%',d:'0.7s',dur:'2.0s'},{l:'72%',t:'90%',d:'0.1s',dur:'1.5s'},
+            {l:'82%',t:'75%',d:'0.9s',dur:'2.2s'},{l:'94%',t:'82%',d:'0.5s',dur:'1.9s'},
+            {l:'3%',t:'55%',d:'1.5s',dur:'2.1s'},{l:'48%',t:'20%',d:'0.3s',dur:'1.7s'},
+            {l:'90%',t:'35%',d:'1.0s',dur:'2.3s'},{l:'35%',t:'42%',d:'0.6s',dur:'1.6s'},
+            {l:'20%',t:'68%',d:'1.3s',dur:'2.0s'},{l:'70%',t:'15%',d:'0.4s',dur:'1.8s'},
+          ].map((s, i) => (
+            <div key={i} className="absolute rounded-full bg-foreground"
+              style={{
+                left: s.l, top: s.t,
+                width: i % 3 === 0 ? '2px' : '1.5px',
+                height: i % 3 === 0 ? '2px' : '1.5px',
+                opacity: 0.25,
+                animation: `twinkle ${s.dur} ease-in-out infinite`,
+                animationDelay: s.d,
+              }}
+            />
+          ))}
+        </div>
+      )}
       {/* Gradient fade at bottom so messages dissolve smoothly into the bar area */}
       {activeTab !== 'forus-games' && (
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
