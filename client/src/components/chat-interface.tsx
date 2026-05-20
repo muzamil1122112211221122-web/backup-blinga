@@ -633,7 +633,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   }, [isSidebarOpen]);
 
   // Conversation starters
-  const conversationStarters = [
+  const allConversationStarters = [
     {
       icon: <Zap className="w-6 h-6 text-blue-500" />,
       title: "Explain complex topics",
@@ -669,8 +669,67 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       title: "Learning & education",
       description: "Expand knowledge",
       prompt: "Teach me about machine learning basics"
-    }
+    },
+    {
+      icon: <Brain className="w-6 h-6 text-purple-500" />,
+      title: "Brainstorm ideas",
+      description: "Generate fresh concepts",
+      prompt: "Give me 10 creative business ideas for 2025"
+    },
+    {
+      icon: <TrendingUp className="w-6 h-6 text-emerald-500" />,
+      title: "Career advice",
+      description: "Grow professionally",
+      prompt: "How do I transition into a software engineering career?"
+    },
+    {
+      icon: <Lightbulb className="w-6 h-6 text-yellow-500" />,
+      title: "Fun facts",
+      description: "Discover interesting things",
+      prompt: "Tell me 5 surprising facts about the universe"
+    },
+    {
+      icon: <FileText className="w-6 h-6 text-cyan-500" />,
+      title: "Summarize anything",
+      description: "Get the key points fast",
+      prompt: "Summarize the key ideas behind stoicism"
+    },
+    {
+      icon: <GraduationCap className="w-6 h-6 text-pink-500" />,
+      title: "Study help",
+      description: "Ace your exams",
+      prompt: "Quiz me on the causes of World War 1"
+    },
+    {
+      icon: <Edit className="w-6 h-6 text-violet-500" />,
+      title: "Improve my writing",
+      description: "Polish any text",
+      prompt: "Make this email sound more professional: 'Hey, can we meet?'"
+    },
+    {
+      icon: <Mic className="w-6 h-6 text-rose-500" />,
+      title: "Speech or debate",
+      description: "Argue any side",
+      prompt: "Give me arguments for and against social media"
+    },
+    {
+      icon: <Image className="w-6 h-6 text-amber-500" />,
+      title: "Describe a scene",
+      description: "Paint with words",
+      prompt: "Describe a futuristic city in vivid detail"
+    },
+    {
+      icon: <Camera className="w-6 h-6 text-teal-500" />,
+      title: "Travel planning",
+      description: "Plan your next trip",
+      prompt: "Plan a 5-day trip to Japan on a budget"
+    },
   ];
+
+  const [conversationStarters] = useState(() => {
+    const shuffled = [...allConversationStarters].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  });
 
   const handleStarterClick = (prompt: string) => {
     setInputValue(prompt);
