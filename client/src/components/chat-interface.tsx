@@ -2167,6 +2167,10 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
+      {/* Gradient fade at bottom so messages dissolve smoothly into the bar area */}
+      {activeTab !== 'forus-games' && (
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
+      )}
       {activeTab === 'nomad' && settingsToggles.nomadGrid && (
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
@@ -3037,7 +3041,7 @@ Let's start the self-listen session!`;
                 onKeyDown={handleKeyDown}
                 placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
-                style={{ height: '22px', maxHeight: '22px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
               />
               {/* Divider */}
