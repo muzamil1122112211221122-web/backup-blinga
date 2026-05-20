@@ -441,6 +441,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'forus-games'>('ask');
+
+  const starterHeadings = [
+    "Try asking me something like:",
+    "Here are some things you can explore:",
+    "Jump right in with one of these:",
+    "Not sure where to start? Try one of these:",
+    "Pick a topic or type anything:",
+    "Here's what I can help you with:",
+    "Some ideas to get you started:",
+    "What's on your mind? For example:",
+  ];
+  const [starterHeading] = useState(() => starterHeadings[Math.floor(Math.random() * starterHeadings.length)]);
   const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'forus-games') => {
     document.documentElement.classList.add('preload');
     setActiveTab(tab);
@@ -2193,7 +2205,7 @@ Let's start the self-listen session!`;
             
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">💡 Ask me about anything for example:</h3>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">{starterHeading}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {conversationStarters.map((starter, index) => (
                   <button
