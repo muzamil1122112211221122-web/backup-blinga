@@ -3036,8 +3036,8 @@ Let's start the self-listen session!`;
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
-                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 min-h-0"
-                style={{ height: '22px', lineHeight: '1.5', overflow: 'hidden' }}
+                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none"
+                style={{ height: '22px', maxHeight: '22px', lineHeight: '1.5', overflow: 'hidden' }}
                 data-testid="input-message"
               />
               {/* Divider */}
@@ -3093,7 +3093,7 @@ Let's start the self-listen session!`;
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
-                  className="w-full min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2"
+                  className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
               </div>
