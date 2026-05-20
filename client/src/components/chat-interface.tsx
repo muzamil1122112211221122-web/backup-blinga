@@ -2126,8 +2126,26 @@ Let's start the self-listen session!`;
         onProfilePictureChange={(dataUrl) => { setProfilePicture(dataUrl); localStorage.setItem('profilePicture', dataUrl); }}
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
+      {/* Full-screen animated gradient side strips */}
+      {(chatBg === 'gradient' || chatBg === 'stars-gradient' || chatBg === 'rainbow' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (() => {
+        const isRainbow = chatBg === 'rainbow' || chatBg === 'stars-rainbow';
+        const baseColor = 'rgba(59,130,246,0.55)';
+        const animation = isRainbow
+          ? 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite'
+          : 'gradient-breathe 3.5s ease-in-out infinite';
+        return (
+          <>
+            <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
+              style={{ width: '24%', background: `linear-gradient(to right, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? '0s, 0s' : '0s' }}
+            />
+            <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
+              style={{ width: '24%', background: `linear-gradient(to left, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? '0s, 0.5s' : '0s' }}
+            />
+          </>
+        );
+      })()}
       {/* Header */}
-      <header className="bg-card border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline">
+      <header className="bg-card/80 border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -2245,35 +2263,6 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
-      {/* Animated gradient side strips */}
-      {(chatBg === 'gradient' || chatBg === 'stars-gradient' || chatBg === 'rainbow' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (() => {
-        const isRainbow = chatBg === 'rainbow' || chatBg === 'stars-rainbow';
-        const baseColor = 'rgba(59,130,246,0.55)';
-        const animation = isRainbow
-          ? 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite'
-          : 'gradient-breathe 3.5s ease-in-out infinite';
-        const delay = isRainbow ? '0s, 0s' : '0s';
-        return (
-          <>
-            <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
-              style={{
-                width: '24%',
-                background: `linear-gradient(to right, ${baseColor}, transparent)`,
-                animation,
-                animationDelay: delay,
-              }}
-            />
-            <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
-              style={{
-                width: '24%',
-                background: `linear-gradient(to left, ${baseColor}, transparent)`,
-                animation,
-                animationDelay: isRainbow ? '0s, 0.5s' : '0s',
-              }}
-            />
-          </>
-        );
-      })()}
       {/* Twinkling stars background */}
       {(chatBg === 'stars' || chatBg === 'stars-gradient' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
