@@ -52,8 +52,12 @@ export function CustomizeModal({
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
+  const [messageBarStyle, setMessageBarStyle] = useState<string>(
+    () => localStorage.getItem('messageBarStyle') || 'default'
+  );
   const originalTheme = useRef<string>(theme);
   const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'square');
+  const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'default');
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
@@ -88,6 +92,9 @@ export function CustomizeModal({
       const savedStyle = localStorage.getItem('functionBarStyle') || 'square';
       setFunctionBarStyle(savedStyle);
       originalFunctionBarStyle.current = savedStyle;
+      const savedMsgStyle = localStorage.getItem('messageBarStyle') || 'default';
+      setMessageBarStyle(savedMsgStyle);
+      originalMessageBarStyle.current = savedMsgStyle;
       setIsDirty(false);
       setShowExitDialog(false);
     }
@@ -101,6 +108,11 @@ export function CustomizeModal({
 
   const handleFunctionBarStyleChange = (val: string) => {
     setFunctionBarStyle(val);
+    setIsDirty(true);
+  };
+
+  const handleMessageBarStyleChange = (val: string) => {
+    setMessageBarStyle(val);
     setIsDirty(true);
   };
 
@@ -127,6 +139,8 @@ export function CustomizeModal({
     setTheme(localTheme);
     localStorage.setItem('functionBarStyle', functionBarStyle);
     window.dispatchEvent(new Event('functionBarStyleChanged'));
+    localStorage.setItem('messageBarStyle', messageBarStyle);
+    window.dispatchEvent(new Event('messageBarStyleChanged'));
     onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
@@ -136,6 +150,7 @@ export function CustomizeModal({
   const handleDontSave = () => {
     setTheme(originalTheme.current);
     setFunctionBarStyle(originalFunctionBarStyle.current);
+    setMessageBarStyle(originalMessageBarStyle.current);
     setIsDirty(false);
     setShowExitDialog(false);
     onClose();
@@ -309,6 +324,37 @@ export function CustomizeModal({
                           <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
                           <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
                         </div>
+                      )}
+                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Message Bar Style</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose the height and size of the message input area</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'default', label: 'Default' },
+                    { value: 'compact', label: 'Compact' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleMessageBarStyleChange(opt.value)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                        messageBarStyle === opt.value
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      {opt.value === 'default' && (
+                        <div className="w-24 h-8 bg-zinc-300 dark:bg-zinc-600 rounded-xl" />
+                      )}
+                      {opt.value === 'compact' && (
+                        <div className="w-24 h-4 bg-zinc-300 dark:bg-zinc-600 rounded-lg" />
                       )}
                       <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
                     </button>

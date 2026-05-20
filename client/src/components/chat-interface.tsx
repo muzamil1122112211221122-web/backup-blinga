@@ -449,11 +449,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
+  const [messageBarStyle, setMessageBarStyle] = useState<string>(
+    () => localStorage.getItem('messageBarStyle') || 'default'
+  );
 
   useEffect(() => {
     const handler = () => setFunctionBarStyle(localStorage.getItem('functionBarStyle') || 'square');
     window.addEventListener('functionBarStyleChanged', handler);
     return () => window.removeEventListener('functionBarStyleChanged', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setMessageBarStyle(localStorage.getItem('messageBarStyle') || 'default');
+    window.addEventListener('messageBarStyleChanged', handler);
+    return () => window.removeEventListener('messageBarStyleChanged', handler);
   }, []);
 
   useEffect(() => {
@@ -2961,14 +2970,18 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          <div className="p-1.5 sm:p-2">
+          <div className={messageBarStyle === 'compact' ? 'p-1' : 'p-1.5 sm:p-2'}>
             <Textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
-              className="w-full min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2"
+              className={`w-full bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 leading-relaxed p-2 ${
+                messageBarStyle === 'compact'
+                  ? 'min-h-[22px] max-h-[80px] text-[14px] sm:text-[15px]'
+                  : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px]'
+              }`}
               data-testid="input-message"
             />
           </div>
