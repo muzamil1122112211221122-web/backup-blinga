@@ -3135,8 +3135,6 @@ Let's start the self-listen session!`;
                   </Tooltip>
                 </>
               )}
-              {/* Divider */}
-              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0 mx-0.5" />
               {/* Textarea — grows to fill space */}
               <Textarea
                 ref={textareaRef}
@@ -3148,8 +3146,6 @@ Let's start the self-listen session!`;
                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
               />
-              {/* Divider */}
-              <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-600 flex-shrink-0 mx-0.5" />
               {/* RIGHT: Model selector + mic + send */}
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                 <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[120px]">
