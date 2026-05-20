@@ -508,11 +508,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Force all Nomad models to use working Groq API for reliable responses
       try {
         let aiResponse;
-        
-        const groqKey = process.env.GROQ_API_KEY;
-        
+
+        // Split 12 Nomad models across 2 Groq keys (6 each) to avoid rate limits
+        const GROQ_KEY1_MODELS = ['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1'];
+        const GROQ_KEY2_MODELS = ['doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai'];
+        const useKey2 = model && GROQ_KEY2_MODELS.includes(model);
+        const groqKey = useKey2
+          ? (process.env.GROQ_API_KEY_2 || process.env.GROQ_API_KEY)
+          : (process.env.GROQ_API_KEY || process.env.GROQ_API_KEY_2);
+        const groqKeyFallback = useKey2
+          ? process.env.GROQ_API_KEY
+          : process.env.GROQ_API_KEY_2;
+
         if (!aiResponse && groqKey) {
-          console.log(`Routing to Groq for reliability...`);
+          console.log(`Routing ${model} to Groq key ${useKey2 ? '2' : '1'} for reliability...`);
           
           const systemPrompt = (customSystemPrompt || getModelPersonality(model || '')) + LANGUAGE_INSTRUCTION;
           
@@ -565,10 +574,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   usage: data.usage 
                 }
               };
-              console.log(`Groq response successful`);
+              console.log(`Groq key ${useKey2 ? '2' : '1'} response successful for ${model}`);
             } else {
               const errorData = await response.json().catch(() => ({}));
-              console.error(`Groq API error:`, response.status, errorData);
+              console.error(`Groq key ${useKey2 ? '2' : '1'} error:`, response.status, errorData);
+
+              // Auto-fallback to the other Groq key
+              if (groqKeyFallback) {
+                console.log(`Falling back to Groq key ${useKey2 ? '1' : '2'} for ${model}...`);
+                try {
+                  const fallbackResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${groqKeyFallback}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      model: "llama-3.3-70b-versatile",
+                      messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...historyMessages,
+                        { role: 'user', content: message }
+                      ],
+                      temperature: 0.7,
+                      max_tokens: 2000
+                    })
+                  });
+                  if (fallbackResponse.ok) {
+                    const fallbackData = await fallbackResponse.json();
+                    aiResponse = {
+                      content: fallbackData.choices[0].message.content,
+                      metadata: { model: 'llama-3.3-70b-versatile', provider: 'groq', usage: fallbackData.usage }
+                    };
+                    console.log(`Groq fallback key successful for ${model}`);
+                  }
+                } catch (fallbackErr) {
+                  console.error(`Groq fallback key also failed:`, fallbackErr);
+                }
+              }
             }
           } catch (groqError) {
             console.error(`Groq failed:`, groqError);

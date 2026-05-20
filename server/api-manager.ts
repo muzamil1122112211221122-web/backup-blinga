@@ -26,7 +26,7 @@ class APIManager {
     console.log('Debug: OPENAI_API_KEY exists?', !!process.env.OPENAI_API_KEY);
     console.log('Debug: GEMINI_API_KEY exists?', !!process.env.GEMINI_API_KEY);
 
-    // Primary: Groq API
+    // Primary: Groq API (two keys for load balancing)
     if (process.env.GROQ_API_KEY) {
       this.apis.push({
         key: process.env.GROQ_API_KEY,
@@ -35,7 +35,17 @@ class APIManager {
         failureCount: 0,
         requestCount: 0
       });
-      console.log('Debug: Added Groq API');
+      console.log('Debug: Added Groq API key 1');
+    }
+    if (process.env.GROQ_API_KEY_2) {
+      this.apis.push({
+        key: process.env.GROQ_API_KEY_2,
+        provider: 'groq',
+        isWorking: true,
+        failureCount: 0,
+        requestCount: 0
+      });
+      console.log('Debug: Added Groq API key 2');
     }
 
     // Secondary: OpenRouter APIs (10 keys for load balancing)
