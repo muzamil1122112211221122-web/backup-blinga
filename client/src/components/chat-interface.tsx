@@ -2245,14 +2245,37 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
-      {/* Blue sides gradient overlay */}
-      {(chatBg === 'gradient' || chatBg === 'stars-gradient') && activeTab === 'ask' && (
-        <div className="absolute inset-0 pointer-events-none z-0"
-          style={{ background: 'linear-gradient(to right, rgba(59,130,246,0.18) 0%, transparent 28%, transparent 72%, rgba(59,130,246,0.18) 100%)' }}
-        />
-      )}
+      {/* Animated gradient side strips */}
+      {(chatBg === 'gradient' || chatBg === 'stars-gradient' || chatBg === 'rainbow' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (() => {
+        const isRainbow = chatBg === 'rainbow' || chatBg === 'stars-rainbow';
+        const baseColor = 'rgba(59,130,246,0.55)';
+        const animation = isRainbow
+          ? 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite'
+          : 'gradient-breathe 3.5s ease-in-out infinite';
+        const delay = isRainbow ? '0s, 0s' : '0s';
+        return (
+          <>
+            <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
+              style={{
+                width: '24%',
+                background: `linear-gradient(to right, ${baseColor}, transparent)`,
+                animation,
+                animationDelay: delay,
+              }}
+            />
+            <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
+              style={{
+                width: '24%',
+                background: `linear-gradient(to left, ${baseColor}, transparent)`,
+                animation,
+                animationDelay: isRainbow ? '0s, 0.5s' : '0s',
+              }}
+            />
+          </>
+        );
+      })()}
       {/* Twinkling stars background */}
-      {(chatBg === 'stars' || chatBg === 'stars-gradient') && activeTab === 'ask' && (
+      {(chatBg === 'stars' || chatBg === 'stars-gradient' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           {[
             {l:'5%',t:'8%',d:'0s',dur:'2.1s',dd:'0s',ddur:'9s'},{l:'15%',t:'22%',d:'0.4s',dur:'1.8s',dd:'1.2s',ddur:'11s'},

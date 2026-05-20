@@ -383,8 +383,10 @@ export function CustomizeModal({
                   {[
                     { value: 'plain', label: 'Plain' },
                     { value: 'gradient', label: 'Blue Sides' },
+                    { value: 'rainbow', label: 'Rainbow Sides' },
                     { value: 'stars', label: 'Stars' },
                     { value: 'stars-gradient', label: 'Stars + Blue' },
+                    { value: 'stars-rainbow', label: 'Stars + Rainbow' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -420,6 +422,40 @@ export function CustomizeModal({
                           {[...Array(6)].map((_, i) => (
                             <div key={i} className="absolute w-0.5 h-0.5 bg-blue-500 rounded-full opacity-80" style={{
                               left: `${8 + (i * 15) % 84}%`,
+                              top: `${20 + (i * 19) % 60}%`,
+                              animation: `twinkle ${1.2 + (i * 0.3) % 1.5}s ease-in-out infinite`,
+                              animationDelay: `${(i * 0.25) % 1.5}s`
+                            }} />
+                          ))}
+                        </div>
+                      )}
+                      {opt.value === 'rainbow' && (
+                        <div className="w-24 h-10 rounded-lg relative overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                          <div className="absolute top-0 left-0 bottom-0 w-8 rounded-l-lg" style={{
+                            background: 'linear-gradient(to right, rgba(59,130,246,0.6), transparent)',
+                            animation: 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite',
+                          }} />
+                          <div className="absolute top-0 right-0 bottom-0 w-8 rounded-r-lg" style={{
+                            background: 'linear-gradient(to left, rgba(59,130,246,0.6), transparent)',
+                            animation: 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite',
+                            animationDelay: '0s, 0.5s',
+                          }} />
+                        </div>
+                      )}
+                      {opt.value === 'stars-rainbow' && (
+                        <div className="w-24 h-10 rounded-lg relative overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                          <div className="absolute top-0 left-0 bottom-0 w-8 rounded-l-lg" style={{
+                            background: 'linear-gradient(to right, rgba(59,130,246,0.6), transparent)',
+                            animation: 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite',
+                          }} />
+                          <div className="absolute top-0 right-0 bottom-0 w-8 rounded-r-lg" style={{
+                            background: 'linear-gradient(to left, rgba(59,130,246,0.6), transparent)',
+                            animation: 'gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite',
+                            animationDelay: '0s, 0.5s',
+                          }} />
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} className="absolute w-0.5 h-0.5 bg-zinc-600 dark:bg-zinc-300 rounded-full" style={{
+                              left: `${15 + (i * 17) % 70}%`,
                               top: `${20 + (i * 19) % 60}%`,
                               animation: `twinkle ${1.2 + (i * 0.3) % 1.5}s ease-in-out infinite`,
                               animationDelay: `${(i * 0.25) % 1.5}s`

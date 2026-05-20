@@ -719,6 +719,16 @@
   50% { opacity: 1; transform: scale(1.6); }
 }
 
+@keyframes gradient-breathe {
+  0%, 100% { width: 20%; opacity: 0.6; }
+  50% { width: 34%; opacity: 1; }
+}
+
+@keyframes rainbow-shift {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
 @keyframes star-drift-1 {
   0%   { translate: 0px 0px; }
   25%  { translate: 6px -8px; }
