@@ -2933,7 +2933,7 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
-        <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] transition-all duration-300 glossy-outline !border-none !outline-none">
+        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
             <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
@@ -2982,7 +2982,7 @@ Let's start the self-listen session!`;
                   ? 'min-h-[10px] max-h-[60px] text-[13px] !py-1 !px-2'
                   : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px] leading-relaxed p-2'
               }`}
-              style={messageBarStyle === 'compact' ? { height: '36px', lineHeight: '1.4' } : undefined}
+              style={messageBarStyle === 'compact' ? { height: '30px', lineHeight: '1.4' } : undefined}
               data-testid="input-message"
             />
           </div>
