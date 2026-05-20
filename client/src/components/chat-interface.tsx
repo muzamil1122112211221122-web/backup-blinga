@@ -2245,8 +2245,14 @@ Let's start the self-listen session!`;
       
       {/* Chat Messages Area */}
       <div className="relative flex-1 min-h-0">
+      {/* Blue sides gradient overlay */}
+      {(chatBg === 'gradient' || chatBg === 'stars-gradient') && activeTab === 'ask' && (
+        <div className="absolute inset-0 pointer-events-none z-0"
+          style={{ background: 'linear-gradient(to right, rgba(59,130,246,0.18) 0%, transparent 28%, transparent 72%, rgba(59,130,246,0.18) 100%)' }}
+        />
+      )}
       {/* Twinkling stars background */}
-      {chatBg === 'stars' && activeTab === 'ask' && (
+      {(chatBg === 'stars' || chatBg === 'stars-gradient') && activeTab === 'ask' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           {[
             {l:'5%',t:'8%',d:'0s',dur:'2.1s',dd:'0s',ddur:'9s'},{l:'15%',t:'22%',d:'0.4s',dur:'1.8s',dd:'1.2s',ddur:'11s'},

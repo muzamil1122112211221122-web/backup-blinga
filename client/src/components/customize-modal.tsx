@@ -382,7 +382,9 @@ export function CustomizeModal({
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: 'plain', label: 'Plain' },
+                    { value: 'gradient', label: 'Blue Sides' },
                     { value: 'stars', label: 'Stars' },
+                    { value: 'stars-gradient', label: 'Stars + Blue' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -396,6 +398,10 @@ export function CustomizeModal({
                       {opt.value === 'plain' && (
                         <div className="w-24 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" />
                       )}
+                      {opt.value === 'gradient' && (
+                        <div className="w-24 h-10 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700"
+                          style={{ background: 'linear-gradient(to right, rgba(59,130,246,0.35) 0%, white 35%, white 65%, rgba(59,130,246,0.35) 100%)' }} />
+                      )}
                       {opt.value === 'stars' && (
                         <div className="w-24 h-10 bg-zinc-900 rounded-lg relative overflow-hidden border border-zinc-700">
                           {[...Array(8)].map((_, i) => (
@@ -404,6 +410,19 @@ export function CustomizeModal({
                               top: `${15 + (i * 17) % 70}%`,
                               animation: `twinkle ${1.2 + (i * 0.3) % 1.5}s ease-in-out infinite`,
                               animationDelay: `${(i * 0.2) % 1.5}s`
+                            }} />
+                          ))}
+                        </div>
+                      )}
+                      {opt.value === 'stars-gradient' && (
+                        <div className="w-24 h-10 rounded-lg relative overflow-hidden border border-blue-300 dark:border-blue-900"
+                          style={{ background: 'linear-gradient(to right, rgba(59,130,246,0.35) 0%, white 35%, white 65%, rgba(59,130,246,0.35) 100%)' }}>
+                          {[...Array(6)].map((_, i) => (
+                            <div key={i} className="absolute w-0.5 h-0.5 bg-blue-500 rounded-full opacity-80" style={{
+                              left: `${8 + (i * 15) % 84}%`,
+                              top: `${20 + (i * 19) % 60}%`,
+                              animation: `twinkle ${1.2 + (i * 0.3) % 1.5}s ease-in-out infinite`,
+                              animationDelay: `${(i * 0.25) % 1.5}s`
                             }} />
                           ))}
                         </div>
