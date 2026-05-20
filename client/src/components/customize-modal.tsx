@@ -53,11 +53,11 @@ export function CustomizeModal({
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
-    () => localStorage.getItem('messageBarStyle') || 'default'
+    () => localStorage.getItem('messageBarStyle') || 'compact'
   );
   const originalTheme = useRef<string>(theme);
   const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'square');
-  const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'default');
+  const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'compact');
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');

@@ -450,7 +450,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     () => localStorage.getItem('functionBarStyle') || 'square'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
-    () => localStorage.getItem('messageBarStyle') || 'default'
+    () => localStorage.getItem('messageBarStyle') || 'compact'
   );
 
   useEffect(() => {
@@ -460,7 +460,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   }, []);
 
   useEffect(() => {
-    const handler = () => setMessageBarStyle(localStorage.getItem('messageBarStyle') || 'default');
+    const handler = () => setMessageBarStyle(localStorage.getItem('messageBarStyle') || 'compact');
     window.addEventListener('messageBarStyleChanged', handler);
     return () => window.removeEventListener('messageBarStyleChanged', handler);
   }, []);
