@@ -835,10 +835,10 @@
 
 /* Compact message bar toolbar — shrink all buttons and send button */
 [data-compact-toolbar] button {
-  width: 1.75rem !important;
-  height: 1.75rem !important;
-  min-width: 1.75rem !important;
-  min-height: 1.75rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
 }
 [data-compact-toolbar] button img.btn-icon {
   width: 14px !important;

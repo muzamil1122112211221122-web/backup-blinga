@@ -2982,7 +2982,7 @@ Let's start the self-listen session!`;
                   ? 'min-h-[10px] max-h-[60px] text-[13px] !py-1 !px-2'
                   : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px] leading-relaxed p-2'
               }`}
-              style={messageBarStyle === 'compact' ? { height: '28px', lineHeight: '1.4' } : undefined}
+              style={messageBarStyle === 'compact' ? { height: '36px', lineHeight: '1.4' } : undefined}
               data-testid="input-message"
             />
           </div>
