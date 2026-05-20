@@ -728,7 +728,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   const [conversationStarters] = useState(() => {
     const shuffled = [...allConversationStarters].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
+    const count = Math.floor(Math.random() * 4) + 3;
+    return shuffled.slice(0, count);
   });
 
   const handleStarterClick = (prompt: string) => {
