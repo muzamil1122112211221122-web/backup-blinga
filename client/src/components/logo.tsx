@@ -15,10 +15,11 @@ export function Logo({ className, size = "md" }: LogoProps) {
 
   return (
     <div 
-      className={cn("logo-container relative inline-flex items-center justify-center cursor-pointer transition-colors duration-200 border-2 border-zinc-200 dark:border-zinc-800 rounded-full", sizeClasses[size], className)}
+      className={cn("logo-container relative inline-flex items-center justify-center cursor-pointer transition-colors duration-200 border-2 border-zinc-200 dark:border-zinc-800 rounded-full aspect-square overflow-hidden flex-shrink-0", sizeClasses[size], className)}
+      style={{ borderRadius: '9999px' }}
       data-testid="logo-forus"
     >
-      <span className="text-foreground font-normal select-none">ƒ</span>
+      <span className="text-foreground font-normal select-none leading-none">ƒ</span>
     </div>
   );
 }
