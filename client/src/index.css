@@ -715,8 +715,39 @@
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0.1; transform: scale(1); }
-  50% { opacity: 0.9; transform: scale(1.4); }
+  0%, 100% { opacity: 0.08; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.6); }
+}
+
+@keyframes star-drift-1 {
+  0%   { translate: 0px 0px; }
+  25%  { translate: 6px -8px; }
+  50%  { translate: 12px 2px; }
+  75%  { translate: 4px 10px; }
+  100% { translate: 0px 0px; }
+}
+
+@keyframes star-drift-2 {
+  0%   { translate: 0px 0px; }
+  25%  { translate: -8px 5px; }
+  50%  { translate: -3px 12px; }
+  75%  { translate: 7px 6px; }
+  100% { translate: 0px 0px; }
+}
+
+@keyframes star-drift-3 {
+  0%   { translate: 0px 0px; }
+  33%  { translate: 10px 6px; }
+  66%  { translate: -5px 9px; }
+  100% { translate: 0px 0px; }
+}
+
+@keyframes star-drift-4 {
+  0%   { translate: 0px 0px; }
+  20%  { translate: -9px -4px; }
+  50%  { translate: 3px -11px; }
+  80%  { translate: 8px -2px; }
+  100% { translate: 0px 0px; }
 }
 
 /* Place the blinking cursor INSIDE the last text element so it sits right after
