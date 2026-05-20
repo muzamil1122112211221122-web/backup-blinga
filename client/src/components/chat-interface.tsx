@@ -2266,6 +2266,41 @@ Let's start the self-listen session!`;
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
               <h3 className="text-lg font-semibold mb-4 text-foreground">{starterHeading}</h3>
+              {conversationStarters.length === 4 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    {conversationStarters.slice(0, 3).map((starter, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleStarterClick(starter.prompt)}
+                        className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">{starter.icon}</div>
+                          <div>
+                            <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{starter.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{starter.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => handleStarterClick(conversationStarters[3].prompt)}
+                      className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md w-full md:w-1/3"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0">{conversationStarters[3].icon}</div>
+                        <div>
+                          <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{conversationStarters[3].title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{conversationStarters[3].description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {conversationStarters.map((starter, index) => (
                   <button
@@ -2283,6 +2318,7 @@ Let's start the self-listen session!`;
                   </button>
                 ))}
               </div>
+              )}
             </div>
           </div>
         ) : (
