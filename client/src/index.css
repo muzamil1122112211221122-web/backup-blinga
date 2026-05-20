@@ -833,6 +833,26 @@
   filter: brightness(0) invert(1) brightness(0.85);
 }
 
+/* Compact message bar toolbar — shrink all buttons and send button */
+[data-compact-toolbar] button {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  min-width: 1.75rem !important;
+  min-height: 1.75rem !important;
+}
+[data-compact-toolbar] button img.btn-icon {
+  width: 14px !important;
+  height: 14px !important;
+}
+[data-compact-toolbar] button svg {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
+}
+[data-compact-toolbar] [role="combobox"] {
+  height: 1.5rem !important;
+  font-size: 11px !important;
+}
+
 .glossy-outline {
   box-shadow: 0 6px 18px rgba(0,0,0,0.15), inset 0 -3px 0 rgba(200,200,200,0.9), inset 0 -8px 18px rgba(200,200,200,0.15) !important;
 }

@@ -2987,7 +2987,7 @@ Let's start the self-listen session!`;
             />
           </div>
 
-          <div className="flex items-center justify-between px-2 pb-1.5">
+          <div className={`flex items-center justify-between px-2 ${messageBarStyle === 'compact' ? 'pb-0.5' : 'pb-1.5'}`} data-compact-toolbar={messageBarStyle === 'compact' ? 'true' : undefined}>
             <div className="flex items-center">
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                 <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
