@@ -3,17 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Brain, Calculator, BookOpen, Gamepad2, Star } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard';
+type GameId = 'menu' | 'maths' | 'word' | 'memory' | 'quiz' | 'leaderboard' | 'car' | 'oddword';
 type Level = 'easy' | 'medium' | 'hard';
 
 interface LeaderboardEntry { name: string; score: number; date: string; level: string; }
-interface AllLeaderboards { maths: LeaderboardEntry[]; word: LeaderboardEntry[]; memory: LeaderboardEntry[]; quiz: LeaderboardEntry[]; }
+interface AllLeaderboards { maths: LeaderboardEntry[]; word: LeaderboardEntry[]; memory: LeaderboardEntry[]; quiz: LeaderboardEntry[]; car: LeaderboardEntry[]; oddword: LeaderboardEntry[]; }
 
 // ─── Leaderboard helpers ──────────────────────────────────────────────────────
 const LB_KEY = 'forus_games_leaderboard_v2';
 function loadLeaderboard(): AllLeaderboards {
-  try { const raw = localStorage.getItem(LB_KEY); if (raw) return JSON.parse(raw); } catch {}
-  return { maths: [], word: [], memory: [], quiz: [] };
+  try { const raw = localStorage.getItem(LB_KEY); if (raw) { const d = JSON.parse(raw); return { car: [], oddword: [], ...d }; } } catch {}
+  return { maths: [], word: [], memory: [], quiz: [], car: [], oddword: [] };
 }
 function saveScore(game: keyof AllLeaderboards, entry: LeaderboardEntry) {
   const lb = loadLeaderboard();
@@ -144,6 +144,49 @@ const QUIZ_HARD = [
   { q: 'What is the rarest blood type?', options: ['AB-', 'O-', 'B-', 'A-'], answer: 0 },
   { q: 'Who composed "The Four Seasons"?', options: ['Bach', 'Mozart', 'Vivaldi', 'Beethoven'], answer: 2 },
   { q: 'What is the atomic mass of carbon?', options: ['6', '12', '14', '16'], answer: 1 },
+];
+
+// ─── Odd Word Data ─────────────────────────────────────────────────────────────
+interface OddWordQ { text: string; words: string[]; wrongIdx: number; fix: string; }
+const ODD_EASY: OddWordQ[] = [
+  { text: "Elephants are the smallest land animals on Earth", words: ["Elephants","smallest","land","Earth"], wrongIdx: 1, fix: "Elephants are the LARGEST land animals." },
+  { text: "Water boils at 0 degrees Celsius at sea level", words: ["Water","boils","0","Celsius"], wrongIdx: 2, fix: "Water boils at 100°C — it FREEZES at 0°C." },
+  { text: "The Earth takes 365 days to orbit the Moon", words: ["365","orbit","Moon","days"], wrongIdx: 2, fix: "Earth orbits the SUN, not the Moon." },
+  { text: "Dogs are reptiles that make great household pets", words: ["Dogs","reptiles","household","pets"], wrongIdx: 1, fix: "Dogs are MAMMALS, not reptiles." },
+  { text: "Spiders have six legs and spin silk webs", words: ["Spiders","six","silk","webs"], wrongIdx: 1, fix: "Spiders have EIGHT legs — they are arachnids, not insects." },
+  { text: "The capital of Australia is Sydney", words: ["capital","Australia","Sydney","is"], wrongIdx: 2, fix: "Australia's capital is Canberra, not Sydney." },
+  { text: "Penguins live in the Arctic alongside polar bears", words: ["Penguins","Arctic","polar bears","live"], wrongIdx: 1, fix: "Penguins live in the ANTARCTIC (South Pole)." },
+  { text: "The Sun is a planet at the centre of our solar system", words: ["Sun","planet","centre","solar system"], wrongIdx: 1, fix: "The Sun is a STAR, not a planet." },
+  { text: "Humans have 206 muscles in their skeleton", words: ["206","muscles","skeleton","Humans"], wrongIdx: 1, fix: "Humans have 206 BONES — we have over 600 muscles." },
+  { text: "Sharks are mammals that breathe using gills", words: ["Sharks","mammals","breathe","gills"], wrongIdx: 1, fix: "Sharks are FISH, not mammals." },
+  { text: "The Moon produces its own light and orbits Earth", words: ["Moon","produces","light","orbits"], wrongIdx: 1, fix: "The Moon reflects sunlight — it produces no light of its own." },
+  { text: "Rainbows always appear in the direction of the Sun", words: ["Rainbows","always","direction","Sun"], wrongIdx: 3, fix: "Rainbows appear OPPOSITE the Sun — you must face away from it." },
+];
+const ODD_MEDIUM: OddWordQ[] = [
+  { text: "Isaac Newton discovered gravity after an orange fell on his head", words: ["gravity","orange","fell","head"], wrongIdx: 1, fix: "The famous story involves an APPLE, not an orange." },
+  { text: "The chemical symbol for gold is Ag on the periodic table", words: ["gold","Ag","periodic","table"], wrongIdx: 1, fix: "Gold's symbol is AU (from Latin Aurum), not Ag (that's Silver)." },
+  { text: "Shakespeare was born in London in the 16th century", words: ["Shakespeare","London","16th","century"], wrongIdx: 1, fix: "Shakespeare was born in Stratford-upon-Avon, not London." },
+  { text: "The Pacific is the smallest ocean on Earth by area", words: ["Pacific","smallest","ocean","area"], wrongIdx: 1, fix: "The Pacific is the LARGEST ocean — the smallest is the Arctic Ocean." },
+  { text: "Mount Everest is the tallest mountain located in Africa", words: ["Everest","tallest","mountain","Africa"], wrongIdx: 3, fix: "Everest is located on the Nepal–Tibet border in ASIA." },
+  { text: "DNA stores genetic information in a single-stranded helix structure", words: ["DNA","genetic","single-stranded","helix"], wrongIdx: 2, fix: "DNA has a DOUBLE-stranded helix — two strands wound together." },
+  { text: "Sound travels faster than light in a vacuum", words: ["Sound","faster","light","vacuum"], wrongIdx: 0, fix: "Light travels faster — sound cannot travel through a vacuum at all." },
+  { text: "The Great Wall of China is clearly visible from the Moon", words: ["Great Wall","clearly visible","Moon","China"], wrongIdx: 1, fix: "This is a myth — the Wall is far too narrow to see from the Moon." },
+  { text: "Humans use only 10 percent of their brain at any time", words: ["Humans","10 percent","brain","time"], wrongIdx: 1, fix: "This is a myth — brain scans show virtually all areas are active." },
+  { text: "Albert Einstein failed mathematics at school as a child", words: ["Einstein","failed","mathematics","school"], wrongIdx: 2, fix: "Einstein excelled at mathematics — he failed a French-language entrance exam, not maths." },
+  { text: "Napoleon Bonaparte was unusually short for his era", words: ["Napoleon","unusually short","era","Bonaparte"], wrongIdx: 1, fix: "Napoleon was about 5'7\" — average height for his time. The 'short' myth came from British propaganda." },
+  { text: "Oxygen makes up about 78 percent of Earth's atmosphere", words: ["Oxygen","78 percent","Earth's","atmosphere"], wrongIdx: 0, fix: "NITROGEN makes up ~78% of the atmosphere. Oxygen is about 21%." },
+];
+const ODD_HARD: OddWordQ[] = [
+  { text: "The mitochondria produce ATP through a process called photosynthesis", words: ["mitochondria","ATP","photosynthesis","produce"], wrongIdx: 2, fix: "Mitochondria produce ATP via CELLULAR RESPIRATION, not photosynthesis (that's in chloroplasts)." },
+  { text: "The French Revolution began in 1789 under King Louis XV", words: ["1789","Revolution","Louis XV","France"], wrongIdx: 2, fix: "The French Revolution occurred under LOUIS XVI, not XV." },
+  { text: "The Coriolis effect makes hurricanes spin clockwise in the Northern Hemisphere", words: ["Coriolis","hurricanes","clockwise","Northern"], wrongIdx: 2, fix: "In the Northern Hemisphere hurricanes spin COUNTER-CLOCKWISE (clockwise in the South)." },
+  { text: "Penicillin was accidentally discovered by Louis Pasteur in 1928", words: ["Penicillin","accidentally","Louis Pasteur","1928"], wrongIdx: 2, fix: "Penicillin was discovered by ALEXANDER FLEMING — Pasteur pioneered germ theory." },
+  { text: "The speed of light in a vacuum is approximately 300 miles per second", words: ["light","vacuum","300","miles"], wrongIdx: 3, fix: "Light travels ~300,000 KILOMETRES per second (not miles, and not just 300)." },
+  { text: "In quantum mechanics, Heisenberg's principle limits our knowledge of momentum and temperature simultaneously", words: ["Heisenberg's","momentum","temperature","simultaneously"], wrongIdx: 2, fix: "The uncertainty principle applies to POSITION and momentum — not temperature." },
+  { text: "The Treaty of Westphalia in 1848 ended the Thirty Years' War", words: ["Westphalia","1848","Thirty Years'","ended"], wrongIdx: 1, fix: "The Treaty of Westphalia was signed in 1648, not 1848." },
+  { text: "Schrödinger proposed his famous cat paradox to support quantum superposition", words: ["Schrödinger","support","cat paradox","quantum"], wrongIdx: 1, fix: "Schrödinger devised the paradox to CRITIQUE and highlight absurdities in quantum superposition theory." },
+  { text: "The human genome contains approximately 3 billion base pairs encoding 2 million genes", words: ["3 billion","base pairs","2 million","genes"], wrongIdx: 2, fix: "The human genome has ~20,000–25,000 protein-coding genes, not 2 million." },
+  { text: "Nikola Tesla invented the telephone and was awarded the Nobel Prize in 1909", words: ["Tesla","telephone","Nobel Prize","1909"], wrongIdx: 1, fix: "The telephone was invented by Alexander Graham Bell — Tesla pioneered AC electricity and radio." },
 ];
 
 // ─── Memory Emojis (larger pool, pick fresh subset each game) ─────────────────
@@ -756,6 +799,248 @@ function ForusQuiz({ playerName, level, onBack }: { playerName: string; level: L
   );
 }
 
+// ─── Car Dodge Game ───────────────────────────────────────────────────────────
+function ForusCar({ playerName, level, onBack }: { playerName: string; level: Level; onBack: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [uiScore, setUiScore] = useState(0);
+  const [uiLives, setUiLives] = useState(3);
+  const [phase, setPhase] = useState<'intro'|'playing'|'dead'>('intro');
+  const [showSave, setShowSave] = useState(false);
+  const SPEED_INIT = { easy: 2.5, medium: 4.2, hard: 6.5 }[level];
+  const SPAWN_RATE = { easy: 88, medium: 58, hard: 36 }[level];
+  const CW = 210; const CH = 370;
+  const LANE_W = 70; const LANES = 3;
+  const CAR_W = 36; const CAR_H = 52; const OBS_H = 52;
+  const PY = CH - CAR_H - 16;
+  const lx = (l: number) => l * LANE_W + (LANE_W - CAR_W) / 2;
+  const OBS_COLORS = ['#ef4444','#f97316','#a855f7','#eab308','#3b82f6','#ec4899'];
+  const gs = useRef({ lane: 1, obs: [] as {lane:number;y:number;col:string}[], score: 0, lives: 3, speed: SPEED_INIT, frame: 0, dead: false });
+  const raf = useRef(0);
+
+  const rr = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  };
+
+  const draw = useCallback(() => {
+    const cv = canvasRef.current; if (!cv) return;
+    const ctx = cv.getContext('2d')!; const s = gs.current;
+    ctx.fillStyle = '#1c1917'; ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = '#292524'; ctx.fillRect(4, 0, CW-8, CH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.setLineDash([16,12]); ctx.lineWidth = 2;
+    for (let i = 1; i < LANES; i++) { ctx.beginPath(); ctx.moveTo(i*LANE_W,0); ctx.lineTo(i*LANE_W,CH); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#44403c'; ctx.fillRect(0,0,4,CH); ctx.fillRect(CW-4,0,4,CH);
+    for (const o of s.obs) {
+      const x = lx(o.lane);
+      ctx.fillStyle = o.col; rr(ctx, x, o.y, CAR_W, OBS_H, 6); ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(x+5, o.y+9, CAR_W-10, 13);
+      ctx.fillStyle='#fde68a'; ctx.beginPath(); ctx.arc(x+7, o.y+5, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+CAR_W-7, o.y+5, 4, 0, Math.PI*2); ctx.fill();
+    }
+    const px = lx(s.lane);
+    ctx.fillStyle='#22c55e'; rr(ctx, px, PY, CAR_W, CAR_H, 7); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(px+5, PY+8, CAR_W-10, 14);
+    ctx.fillStyle='#fef08a';
+    ctx.beginPath(); ctx.arc(px+7, PY+CAR_H-6, 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px+CAR_W-7, PY+CAR_H-6, 4, 0, Math.PI*2); ctx.fill();
+    if (s.lives <= 0) {
+      ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,CW,CH);
+      ctx.fillStyle='#fff'; ctx.font='bold 22px system-ui'; ctx.textAlign='center';
+      ctx.fillText('GAME OVER', CW/2, CH/2 - 10);
+      ctx.font='16px system-ui'; ctx.fillText(`Score: ${s.score}`, CW/2, CH/2+18);
+    }
+  }, []);
+
+  const startGame = useCallback(() => {
+    gs.current = { lane: 1, obs: [], score: 0, lives: 3, speed: SPEED_INIT, frame: 0, dead: false };
+    setUiScore(0); setUiLives(3); setPhase('playing');
+  }, [SPEED_INIT]);
+
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const s = gs.current;
+    const tick = () => {
+      if (s.dead) return;
+      s.frame++;
+      if (s.frame % SPAWN_RATE === 0) {
+        const occupiedLane = s.obs.filter(o => o.y < OBS_H * 1.5).map(o => o.lane);
+        let lane = Math.floor(Math.random() * LANES);
+        for (let t = 0; t < 5 && occupiedLane.includes(lane); t++) lane = Math.floor(Math.random() * LANES);
+        s.obs.push({ lane, y: -OBS_H, col: OBS_COLORS[Math.floor(Math.random()*OBS_COLORS.length)] });
+      }
+      for (const o of s.obs) o.y += s.speed;
+      let hitThisFrame = false;
+      s.obs = s.obs.filter(o => {
+        if (!hitThisFrame && o.lane === s.lane && o.y + OBS_H >= PY && o.y <= PY + CAR_H) {
+          hitThisFrame = true; s.lives--; setUiLives(s.lives);
+          if (s.lives <= 0) { s.dead = true; setPhase('dead'); setUiScore(s.score); setShowSave(true); draw(); }
+          return false;
+        }
+        if (o.y >= CH) { s.score++; setUiScore(s.score); return false; }
+        return true;
+      });
+      if (s.frame % 280 === 0) s.speed = Math.min(s.speed + 0.5, 16);
+      draw();
+      if (!s.dead) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [phase, draw]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (phase !== 'playing') return;
+      if (e.key === 'ArrowLeft' || e.key === 'a') gs.current.lane = Math.max(0, gs.current.lane - 1);
+      if (e.key === 'ArrowRight' || e.key === 'd') gs.current.lane = Math.min(2, gs.current.lane + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase]);
+
+  useEffect(() => { draw(); }, [draw]);
+
+  const handleSave = (name: string) => { saveScore('car', { name, score: uiScore, date: new Date().toISOString(), level }); setShowSave(false); };
+  const moveLeft = () => { gs.current.lane = Math.max(0, gs.current.lane - 1); };
+  const moveRight = () => { gs.current.lane = Math.min(2, gs.current.lane + 1); };
+
+  return (
+    <div className="flex flex-col h-full">
+      {showSave && <ScoreSaveModal score={uiScore} game="car" level={level} playerName={playerName} onSave={handleSave} onSkip={() => setShowSave(false)} />}
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div className="flex gap-2 items-center">
+          <StatPill>{'❤️ '.repeat(Math.max(0, uiLives)).trim() || '💀'}</StatPill>
+          <StatPill>⭐ {uiScore}</StatPill>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
+        {phase === 'intro' && (
+          <div className="text-center">
+            <div className="text-5xl mb-3">🚗</div>
+            <h3 className="text-xl font-bold text-white mb-1">Car Dodge</h3>
+            <p className="text-zinc-400 text-sm mb-1">Avoid incoming cars. You have 3 lives.</p>
+            <p className="text-zinc-500 text-xs mb-5">← → arrow keys or tap buttons below</p>
+            <Button onClick={startGame}>Start Game</Button>
+          </div>
+        )}
+        {(phase === 'playing' || phase === 'dead') && (
+          <div className="flex flex-col items-center gap-3">
+            <canvas ref={canvasRef} width={CW} height={CH} className="rounded-2xl border border-white/10" style={{ imageRendering: 'crisp-edges' }} />
+            {phase === 'playing' && (
+              <div className="flex gap-5">
+                <button onPointerDown={moveLeft} className="w-16 h-16 rounded-2xl bg-white/10 text-white text-3xl font-bold hover:bg-white/20 active:scale-90 transition-all select-none touch-none">←</button>
+                <button onPointerDown={moveRight} className="w-16 h-16 rounded-2xl bg-white/10 text-white text-3xl font-bold hover:bg-white/20 active:scale-90 transition-all select-none touch-none">→</button>
+              </div>
+            )}
+            {phase === 'dead' && (
+              <div className="flex gap-3">
+                <Button onClick={startGame}>Play Again</Button>
+                <Button variant="outline" onClick={onBack}>Menu</Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Odd Word Out Game ─────────────────────────────────────────────────────────
+function ForusOddWord({ playerName, level, onBack }: { playerName: string; level: Level; onBack: () => void }) {
+  const pool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[level];
+  const ROUNDS = 10; const ROUND_TIME = { easy: 18, medium: 14, hard: 10 }[level];
+  const [questions] = useState<OddWordQ[]>(() => shuffleArray(pool).slice(0, ROUNDS));
+  const [qIdx, setQIdx] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [score, setScore] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(ROUND_TIME);
+  const [gameOver, setGameOver] = useState(false);
+  const [showSave, setShowSave] = useState(false);
+  const lv = LEVELS.find(l => l.id === level)!;
+
+  const advance = useCallback((wasCorrect: boolean, tl: number) => {
+    const pts = wasCorrect ? 10 + tl * 2 : 0;
+    if (wasCorrect) { setScore(s => s + pts); setCorrect(c => c + 1); }
+    if (qIdx + 1 >= ROUNDS) { setGameOver(true); setShowSave(true); }
+    else { setTimeout(() => { setQIdx(i => i + 1); setSelected(null); setTimeLeft(ROUND_TIME); }, 900); }
+  }, [qIdx, ROUNDS, ROUND_TIME]);
+
+  useEffect(() => {
+    if (gameOver || selected !== null) return;
+    if (timeLeft <= 0) { setSelected(-1); advance(false, 0); return; }
+    const t = setTimeout(() => setTimeLeft(x => x - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, selected, gameOver, advance]);
+
+  const handleSelect = (idx: number) => {
+    if (selected !== null) return;
+    setSelected(idx);
+    advance(idx === questions[qIdx].wrongIdx, timeLeft);
+  };
+
+  const handleSave = (name: string) => { saveScore('oddword', { name, score, date: new Date().toISOString(), level }); setShowSave(false); };
+  const q = questions[Math.min(qIdx, ROUNDS - 1)];
+
+  return (
+    <div className="flex flex-col h-full">
+      {showSave && <ScoreSaveModal score={score} game="oddword" level={level} playerName={playerName} onSave={handleSave} onSkip={() => setShowSave(false)} />}
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div className="flex gap-2 items-center">
+          <span className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${lv.color} text-white font-bold`}>{lv.emoji}</span>
+          <StatPill>Q {Math.min(qIdx+1, ROUNDS)}/{ROUNDS}</StatPill>
+          <StatPill>⭐ {score}</StatPill>
+          <StatPill red={timeLeft <= 4}>⏱ {timeLeft}s</StatPill>
+        </div>
+      </div>
+      <TimerBar timeLeft={timeLeft} total={ROUND_TIME} />
+      <div className="flex-1 flex flex-col items-center justify-center">
+        {gameOver ? (
+          <div className="text-center">
+            <div className="text-6xl mb-4">{correct >= 8 ? '🕵️' : correct >= 5 ? '🎯' : '📖'}</div>
+            <h3 className="text-2xl font-bold text-white mb-2">{correct >= 8 ? 'Word Detective!' : correct >= 5 ? 'Sharp Eye!' : 'Keep Studying!'}</h3>
+            <p className="text-zinc-400 mb-1">{correct}/{ROUNDS} correct</p>
+            <p className="text-zinc-400 mb-5">Score: <span className="text-white font-bold text-xl">{score}</span></p>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={onBack}>Change Level</Button>
+              <Button variant="outline" onClick={onBack}>Menu</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full max-w-lg">
+            <p className="text-zinc-500 text-[11px] text-center mb-3 font-semibold uppercase tracking-widest">Which word makes this statement WRONG?</p>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-5 text-center">
+              <p className="text-base font-semibold text-white leading-relaxed">{q.text}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
+              {q.words.map((word, i) => {
+                let cls = 'bg-white/5 border-white/15 hover:bg-white/10 hover:border-white/30 cursor-pointer';
+                if (selected !== null) {
+                  if (i === q.wrongIdx) cls = 'bg-green-500/20 border-green-400 cursor-default';
+                  else if (i === selected) cls = 'bg-red-500/20 border-red-400 cursor-default';
+                  else cls = 'bg-white/5 border-white/10 opacity-40 cursor-default';
+                }
+                return (
+                  <button key={i} onClick={() => handleSelect(i)} disabled={selected !== null}
+                    className={`px-4 py-3 rounded-xl border-2 text-sm font-bold text-white transition-all duration-200 ${cls}`}>
+                    {word}
+                  </button>
+                );
+              })}
+            </div>
+            {selected !== null && (
+              <div className="text-center text-sm text-zinc-400 bg-white/5 rounded-xl px-4 py-2.5 border border-white/8">
+                {q.fix}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Games Hub ───────────────────────────────────────────────────────────
 interface ForusGamesProps { playerName: string; }
 
@@ -878,13 +1163,58 @@ export function ForusGames({ playerName }: ForusGamesProps) {
         </div>
       ),
     },
+    {
+      id: 'car' as GameId,
+      icon: <span style={{ fontSize: 32 }}>🚗</span>,
+      label: 'Car Dodge', category: 'REFLEX',
+      bgStyle: { background: '#16a34a' },
+      iconBg: '#15803d',
+      glowColor: '#86efac',
+      preview: (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4 py-2">
+          {/* Road preview */}
+          <div className="relative w-24 h-16 rounded-lg overflow-hidden" style={{ background: '#292524', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="absolute inset-y-0" style={{ left: '33.3%', width: 1, background: 'rgba(255,255,255,0.18)' }} />
+            <div className="absolute inset-y-0" style={{ left: '66.6%', width: 1, background: 'rgba(255,255,255,0.18)' }} />
+            {/* Obstacle cars */}
+            <div className="absolute rounded" style={{ left: 2, top: 4, width: 22, height: 16, background: '#ef4444' }} />
+            <div className="absolute rounded" style={{ left: '35%', top: 18, width: 22, height: 16, background: '#a855f7' }} />
+            {/* Player car */}
+            <div className="absolute rounded" style={{ left: '35%', bottom: 4, width: 22, height: 18, background: '#22c55e', boxShadow: '0 0 6px #86efac' }} />
+          </div>
+          <div className="text-white/80 text-[9px] font-medium">← → to dodge!</div>
+        </div>
+      ),
+    },
+    {
+      id: 'oddword' as GameId,
+      icon: <span style={{ fontSize: 32 }}>🕵️</span>,
+      label: 'Odd Word Out', category: 'LOGIC',
+      bgStyle: { background: '#0891b2' },
+      iconBg: '#0e7490',
+      glowColor: '#67e8f9',
+      preview: (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 py-2">
+          <div className="text-white/80 text-[9px] font-semibold text-center">Which word is WRONG?</div>
+          <div className="text-white font-bold text-[10px] text-center leading-tight opacity-90">"Dogs are reptiles that love to play"</div>
+          <div className="grid grid-cols-2 gap-1 w-full">
+            {[['Dogs','normal'],['reptiles','wrong'],['love','normal'],['play','normal']].map(([w, t]) => (
+              <div key={w} className="rounded-lg px-2 py-1 text-center"
+                style={{ background: t === 'wrong' ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.12)', border: t === 'wrong' ? '1.5px solid rgba(239,68,68,0.7)' : '1.5px solid rgba(255,255,255,0.15)' }}>
+                <span className="text-white font-semibold text-[9px]">{w}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
   ];
 
-  const catKey: Record<string, keyof AllLeaderboards | null> = { All: null, Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz' };
+  const catKey: Record<string, keyof AllLeaderboards | null> = { All: null, Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz', Car: 'car', Logic: 'oddword' };
   const catGameKey = catKey[lbCatFilter];
   const rawEntries: LeaderboardEntry[] = catGameKey
     ? lbData[catGameKey]
-    : [...lbData.maths, ...lbData.word, ...lbData.memory, ...lbData.quiz].sort((a, b) => b.score - a.score);
+    : [...lbData.maths, ...lbData.word, ...lbData.memory, ...lbData.quiz, ...lbData.car, ...lbData.oddword].sort((a, b) => b.score - a.score);
   const filteredEntries = filterByTime(rawEntries, lbTimeFilter).sort((a, b) => b.score - a.score);
   const topEntries = filteredEntries.slice(0, 3);
   const restEntries = filteredEntries.slice(3, 10);
@@ -898,10 +1228,12 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     return <LevelSelect game={g?.label ?? ''} icon={g?.icon} onSelect={(l) => { setSelectedLevel(l); setActiveGame(pendingGame); setPendingGame(null); }} onBack={() => setPendingGame(null)} />;
   }
 
-  if (activeGame === 'maths')  return <ForusMaths  playerName={playerName} level={selectedLevel} onBack={goBack} />;
-  if (activeGame === 'word')   return <ForusWord   playerName={playerName} level={selectedLevel} onBack={goBack} />;
-  if (activeGame === 'memory') return <ForusMemory playerName={playerName} level={selectedLevel} onBack={goBack} />;
-  if (activeGame === 'quiz')   return <ForusQuiz   playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'maths')    return <ForusMaths    playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'word')     return <ForusWord     playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'memory')   return <ForusMemory   playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'quiz')     return <ForusQuiz     playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'car')      return <ForusCar      playerName={playerName} level={selectedLevel} onBack={goBack} />;
+  if (activeGame === 'oddword')  return <ForusOddWord  playerName={playerName} level={selectedLevel} onBack={goBack} />;
   if (activeGame === 'leaderboard') return <LeaderboardPanel onBack={goBack} />;
 
   return (
@@ -981,7 +1313,7 @@ export function ForusGames({ playerName }: ForusGamesProps) {
             </div>
             {/* Category filters */}
             <div className="flex gap-1 flex-wrap">
-              {['All','Memory','Math','Word','Quiz'].map(f => (
+              {['All','Memory','Math','Word','Quiz','Car','Logic'].map(f => (
                 <button key={f} onClick={() => setLbCatFilter(f)}
                   className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold border"
                   style={{ background: lbCatFilter === f ? '#fff' : 'transparent', color: lbCatFilter === f ? '#000' : '#a1a1aa', borderColor: lbCatFilter === f ? '#fff' : '#3f3f46' }}>
