@@ -71,7 +71,8 @@ export function CustomizeModal({
     improveModel: true,
     personalize: true,
     linkSharing: true,
-    sidebarCloseTop: true
+    sidebarCloseTop: true,
+    showForusLogo: true
   });
 
   // Only reset local state when modal transitions from closed → open
@@ -239,6 +240,13 @@ export function CustomizeModal({
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Conversation Previews in History</span>
                   <Switch checked={localToggles.showPreviews} onCheckedChange={() => handleToggle('showPreviews')} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Forus Logo in Responses</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Display the Forus logo next to AI responses in chat</p>
+                  </div>
+                  <Switch checked={localToggles.showForusLogo ?? true} onCheckedChange={() => handleToggle('showForusLogo')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>

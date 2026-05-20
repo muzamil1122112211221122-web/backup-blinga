@@ -529,7 +529,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     nomadGrid: true,
     nomadNotification: true,
     philosopherNotification: true,
-    forusGamesNotification: true
+    forusGamesNotification: true,
+    showForusLogo: true
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -2301,7 +2302,7 @@ Let's start the self-listen session!`;
                   </div>
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
-                    <Logo size="sm" className="flex-shrink-0 mt-1" />
+                    {(settingsToggles.showForusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
                     <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble ${
                       message.content.includes('```') 
                         ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' 
@@ -2412,7 +2413,7 @@ Let's start the self-listen session!`;
             {isTyping && (
               <div className="flex justify-start" data-testid="typing-indicator">
                 <div className="flex space-x-3">
-                  <Logo size="sm" className="flex-shrink-0 mt-1" />
+                  {(settingsToggles.showForusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
                   <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex justify-center items-center">
                       <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
