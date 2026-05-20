@@ -2970,18 +2970,19 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          <div className={messageBarStyle === 'compact' ? 'p-1' : 'p-1.5 sm:p-2'}>
+          <div className={messageBarStyle === 'compact' ? 'px-1 pt-1 pb-0' : 'p-1.5 sm:p-2'}>
             <Textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
-              className={`w-full bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 leading-relaxed p-2 ${
+              className={`w-full bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 leading-normal ${
                 messageBarStyle === 'compact'
-                  ? 'min-h-[22px] max-h-[80px] text-[14px] sm:text-[15px]'
-                  : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px]'
+                  ? 'min-h-[10px] max-h-[60px] text-[13px] !py-1 !px-2'
+                  : 'min-h-[40px] max-h-[140px] text-[21px] sm:text-[22px] leading-relaxed p-2'
               }`}
+              style={messageBarStyle === 'compact' ? { height: '28px', lineHeight: '1.4' } : undefined}
               data-testid="input-message"
             />
           </div>
