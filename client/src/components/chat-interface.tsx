@@ -2414,8 +2414,7 @@ Let's start the self-listen session!`;
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        ref={chatScrollRef}
-        className={`flex-1 min-h-0 ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''} ${activeTab === 'imagine' ? 'relative' : ''}`}
+        className="flex-1 min-h-0 overflow-hidden relative"
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -2423,8 +2422,9 @@ Let's start the self-listen session!`;
         } : undefined}
       >
         {activeTab === 'ask' ? (
-          messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
+          <div ref={chatScrollRef} className="absolute inset-0 overflow-y-auto p-4 pb-32">
+          {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="xl" className="mb-6" />
             <h2 className="text-3xl font-bold mb-3 text-foreground">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
@@ -2744,7 +2744,8 @@ Let's start the self-listen session!`;
             
             <div ref={messagesEndRef} />
           </div>
-        )
+        )}
+          </div>
         ) : activeTab === 'nomad' ? (
           // Nomad Tab - Multi-AI Interface
           (() => {
@@ -3240,8 +3241,10 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Fius Games Tab
-          <div className="max-w-3xl w-full">
-            <FiusGames playerName={user?.displayName || user?.username || 'Player'} />
+          <div className="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="max-w-3xl w-full">
+              <FiusGames playerName={user?.displayName || user?.username || 'Player'} />
+            </div>
           </div>
         )}
       </div>
