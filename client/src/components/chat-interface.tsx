@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient } from "@/lib/queryClient";
-import { ForusGames } from "./forus-games";
+import { FiusGames } from "./fius-games";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 // Module-scope animation caches — survive component remounts and parent re-renders.
@@ -435,12 +435,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     });
   }, [messages]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>("forus-prime");
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>("fius-prime");
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'forus-games'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games'>('ask');
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
@@ -459,7 +459,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     "What's on your mind? For example:",
   ];
   const [starterHeading] = useState(() => starterHeadings[Math.floor(Math.random() * starterHeadings.length)]);
-  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'forus-games') => {
+  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games') => {
     document.documentElement.classList.add('preload');
     setActiveTab(tab);
     requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
@@ -514,7 +514,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
   const [input, setInput] = useState("");
-  const [forusIntegrationMode, setForusIntegrationMode] = useState(false);
+  const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
   const [isVoiceToVoiceMode, setIsVoiceToVoiceMode] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -530,7 +530,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
-  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai']));
+  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -556,8 +556,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     nomadGrid: true,
     nomadNotification: true,
     philosopherNotification: true,
-    forusGamesNotification: true,
-    showForusLogo: true
+    fiusGamesNotification: true,
+    showFiusLogo: true
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -584,7 +584,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     scheduleNomadNotif();
   }, [scheduleNomadNotif]);
 
-  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai']);
+  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']);
   const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
 
   useEffect(() => {
@@ -601,7 +601,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'qwen': { name: 'Qwen3.6-Plus', provider: 'alibaba', id: 'qwen' },
       'llama-4': { name: 'Llama 4', provider: 'meta', id: 'llama-4' },
       'mistral': { name: 'Mistral Small 4', provider: 'mistral', id: 'mistral' },
-      'forus-ai': { name: 'Forus Pro', provider: 'forus', id: 'forus-ai' }
+      'fius-ai': { name: 'Fius Pro', provider: 'fius', id: 'fius-ai' }
     };
 
     const newNomadModels = aiOrder
@@ -1078,7 +1078,7 @@ IMPORTANT RULES:
         body: JSON.stringify({
           message: content,
           conversationId: `philosopher-${p.id}`,
-          model: 'forus-ai',
+          model: 'fius-ai',
           provider: 'openai',
           systemPrompt,
         }),
@@ -1101,14 +1101,14 @@ IMPORTANT RULES:
     setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: msgId, role: 'user', content }], gameInput: '', isTyping: true }));
     try {
       const langRule = " CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. Match the user's language perfectly every time.";
-      const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Forus Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
+      const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Fius Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
       const response = await fetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content,
-          conversationId: 'forus-games',
-          model: 'forus-ai',
+          conversationId: 'fius-games',
+          model: 'fius-ai',
           provider: 'openai',
           systemPrompt: gameContext,
         }),
@@ -1273,8 +1273,8 @@ IMPORTANT RULES:
       return;
     }
 
-    // Handle Forus Games mode
-    if (activeTab === 'forus-games') {
+    // Handle Fius Games mode
+    if (activeTab === 'fius-games') {
       await handleGamesSend(content);
       return;
     }
@@ -1766,17 +1766,17 @@ IMPORTANT RULES:
     }
   };
 
-  // Adjust Forus function - enhances AI responses with additional prompting
-  const adjustForus = useCallback(() => {
-    const newMode = !forusIntegrationMode;
-    setForusIntegrationMode(newMode);
-    console.log('Adjust Forus function called - Forus Integration Answer mode:', newMode ? 'enabled' : 'disabled');
+  // Adjust Fius function - enhances AI responses with additional prompting
+  const adjustFius = useCallback(() => {
+    const newMode = !fiusIntegrationMode;
+    setFiusIntegrationMode(newMode);
+    console.log('Adjust Fius function called - Fius Integration Answer mode:', newMode ? 'enabled' : 'disabled');
     
     // Show user feedback
     if (typeof window !== 'undefined') {
       const message = newMode 
-        ? 'Forus Integration Answer mode enabled - AI will provide more detailed responses'
-        : 'Forus Integration Answer mode disabled';
+        ? 'Fius Integration Answer mode enabled - AI will provide more detailed responses'
+        : 'Fius Integration Answer mode disabled';
       
       // Create a simple toast notification
       const toast = document.createElement('div');
@@ -1799,7 +1799,7 @@ IMPORTANT RULES:
         document.body.removeChild(toast);
       }, 3000);
     }
-  }, [forusIntegrationMode]);
+  }, [fiusIntegrationMode]);
 
   const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, newAiOrder?: string[]) => {
     setCurrentPreset(preset);
@@ -1948,16 +1948,16 @@ IMPORTANT RULES:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: `Examination - ${data.class} (${data.school})`,
-        preset: 'forus-education',
-        model: 'forus-education',
+        preset: 'fius-education',
+        model: 'fius-education',
       }),
     });
     
     if (response.ok) {
       const newConversation = await response.json();
       setCurrentProjectId(newConversation.id);
-      setSelectedModel('forus-education');
-      setCurrentPreset('forus-education');
+      setSelectedModel('fius-education');
+      setCurrentPreset('fius-education');
       
       // Start examination process - send message directly
       const examMessage = `I want to take an examination. Here are my details:
@@ -2033,16 +2033,16 @@ Please create a comprehensive test based on my school's examination style and th
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: `Self Listen - ${data.heading}`,
-        preset: 'forus-education',
-        model: 'forus-education',
+        preset: 'fius-education',
+        model: 'fius-education',
       }),
     });
     
     if (response.ok) {
       const newConversation = await response.json();
       setCurrentProjectId(newConversation.id);
-      setSelectedModel('forus-education');
-      setCurrentPreset('forus-education');
+      setSelectedModel('fius-education');
+      setCurrentPreset('fius-education');
       
       // Start self-listen session
       const listenMessage = `I want to practice speaking about "${data.heading}". I have uploaded ${data.uploadedImages?.length || 0} related images. 
@@ -2144,7 +2144,7 @@ Let's start the self-listen session!`;
             <TooltipContent>Open Sidebar</TooltipContent>
           </Tooltip>
           <Logo size="sm" />
-          <span className="font-semibold text-foreground text-sm sm:text-base">Forus Heavy API</span>
+          <span className="font-semibold text-foreground text-sm sm:text-base">Fius Heavy API</span>
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2">
@@ -2160,7 +2160,7 @@ Let's start the self-listen session!`;
                 Ask
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Chat with Forus AI</TooltipContent>
+            <TooltipContent>Chat with Fius AI</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -2193,13 +2193,13 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'forus-games' ? 'secondary' : 'ghost'}
+                variant={activeTab === 'fius-games' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => changeTab('forus-games')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'forus-games' ? 'bg-secondary' : ''}`}
-                data-testid="tab-forus-games"
+                onClick={() => changeTab('fius-games')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'fius-games' ? 'bg-secondary' : ''}`}
+                data-testid="tab-fius-games"
               >
-                Forus Games
+                Fius Games
               </Button>
             </TooltipTrigger>
             <TooltipContent>Play games with AI</TooltipContent>
@@ -2299,14 +2299,14 @@ Let's start the self-listen session!`;
         </div>
       )}
       {/* Gradient fade at bottom so messages dissolve smoothly into the bar area */}
-      {activeTab !== 'forus-games' && (
+      {activeTab !== 'fius-games' && (
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       {activeTab === 'nomad' && settingsToggles.nomadGrid && (
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        className={`h-full overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'forus-games' ? 'flex items-center justify-center' : ''}`}
+        className={`h-full overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -2318,9 +2318,9 @@ Let's start the self-listen session!`;
           <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="xl" className="mb-6" />
             <h2 className="text-3xl font-bold mb-3 text-foreground">
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Forus Heavy API'}
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius Heavy API'}
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">Forus is for us!</p>
+            <p className="text-lg text-muted-foreground mb-8">Fius is for us!</p>
             
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
@@ -2478,7 +2478,7 @@ Let's start the self-listen session!`;
                   </div>
                 ) : (
                   <div className="flex space-x-3 max-w-4xl">
-                    {(settingsToggles.showForusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+                    {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
                     <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble ${
                       message.content.includes('```') 
                         ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' 
@@ -2589,7 +2589,7 @@ Let's start the self-listen session!`;
             {isTyping && (
               <div className="flex justify-start" data-testid="typing-indicator">
                 <div className="flex space-x-3">
-                  {(settingsToggles.showForusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+                  {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
                   <div className="bg-card rounded-3xl px-4 py-3 border border-border">
                     <div className="flex justify-center items-center">
                       <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
@@ -2617,13 +2617,13 @@ Let's start the self-listen session!`;
               'qwen': { name: 'Qwen3.6-Plus', logo: '/mistral-logo.png', color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
               'llama-4': { name: 'Llama 4', logo: '/llama-logo.png', color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
               'mistral': { name: 'Mistral Small 4', logo: '/doubao-logo.png', color: '#7c3aed', description: 'Fast & efficient European open AI' },
-              'forus-ai': { name: 'Forus Pro', logo: '/forus-logo.png', color: '#a855f7', description: 'Specialized productivity & task AI' },
+              'fius-ai': { name: 'Fius Pro', logo: '/fius-logo.png', color: '#a855f7', description: 'Specialized productivity & task AI' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => {
               const slugMap: {[key: string]: string} = {
                 'gpt-4o': 'chatgpt', 'claude-3.5-sonnet': 'claude', 'gemini-pro': 'gemini',
-                'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'forus-ai': 'forus',
+                'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'fius-ai': 'fius',
                 'doubao': 'doubao', 'kimi': 'kimi', 'qwen': 'qwen', 'llama-4': 'llama', 'mistral': 'mistral'
               };
               return slugMap[id] || id;
@@ -2692,7 +2692,7 @@ Let's start the self-listen session!`;
                               <img
                                 src={config.logo}
                                 alt={config.name}
-                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
                             </div>
@@ -2756,7 +2756,7 @@ Let's start the self-listen session!`;
                                   <img
                                     src={config.logo}
                                     alt={config.name}
-                                    className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                    className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
                                     onError={(e) => { e.currentTarget.style.display='none'; }}
                                   />
                                 </div>
@@ -2800,7 +2800,7 @@ Let's start the self-listen session!`;
                                 <img
                                   src={config.logo}
                                   alt={config.name}
-                                  className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                  className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
                                   onError={(e) => { e.currentTarget.style.display='none'; }}
                                 />
                               </div>
@@ -2821,7 +2821,7 @@ Let's start the self-listen session!`;
                               <img
                                 src={config.logo}
                                 alt={config.name}
-                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'forus-ai' ? ' rounded-full' : ''}`}
+                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
                                 onError={(e) => { e.currentTarget.style.display='none'; }}
                               />
                             </div>
@@ -2951,9 +2951,9 @@ Let's start the self-listen session!`;
             )}
           </div>
         ) : (
-          // Forus Games Tab
+          // Fius Games Tab
           <div className="max-w-3xl w-full">
-            <ForusGames playerName={user?.displayName || user?.username || 'Player'} />
+            <FiusGames playerName={user?.displayName || user?.username || 'Player'} />
           </div>
         )}
       </div>
@@ -2994,14 +2994,14 @@ Let's start the self-listen session!`;
         };
 
         return (
-          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'forus-games' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Integration Answer',
-                adjustForus,
-                forusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
-                'button-forus-integration'
+                adjustFius,
+                fiusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
+                'button-fius-integration'
               )}
               {renderFunctionBtn(
                 <AudioLines className="h-6 w-6" />,
@@ -3017,12 +3017,12 @@ Let's start the self-listen session!`;
                 undefined,
                 'button-settings'
               )}
-              {selectedModel === 'forus-education' && renderFunctionBtn(
+              {selectedModel === 'fius-education' && renderFunctionBtn(
                 <GraduationCap className="h-5 w-5" />,
                 'Education',
                 () => setIsEducationModalOpen(true),
                 undefined,
-                'button-forus-examination'
+                'button-fius-examination'
               )}
             </div>
           </div>
@@ -3099,7 +3099,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'forus-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
@@ -3166,11 +3166,11 @@ Let's start the self-listen session!`;
                 </DropdownMenu>
                 <TooltipContent>Add Attachment</TooltipContent>
               </Tooltip>
-              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
+              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`} onClick={adjustForus}>
+                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`} onClick={adjustFius}>
                         <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'18px',height:'18px'}} />
                       </Button>
                     </TooltipTrigger>
@@ -3255,7 +3255,7 @@ Let's start the self-listen session!`;
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'forus-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
+                  placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
                   className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
@@ -3287,15 +3287,15 @@ Let's start the self-listen session!`;
 
                 <div className="flex items-center space-x-1.5 sm:space-x-2">
                   {/* Function bar buttons in message bar mode */}
-                  {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'forus-games' && (
+                  {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
                     <>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`w-9 h-9 rounded-full transition-all ${forusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
-                            onClick={adjustForus}
+                            className={`w-9 h-9 rounded-full transition-all ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
+                            onClick={adjustFius}
                           >
                             <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
                           </Button>
@@ -3328,7 +3328,7 @@ Let's start the self-listen session!`;
                         </TooltipTrigger>
                         <TooltipContent>Settings</TooltipContent>
                       </Tooltip>
-                      {selectedModel === 'forus-education' && (
+                      {selectedModel === 'fius-education' && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -3542,7 +3542,7 @@ Let's start the self-listen session!`;
           enabledVariants={[
             "nomad",
             ...(settingsToggles.philosopherNotification ?? true ? ["philosopher"] : []),
-            ...(settingsToggles.forusGamesNotification ?? true ? ["forus-games"] : []),
+            ...(settingsToggles.fiusGamesNotification ?? true ? ["fius-games"] : []),
           ]}
           onClose={handleNomadNotifClose}
         />

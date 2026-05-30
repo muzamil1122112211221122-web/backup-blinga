@@ -17,7 +17,7 @@ export function Logo({ className, size = "md" }: LogoProps) {
     <div 
       className={cn("logo-container relative inline-flex items-center justify-center cursor-pointer transition-colors duration-200 border-2 border-zinc-200 dark:border-zinc-800 rounded-full aspect-square overflow-hidden flex-shrink-0", sizeClasses[size], className)}
       style={{ borderRadius: '9999px' }}
-      data-testid="logo-forus"
+      data-testid="logo-fius"
     >
       <span className="text-foreground font-normal select-none leading-none">ƒ</span>
     </div>

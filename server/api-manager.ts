@@ -1,4 +1,4 @@
-// Advanced API Manager for Forus Heavy API
+// Advanced API Manager for Fius Heavy API
 // Handles intelligent routing between Groq (primary), OpenRouter (secondary), OpenAI (fallback), and Gemini (image generation)
 
 interface APIKey {

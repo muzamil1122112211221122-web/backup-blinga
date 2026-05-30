@@ -26,7 +26,7 @@ export default function Landing() {
     {
       icon: <Bot className="w-8 h-8 text-green-500" />,
       title: "Multiple AI Models", 
-      description: "Access Claude Sonnet 4, ChatGPT 5, Gemini 2.5 Pro, Llama 3.3 70B, plus our exclusive Forus models"
+      description: "Access Claude Sonnet 4, ChatGPT 5, Gemini 2.5 Pro, Llama 3.3 70B, plus our exclusive Fius models"
     },
     {
       icon: <Zap className="w-8 h-8 text-yellow-500" />,
@@ -64,8 +64,8 @@ export default function Landing() {
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
         <header className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-8 py-3 w-full max-w-5xl" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)'}}>
             <div className="flex items-center space-x-3">
-              <img src="/forus-logo.png" alt="Forus" className="w-7 h-7 object-contain" />
-              <h1 className="text-xl font-bold text-white">Forus Heavy API</h1>
+              <img src="/fius-logo.png" alt="Fius" className="w-7 h-7 object-contain" />
+              <h1 className="text-xl font-bold text-white">Fius Heavy API</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button 
@@ -104,7 +104,7 @@ export default function Landing() {
               <span>Begin Experience</span>
             </Button>
             <p className="text-lg font-semibold tracking-wide bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent select-none">
-              Forus is for us!
+              Fius is for us!
             </p>
           </div>
 
@@ -115,7 +115,7 @@ export default function Landing() {
       <section className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h3 className="text-4xl font-bold text-white mb-4">
-            Why Choose Forus Heavy API?
+            Why Choose Fius Heavy API?
           </h3>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Powerful features designed to enhance your AI conversation experience
@@ -154,7 +154,7 @@ export default function Landing() {
             Powered by Leading AI Models
           </h3>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Access the most advanced AI models in the industry, plus our exclusive Forus models
+            Access the most advanced AI models in the industry, plus our exclusive Fius models
           </p>
         </div>
 
@@ -201,7 +201,7 @@ export default function Landing() {
           
           <Card className="border-white/20 bg-gradient-to-br from-gray-800/40 to-gray-600/50 backdrop-blur-sm">
             <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Forus Pro</h4>
+              <h4 className="text-xl font-semibold text-white">Fius Pro</h4>
               <p className="text-gray-200">Our exclusive AI model</p>
             </CardHeader>
             <CardContent>
@@ -211,7 +211,7 @@ export default function Landing() {
           
           <Card className="border-white/20 bg-gradient-to-br from-gray-700/60 to-gray-800/40 backdrop-blur-sm">
             <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Forus Education</h4>
+              <h4 className="text-xl font-semibold text-white">Fius Education</h4>
               <p className="text-gray-200">Fast & efficient AI</p>
             </CardHeader>
             <CardContent>
@@ -246,14 +246,14 @@ export default function Landing() {
         <div className="container mx-auto px-6">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <img src="/forus-logo.png" alt="Forus" className="w-8 h-8 object-contain" />
-              <h4 className="text-2xl font-bold">Forus Heavy API</h4>
+              <img src="/fius-logo.png" alt="Fius" className="w-8 h-8 object-contain" />
+              <h4 className="text-2xl font-bold">Fius Heavy API</h4>
             </div>
             <p className="text-gray-400 mb-6">
               The future of AI conversations, today.
             </p>
             <p className="text-gray-500 text-sm">
-              © 2025 Forus Heavy API. All rights reserved.
+              © 2025 Fius Heavy API. All rights reserved.
             </p>
           </div>
         </div>

@@ -7,12 +7,12 @@ export default function Terms() {
           <div className="space-y-6 text-gray-300">
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Acceptance of Terms</h2>
-              <p>By accessing and using Forus Heavy API, you accept and agree to be bound by the terms and provision of this agreement.</p>
+              <p>By accessing and using Fius Heavy API, you accept and agree to be bound by the terms and provision of this agreement.</p>
             </section>
             
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Use License</h2>
-              <p>Permission is granted to temporarily download one copy of Forus Heavy API for personal, non-commercial transitory viewing only.</p>
+              <p>Permission is granted to temporarily download one copy of Fius Heavy API for personal, non-commercial transitory viewing only.</p>
               <ul className="list-disc ml-6 mt-2 space-y-1">
                 <li>This is the grant of a license, not a transfer of title</li>
                 <li>This license shall automatically terminate if you violate any of these restrictions</li>
@@ -22,12 +22,12 @@ export default function Terms() {
             
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Disclaimer</h2>
-              <p>The materials on Forus Heavy API are provided on an 'as is' basis. Forus Heavy API makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
+              <p>The materials on Fius Heavy API are provided on an 'as is' basis. Fius Heavy API makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.</p>
             </section>
             
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Limitations</h2>
-              <p>In no event shall Forus Heavy API or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Forus Heavy API, even if Forus Heavy API or an authorized representative has been notified orally or in writing of the possibility of such damage.</p>
+              <p>In no event shall Fius Heavy API or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on Fius Heavy API, even if Fius Heavy API or an authorized representative has been notified orally or in writing of the possibility of such damage.</p>
             </section>
             
             <section>

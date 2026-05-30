@@ -1,4 +1,4 @@
-// API Testing Module for Forus Heavy API
+// API Testing Module for Fius Heavy API
 // Tests all integrated APIs: Groq (main), OpenRouter (secondary), OpenAI (fallback), Gemini (image generation)
 
 import { apiManager } from './api-manager';
@@ -135,7 +135,7 @@ async function testOpenRouterAPIs(results: APITestResult[], testPrompt: string) 
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-          'X-Title': 'Forus Heavy API Test'
+          'X-Title': 'Fius Heavy API Test'
         },
         body: JSON.stringify({
           model: 'anthropic/claude-3.5-sonnet',

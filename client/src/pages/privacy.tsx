@@ -7,7 +7,7 @@ export default function Privacy() {
           <div className="space-y-6 text-gray-300">
             <section>
               <h2 className="text-2xl font-semibold text-white mb-4">Information We Collect</h2>
-              <p>When you use Forus Heavy API, we may collect:</p>
+              <p>When you use Fius Heavy API, we may collect:</p>
               <ul className="list-disc ml-6 mt-2 space-y-1">
                 <li>Email address and profile information from Google OAuth</li>
                 <li>Chat conversations and messages</li>

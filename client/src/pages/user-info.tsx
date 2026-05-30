@@ -144,7 +144,7 @@ export default function UserInfo() {
 
   const logo = (
     <div className="flex items-center justify-center mb-6">
-      <img src="/forus-logo.png" alt="Forus" className="w-12 h-12 object-contain" />
+      <img src="/fius-logo.png" alt="Fius" className="w-12 h-12 object-contain" />
     </div>
   );
 
@@ -204,7 +204,7 @@ export default function UserInfo() {
               <CardHeader className="text-center pb-4">
                 {logo}
                 <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
-                <p className="text-gray-400 text-sm">Log in to your Forus account</p>
+                <p className="text-gray-400 text-sm">Log in to your Fius account</p>
               </CardHeader>
               <CardContent className="space-y-5">
                 {info && (
@@ -286,7 +286,7 @@ export default function UserInfo() {
               <CardHeader className="text-center pb-4">
                 {logo}
                 <h1 className="text-3xl font-bold text-white mb-1">Create account</h1>
-                <p className="text-gray-400 text-sm">Join Forus — it's free</p>
+                <p className="text-gray-400 text-sm">Join Fius — it's free</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
@@ -392,7 +392,7 @@ export default function UserInfo() {
           )}
 
           <div className="text-center mt-8">
-            <p className="text-lg text-gray-300 italic">Forus is for us!</p>
+            <p className="text-lg text-gray-300 italic">Fius is for us!</p>
           </div>
         </div>
       </div>

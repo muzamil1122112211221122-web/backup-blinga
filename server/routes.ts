@@ -18,8 +18,8 @@ import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-man
 
 // Model mapping for different AI models - Updated to latest versions
 const MODEL_MAPPING = {
-  'forus-prime': 'anthropic/claude-sonnet-4-5',
-  'forus-education': 'anthropic/claude-sonnet-4-5',
+  'fius-prime': 'anthropic/claude-sonnet-4-5',
+  'fius-education': 'anthropic/claude-sonnet-4-5',
   'claude-3.5-sonnet': 'anthropic/claude-sonnet-4-5',
   'gpt-4o': 'openai/gpt-4.1',
   'gemini-pro': 'google/gemini-2.5-pro-preview-03-25',
@@ -28,22 +28,22 @@ const MODEL_MAPPING = {
   'deepseek-r1': 'deepseek/deepseek-chat',
   'perplexity': 'perplexity/sonar-pro',
   'grok-4': 'x-ai/grok-3',
-  'forus-ai': 'anthropic/claude-sonnet-4-5',
+  'fius-ai': 'anthropic/claude-sonnet-4-5',
   'auto': 'anthropic/claude-sonnet-4-5'
 };
 
 // Groq model mapping
-function mapToGroqModel(forusModel: string): string {
+function mapToGroqModel(fiusModel: string): string {
   const groqModels: Record<string, string> = {
-    'forus-prime': 'llama-3.3-70b-versatile',
-    'forus-education': 'llama-3.3-70b-versatile',
+    'fius-prime': 'llama-3.3-70b-versatile',
+    'fius-education': 'llama-3.3-70b-versatile',
     'claude-3.5-sonnet': 'llama-3.3-70b-versatile',
     'gpt-4o': 'llama-3.3-70b-versatile',
     'gemini-pro': 'llama-3.3-70b-versatile',
     'llama-3.1': 'llama-3.1-70b-versatile',
     'auto': 'llama-3.3-70b-versatile'
   };
-  return groqModels[forusModel] || 'llama-3.3-70b-versatile';
+  return groqModels[fiusModel] || 'llama-3.3-70b-versatile';
 }
 
 interface ChatClient {
@@ -55,8 +55,8 @@ interface ChatClient {
 function getModelPersonality(model: string): string {
   const modelName = model.includes('/') ? model.split('/').pop() : model;
   switch (true) {
-    case model.includes('forus-prime') || modelName === 'forus-prime':
-      return "You are Forus Pro, an advanced AI with deep reasoning capabilities built by the Forus team. You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Forus Pro.";
+    case model.includes('fius-prime') || modelName === 'fius-prime':
+      return "You are Fius Pro, an advanced AI with deep reasoning capabilities built by the Fius team. You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Fius Pro.";
     case model === 'gpt-4o' || modelName === 'gpt-4o':
       return "You are ChatGPT 5, the latest and most advanced model from OpenAI. You are helpful, balanced, and thoughtful with a friendly, professional tone. You excel at a wide range of tasks including writing, analysis, coding, math, and creative work. If anyone asks which model or version you are, tell them you are ChatGPT 5 by OpenAI.";
     case model.includes('claude') || (modelName?.includes('claude') ?? false):
@@ -81,8 +81,8 @@ function getModelPersonality(model: string): string {
       return "You are Qwen3.6-Plus, Alibaba Cloud's advanced large language model. You excel at complex reasoning, coding, mathematics, and multilingual tasks. You are precise, structured, and highly capable, with a focus on delivering clear and comprehensive responses. If anyone asks which model or version you are, tell them you are Qwen3.6-Plus by Alibaba Cloud.";
     case model === 'mistral' || model.includes('mistral') || (modelName?.includes('mistral') ?? false):
       return "You are Mistral Small 4, a highly efficient and capable model by Mistral AI, released on March 16, 2026. You are designed for speed and precision — delivering accurate, concise, and well-reasoned responses without unnecessary verbosity. You excel at coding, instruction-following, and multilingual tasks. If anyone asks which model or version you are, tell them you are Mistral Small 4 by Mistral AI.";
-    case model.includes('forus') || (modelName?.includes('forus') ?? false):
-      return "You are Forus, an advanced AI assistant created by the Forus team. You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Forus AI.";
+    case model.includes('fius') || (modelName?.includes('fius') ?? false):
+      return "You are Fius, an advanced AI assistant created by the Fius team. You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Fius AI.";
     default:
       return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
   }
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!message) return res.status(400).json({ error: 'message required' });
 
       const systemPrompt =
-        `You are Forus AI, a voice assistant. The user is speaking ${lang}. ` +
+        `You are Fius AI, a voice assistant. The user is speaking ${lang}. ` +
         `STRICT RULES: reply in the EXACT same language/script as the user. ` +
         `Maximum ONE sentence. No markdown, no bullets, no asterisks. ` +
         `Plain spoken words only. Be concise and direct.`;
@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get conversation or use default
       let conversation = conversationId ? await storage.getConversation(conversationId) : null;
       if (!conversation) {
-        conversation = { model: 'forus-prime', preset: 'custom' } as any;
+        conversation = { model: 'fius-prime', preset: 'custom' } as any;
       }
 
       // Override conversation model with Nomad model if specified
@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Split 12 Nomad models across 2 Groq keys (6 each) to avoid rate limits
         const GROQ_KEY1_MODELS = ['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1'];
-        const GROQ_KEY2_MODELS = ['doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'forus-ai'];
+        const GROQ_KEY2_MODELS = ['doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai'];
         const useKey2 = model && GROQ_KEY2_MODELS.includes(model);
         const groqKey = useKey2
           ? (process.env.GROQ_API_KEY_2 || process.env.GROQ_API_KEY)
@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fallbackConversation = {
             ...(conversation as any),
             id: conversationId,
-            model: model || (conversation as any)?.model || 'forus-prime',
+            model: model || (conversation as any)?.model || 'fius-prime',
             preset: 'custom',
           };
           aiResponse = await callAIService(message, fallbackConversation, user);
@@ -1427,8 +1427,8 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
     const modelName = model.includes('/') ? model.split('/').pop() : model;
     
     switch(true) {
-      case model.includes('forus-prime') || modelName === 'forus-prime':
-        return `You are Forus Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST demonstrate transparent thinking by showing your reasoning process.
+      case model.includes('fius-prime') || modelName === 'fius-prime':
+        return `You are Fius Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST demonstrate transparent thinking by showing your reasoning process.
 
 For every response, follow this format:
 
@@ -1613,7 +1613,7 @@ async function callOpenRouterDirectly(message: string, model: string): Promise<{
         'Authorization': `Bearer ${api.key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-        'X-Title': 'Forus Heavy API'
+        'X-Title': 'Fius Heavy API'
       },
       body: JSON.stringify({
         model: openRouterModel,
@@ -1702,8 +1702,8 @@ Let me provide you with a detailed description instead, or you can try asking ag
     }
   }
 
-  const forusModel = conversation.model || 'forus-prime';
-  const mappedModel = MODEL_MAPPING[forusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
+  const fiusModel = conversation.model || 'fius-prime';
+  const mappedModel = MODEL_MAPPING[fiusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
   const systemPrompt = getSystemPrompt(conversation, user);
   
   // Get conversation history for AI memory - CRITICAL FIX
@@ -1756,7 +1756,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
       
       if (provider === 'groq') {
         // Groq API call - map models to Groq-compatible ones
-        const groqModel = mapToGroqModel(forusModel);
+        const groqModel = mapToGroqModel(fiusModel);
         response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -1793,7 +1793,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-            'X-Title': 'Forus API',
+            'X-Title': 'Fius API',
           },
           body: JSON.stringify({
             model: mappedModel,
@@ -1882,7 +1882,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
 }
 
 function getSystemPrompt(conversation: any, user?: any): string {
-  let basePrompt = "You are Forus from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to creative projects to complex problems. Be natural and engaging. Do NOT repeatedly address the user by name in every message; use their name at most once when greeting." + LANGUAGE_INSTRUCTION;
+  let basePrompt = "You are Fius from Planet M, an advanced AI assistant. You are helpful, intelligent, and conversational. You assist with any question or task — from everyday queries to creative projects to complex problems. Be natural and engaging. Do NOT repeatedly address the user by name in every message; use their name at most once when greeting." + LANGUAGE_INSTRUCTION;
   
   // Mention the user's name only once subtly
   if (user && (user.displayName || user.username)) {
@@ -1902,8 +1902,8 @@ function getSystemPrompt(conversation: any, user?: any): string {
     case 'socratic':
       systemPrompt += " Use the Socratic method to help the user learn. Ask guiding questions and encourage critical thinking rather than providing direct answers.";
       break;
-    case 'forus-education':
-      systemPrompt += " You are Forus Education, an advanced AI educational assistant. You specialize in:\n1. **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula\n2. **Voice-based Learning Assessment**: Provide interactive speaking practice with constructive feedback\n3. **Educational Support**: Adapt to different education systems (O/A levels, Matric, etc.)\n\nWhen helping with examinations:\n- Generate questions that match the school's examination style\n- Provide detailed feedback with marks and explanations\n- Cover multiple question types (MCQ, short answer, essay)\n\nWhen conducting voice-based learning:\n- Encourage verbal explanations\n- Provide constructive feedback on understanding\n- Correct mistakes gently and suggest improvements\n- Use interactive discussion to enhance learning\n\nAlways be encouraging, educational, and adapt to the student's level.";
+    case 'fius-education':
+      systemPrompt += " You are Fius Education, an advanced AI educational assistant. You specialize in:\n1. **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula\n2. **Voice-based Learning Assessment**: Provide interactive speaking practice with constructive feedback\n3. **Educational Support**: Adapt to different education systems (O/A levels, Matric, etc.)\n\nWhen helping with examinations:\n- Generate questions that match the school's examination style\n- Provide detailed feedback with marks and explanations\n- Cover multiple question types (MCQ, short answer, essay)\n\nWhen conducting voice-based learning:\n- Encourage verbal explanations\n- Provide constructive feedback on understanding\n- Correct mistakes gently and suggest improvements\n- Use interactive discussion to enhance learning\n\nAlways be encouraging, educational, and adapt to the student's level.";
       break;
     case 'custom':
       if (conversation.customInstructions) {

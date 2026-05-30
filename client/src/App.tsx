@@ -50,8 +50,8 @@ function Router() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
-          <img src="/forus-logo.png" alt="Forus" className="w-16 h-16 object-contain animate-pulse" />
-          <p className="text-white text-xl font-bold tracking-widest animate-pulse">FORUS</p>
+          <img src="/fius-logo.png" alt="Fius" className="w-16 h-16 object-contain animate-pulse" />
+          <p className="text-white text-xl font-bold tracking-widest animate-pulse">FIUS</p>
         </div>
       </div>
     );
@@ -72,7 +72,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="forus-ui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="fius-ui-theme">
         <TooltipProvider>
           <Toaster />
           <Router />

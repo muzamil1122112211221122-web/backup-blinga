@@ -10,9 +10,9 @@ type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
 interface GameProps { playerName: string; gameLevel: number; onWin: (score: number) => void; onLose: () => void; onBack: () => void; }
 
 // ─── Fragment & Progress Storage ──────────────────────────────────────────────
-const FRAG_KEY  = 'forus_fragments_v1';
-const OWNED_KEY = 'forus_owned_games_v1';
-const LEVEL_KEY = 'forus_game_levels_v1';
+const FRAG_KEY  = 'fius_fragments_v1';
+const OWNED_KEY = 'fius_owned_games_v1';
+const LEVEL_KEY = 'fius_game_levels_v1';
 
 function loadFragments(): number { try { return parseInt(localStorage.getItem(FRAG_KEY) || '0', 10) || 0; } catch { return 0; } }
 function saveFragments(n: number) { localStorage.setItem(FRAG_KEY, String(n)); }
@@ -352,8 +352,8 @@ function ContinueModal({ nextLevel, onYes, onNo }: { nextLevel: number; onYes: (
   );
 }
 
-// ─── FORUS MATHS ──────────────────────────────────────────────────────────────
-function ForusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
+// ─── FIUS MATHS ──────────────────────────────────────────────────────────────
+function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
   const Q_TIME = getTimer(gameLevel, 12);
@@ -452,8 +452,8 @@ function ForusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
   );
 }
 
-// ─── FORUS WORD ───────────────────────────────────────────────────────────────
-function ForusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
+// ─── FIUS WORD ───────────────────────────────────────────────────────────────
+function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
   const Q_TIME = getTimer(gameLevel, 12);
@@ -547,9 +547,9 @@ function ForusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   );
 }
 
-// ─── FORUS MEMORY ─────────────────────────────────────────────────────────────
+// ─── FIUS MEMORY ─────────────────────────────────────────────────────────────
 interface MemoryCard { id: number; emoji: string; flipped: boolean; matched: boolean; }
-function ForusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const pairCount = Math.min(4 + Math.floor(gameLevel * 0.8), 10);
   const totalTime = Math.max(30, 90 - gameLevel * 5);
   const cols = pairCount >= 8 ? 5 : 4;
@@ -633,8 +633,8 @@ function ForusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
   );
 }
 
-// ─── FORUS QUIZ ───────────────────────────────────────────────────────────────
-function ForusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
+// ─── FIUS QUIZ ───────────────────────────────────────────────────────────────
+function FiusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const pool = { easy: QUIZ_EASY, medium: QUIZ_MEDIUM, hard: QUIZ_HARD }[diff];
   const total = getRounds(gameLevel, 5);
@@ -712,8 +712,8 @@ function ForusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   );
 }
 
-// ─── FORUS ODD WORD ───────────────────────────────────────────────────────────
-function ForusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
+// ─── FIUS ODD WORD ───────────────────────────────────────────────────────────
+function FiusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const pool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[diff];
   const ROUNDS = getRounds(gameLevel, 5);
@@ -787,7 +787,7 @@ function ForusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ─── CAR DODGE ────────────────────────────────────────────────────────────────
-function ForusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [uiScore, setUiScore] = useState(0);
   const [uiLives, setUiLives] = useState(3);
@@ -1712,18 +1712,18 @@ function GameStore({ fragments, ownedGames, onBuy, onClose }: { fragments: numbe
 // ─── MAIN GAME HUB ────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface ForusGamesProps { playerName: string; }
+interface FiusGamesProps { playerName: string; }
 
 const FREE_GAMES = [
-  { id: 'memory' as GameId,  label: 'Forus Memory',    emoji: '🃏', color: '#c026d3', desc: 'Match pairs before time runs out' },
-  { id: 'maths' as GameId,   label: 'Forus Maths',     emoji: '🔢', color: '#0ea5e9', desc: 'Solve arithmetic against the clock' },
-  { id: 'word' as GameId,    label: 'Forus Word',      emoji: '🔤', color: '#7c3aed', desc: 'Unscramble hidden words fast' },
-  { id: 'quiz' as GameId,    label: 'Forus Quiz',      emoji: '🧠', color: '#f97316', desc: 'Test your general knowledge' },
+  { id: 'memory' as GameId,  label: 'Fius Memory',    emoji: '🃏', color: '#c026d3', desc: 'Match pairs before time runs out' },
+  { id: 'maths' as GameId,   label: 'Fius Maths',     emoji: '🔢', color: '#0ea5e9', desc: 'Solve arithmetic against the clock' },
+  { id: 'word' as GameId,    label: 'Fius Word',      emoji: '🔤', color: '#7c3aed', desc: 'Unscramble hidden words fast' },
+  { id: 'quiz' as GameId,    label: 'Fius Quiz',      emoji: '🧠', color: '#f97316', desc: 'Test your general knowledge' },
   { id: 'car' as GameId,     label: 'Car Dodge',       emoji: '🚗', color: '#16a34a', desc: 'Dodge cars for as long as you can' },
   { id: 'oddword' as GameId, label: 'Odd Word Out',    emoji: '🕵️', color: '#0891b2', desc: 'Find the wrong word in the sentence' },
 ];
 
-export function ForusGames({ playerName }: ForusGamesProps) {
+export function FiusGames({ playerName }: FiusGamesProps) {
   const [screen, setScreen] = useState<'menu'|'store'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
   const [gameLevel, setGameLevel] = useState(1);
@@ -1764,12 +1764,12 @@ export function ForusGames({ playerName }: ForusGamesProps) {
     if (!activeGame) return null;
     const props: GameProps = { playerName, gameLevel, onWin: handleWin, onLose: handleLose, onBack: goToMenu };
     switch (activeGame) {
-      case 'maths':       return <ForusMaths key={key} {...props} />;
-      case 'word':        return <ForusWord key={key} {...props} />;
-      case 'memory':      return <ForusMemory key={key} {...props} />;
-      case 'quiz':        return <ForusQuiz key={key} {...props} />;
-      case 'car':         return <ForusCar key={key} {...props} />;
-      case 'oddword':     return <ForusOddWord key={key} {...props} />;
+      case 'maths':       return <FiusMaths key={key} {...props} />;
+      case 'word':        return <FiusWord key={key} {...props} />;
+      case 'memory':      return <FiusMemory key={key} {...props} />;
+      case 'quiz':        return <FiusQuiz key={key} {...props} />;
+      case 'car':         return <FiusCar key={key} {...props} />;
+      case 'oddword':     return <FiusOddWord key={key} {...props} />;
       case 'tictactoe':   return <TicTacToe key={key} {...props} />;
       case 'hangman':     return <Hangman key={key} {...props} />;
       case 'rps':         return <RockPaperScissors key={key} {...props} />;

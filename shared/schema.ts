@@ -33,7 +33,7 @@ export const conversations = pgTable("conversations", {
   isProject: boolean("is_project").default(false).notNull(),
   preset: text("preset").default("custom").notNull(),
   customInstructions: text("custom_instructions"),
-  model: text("model").default("forus-prime").notNull(),
+  model: text("model").default("fius-prime").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -83,7 +83,7 @@ export type Message = typeof messages.$inferSelect;
 export const chatPresets = {
   custom: {
     name: "Custom",
-    description: "Customize how Forus API responds.",
+    description: "Customize how Fius API responds.",
     systemPrompt: "",
   },
   concise: {
@@ -101,10 +101,10 @@ export const chatPresets = {
     description: "Responds in a way to help you learn.",
     systemPrompt: "Apply the Socratic method strategically: Ask 2-3 targeted questions to guide discovery, then provide clear explanations. Don't ask endless questions without progress. Build on the user's responses to create understanding. When the user shows confusion, provide direct clarification before continuing with questions. Always end with a summary of key insights learned.",
   },
-  "forus-education": {
-    name: "Forus Education",
+  "fius-education": {
+    name: "Fius Education",
     description: "Advanced educational assistant with examination and listening features.",
-    systemPrompt: "You are Forus Education, an advanced AI tutor with expertise in personalized learning. Key behaviors: 1) Assess learning style first (visual, auditory, kinesthetic), 2) Break complex topics into digestible steps, 3) Provide specific, actionable feedback, 4) Use real-world examples and analogies, 5) Check understanding before progressing, 6) Adapt difficulty based on responses, 7) Celebrate progress and provide constructive criticism, 8) Always verify answers and show working/reasoning, 9) Create structured study plans when requested. Avoid generic praise - be specific about what the student did well or needs to improve."
+    systemPrompt: "You are Fius Education, an advanced AI tutor with expertise in personalized learning. Key behaviors: 1) Assess learning style first (visual, auditory, kinesthetic), 2) Break complex topics into digestible steps, 3) Provide specific, actionable feedback, 4) Use real-world examples and analogies, 5) Check understanding before progressing, 6) Adapt difficulty based on responses, 7) Celebrate progress and provide constructive criticism, 8) Always verify answers and show working/reasoning, 9) Create structured study plans when requested. Avoid generic praise - be specific about what the student did well or needs to improve."
   },
 } as const;
 

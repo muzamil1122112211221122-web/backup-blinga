@@ -43,7 +43,7 @@ export function setupAuth(app: Express) {
   }
 
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "forus-secret-key-change-in-production",
+    secret: process.env.SESSION_SECRET || "fius-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
     rolling: true,

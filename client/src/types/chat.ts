@@ -17,7 +17,7 @@ export interface ChatConversation {
   userId: string;
   title: string;
   isPrivate: boolean;
-  preset: 'custom' | 'concise' | 'formal' | 'socratic' | 'forus-education';
+  preset: 'custom' | 'concise' | 'formal' | 'socratic' | 'fius-education';
   customInstructions?: string;
   model: string;
   createdAt: Date;
@@ -43,10 +43,10 @@ export interface WebSocketMessage {
 
 export const MODEL_OPTIONS = [
   { 
-    id: 'forus-prime', 
-    name: 'Forus Pro', 
+    id: 'fius-prime', 
+    name: 'Fius Pro', 
     description: 'Our most advanced general AI', 
-    provider: 'forus',
+    provider: 'fius',
     speed: 'fast',
     intelligence: 'high'
   },
@@ -83,22 +83,22 @@ export const MODEL_OPTIONS = [
     intelligence: 'high'
   },
   { 
-    id: 'forus-education', 
-    name: 'Forus Education', 
+    id: 'fius-education', 
+    name: 'Fius Education', 
     description: 'Specialized for learning and teaching', 
-    provider: 'forus',
+    provider: 'fius',
     speed: 'fast',
     intelligence: 'high'
   }
 ] as const;
 
 export const AVAILABLE_MODELS = [
-  'forus-prime',        
+  'fius-prime',        
   'gpt-4o',
   'claude-3.5-sonnet',
   'gemini-pro',
   'llama-3.3-70b-versatile',
-  'forus-education',
+  'fius-education',
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];
@@ -106,7 +106,7 @@ export type AvailableModel = typeof AVAILABLE_MODELS[number];
 export const CHAT_PRESETS = {
   custom: {
     name: "Custom",
-    description: "Customize how Forus API responds.",
+    description: "Customize how Fius API responds.",
   },
   concise: {
     name: "Concise", 
@@ -120,8 +120,8 @@ export const CHAT_PRESETS = {
     name: "Socratic",
     description: "Responds in a way to help you learn.",
   },
-  "forus-education": {
-    name: "Forus Education",
+  "fius-education": {
+    name: "Fius Education",
     description: "Advanced educational assistant with examination and listening features.",
   },
 } as const;

@@ -82,9 +82,9 @@ const NOTIFICATION_VARIANTS = [
     dotColor: "bg-purple-400",
   },
   {
-    id: "forus-games",
-    image: "/forus-games-avatar.png",
-    title: "Meet Forus Games",
+    id: "fius-games",
+    image: "/fius-games-avatar.png",
+    title: "Meet Fius Games",
     description: "Challenge yourself and play with AI companions",
     dotColor: "bg-blue-400",
   },

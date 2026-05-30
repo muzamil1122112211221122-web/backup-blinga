@@ -231,7 +231,7 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
       headers: {
         'apikey': '0000000000',
         'Content-Type': 'application/json',
-        'Client-Agent': 'forus:1.0:forus-ai'
+        'Client-Agent': 'fius:1.0:fius-ai'
       },
       body: JSON.stringify({
         prompt: enhancedPrompt,
@@ -262,7 +262,7 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
         await new Promise(r => setTimeout(r, 3000));
 
         const statusResponse = await fetch(`https://stablehorde.net/api/v2/generate/check/${jobId}`, {
-          headers: { 'Client-Agent': 'forus:1.0:forus-ai' },
+          headers: { 'Client-Agent': 'fius:1.0:fius-ai' },
           signal: AbortSignal.timeout(8000)
         });
 
@@ -270,7 +270,7 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
           const status = await statusResponse.json();
           if (status.done) {
             const resultResponse = await fetch(`https://stablehorde.net/api/v2/generate/status/${jobId}`, {
-              headers: { 'Client-Agent': 'forus:1.0:forus-ai' },
+              headers: { 'Client-Agent': 'fius:1.0:fius-ai' },
               signal: AbortSignal.timeout(10000)
             });
             if (resultResponse.ok) {

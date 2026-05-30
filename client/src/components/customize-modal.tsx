@@ -44,8 +44,8 @@ export function CustomizeModal({
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>('forus-prime');
-  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'forus-ai']);
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>('fius-prime');
+  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'fius-ai']);
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [localTheme, setLocalTheme] = useState<string>(theme);
@@ -80,7 +80,7 @@ export function CustomizeModal({
     personalize: true,
     linkSharing: true,
     sidebarCloseTop: true,
-    showForusLogo: true
+    showFiusLogo: true
   });
 
   // Only reset local state when modal transitions from closed → open
@@ -270,10 +270,10 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Forus Logo in Responses</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Display the Forus logo next to AI responses in chat</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Fius Logo in Responses</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Display the Fius logo next to AI responses in chat</p>
                   </div>
-                  <Switch checked={localToggles.showForusLogo ?? true} onCheckedChange={() => handleToggle('showForusLogo')} />
+                  <Switch checked={localToggles.showFiusLogo ?? true} onCheckedChange={() => handleToggle('showFiusLogo')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -298,10 +298,10 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Forus Games Notifications</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Include the Forus Games variant in periodic pop-ups</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Games Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Fius Games variant in periodic pop-ups</p>
                   </div>
-                  <Switch checked={localToggles.forusGamesNotification ?? true} onCheckedChange={() => handleToggle('forusGamesNotification')} />
+                  <Switch checked={localToggles.fiusGamesNotification ?? true} onCheckedChange={() => handleToggle('fiusGamesNotification')} />
                 </div>
               </div>
 
@@ -512,7 +512,7 @@ export function CustomizeModal({
                 </div>
               </div>
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Customize Forus's Response</h4>
+              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Customize Fius's Response</h4>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(CHAT_PRESETS).map(([key, preset]) => (
                   <Card
@@ -540,13 +540,13 @@ export function CustomizeModal({
                 <Textarea 
                   value={instructions}
                   onChange={(e) => { setInstructions(e.target.value); setIsDirty(true); }}
-                  placeholder="Tell Forus how to behave..."
+                  placeholder="Tell Fius how to behave..."
                   className="bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white min-h-[100px]"
                 />
               </div>
               <p className="text-xs text-zinc-500 flex items-center space-x-2">
                 <Settings className="w-3 h-3" />
-                <span>Select an instruction set from above or write your own to customize Forus's responses.</span>
+                <span>Select an instruction set from above or write your own to customize Fius's responses.</span>
               </p>
               </div>
             </div>
@@ -565,7 +565,7 @@ export function CustomizeModal({
                       'perplexity': 'Perplexity Sonar Pro',
                       'grok-4': 'Grok 4',
                       'deepseek-r1': 'Deepseek v3',
-                      'forus-ai': 'Forus Pro',
+                      'fius-ai': 'Fius Pro',
                     };
                     return (
                     <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -605,8 +605,8 @@ export function CustomizeModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="max-w-[80%]">
-                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Forus with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
-                      <p className="text-xs text-zinc-500 mt-1">Allow Forus to remember details from your previous conversations.</p>
+                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Fius with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
+                      <p className="text-xs text-zinc-500 mt-1">Allow Fius to remember details from your previous conversations.</p>
                     </div>
                     <Switch checked={localToggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
                   </div>
