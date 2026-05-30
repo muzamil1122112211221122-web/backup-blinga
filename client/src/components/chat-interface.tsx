@@ -964,21 +964,21 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
                 </code>
               );
             },
-            img: ({src, alt}) => (
-              <img 
-                src={src} 
-                alt={alt || "Generated image"} 
-                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                onError={(e) => {
-                  console.error('Image failed to load:', src);
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
-                }}
-                onLoad={() => {
-                  console.log('Image loaded successfully in chat:', src);
-                }}
-              />
-            )
+            img: ({src, alt}) => {
+              if (!src) return null;
+              return (
+                <img 
+                  src={src} 
+                  alt={alt || "Generated image"} 
+                  className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.style.display = 'none';
+                  }}
+                />
+              );
+            }
           }}
         >
           {displayedText}
@@ -2484,12 +2484,9 @@ Let's start the self-listen session!`;
                           alt="Uploaded image" 
                           className="max-w-full h-auto rounded-lg shadow-sm border border-border" 
                           onError={(e) => {
-                            console.error('Uploaded image failed to load:', message.imageUrl);
                             const target = e.target as HTMLImageElement;
-                            target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
-                          }}
-                          onLoad={() => {
-                            console.log('Uploaded image loaded successfully:', message.imageUrl);
+                            target.onerror = null;
+                            target.style.display = 'none';
                           }}
                         />
                       </div>
@@ -2498,21 +2495,21 @@ Let's start the self-listen session!`;
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          img: ({src, alt}) => (
-                            <img 
-                              src={src} 
-                              alt={alt || "Generated image"} 
-                              className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                              onError={(e) => {
-                                console.error('Image failed to load:', src);
-                                const target = e.target as HTMLImageElement;
-                                target.src = `https://via.placeholder.com/400x300/cccccc/666666?text=Image+Loading+Error`;
-                              }}
-                              onLoad={() => {
-                                console.log('Image loaded successfully in chat:', src);
-                              }}
-                            />
-                          )
+                          img: ({src, alt}) => {
+                            if (!src) return null;
+                            return (
+                              <img 
+                                src={src} 
+                                alt={alt || "Generated image"} 
+                                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.onerror = null;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            );
+                          }
                         }}
                       >
                         {message.content}
