@@ -2144,7 +2144,7 @@ Let's start the self-listen session!`;
             <TooltipContent>Open Sidebar</TooltipContent>
           </Tooltip>
           <Logo size="sm" />
-          <span className="font-semibold text-foreground text-sm sm:text-base">Fius Heavy API</span>
+          <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
         </div>
         
         <div className="flex items-center space-x-1 sm:space-x-2">
@@ -2318,7 +2318,7 @@ Let's start the self-listen session!`;
           <div className="flex flex-col items-center justify-center h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="xl" className="mb-6" />
             <h2 className="text-3xl font-bold mb-3 text-foreground">
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius Heavy API'}
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
             </h2>
             <p className="text-lg text-muted-foreground mb-8">Fius is for us!</p>
             

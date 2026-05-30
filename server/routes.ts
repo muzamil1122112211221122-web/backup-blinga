@@ -1613,7 +1613,7 @@ async function callOpenRouterDirectly(message: string, model: string): Promise<{
         'Authorization': `Bearer ${api.key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-        'X-Title': 'Fius Heavy API'
+        'X-Title': 'Fius'
       },
       body: JSON.stringify({
         model: openRouterModel,

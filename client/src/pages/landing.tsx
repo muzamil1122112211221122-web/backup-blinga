@@ -65,7 +65,7 @@ export default function Landing() {
         <header className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-8 py-3 w-full max-w-5xl" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)'}}>
             <div className="flex items-center space-x-3">
               <img src="/fius-logo.png" alt="Fius" className="w-7 h-7 object-contain" />
-              <h1 className="text-xl font-bold text-white">Fius Heavy API</h1>
+              <h1 className="text-xl font-bold text-white">Fius</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button 
@@ -115,7 +115,7 @@ export default function Landing() {
       <section className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h3 className="text-4xl font-bold text-white mb-4">
-            Why Choose Fius Heavy API?
+            Why Choose Fius?
           </h3>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
             Powerful features designed to enhance your AI conversation experience
@@ -247,13 +247,13 @@ export default function Landing() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <img src="/fius-logo.png" alt="Fius" className="w-8 h-8 object-contain" />
-              <h4 className="text-2xl font-bold">Fius Heavy API</h4>
+              <h4 className="text-2xl font-bold">Fius</h4>
             </div>
             <p className="text-gray-400 mb-6">
               The future of AI conversations, today.
             </p>
             <p className="text-gray-500 text-sm">
-              © 2025 Fius Heavy API. All rights reserved.
+              © 2025 Fius. All rights reserved.
             </p>
           </div>
         </div>
