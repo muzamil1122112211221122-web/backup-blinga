@@ -6,7 +6,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
 }
 
-/** Generates a smooth wavy circle path (quadratic bezier through alternating inner/outer points) */
+/** Smooth wavy (scalloped) circle path via quadratic bezier through alternating inner/outer points */
 function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: number): string {
   const numPts = waves * 2;
   const pts: [number, number][] = [];
@@ -15,8 +15,6 @@ function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: num
     const r = R + (i % 2 === 0 ? amp : -amp);
     pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
   }
-  // Smooth closed path: each control point is the wave peak/trough,
-  // curve passes through midpoints of adjacent pairs
   const mid = (i: number): [number, number] => [
     (pts[i][0] + pts[(i + 1) % numPts][0]) / 2,
     (pts[i][1] + pts[(i + 1) % numPts][1]) / 2,
@@ -27,15 +25,16 @@ function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: num
     const m = mid(i);
     d += `Q ${pts[i][0].toFixed(2)} ${pts[i][1].toFixed(2)} ${m[0].toFixed(2)} ${m[1].toFixed(2)} `;
   }
-  return d + 'Z';
+  return d + "Z";
 }
 
 export function Logo({ className, size = "md" }: LogoProps) {
-  const px    = { sm: 32, md: 40, lg: 64, xl: 80 }[size];
-  const font  = { sm: 14, md: 18, lg: 28, xl: 36 }[size];
-  const sw    = { sm: 1.5, md: 2,  lg: 2.5, xl: 3 }[size];
-  const waves = { sm: 10,  md: 11, lg: 14,  xl: 16 }[size];
-  const amp   = { sm: 2,   md: 2.5,lg: 3.5, xl: 4.5 }[size];
+  const px    = { sm: 34, md: 44, lg: 68, xl: 84 }[size];
+  // ℱ font size — bigger so it fills the ring comfortably
+  const font  = { sm: 18, md: 23, lg: 34, xl: 42 }[size];
+  const sw    = { sm: 1.6, md: 2,  lg: 2.6, xl: 3.2 }[size];
+  const waves = { sm: 10,  md: 11, lg: 14,  xl: 16  }[size];
+  const amp   = { sm: 2.2, md: 2.6,lg: 3.6, xl: 4.6 }[size];
   const cx = px / 2;
   const cy = px / 2;
   const R  = px / 2 - sw - 2;
@@ -45,11 +44,9 @@ export function Logo({ className, size = "md" }: LogoProps) {
     [cx, cy, R, waves, amp]
   );
 
-  // Rotating by exactly one wave-interval (360 / numPts degrees) creates a
-  // perfectly seamless loop — the waves appear to travel around continuously.
-  const rotStep = (360 / (waves * 2)).toFixed(4);
-  const dur = "1.0s"; // speed of wave travel
-
+  // Rotating 360° is perfectly seamless — the wavy pattern returns to its
+  // exact starting appearance, so there's never a visible reset/jump.
+  // Duration controls speed: 10s = one gentle full wave-cycle.
   return (
     <div
       className={cn(
@@ -73,13 +70,13 @@ export function Logo({ className, size = "md" }: LogoProps) {
           strokeLinejoin="round"
           strokeOpacity={0.55}
         >
-          {/* Rotate by exactly one wave interval → seamless traveling-wave loop */}
+          {/* 360° full rotation = seamless infinite loop, no visible jump */}
           <animateTransform
             attributeName="transform"
             type="rotate"
             from={`0 ${cx} ${cy}`}
-            to={`${rotStep} ${cx} ${cy}`}
-            dur={dur}
+            to={`360 ${cx} ${cy}`}
+            dur="10s"
             repeatCount="indefinite"
             calcMode="linear"
           />
@@ -87,7 +84,12 @@ export function Logo({ className, size = "md" }: LogoProps) {
       </svg>
       <span
         className="text-foreground leading-none relative z-10"
-        style={{ fontSize: font, fontWeight: 400, fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{
+          fontSize: font,
+          fontWeight: 400,
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          marginTop: 1,
+        }}
       >
         ℱ
       </span>

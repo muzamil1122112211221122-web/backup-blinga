@@ -927,31 +927,31 @@ body.voice-mode-active [data-message-bar] {
 
 /* ─── Thinking cloud animation ─── */
 
-/* Cloud reveals from left → right using clip-path */
+/* 1. Cloud sweeps in from left → right */
 @keyframes cloud-reveal {
-  0%   { clip-path: inset(0 100% 0 0 round 4px); opacity: 0.4; }
-  20%  { opacity: 1; }
-  100% { clip-path: inset(0 0%   0 0 round 4px); opacity: 1; }
+  0%   { clip-path: inset(0 100% 0 0 round 6px); opacity: 0.3; }
+  25%  { opacity: 1; }
+  100% { clip-path: inset(0 0%   0 0 round 6px); opacity: 1; }
 }
 
-/* Text fades in after cloud is mostly open */
+/* 2. Cloud breathes: expands then contracts smoothly, forever */
+@keyframes cloud-breathe {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.05); }
+}
+
+/* 3. Text fades in once cloud is mostly open */
 @keyframes thinking-text-in {
-  0%,60%  { opacity: 0; }
-  100%    { opacity: 1; }
-}
-
-/* Logo gentle glow while waiting */
-@keyframes thinking-logo-glow {
-  0%,100% { opacity: 0.75; }
-  50%     { opacity: 1;    }
-}
-
-.thinking-logo-wrap {
-  animation: thinking-logo-glow 2s ease-in-out infinite;
+  0%,55%  { opacity: 0; transform: translateX(-4px); }
+  100%    { opacity: 1; transform: translateX(0);    }
 }
 
 .thinking-cloud-wrapper {
-  animation: cloud-reveal 0.65s cubic-bezier(0.23,1,0.32,1) forwards;
+  /* chain: reveal first, then breathe */
+  animation:
+    cloud-reveal  0.6s cubic-bezier(0.23,1,0.32,1) forwards,
+    cloud-breathe 2.6s ease-in-out 0.6s infinite;
+  transform-origin: left center;
 }
 
 .thinking-label {
@@ -960,7 +960,7 @@ body.voice-mode-active [data-message-bar] {
   font-weight: 500;
   color: rgba(168,168,180,0.95);
   letter-spacing: 0.01em;
-  animation: thinking-text-in 1s cubic-bezier(0.23,1,0.32,1) forwards;
+  animation: thinking-text-in 0.9s cubic-bezier(0.23,1,0.32,1) forwards;
   white-space: nowrap;
 }
 
