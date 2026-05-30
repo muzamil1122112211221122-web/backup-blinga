@@ -441,7 +441,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine'>('ask');
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
@@ -460,7 +460,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     "What's on your mind? For example:",
   ];
   const [starterHeading] = useState(() => starterHeadings[Math.floor(Math.random() * starterHeadings.length)]);
-  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games') => {
+  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine') => {
     document.documentElement.classList.add('preload');
     setActiveTab(tab);
     requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
@@ -540,6 +540,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
+  const [imaginePrompt, setImaginePrompt] = useState("");
+  const [imagineImages, setImagineImages] = useState<string[]>([]);
+  const [imagineIsGenerating, setImagineIsGenerating] = useState(false);
+  const [imagineStyle, setImagineStyle] = useState("Photorealistic");
+  const [imagineError, setImagineError] = useState<string | null>(null);
+  const imagineTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
 
   // Settings state
@@ -2151,7 +2157,7 @@ Let's start the self-listen session!`;
         onSearchOpen={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
         onVoiceClick={() => { setIsSidebarOpen(false); setIsVoiceModeModalOpen(true); }}
-        onImagineClick={() => { setIsSidebarOpen(false); setIsImagineOpen(true); }}
+        onImagineClick={() => { setIsSidebarOpen(false); changeTab('imagine'); }}
         user={user || undefined}
         onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
         profilePicture={profilePicture || undefined}
@@ -2207,6 +2213,20 @@ Let's start the self-listen session!`;
               </Button>
             </TooltipTrigger>
             <TooltipContent>Compare all AIs side by side</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTab === 'imagine' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => changeTab('imagine')}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'imagine' ? 'bg-secondary' : ''}`}
+                data-testid="tab-imagine"
+              >
+                Imagine
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>AI Image Generation</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -2338,7 +2358,7 @@ Let's start the self-listen session!`;
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        className={`h-full overflow-y-auto ${activeTab === 'nomad' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
+        className={`h-full ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -2915,6 +2935,159 @@ Let's start the self-listen session!`;
             </div>
             );
           })()
+        ) : activeTab === 'imagine' ? (
+          // ── Imagine Tab ─────────────────────────────────────────────────────
+          (() => {
+            const IMAGINE_STYLE_TAGS = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Sketch", "Cinematic"];
+            const IMAGINE_PROMPTS = [
+              { label: "Sunset Mountains", prompt: "a breathtaking sunset over snow-capped mountains with golden light", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80" },
+              { label: "Cyberpunk City", prompt: "a neon-lit cyberpunk city at night with flying cars and rain", img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=80" },
+              { label: "Majestic Lion", prompt: "a majestic lion portrait with a dramatic mane in golden light", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80" },
+              { label: "Cherry Blossoms", prompt: "a serene Japanese garden with cherry blossom petals falling", img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=80" },
+              { label: "Space Explorer", prompt: "an astronaut floating in space with Earth and stars behind them", img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=80" },
+              { label: "Fantasy Castle", prompt: "an epic fantasy castle on a clifftop surrounded by clouds", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80" },
+              { label: "Ocean Waves", prompt: "massive ocean waves crashing with foam and turquoise water", img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=80" },
+              { label: "Northern Lights", prompt: "vibrant aurora borealis over a snowy pine forest at night", img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=80" },
+            ];
+
+            const handleImagineGenerate = async () => {
+              if (!imaginePrompt.trim() || imagineIsGenerating) return;
+              setImagineIsGenerating(true);
+              setImagineError(null);
+              const fullPrompt = `${imaginePrompt.trim()}, ${imagineStyle.toLowerCase()} style`;
+              try {
+                const res = await fetch("/api/test-ai", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: "imagine" }),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
+                  if (match?.[1]) {
+                    setImagineImages(prev => [match[1], ...prev.slice(0, 11)]);
+                  } else {
+                    setImagineError("Generation complete — check the response for the image.");
+                  }
+                }
+              } catch {
+                setImagineError("Could not connect. Please try again.");
+              } finally {
+                setImagineIsGenerating(false);
+              }
+            };
+
+            const handleImagineKeyDown = (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleImagineGenerate(); }
+            };
+
+            return (
+              <div className="h-full flex flex-col">
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6" style={{ scrollbarWidth: 'thin' }}>
+                  <div className="max-w-4xl mx-auto">
+
+                    {/* Generated images */}
+                    {imagineImages.length > 0 && (
+                      <div className="mb-8">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Generated</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {imagineImages.map((src, i) => (
+                            <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-border bg-card">
+                              <img src={src} alt="generated" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Generating indicator */}
+                    {imagineIsGenerating && (
+                      <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-2xl bg-card border border-border">
+                        <div className="flex gap-1">
+                          {[0, 0.2, 0.4].map((d, i) => (
+                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
+                              style={{ animation: `pulse-dot 1.4s ease-in-out ${d}s infinite` }} />
+                          ))}
+                        </div>
+                        <span className="text-sm text-muted-foreground italic">Generating your image…</span>
+                      </div>
+                    )}
+
+                    {/* Error */}
+                    {imagineError && (
+                      <div className="mb-5 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-300 text-sm">
+                        {imagineError}
+                      </div>
+                    )}
+
+                    {/* Quick ideas */}
+                    <div className="mb-6">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Quick Ideas</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {IMAGINE_PROMPTS.map((ref) => (
+                          <button
+                            key={ref.label}
+                            onClick={() => { setImaginePrompt(ref.prompt); imagineTextareaRef.current?.focus(); }}
+                            className="relative group aspect-video rounded-2xl overflow-hidden border border-border text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            <img src={ref.img} alt={ref.label} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                            <span className="absolute bottom-2 left-2.5 text-white text-xs font-semibold leading-tight drop-shadow">
+                              {ref.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Style selector */}
+                    <div className="mb-4">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Style</p>
+                      <div className="flex flex-wrap gap-2">
+                        {IMAGINE_STYLE_TAGS.map(style => (
+                          <button
+                            key={style}
+                            onClick={() => setImagineStyle(style)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${imagineStyle === style ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                            style={imagineStyle === style ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)" } : undefined}
+                          >
+                            {style}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Message bar — just a border line + input + send, no function bar */}
+                <div className="border-t border-border px-4 sm:px-8 py-3 flex items-center gap-3 bg-background">
+                  <div className="flex-1 max-w-4xl mx-auto flex items-center gap-3">
+                    <Textarea
+                      ref={imagineTextareaRef}
+                      value={imaginePrompt}
+                      onChange={e => setImaginePrompt(e.target.value)}
+                      onKeyDown={handleImagineKeyDown}
+                      placeholder="Describe what you want to imagine…"
+                      className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[18px] sm:text-[20px] leading-relaxed !p-0 !min-h-0 !rounded-none overflow-y-auto"
+                      style={{ height: '40px', maxHeight: '120px', overflowY: 'auto', scrollbarWidth: 'none' }}
+                    />
+                    <Button
+                      onClick={handleImagineGenerate}
+                      disabled={!imaginePrompt.trim() || imagineIsGenerating}
+                      className="w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-30 transition-all flex-shrink-0 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100"
+                      style={{ border: "none" }}
+                    >
+                      {imagineIsGenerating
+                        ? <RefreshCw size={15} className="text-white dark:text-black animate-spin" />
+                        : <ArrowUp size={15} className="text-white dark:text-black" />}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()
         ) : activeTab === 'philosopher' ? (
           // Philosopher Tab
           <div className="h-full flex flex-col">
@@ -3063,7 +3236,7 @@ Let's start the self-listen session!`;
         };
 
         return (
-          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'imagine' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
@@ -3168,7 +3341,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || activeTab === 'imagine' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
