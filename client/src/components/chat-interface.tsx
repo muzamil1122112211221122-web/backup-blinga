@@ -2661,7 +2661,17 @@ Let's start the self-listen session!`;
                       {(settingsToggles.showFiusLogo ?? true) && (
                         <Logo size="sm" />
                       )}
-                      <span className="thinking-label">{label}</span>
+                      <span className="thinking-label">
+                        {label.split('').map((char, i) => (
+                          <span
+                            key={i}
+                            className="thinking-char"
+                            style={{ animationDelay: `${0.38 + i * 0.06}s` }}
+                          >
+                            {char}
+                          </span>
+                        ))}
+                      </span>
                     </div>
                   </div>
                 </div>
