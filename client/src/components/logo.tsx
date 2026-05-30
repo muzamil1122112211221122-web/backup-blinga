@@ -67,12 +67,16 @@ export function Logo({ className, size = "md" }: LogoProps) {
       style={{ width: px, height: px }}
       data-testid="logo-fius"
     >
+      {/* Single SVG holds both the animated ring and the ƒ text.
+          text-anchor="middle" + dominant-baseline="central" guarantee
+          true optical centering regardless of glyph metrics. */}
       <svg
         width={px} height={px}
         viewBox={`0 0 ${px} ${px}`}
         style={{ position: "absolute", inset: 0 }}
         overflow="visible"
       >
+        {/* Animated wavy / circle ring */}
         <path
           fill="none"
           stroke="currentColor"
@@ -81,7 +85,6 @@ export function Logo({ className, size = "md" }: LogoProps) {
           strokeLinecap="round"
           strokeOpacity={0.58}
         >
-          {/* Morph: wavy ↔ perfect circle */}
           <animate
             attributeName="d"
             values={morphValues}
@@ -91,7 +94,6 @@ export function Logo({ className, size = "md" }: LogoProps) {
             repeatCount="indefinite"
             calcMode="spline"
           />
-          {/* Continuous rotation — creates traveling waves when wavy, invisible on circle */}
           <animateTransform
             attributeName="transform"
             type="rotate"
@@ -103,25 +105,22 @@ export function Logo({ className, size = "md" }: LogoProps) {
             additive="sum"
           />
         </path>
+
+        {/* ƒ — SVG text centering is exact; no glyph-metric surprises */}
+        <text
+          x={cx}
+          y={cy + 1}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={font}
+          fontWeight="400"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fill="currentColor"
+          style={{ userSelect: "none" }}
+        >
+          ƒ
+        </text>
       </svg>
-      {/* Absolute centering overrides glyph-metric quirks of ƒ */}
-      <span
-        className="text-foreground"
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -52%)",
-          fontSize: font,
-          fontWeight: 400,
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          lineHeight: 1,
-          zIndex: 1,
-          userSelect: "none",
-        }}
-      >
-        ƒ
-      </span>
     </div>
   );
 }
