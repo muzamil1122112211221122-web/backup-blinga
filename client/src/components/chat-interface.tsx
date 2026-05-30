@@ -543,6 +543,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
   const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, isGenerating?: boolean}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
 
   // Settings state
@@ -1302,44 +1303,32 @@ IMPORTANT RULES:
       return;
     }
 
-    // Handle Imagine mode — generate image, show in right panel
+    // Handle Imagine mode — build Pollinations URL directly (no backend needed)
     if (activeTab === 'imagine') {
+      const IMAGINE_STYLE_SUFFIXES: Record<string, string> = {
+        "Photorealistic": "photorealistic, ultra detailed, 8k resolution, sharp focus, hyperrealistic",
+        "Anime": "anime art style, manga, japanese animation, studio ghibli inspired",
+        "Oil Painting": "oil painting, classical art, rich textures, impasto, renaissance masterpiece",
+        "3D Render": "3D CGI render, octane render, unreal engine 5, volumetric lighting, ray tracing",
+        "Watercolor": "watercolor painting, soft washes, artistic, transparent pigments, paper texture",
+        "Pixel Art": "pixel art, 8-bit retro style, game sprite, low resolution pixel",
+        "Sketch": "pencil sketch, graphite drawing, hand drawn, fine lines, black and white",
+        "Cinematic": "cinematic photography, movie still, anamorphic lens, dramatic lighting, film grain",
+      };
+      const seed = Math.floor(Math.random() * 9999999);
+      const styleSuffix = IMAGINE_STYLE_SUFFIXES[imagineStyle] || imagineStyle.toLowerCase();
+      const fullPrompt = `${content}, ${styleSuffix}`;
+      const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=768&model=flux&nologo=true&seed=${seed}`;
+
       const userMsgId = Date.now().toString();
       const aiMsgId = (Date.now() + 1).toString();
       setImagineMessages(prev => [
         ...prev,
         { id: userMsgId, role: 'user', content },
-        { id: aiMsgId, role: 'ai', content: '', isGenerating: true },
+        { id: aiMsgId, role: 'ai', content: '', imageUrl: pollinationsUrl, isGenerating: true },
       ]);
       setInputValue("");
       setTimeout(() => imagineMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
-      const fullPrompt = `${content}, ${imagineStyle.toLowerCase()} style`;
-      try {
-        const res = await fetch("/api/test-ai", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: "imagine" }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
-          setImagineMessages(prev => prev.map(m => m.id === aiMsgId
-            ? { ...m, isGenerating: false, imageUrl: match?.[1] || undefined, content: match?.[1] ? '' : 'Could not extract image URL from response.' }
-            : m
-          ));
-        } else {
-          setImagineMessages(prev => prev.map(m => m.id === aiMsgId
-            ? { ...m, isGenerating: false, content: 'Generation failed. Please try again.' }
-            : m
-          ));
-        }
-      } catch {
-        setImagineMessages(prev => prev.map(m => m.id === aiMsgId
-          ? { ...m, isGenerating: false, content: 'Could not connect. Please try again.' }
-          : m
-        ));
-      }
-      setTimeout(() => imagineMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       return;
     }
 
@@ -1462,6 +1451,27 @@ IMPORTANT RULES:
     const controller = new AbortController();
     abortControllerRef.current = controller;
     try {
+      // Optionally enrich with DuckDuckGo web search context
+      let enrichedContent = content;
+      if (webSearchEnabled) {
+        try {
+          const searchRes = await fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal });
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            const snippets: string[] = [];
+            if (searchData.answer) snippets.push(`Answer: ${searchData.answer}`);
+            if (searchData.abstract) snippets.push(`Summary: ${searchData.abstract} (${searchData.abstractSource})`);
+            searchData.relatedTopics?.slice(0, 4).forEach((t: { text: string; url: string }) => {
+              if (t.text) snippets.push(`• ${t.text}`);
+            });
+            if (snippets.length > 0) {
+              enrichedContent = `[Web search results for "${content}"]\n${snippets.join('\n')}\n\n[User question]: ${content}`;
+            }
+          }
+        } catch {
+          // proceed without search if it fails
+        }
+      }
       console.log('Making direct API call...');
       const response = await fetch('/api/test-ai', {
         method: 'POST',
@@ -1469,7 +1479,7 @@ IMPORTANT RULES:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: content,
+          message: enrichedContent,
           conversationId: conversationId,
           activeTab: currentTab || activeTab,
         }),
@@ -2975,26 +2985,26 @@ Let's start the self-listen session!`;
           (() => {
             const IMAGINE_STYLE_TAGS = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Sketch", "Cinematic"];
             const IMAGINE_PROMPTS = [
-              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",       img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop&q=85" },
-              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",              img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&auto=format&fit=crop&q=85" },
-              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",            img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&auto=format&fit=crop&q=85" },
-              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",              img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=800&auto=format&fit=crop&q=85" },
-              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",           img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&auto=format&fit=crop&q=85" },
-              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=85" },
-              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",               img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&auto=format&fit=crop&q=85" },
-              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",               img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&auto=format&fit=crop&q=85" },
-              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                   img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&auto=format&fit=crop&q=85" },
-              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",   img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=85" },
-              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",           img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=85" },
-              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",   img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=800&auto=format&fit=crop&q=85" },
-              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",  img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop&q=85" },
-              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",    img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=800&auto=format&fit=crop&q=85" },
-              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",          img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=800&auto=format&fit=crop&q=85" },
-              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",   img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&auto=format&fit=crop&q=85" },
-              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night", img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=800&auto=format&fit=crop&q=85" },
-              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",  img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=800&auto=format&fit=crop&q=85" },
-              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                    img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop&q=85" },
-              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=800&auto=format&fit=crop&q=85" },
+              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",        img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=70&auto=format&fit=crop" },
+              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",               img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
+              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",             img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70&auto=format&fit=crop" },
+              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",               img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
+              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",            img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
+              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                 img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
+              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",                img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
+              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
+              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                    img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",            img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
+              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",    img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=70&auto=format&fit=crop" },
+              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",   img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
+              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",     img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=400&q=70&auto=format&fit=crop" },
+              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",           img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=400&q=70&auto=format&fit=crop" },
+              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",    img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
+              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night",  img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
+              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",   img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
+              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                     img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
+              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=400&q=70&auto=format&fit=crop" },
             ];
 
             return (
@@ -3014,16 +3024,16 @@ Let's start the self-listen session!`;
                   ))}
                 </div>
 
-                {/* Main body — photo grid + right panel */}
-                <div className="flex-1 flex overflow-hidden">
-                  {/* Photo grid — fills all available space */}
-                  <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                {/* Main body — photo grid + overlay panel */}
+                <div className="flex-1 overflow-hidden relative">
+                  {/* Photo grid — always fills full space */}
+                  <div className="absolute inset-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-0.5">
                       {IMAGINE_PROMPTS.map((ref) => (
                         <button
                           key={ref.label}
                           onClick={() => setInputValue(ref.prompt)}
-                          className="relative group aspect-[4/3] overflow-hidden"
+                          className="relative group aspect-[4/3] overflow-hidden bg-muted"
                         >
                           <img
                             src={ref.img}
@@ -3031,6 +3041,7 @@ Let's start the self-listen session!`;
                             loading="lazy"
                             decoding="async"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e) => { (e.target as HTMLImageElement).onerror = null; (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                           <span className="absolute bottom-2 left-2.5 text-white text-xs font-semibold leading-tight drop-shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -3041,50 +3052,72 @@ Let's start the self-listen session!`;
                     </div>
                   </div>
 
-                  {/* Right panel — slides in when messages exist */}
-                  {imagineMessages.length > 0 && (
-                    <div className="w-72 sm:w-80 flex-shrink-0 border-l border-border flex flex-col overflow-hidden bg-background">
-                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
-                        <span className="text-sm font-semibold text-foreground">Generations</span>
-                        <button
-                          onClick={() => setImagineMessages([])}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                      <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
-                        {imagineMessages.map(msg => (
-                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.role === 'user' ? (
-                              <div className="bg-card rounded-3xl px-4 py-2.5 max-w-[90%] chat-bubble shadow-sm border border-border">
-                                <p className="text-foreground text-sm">{msg.content}</p>
-                              </div>
-                            ) : (
-                              <div className="w-full">
-                                {msg.isGenerating ? (
-                                  <div className="flex items-center gap-2 px-2 py-2">
-                                    {[0, 0.2, 0.4].map((d, i) => (
-                                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
-                                        style={{ animation: `pulse-dot 1.4s ease-in-out ${d}s infinite` }} />
-                                    ))}
-                                    <span className="text-xs text-muted-foreground italic">Generating…</span>
-                                  </div>
-                                ) : msg.imageUrl ? (
-                                  <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
-                                    <img src={msg.imageUrl} alt="Generated" className="w-full h-auto" />
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground px-1">{msg.content}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        <div ref={imagineMessagesEndRef} />
-                      </div>
+                  {/* Generations panel — slides in from right as overlay (no layout shift) */}
+                  <div
+                    className="absolute inset-y-0 right-0 w-72 sm:w-80 border-l border-border flex flex-col bg-background/97 backdrop-blur-sm transition-transform duration-300 ease-out z-10"
+                    style={{ transform: imagineMessages.length > 0 ? 'translateX(0)' : 'translateX(100%)' }}
+                  >
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
+                      <span className="text-sm font-semibold text-foreground">Generations</span>
+                      <button
+                        onClick={() => setImagineMessages([])}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-md hover:bg-accent"
+                      >
+                        Clear
+                      </button>
                     </div>
-                  )}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+                      {imagineMessages.map(msg => (
+                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          {msg.role === 'user' ? (
+                            <div className="bg-card rounded-3xl px-4 py-2.5 max-w-[90%] shadow-sm border border-border">
+                              <p className="text-foreground text-sm">{msg.content}</p>
+                            </div>
+                          ) : (
+                            <div className="w-full">
+                              {msg.imageUrl ? (
+                                <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted" style={{ minHeight: msg.isGenerating ? '160px' : undefined }}>
+                                  {msg.isGenerating && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
+                                      <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                      <span className="text-xs text-muted-foreground">Generating image…</span>
+                                      <span className="text-[10px] text-muted-foreground/60">~15–30 seconds</span>
+                                    </div>
+                                  )}
+                                  <img
+                                    src={msg.imageUrl}
+                                    alt="Generated"
+                                    className={`w-full h-auto transition-opacity duration-500 ${msg.isGenerating ? 'opacity-0' : 'opacity-100'}`}
+                                    onLoad={() => setImagineMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isGenerating: false } : m))}
+                                    onError={(e) => {
+                                      const t = e.target as HTMLImageElement;
+                                      t.onerror = null;
+                                      setImagineMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isGenerating: false, imageUrl: undefined, content: 'Generation failed. Check your internet connection and try again.' } : m));
+                                    }}
+                                  />
+                                  {!msg.isGenerating && (
+                                    <a
+                                      href={msg.imageUrl}
+                                      download="generated.jpg"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
+                                      onClick={e => e.stopPropagation()}
+                                    >
+                                      Save
+                                    </a>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground px-1">{msg.content}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div ref={imagineMessagesEndRef} />
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -3413,6 +3446,24 @@ Let's start the self-listen session!`;
                 </DropdownMenu>
                 <TooltipContent>Add Attachment</TooltipContent>
               </Tooltip>
+              {/* Web search toggle — visible in ask/nomad tabs only */}
+              {activeTab !== 'philosopher' && activeTab !== 'fius-games' && activeTab !== 'imagine' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${webSearchEnabled ? 'text-blue-500 bg-blue-500/15' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
+                      onClick={() => setWebSearchEnabled(v => !v)}
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                      </svg>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{webSearchEnabled ? 'Web search ON — click to disable' : 'Enable web search'}</TooltipContent>
+                </Tooltip>
+              )}
               {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
                 <>
                   <Tooltip>

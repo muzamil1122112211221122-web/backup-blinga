@@ -680,6 +680,34 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     }
   });
 
+  // DuckDuckGo web search endpoint
+  app.get('/api/search', requireAuth, async (req, res) => {
+    try {
+      const q = (req.query.q as string || '').trim();
+      if (!q) return res.status(400).json({ error: 'Query required' });
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'Fius-AI/1.0' } });
+      if (!r.ok) return res.status(502).json({ error: 'DDG API error' });
+      const data: any = await r.json();
+      const relatedTopics = (data.RelatedTopics || [])
+        .filter((t: any) => t.Text)
+        .map((t: any) => ({ text: t.Text, url: t.FirstURL }))
+        .slice(0, 6);
+      res.json({
+        answer: data.Answer || '',
+        abstract: data.AbstractText || '',
+        abstractSource: data.AbstractSource || '',
+        abstractUrl: data.AbstractURL || '',
+        relatedTopics,
+        definition: data.Definition || '',
+        definitionSource: data.DefinitionSource || '',
+      });
+    } catch (err) {
+      console.error('Search error:', err);
+      res.status(500).json({ error: 'Search failed' });
+    }
+  });
+
   // Image generation endpoint
   app.post('/api/generate-image', requireAuth, async (req, res) => {
     try {
