@@ -109,7 +109,7 @@ export function Logo({ className, size = "md" }: LogoProps) {
         {/* ƒ — optical nudge: glyph visual centre sits left-of and above
             the SVG advance-width centre, so shift right and up to compensate */}
         <text
-          x={cx + Math.round(font * 0.12)}
+          x={cx + Math.round(font * 0.16)}
           y={cy - Math.round(font * 0.06)}
           textAnchor="middle"
           dominantBaseline="central"
