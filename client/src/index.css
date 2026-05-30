@@ -922,75 +922,45 @@ body.voice-mode-active [data-message-bar] {
   animation: nomad-pop-slide-out 0.55s ease-in-out forwards;
 }
 
-/* ─── Logo ring animation (Google-style arc) ─── */
-@keyframes logo-ring-spin {
-  0%   { transform: rotate(-90deg); }
-  100% { transform: rotate(270deg); }
-}
-@keyframes logo-arc-grow {
-  0%   { stroke-dasharray: 4 280;  stroke: rgba(150,150,160,0.18); }
-  30%  { stroke-dasharray: 150 280; stroke: rgba(150,150,160,0.85); }
-  70%  { stroke-dasharray: 220 280; stroke: rgba(150,150,160,0.85); }
-  100% { stroke-dasharray: 4 280;  stroke: rgba(150,150,160,0.18); }
-}
-
-.logo-ring-svg {
-  animation: logo-ring-spin 2.8s cubic-bezier(0.4,0,0.2,1) infinite;
-  overflow: visible;
-}
-.logo-ring-track {
-  stroke: rgba(150,150,160,0.1);
-}
-.logo-ring-arc {
-  animation: logo-arc-grow 2.8s cubic-bezier(0.4,0,0.2,1) infinite;
-}
-
-.dark .logo-ring-track { stroke: rgba(255,255,255,0.07); }
+/* ─── Logo wavy circle (traveling-wave style) ─── */
+/* Animation is handled entirely via SVG <animateTransform> in logo.tsx */
 
 /* ─── Thinking cloud animation ─── */
 
-/* 1. Logo glow pulse — gentle while waiting */
-@keyframes thinking-logo-glow {
-  0%,100% { filter: drop-shadow(0 0 0px transparent); }
-  50%     { filter: drop-shadow(0 0 6px rgba(160,160,180,0.45)); }
+/* Cloud reveals from left → right using clip-path */
+@keyframes cloud-reveal {
+  0%   { clip-path: inset(0 100% 0 0 round 4px); opacity: 0.4; }
+  20%  { opacity: 1; }
+  100% { clip-path: inset(0 0%   0 0 round 4px); opacity: 1; }
 }
 
-/* 2. Cloud bubble expands from behind logo to the right */
-@keyframes cloud-expand {
-  0%   { max-width: 0;     opacity: 0; padding-left: 0; padding-right: 0; }
-  35%  { opacity: 1; }
-  100% { max-width: 220px; opacity: 1; padding-left: 14px; padding-right: 14px; }
-}
-
-/* 3. Text fades in after cloud has mostly expanded */
+/* Text fades in after cloud is mostly open */
 @keyframes thinking-text-in {
-  0%,55%  { opacity: 0; }
+  0%,60%  { opacity: 0; }
   100%    { opacity: 1; }
 }
 
-.thinking-logo-wrap {
-  animation: thinking-logo-glow 2.2s ease-in-out infinite;
-  flex-shrink: 0;
+/* Logo gentle glow while waiting */
+@keyframes thinking-logo-glow {
+  0%,100% { opacity: 0.75; }
+  50%     { opacity: 1;    }
 }
 
-.thinking-cloud {
-  overflow: hidden;
-  white-space: nowrap;
-  padding-top: 7px;
-  padding-bottom: 7px;
-  border-radius: 999px;
-  animation: cloud-expand 0.55s cubic-bezier(0.23,1,0.32,1) forwards;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%);
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
+.thinking-logo-wrap {
+  animation: thinking-logo-glow 2s ease-in-out infinite;
+}
+
+.thinking-cloud-wrapper {
+  animation: cloud-reveal 0.65s cubic-bezier(0.23,1,0.32,1) forwards;
 }
 
 .thinking-label {
   display: inline-block;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(160,160,170,0.9);
+  color: rgba(168,168,180,0.95);
   letter-spacing: 0.01em;
-  animation: thinking-text-in 0.9s cubic-bezier(0.23,1,0.32,1) forwards;
+  animation: thinking-text-in 1s cubic-bezier(0.23,1,0.32,1) forwards;
+  white-space: nowrap;
 }
 

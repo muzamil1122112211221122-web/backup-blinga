@@ -2617,23 +2617,49 @@ Let's start the self-listen session!`;
               </div>
             ))}
             
-            {/* Thinking Indicator */}
-            {isTyping && (
-              <div className="flex justify-start mb-2" data-testid="typing-indicator">
-                <div className="flex items-center gap-2">
-                  {(settingsToggles.showFiusLogo ?? true) && (
-                    <div className="thinking-logo-wrap">
-                      <Logo size="sm" />
-                    </div>
-                  )}
-                  <div className="thinking-cloud">
-                    <span className="thinking-label">
-                      {thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking'}
+            {/* Thinking Indicator — logo inside expanding cloud */}
+            {isTyping && (() => {
+              const label = thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking';
+              // Cloud SVG path (220×72 viewBox): bumpy top, smooth bottom
+              // Logo sits in the left pocket, text floats to its right
+              const cloudPath = "M 14 63 Q 3 63 3 52 Q 3 39 15 36 Q 11 17 29 15 Q 43 3 61 15 Q 75 3 95 15 Q 111 3 129 15 Q 145 3 159 16 Q 173 9 177 27 Q 191 27 193 46 Q 195 63 177 65 Z";
+              return (
+                <div className="flex justify-start mb-2" data-testid="typing-indicator">
+                  <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: 198, height: 68 }}>
+                    {/* Cloud shape background */}
+                    <svg
+                      viewBox="0 0 198 68"
+                      width="198" height="68"
+                      style={{ position: 'absolute', top: 0, left: 0 }}
+                    >
+                      <path
+                        d={cloudPath}
+                        fill="rgba(22,22,28,0.72)"
+                        stroke="rgba(255,255,255,0.11)"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {/* Logo inside cloud — left side */}
+                    {(settingsToggles.showFiusLogo ?? true) && (
+                      <div
+                        className="thinking-logo-wrap"
+                        style={{ position: 'absolute', top: 18, left: 10, zIndex: 1 }}
+                      >
+                        <Logo size="sm" />
+                      </div>
+                    )}
+                    {/* Text to the right of logo */}
+                    <span
+                      className="thinking-label"
+                      style={{ position: 'absolute', left: 52, top: 27, zIndex: 1 }}
+                    >
+                      {label}
                     </span>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             
             <div ref={messagesEndRef} />
           </div>
