@@ -47,22 +47,15 @@ export function Logo({ className, size = "md" }: LogoProps) {
   const circlePath = useMemo(() => makeWavyPath(cx, cy, R, waves, 0),   [cx, cy, R, waves]);
 
   /**
-   * 8-second cycle:
-   *   0% → 45%  : wavy  (rotation creates traveling-wave illusion)
-   *   45% → 57% : smooth morph wavy → circle
-   *   57% → 75% : perfect circle  (rotation invisible — circle looks still)
-   *   75% → 87% : smooth morph circle → wavy
-   *   87% → 100%: wavy again
-   *
-   * <animate> targets 'd'       — shape morphing
-   * <animateTransform> targets 'transform' — continuous rotation
-   * Both run simultaneously; on a circle rotation is imperceptible,
-   * on the wavy path it makes the bumps appear to travel.
+   * 6-second cycle (quicker), circle-first order:
+   *   0%  → 50% : perfect circle  (stays longer; rotation invisible here)
+   *   50% → 60% : smooth morph circle → wavy
+   *   60% → 78% : wavy  (rotation creates traveling-wave illusion)
+   *   78% → 88% : smooth morph wavy → circle
+   *   88% → 100%: circle again
    */
-  const morphValues    = [wavyPath, wavyPath, circlePath, circlePath, wavyPath, wavyPath].join(";");
-  const morphKeyTimes  = "0; 0.45; 0.57; 0.75; 0.87; 1";
-  // 5 segments → 5 keySplines
-  // hold segments: ease doesn't matter (same start/end), morph segments: smooth ease-in-out
+  const morphValues     = [circlePath, circlePath, wavyPath, wavyPath, circlePath, circlePath].join(";");
+  const morphKeyTimes   = "0; 0.50; 0.60; 0.78; 0.88; 1";
   const morphKeySplines = "0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1";
 
   return (
@@ -94,7 +87,7 @@ export function Logo({ className, size = "md" }: LogoProps) {
             values={morphValues}
             keyTimes={morphKeyTimes}
             keySplines={morphKeySplines}
-            dur="8s"
+            dur="6s"
             repeatCount="indefinite"
             calcMode="spline"
           />
@@ -120,7 +113,7 @@ export function Logo({ className, size = "md" }: LogoProps) {
           marginTop: 1,
         }}
       >
-        ℱ
+        ƒ
       </span>
     </div>
   );
