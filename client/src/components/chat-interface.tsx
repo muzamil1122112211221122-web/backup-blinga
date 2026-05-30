@@ -540,12 +540,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
-  const [imaginePrompt, setImaginePrompt] = useState("");
-  const [imagineImages, setImagineImages] = useState<string[]>([]);
-  const [imagineIsGenerating, setImagineIsGenerating] = useState(false);
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
-  const [imagineError, setImagineError] = useState<string | null>(null);
-  const imagineTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, isGenerating?: boolean}[]>([]);
+  const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
 
   // Settings state
@@ -1302,6 +1299,47 @@ IMPORTANT RULES:
     // Handle Fius Games mode
     if (activeTab === 'fius-games') {
       await handleGamesSend(content);
+      return;
+    }
+
+    // Handle Imagine mode — generate image, show in right panel
+    if (activeTab === 'imagine') {
+      const userMsgId = Date.now().toString();
+      const aiMsgId = (Date.now() + 1).toString();
+      setImagineMessages(prev => [
+        ...prev,
+        { id: userMsgId, role: 'user', content },
+        { id: aiMsgId, role: 'ai', content: '', isGenerating: true },
+      ]);
+      setInputValue("");
+      setTimeout(() => imagineMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+      const fullPrompt = `${content}, ${imagineStyle.toLowerCase()} style`;
+      try {
+        const res = await fetch("/api/test-ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: "imagine" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
+          setImagineMessages(prev => prev.map(m => m.id === aiMsgId
+            ? { ...m, isGenerating: false, imageUrl: match?.[1] || undefined, content: match?.[1] ? '' : 'Could not extract image URL from response.' }
+            : m
+          ));
+        } else {
+          setImagineMessages(prev => prev.map(m => m.id === aiMsgId
+            ? { ...m, isGenerating: false, content: 'Generation failed. Please try again.' }
+            : m
+          ));
+        }
+      } catch {
+        setImagineMessages(prev => prev.map(m => m.id === aiMsgId
+          ? { ...m, isGenerating: false, content: 'Could not connect. Please try again.' }
+          : m
+        ));
+      }
+      setTimeout(() => imagineMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       return;
     }
 
@@ -2940,150 +2978,114 @@ Let's start the self-listen session!`;
           (() => {
             const IMAGINE_STYLE_TAGS = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Sketch", "Cinematic"];
             const IMAGINE_PROMPTS = [
-              { label: "Sunset Mountains", prompt: "a breathtaking sunset over snow-capped mountains with golden light", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80" },
-              { label: "Cyberpunk City", prompt: "a neon-lit cyberpunk city at night with flying cars and rain", img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=80" },
-              { label: "Majestic Lion", prompt: "a majestic lion portrait with a dramatic mane in golden light", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=80" },
-              { label: "Cherry Blossoms", prompt: "a serene Japanese garden with cherry blossom petals falling", img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=80" },
-              { label: "Space Explorer", prompt: "an astronaut floating in space with Earth and stars behind them", img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=80" },
-              { label: "Fantasy Castle", prompt: "an epic fantasy castle on a clifftop surrounded by clouds", img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80" },
-              { label: "Ocean Waves", prompt: "massive ocean waves crashing with foam and turquoise water", img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=80" },
-              { label: "Northern Lights", prompt: "vibrant aurora borealis over a snowy pine forest at night", img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=80" },
+              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",       img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80" },
+              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",              img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&q=80" },
+              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",            img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=600&q=80" },
+              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",              img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=600&q=80" },
+              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",           img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=600&q=80" },
+              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" },
+              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",               img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=600&q=80" },
+              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",               img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80" },
+              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                   img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&q=80" },
+              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",   img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80" },
+              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",           img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80" },
+              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",   img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=600&q=80" },
+              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",  img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=600&q=80" },
+              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",    img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=600&q=80" },
+              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",          img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=600&q=80" },
+              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",   img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600&q=80" },
+              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night", img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=600&q=80" },
+              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",  img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&q=80" },
+              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                    img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80" },
+              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=600&q=80" },
             ];
 
-            const handleImagineGenerate = async () => {
-              if (!imaginePrompt.trim() || imagineIsGenerating) return;
-              setImagineIsGenerating(true);
-              setImagineError(null);
-              const fullPrompt = `${imaginePrompt.trim()}, ${imagineStyle.toLowerCase()} style`;
-              try {
-                const res = await fetch("/api/test-ai", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: "imagine" }),
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
-                  if (match?.[1]) {
-                    setImagineImages(prev => [match[1], ...prev.slice(0, 11)]);
-                  } else {
-                    setImagineError("Generation complete — check the response for the image.");
-                  }
-                }
-              } catch {
-                setImagineError("Could not connect. Please try again.");
-              } finally {
-                setImagineIsGenerating(false);
-              }
-            };
-
-            const handleImagineKeyDown = (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleImagineGenerate(); }
-            };
-
             return (
-              <div className="h-full flex flex-col">
-                {/* Scrollable content */}
-                <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6" style={{ scrollbarWidth: 'thin' }}>
-                  <div className="max-w-4xl mx-auto">
-
-                    {/* Generated images */}
-                    {imagineImages.length > 0 && (
-                      <div className="mb-8">
-                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Generated</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {imagineImages.map((src, i) => (
-                            <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-border bg-card">
-                              <img src={src} alt="generated" className="w-full h-full object-cover" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Generating indicator */}
-                    {imagineIsGenerating && (
-                      <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-2xl bg-card border border-border">
-                        <div className="flex gap-1">
-                          {[0, 0.2, 0.4].map((d, i) => (
-                            <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
-                              style={{ animation: `pulse-dot 1.4s ease-in-out ${d}s infinite` }} />
-                          ))}
-                        </div>
-                        <span className="text-sm text-muted-foreground italic">Generating your image…</span>
-                      </div>
-                    )}
-
-                    {/* Error */}
-                    {imagineError && (
-                      <div className="mb-5 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-300 text-sm">
-                        {imagineError}
-                      </div>
-                    )}
-
-                    {/* Quick ideas */}
-                    <div className="mb-6">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Quick Ideas</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {IMAGINE_PROMPTS.map((ref) => (
-                          <button
-                            key={ref.label}
-                            onClick={() => { setImaginePrompt(ref.prompt); imagineTextareaRef.current?.focus(); }}
-                            className="relative group aspect-video rounded-2xl overflow-hidden border border-border text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            <img src={ref.img} alt={ref.label} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                            <span className="absolute bottom-2 left-2.5 text-white text-xs font-semibold leading-tight drop-shadow">
-                              {ref.label}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Style selector */}
-                    <div className="mb-4">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Style</p>
-                      <div className="flex flex-wrap gap-2">
-                        {IMAGINE_STYLE_TAGS.map(style => (
-                          <button
-                            key={style}
-                            onClick={() => setImagineStyle(style)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${imagineStyle === style ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                            style={imagineStyle === style ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)" } : undefined}
-                          >
-                            {style}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
+              <div className="h-full flex flex-col overflow-hidden">
+                {/* Style pills — fixed at top */}
+                <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
+                  {IMAGINE_STYLE_TAGS.map(style => (
+                    <button
+                      key={style}
+                      onClick={() => setImagineStyle(style)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 border ${imagineStyle === style ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                      style={imagineStyle === style ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)" } : undefined}
+                    >
+                      {style}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Message bar — just a border line + input + send, no function bar */}
-                <div className="border-t border-border px-4 sm:px-8 py-3 flex items-center gap-3 bg-background">
-                  <div className="flex-1 max-w-4xl mx-auto flex items-center gap-3">
-                    <Textarea
-                      ref={imagineTextareaRef}
-                      value={imaginePrompt}
-                      onChange={e => setImaginePrompt(e.target.value)}
-                      onKeyDown={handleImagineKeyDown}
-                      placeholder="Describe what you want to imagine…"
-                      className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[18px] sm:text-[20px] leading-relaxed !p-0 !min-h-0 !rounded-none overflow-y-auto"
-                      style={{ height: '40px', maxHeight: '120px', overflowY: 'auto', scrollbarWidth: 'none' }}
-                    />
-                    <Button
-                      onClick={handleImagineGenerate}
-                      disabled={!imaginePrompt.trim() || imagineIsGenerating}
-                      className="w-9 h-9 rounded-full flex items-center justify-center disabled:opacity-30 transition-all flex-shrink-0 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100"
-                      style={{ border: "none" }}
-                    >
-                      {imagineIsGenerating
-                        ? <RefreshCw size={15} className="text-white dark:text-black animate-spin" />
-                        : <ArrowUp size={15} className="text-white dark:text-black" />}
-                    </Button>
+                {/* Main body — photo grid + right panel */}
+                <div className="flex-1 flex overflow-hidden">
+                  {/* Photo grid — fills all available space */}
+                  <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-0.5">
+                      {IMAGINE_PROMPTS.map((ref) => (
+                        <button
+                          key={ref.label}
+                          onClick={() => setInputValue(ref.prompt)}
+                          className="relative group aspect-[4/3] overflow-hidden"
+                        >
+                          <img
+                            src={ref.img}
+                            alt={ref.label}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                          <span className="absolute bottom-2 left-2.5 text-white text-xs font-semibold leading-tight drop-shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {ref.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Right panel — slides in when messages exist */}
+                  {imagineMessages.length > 0 && (
+                    <div className="w-72 sm:w-80 flex-shrink-0 border-l border-border flex flex-col overflow-hidden bg-background">
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
+                        <span className="text-sm font-semibold text-foreground">Generations</span>
+                        <button
+                          onClick={() => setImagineMessages([])}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+                        {imagineMessages.map(msg => (
+                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.role === 'user' ? (
+                              <div className="bg-card rounded-3xl px-4 py-2.5 max-w-[90%] chat-bubble shadow-sm border border-border">
+                                <p className="text-foreground text-sm">{msg.content}</p>
+                              </div>
+                            ) : (
+                              <div className="w-full">
+                                {msg.isGenerating ? (
+                                  <div className="flex items-center gap-2 px-2 py-2">
+                                    {[0, 0.2, 0.4].map((d, i) => (
+                                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground"
+                                        style={{ animation: `pulse-dot 1.4s ease-in-out ${d}s infinite` }} />
+                                    ))}
+                                    <span className="text-xs text-muted-foreground italic">Generating…</span>
+                                  </div>
+                                ) : msg.imageUrl ? (
+                                  <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
+                                    <img src={msg.imageUrl} alt="Generated" className="w-full h-auto" />
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground px-1">{msg.content}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div ref={imagineMessagesEndRef} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -3341,7 +3343,7 @@ Let's start the self-listen session!`;
       )}
 
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || activeTab === 'imagine' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+      <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
@@ -3442,7 +3444,7 @@ Let's start the self-listen session!`;
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
+                placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
@@ -3516,7 +3518,7 @@ Let's start the self-listen session!`;
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
+                  placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
                   className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
