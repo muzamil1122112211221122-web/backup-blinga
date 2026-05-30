@@ -1451,21 +1451,25 @@ IMPORTANT RULES:
     const controller = new AbortController();
     abortControllerRef.current = controller;
     try {
-      // Optionally enrich with DuckDuckGo web search context
+      // Optionally enrich with DuckDuckGo web search context — fires concurrently, 2-second cap
       let enrichedContent = content;
       if (webSearchEnabled) {
         try {
-          const searchRes = await fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal });
-          if (searchRes.ok) {
-            const searchData = await searchRes.json();
+          const searchPromise = fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null);
+          const timeoutPromise = new Promise<null>(res => setTimeout(() => res(null), 2000));
+          const searchData = await Promise.race([searchPromise, timeoutPromise]);
+          if (searchData) {
             const snippets: string[] = [];
-            if (searchData.answer) snippets.push(`Answer: ${searchData.answer}`);
-            if (searchData.abstract) snippets.push(`Summary: ${searchData.abstract} (${searchData.abstractSource})`);
-            searchData.relatedTopics?.slice(0, 4).forEach((t: { text: string; url: string }) => {
+            if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
+            if (searchData.abstract) snippets.push(`Summary (${searchData.abstractSource}): ${searchData.abstract}`);
+            if (searchData.definition) snippets.push(`Definition (${searchData.definitionSource}): ${searchData.definition}`);
+            searchData.relatedTopics?.slice(0, 5).forEach((t: { text: string }) => {
               if (t.text) snippets.push(`• ${t.text}`);
             });
             if (snippets.length > 0) {
-              enrichedContent = `[Web search results for "${content}"]\n${snippets.join('\n')}\n\n[User question]: ${content}`;
+              enrichedContent = `[Web search for: "${content}"]\n${snippets.join('\n')}\n\n[Answer the user's question using the above web context where relevant]: ${content}`;
             }
           }
         } catch {
@@ -3024,10 +3028,10 @@ Let's start the self-listen session!`;
                   ))}
                 </div>
 
-                {/* Main body — photo grid + overlay panel */}
-                <div className="flex-1 overflow-hidden relative">
-                  {/* Photo grid — always fills full space */}
-                  <div className="absolute inset-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                {/* Main body — photo grid + side panel */}
+                <div className="flex-1 flex min-h-0 overflow-hidden">
+                  {/* Photo grid — flex-1 so it fills remaining space, scrolls independently */}
+                  <div className="flex-1 min-w-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-0.5">
                       {IMAGINE_PROMPTS.map((ref) => (
                         <button
@@ -3052,11 +3056,13 @@ Let's start the self-listen session!`;
                     </div>
                   </div>
 
-                  {/* Generations panel — slides in from right as overlay (no layout shift) */}
+                  {/* Generations panel — width transitions in/out, no layout jump */}
                   <div
-                    className="absolute inset-y-0 right-0 w-72 sm:w-80 border-l border-border flex flex-col bg-background/97 backdrop-blur-sm transition-transform duration-300 ease-out z-10"
-                    style={{ transform: imagineMessages.length > 0 ? 'translateX(0)' : 'translateX(100%)' }}
+                    className="flex-shrink-0 border-l border-border flex-col bg-background overflow-hidden transition-[width] duration-300 ease-out"
+                    style={{ width: imagineMessages.length > 0 ? '300px' : '0px', display: 'flex' }}
                   >
+                    {/* inner wrapper fixed at 300px so content never squishes during transition */}
+                    <div className="flex flex-col h-full" style={{ minWidth: '300px' }}>
                     <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
                       <span className="text-sm font-semibold text-foreground">Generations</span>
                       <button
@@ -3116,6 +3122,7 @@ Let's start the self-listen session!`;
                         </div>
                       ))}
                       <div ref={imagineMessagesEndRef} />
+                    </div>
                     </div>
                   </div>
                 </div>
