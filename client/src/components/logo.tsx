@@ -106,10 +106,11 @@ export function Logo({ className, size = "md" }: LogoProps) {
           />
         </path>
 
-        {/* ƒ — SVG text centering is exact; no glyph-metric surprises */}
+        {/* ƒ — optical nudge: glyph visual centre sits left-of and above
+            the SVG advance-width centre, so shift right and up to compensate */}
         <text
-          x={cx}
-          y={cy + 1}
+          x={cx + Math.round(font * 0.12)}
+          y={cy - Math.round(font * 0.06)}
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={font}
