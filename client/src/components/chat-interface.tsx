@@ -1458,8 +1458,12 @@ IMPORTANT RULES:
       // Always enrich with DuckDuckGo web search context — fires concurrently, 3-second cap
       let enrichedContent = content;
       let webSources: Array<{ title: string; url: string; snippet: string }> = [];
+      // Skip web search for simple greetings and very short conversational messages
+      const skipSearchPatterns = /^(hi|hello|hey|hiya|howdy|sup|yo|greetings|good morning|good afternoon|good evening|good night|how are you|how r u|how's it going|what's up|whats up|wassup|hows it|bye|goodbye|ok|okay|thanks|thank you|lol|lmao|haha|cool|nice|great|wow|awesome|sure|yes|no|nope|yep|yeah)[\s!?.]*$/i;
+      const isShortConversational = content.trim().split(/\s+/).length <= 3 && content.trim().length <= 20;
+      const shouldSkipSearch = skipSearchPatterns.test(content.trim()) || isShortConversational;
       try {
-        const searchPromise = fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
+        const searchPromise = shouldSkipSearch ? Promise.resolve(null) : fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
           .catch(() => null);
         const timeoutPromise = new Promise<null>(res => setTimeout(() => res(null), 3000));
