@@ -543,6 +543,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
   const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, isGenerating?: boolean}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
+  const imagineScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
 
@@ -1328,7 +1329,7 @@ IMPORTANT RULES:
         { id: aiMsgId, role: 'ai', content: '', imageUrl: pollinationsUrl, isGenerating: true },
       ]);
       setInputValue("");
-      setTimeout(() => imagineMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+      setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
       return;
     }
 
@@ -2410,7 +2411,7 @@ Let's start the self-listen session!`;
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        className={`flex-1 min-h-0 ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
+        className={`flex-1 min-h-0 flex flex-col ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'items-center justify-center' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -3012,7 +3013,7 @@ Let's start the self-listen session!`;
             ];
 
             return (
-              <div className="h-full flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {/* Style pills — fixed at top */}
                 <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
@@ -3072,7 +3073,7 @@ Let's start the self-listen session!`;
                         Clear
                       </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+                    <div ref={imagineScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
                       {imagineMessages.map(msg => (
                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           {msg.role === 'user' ? (
