@@ -84,7 +84,7 @@ const NOTIFICATION_VARIANTS = [
   {
     id: "fius-games",
     image: "/fius-games-avatar.png",
-    title: "Meet Fius Games",
+    title: "Meet Game Zone",
     description: "Challenge yourself and play with AI companions",
     dotColor: "bg-blue-400",
   },
