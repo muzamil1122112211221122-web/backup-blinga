@@ -2389,14 +2389,14 @@ Let's start the self-listen session!`;
         </div>
       )}
       {/* Gradient fade at bottom so messages dissolve smoothly into the bar area */}
-      {activeTab !== 'fius-games' && (
+      {activeTab !== 'fius-games' && activeTab !== 'imagine' && (
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       {activeTab === 'nomad' && settingsToggles.nomadGrid && (
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        className={`h-full ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
+        className={`flex-1 min-h-0 ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -2975,26 +2975,26 @@ Let's start the self-listen session!`;
           (() => {
             const IMAGINE_STYLE_TAGS = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Sketch", "Cinematic"];
             const IMAGINE_PROMPTS = [
-              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",       img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80" },
-              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",              img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&q=80" },
-              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",            img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=600&q=80" },
-              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",              img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=600&q=80" },
-              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",           img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=600&q=80" },
-              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" },
-              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",               img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=600&q=80" },
-              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",               img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&q=80" },
-              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                   img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&q=80" },
-              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",   img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&q=80" },
-              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",           img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80" },
-              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",   img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=600&q=80" },
-              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",  img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=600&q=80" },
-              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",    img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=600&q=80" },
-              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",          img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=600&q=80" },
-              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",   img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=600&q=80" },
-              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night", img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=600&q=80" },
-              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",  img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&q=80" },
-              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                    img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80" },
-              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=600&q=80" },
+              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",       img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop&q=85" },
+              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",              img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&auto=format&fit=crop&q=85" },
+              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",            img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&auto=format&fit=crop&q=85" },
+              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",              img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=800&auto=format&fit=crop&q=85" },
+              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",           img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=800&auto=format&fit=crop&q=85" },
+              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=85" },
+              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",               img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&auto=format&fit=crop&q=85" },
+              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",               img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&auto=format&fit=crop&q=85" },
+              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                   img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&auto=format&fit=crop&q=85" },
+              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",   img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=85" },
+              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",           img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=85" },
+              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",   img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=800&auto=format&fit=crop&q=85" },
+              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",  img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=800&auto=format&fit=crop&q=85" },
+              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",    img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=800&auto=format&fit=crop&q=85" },
+              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",          img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=800&auto=format&fit=crop&q=85" },
+              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",   img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&auto=format&fit=crop&q=85" },
+              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night", img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=800&auto=format&fit=crop&q=85" },
+              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",  img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=800&auto=format&fit=crop&q=85" },
+              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                    img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop&q=85" },
+              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=800&auto=format&fit=crop&q=85" },
             ];
 
             return (
@@ -3028,6 +3028,8 @@ Let's start the self-listen session!`;
                           <img
                             src={ref.img}
                             alt={ref.label}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -3339,6 +3341,10 @@ Let's start the self-listen session!`;
         </div>
       )}
 
+      {/* Separator line above message bar — shown for imagine tab */}
+      {activeTab === 'imagine' && !isVoiceModeModalOpen && !isVoiceModeOpen && (
+        <div className="border-t border-border mx-0" />
+      )}
       {/* New Unified Message Bar */}
       <div data-message-bar className={`max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
