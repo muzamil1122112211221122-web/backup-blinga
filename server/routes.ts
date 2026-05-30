@@ -685,6 +685,83 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     }
   });
 
+  // ── Admin: Gemini key management ──────────────────────────────────────────
+  const KEYS_FILE = path.join(process.cwd(), 'data', 'api-keys.json');
+
+  function loadPersistedKeys() {
+    try {
+      if (fs.existsSync(KEYS_FILE)) {
+        const data = JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8'));
+        if (Array.isArray(data.geminiKeys)) {
+          apiManager.setGeminiKeys(data.geminiKeys);
+          console.log(`Loaded ${data.geminiKeys.filter(Boolean).length} persisted Gemini keys`);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  loadPersistedKeys();
+
+  // GET /api/admin/api-status — returns configured key summary (no raw keys)
+  app.get('/api/admin/api-status', requireAuth, (req, res) => {
+    const geminiKeys = apiManager.getGeminiKeys();
+    res.json({
+      gemini: geminiKeys.map((k, i) => ({
+        slot: i + 1,
+        masked: k ? k.slice(0, 8) + '...' + k.slice(-4) : '',
+        configured: !!k,
+        isWorking: apiManager.getAvailableCount('gemini') > 0,
+      })),
+      groq: {
+        key1: !!process.env.GROQ_API_KEY,
+        key2: !!process.env.GROQ_API_KEY_2,
+        available: apiManager.getAvailableCount('groq'),
+      },
+    });
+  });
+
+  // POST /api/admin/gemini-keys — save 1-3 Gemini keys
+  app.post('/api/admin/gemini-keys', requireAuth, (req, res) => {
+    const { keys } = req.body as { keys: string[] };
+    if (!Array.isArray(keys)) return res.status(400).json({ error: 'keys must be an array' });
+    const cleaned = keys.map(k => (typeof k === 'string' ? k.trim() : '')).slice(0, 3);
+    apiManager.setGeminiKeys(cleaned.filter(Boolean));
+    try {
+      if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
+        fs.mkdirSync(path.join(process.cwd(), 'data'), { recursive: true });
+      }
+      fs.writeFileSync(KEYS_FILE, JSON.stringify({ geminiKeys: cleaned }, null, 2));
+    } catch (e) { console.error('Failed to persist keys:', e); }
+    const active = apiManager.getAvailableCount('gemini');
+    console.log(`Gemini keys updated. Active: ${active}`);
+    res.json({ success: true, active });
+  });
+
+  // POST /api/admin/test-gemini-key — test a single key
+  app.post('/api/admin/test-gemini-key', requireAuth, async (req, res) => {
+    const { key } = req.body as { key: string };
+    if (!key?.trim()) return res.status(400).json({ error: 'key required' });
+    try {
+      const testRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key.trim()}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Say hi in 3 words.' }] }] }),
+        }
+      );
+      if (testRes.ok) {
+        const data = await testRes.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'ok';
+        return res.json({ success: true, reply });
+      }
+      const err = await testRes.json().catch(() => ({}));
+      res.json({ success: false, error: err?.error?.message || `HTTP ${testRes.status}` });
+    } catch (e: any) {
+      res.json({ success: false, error: e.message });
+    }
+  });
+  // ── End admin ──────────────────────────────────────────────────────────────
+
   // DuckDuckGo web search endpoint — instant answers + real HTML scrape
   app.get('/api/search', requireAuth, async (req, res) => {
     try {
@@ -1818,6 +1895,52 @@ Let me provide you with a detailed description instead, or you can try asking ag
       // Keep consistent high token limit for complete responses - don't truncate content
       const maxTokens = 1500; // Fixed high limit to prevent response truncation
       
+      // Gemini uses a different API format — handle separately and return directly
+      if (provider === 'gemini') {
+        try {
+          const systemMsg = messages.find((m: any) => m.role === 'system');
+          const chatMsgs = messages.filter((m: any) => m.role !== 'system');
+          const geminiContents = chatMsgs.map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          }));
+          const geminiBody: any = {
+            contents: geminiContents,
+            generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 }
+          };
+          if (systemMsg) {
+            geminiBody.systemInstruction = { parts: [{ text: systemMsg.content }] };
+          }
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) }
+          );
+          if (!geminiRes.ok) {
+            const errData = await geminiRes.json().catch(() => ({}));
+            const reason = geminiRes.status === 429 ? 'Rate limited' : geminiRes.status === 401 ? 'Unauthorized' : 'API error';
+            apiManager.markAPIFailed(api, reason);
+            console.log(`Gemini key failed with ${reason}, trying next...`);
+            lastError = new Error(`Gemini error ${geminiRes.status}: ${errData?.error?.message || reason}`);
+            continue;
+          }
+          const geminiData = await geminiRes.json();
+          const geminiContent = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (geminiContent) {
+            console.log(`Successful response from gemini key: ${apiKey.substring(0, 10)}... (${geminiContent.length} chars)`);
+            return {
+              content: geminiContent,
+              metadata: { model: 'gemini-2.0-flash', provider: 'Gemini', attempt }
+            };
+          }
+          throw new Error('No content in Gemini response');
+        } catch (geminiErr: any) {
+          console.log(`Gemini attempt ${attempt} failed:`, geminiErr.message);
+          lastError = geminiErr;
+          if (attempt < maxRetries) await new Promise(r => setTimeout(r, Math.min(500 * attempt, 2000)));
+          continue;
+        }
+      }
+
       let response: Response;
       
       if (provider === 'groq') {
