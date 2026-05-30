@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <script>document.documentElement.classList.add('preload');</script>
-    <style>.preload *,.preload *::before,.preload *::after{transition-duration:0s!important;animation-duration:0s!important;}</style>
+    <style>
+      html,body{background:#0a0a0a;margin:0;padding:0;}
+      .preload *,.preload *::before,.preload *::after{transition-duration:0s!important;animation-duration:0s!important;}
+      #root:empty::before{
+        content:'';display:block;position:fixed;inset:0;background:#0a0a0a;z-index:9999;
+      }
+    </style>
     <title>Fius - AI Chat Platform</title>
     <meta name="description" content="Fius - Advanced AI chat platform with multiple model support. Fius from Plant M." />
     <!-- Preload all static icons and avatars so they are ready instantly -->
@@ -28,7 +34,13 @@
     <link rel="preload" as="image" href="/settings-icon.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-splash" style="position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+        <img src="/fius-logo.png" alt="Fius" style="width:56px;height:56px;object-fit:contain;animation:pulse 1.4s ease-in-out infinite;" />
+        <p style="color:white;font-size:18px;font-weight:700;letter-spacing:0.2em;margin-top:14px;animation:pulse 1.4s ease-in-out infinite;">FIUS</p>
+      </div>
+      <style>@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}</style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
