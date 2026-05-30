@@ -685,27 +685,60 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     }
   });
 
-  // DuckDuckGo web search endpoint
+  // DuckDuckGo web search endpoint — instant answers + real HTML scrape
   app.get('/api/search', requireAuth, async (req, res) => {
     try {
       const q = (req.query.q as string || '').trim();
       if (!q) return res.status(400).json({ error: 'Query required' });
-      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`;
-      const r = await fetch(url, { headers: { 'User-Agent': 'Fius-AI/1.0' } });
-      if (!r.ok) return res.status(502).json({ error: 'DDG API error' });
-      const data: any = await r.json();
-      const relatedTopics = (data.RelatedTopics || [])
-        .filter((t: any) => t.Text)
-        .map((t: any) => ({ text: t.Text, url: t.FirstURL }))
-        .slice(0, 6);
+
+      const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+      // Fire instant-answer API and HTML scrape concurrently
+      const [instantResult, htmlResult] = await Promise.allSettled([
+        fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_html=1&skip_disambig=1`, {
+          headers: { 'User-Agent': UA },
+        }).then(r => r.json() as Promise<any>),
+        fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`, {
+          headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'en-US,en;q=0.9' },
+        }).then(r => r.text()),
+      ]);
+
+      const instant: any = instantResult.status === 'fulfilled' ? instantResult.value : {};
+      const html: string   = htmlResult.status  === 'fulfilled' ? htmlResult.value  : '';
+
+      // Parse real web results from DDG HTML
+      const webResults: Array<{ title: string; url: string; snippet: string }> = [];
+      if (html) {
+        // Extract encoded destination URLs (uddg param)
+        const urlMatches   = [...html.matchAll(/uddg=([^&"\\]+)/g)];
+        // Extract link text (titles)
+        const titleMatches = [...html.matchAll(/class="result__a"[^>]*>([\s\S]*?)<\/a>/g)];
+        // Extract snippets
+        const snipMatches  = [...html.matchAll(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g)];
+
+        const decode = (s: string) =>
+          s.replace(/<[^>]+>/g, '')
+           .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+           .replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+
+        for (let i = 0; i < Math.min(5, urlMatches.length, titleMatches.length); i++) {
+          const rawUrl = decodeURIComponent(urlMatches[i][1]);
+          const title  = decode(titleMatches[i][1]);
+          const snippet = snipMatches[i] ? decode(snipMatches[i][1]) : '';
+          if (title && rawUrl.startsWith('http')) {
+            webResults.push({ title, url: rawUrl, snippet });
+          }
+        }
+      }
+
       res.json({
-        answer: data.Answer || '',
-        abstract: data.AbstractText || '',
-        abstractSource: data.AbstractSource || '',
-        abstractUrl: data.AbstractURL || '',
-        relatedTopics,
-        definition: data.Definition || '',
-        definitionSource: data.DefinitionSource || '',
+        answer:          instant.Answer        || '',
+        abstract:        instant.AbstractText  || '',
+        abstractSource:  instant.AbstractSource || '',
+        abstractUrl:     instant.AbstractURL   || '',
+        definition:      instant.Definition    || '',
+        definitionSource:instant.DefinitionSource || '',
+        webResults,
       });
     } catch (err) {
       console.error('Search error:', err);

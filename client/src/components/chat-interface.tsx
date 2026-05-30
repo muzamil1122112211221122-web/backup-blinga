@@ -545,7 +545,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const imagineScrollRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [webSearchEnabled] = useState(true);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
 
   // Settings state
@@ -1455,30 +1455,37 @@ IMPORTANT RULES:
     const controller = new AbortController();
     abortControllerRef.current = controller;
     try {
-      // Optionally enrich with DuckDuckGo web search context — fires concurrently, 2-second cap
+      // Always enrich with DuckDuckGo web search context — fires concurrently, 3-second cap
       let enrichedContent = content;
-      if (webSearchEnabled) {
-        try {
-          const searchPromise = fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
-            .then(r => r.ok ? r.json() : null)
-            .catch(() => null);
-          const timeoutPromise = new Promise<null>(res => setTimeout(() => res(null), 2000));
-          const searchData = await Promise.race([searchPromise, timeoutPromise]);
-          if (searchData) {
-            const snippets: string[] = [];
-            if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
-            if (searchData.abstract) snippets.push(`Summary (${searchData.abstractSource}): ${searchData.abstract}`);
-            if (searchData.definition) snippets.push(`Definition (${searchData.definitionSource}): ${searchData.definition}`);
-            searchData.relatedTopics?.slice(0, 5).forEach((t: { text: string }) => {
-              if (t.text) snippets.push(`• ${t.text}`);
-            });
-            if (snippets.length > 0) {
-              enrichedContent = `[Web search for: "${content}"]\n${snippets.join('\n')}\n\n[Answer the user's question using the above web context where relevant]: ${content}`;
-            }
+      let webSources: Array<{ title: string; url: string; snippet: string }> = [];
+      try {
+        const searchPromise = fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null);
+        const timeoutPromise = new Promise<null>(res => setTimeout(() => res(null), 3000));
+        const searchData = await Promise.race([searchPromise, timeoutPromise]);
+        if (searchData) {
+          const snippets: string[] = [];
+          if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
+          if (searchData.abstract && searchData.abstractSource) {
+            snippets.push(`${searchData.abstractSource}: ${searchData.abstract}`);
+            if (searchData.abstractUrl) webSources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
           }
-        } catch {
-          // proceed without search if it fails
+          if (searchData.definition && searchData.definitionSource) {
+            snippets.push(`Definition (${searchData.definitionSource}): ${searchData.definition}`);
+          }
+          if (searchData.webResults?.length > 0) {
+            searchData.webResults.slice(0, 4).forEach((r: { title: string; url: string; snippet: string }) => {
+              if (r.snippet) snippets.push(`${r.title}: ${r.snippet}`);
+              if (r.url && r.title) webSources.push(r);
+            });
+          }
+          if (snippets.length > 0) {
+            enrichedContent = `[Web search results for: "${content}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically as credits below your response.]\nUser: ${content}`;
+          }
         }
+      } catch {
+        // proceed without search if it fails
       }
       console.log('Making direct API call...');
       const response = await fetch('/api/test-ai', {
@@ -1505,7 +1512,7 @@ IMPORTANT RULES:
           role: 'assistant',
           content: result.response,
           createdAt: new Date(),
-          metadata: result.metadata,
+          metadata: { ...result.metadata, webSources: webSources.length > 0 ? webSources : undefined },
         };
 
         setMessages(prev => [...prev, aiMessage]);
@@ -2591,6 +2598,24 @@ Let's start the self-listen session!`;
                         : ''
                     }`}>
                       <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
+                      {/* Source credits for web-searched responses */}
+                      {message.metadata?.webSources && message.metadata.webSources.length > 0 && (
+                        <div className="mt-3 pt-2 border-t border-border/40">
+                          <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Sources
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {message.metadata.webSources.map((src: { title: string; url: string }, i: number) => (
+                              <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors max-w-[220px] truncate">
+                                <svg className="w-2.5 h-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                {src.title}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex space-x-2">
                           <Tooltip>
@@ -3461,24 +3486,6 @@ Let's start the self-listen session!`;
                 </DropdownMenu>
                 <TooltipContent>Add Attachment</TooltipContent>
               </Tooltip>
-              {/* Web search toggle — visible in ask/nomad tabs only */}
-              {activeTab !== 'philosopher' && activeTab !== 'fius-games' && activeTab !== 'imagine' && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${webSearchEnabled ? 'text-blue-500 bg-blue-500/15' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
-                      onClick={() => setWebSearchEnabled(v => !v)}
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                      </svg>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{webSearchEnabled ? 'Web search ON — click to disable' : 'Enable web search'}</TooltipContent>
-                </Tooltip>
-              )}
               {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
                 <>
                   <Tooltip>
