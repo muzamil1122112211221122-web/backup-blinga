@@ -46,17 +46,6 @@ function Router() {
     }
   }, [user, isLoading, location, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <img src="/fius-logo.png" alt="Fius" className="w-16 h-16 object-contain animate-pulse" />
-          <p className="text-white text-xl font-bold tracking-widest animate-pulse">FIUS</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <Switch>
       <Route path="/" component={Landing} />
