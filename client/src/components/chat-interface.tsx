@@ -3236,6 +3236,25 @@ Let's start the self-listen session!`;
                 </TooltipTrigger>
                 <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
               </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                    onClick={handleEnhancePrompt}
+                    disabled={!inputValue.trim() || isEnhancing}
+                    data-testid="button-enhance"
+                  >
+                    {isEnhancing ? (
+                      <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
+                    ) : (
+                      <img src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-200 contrast-150" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Enhance prompt</TooltipContent>
+              </Tooltip>
               {(isTyping || isAnimatingResponse) ? (
                 <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0" data-testid="button-stop-response">
                   <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
