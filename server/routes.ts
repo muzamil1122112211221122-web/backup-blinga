@@ -592,6 +592,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 apiManager.markAPIFailed(api, reason);
                 console.log(`Groq failed (${reason}), trying next...`);
               }
+            } else if (provider === 'openrouter') {
+              const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                  'HTTP-Referer': 'https://fius.app',
+                  'X-Title': 'Fius AI',
+                },
+                body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct', messages: allMessages, temperature: 0.7, max_tokens: 2000 }),
+              });
+              if (orRes.ok) {
+                const data = await orRes.json();
+                const text = data.choices?.[0]?.message?.content;
+                if (text) {
+                  aiResponse = { content: text, metadata: { model: 'llama-3.3-70b-instruct', provider: 'OpenRouter', usage: data.usage, attempt } };
+                  console.log(`OpenRouter key successful for ${model} (${text.length} chars)`);
+                }
+              } else {
+                const reason = orRes.status === 429 ? 'Rate limited' : orRes.status === 401 ? 'Unauthorized' : 'API error';
+                apiManager.markAPIFailed(api, reason);
+                console.log(`OpenRouter failed (${reason}), trying next...`);
+              }
             }
           } catch (err: any) {
             apiManager.markAPIFailed(api, err.message);

@@ -47,7 +47,15 @@ class APIManager {
       }
     }
 
-    // OpenRouter keys (legacy fallback)
+    // OpenRouter keys (3rd tier fallback) — new naming: OPENROUTER_KEY_1..6
+    for (let i = 1; i <= 6; i++) {
+      const key = process.env[`OPENROUTER_KEY_${i}`];
+      if (key) {
+        this.apis.push({ key, provider: 'openrouter', isWorking: true, failureCount: 0, requestCount: 0 });
+        console.log(`Debug: Added OpenRouter key (OPENROUTER_KEY_${i})`);
+      }
+    }
+    // Legacy OpenRouter key names
     for (let i = 1; i <= 10; i++) {
       const key = process.env[`OPENROUTER_API_KEY_${i}`];
       if (key) {
