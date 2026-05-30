@@ -47,16 +47,16 @@ export function Logo({ className, size = "md" }: LogoProps) {
   const circlePath = useMemo(() => makeWavyPath(cx, cy, R, waves, 0),   [cx, cy, R, waves]);
 
   /**
-   * 6-second cycle (quicker), circle-first order:
-   *   0%  → 50% : perfect circle  (stays longer; rotation invisible here)
-   *   50% → 60% : smooth morph circle → wavy
-   *   60% → 78% : wavy  (rotation creates traveling-wave illusion)
-   *   78% → 88% : smooth morph wavy → circle
-   *   88% → 100%: circle again
+   * 8-second cycle, circle-first, slower morphs for silky feel:
+   *   0%  → 44% : perfect circle  (stays longer; rotation invisible here)
+   *   44% → 62% : slow smooth morph circle → wavy
+   *   62% → 76% : wavy  (rotation creates traveling-wave illusion)
+   *   76% → 94% : slow smooth morph wavy → circle
+   *   94% → 100%: circle again
    */
   const morphValues     = [circlePath, circlePath, wavyPath, wavyPath, circlePath, circlePath].join(";");
-  const morphKeyTimes   = "0; 0.50; 0.60; 0.78; 0.88; 1";
-  const morphKeySplines = "0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1";
+  const morphKeyTimes   = "0; 0.44; 0.62; 0.76; 0.94; 1";
+  const morphKeySplines = "0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1";
 
   return (
     <div
@@ -87,7 +87,7 @@ export function Logo({ className, size = "md" }: LogoProps) {
             values={morphValues}
             keyTimes={morphKeyTimes}
             keySplines={morphKeySplines}
-            dur="6s"
+            dur="8s"
             repeatCount="indefinite"
             calcMode="spline"
           />
@@ -104,13 +104,20 @@ export function Logo({ className, size = "md" }: LogoProps) {
           />
         </path>
       </svg>
+      {/* Absolute centering overrides glyph-metric quirks of ƒ */}
       <span
-        className="text-foreground leading-none relative z-10"
+        className="text-foreground"
         style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -52%)",
           fontSize: font,
           fontWeight: 400,
           fontFamily: "Georgia, 'Times New Roman', serif",
-          marginTop: 1,
+          lineHeight: 1,
+          zIndex: 1,
+          userSelect: "none",
         }}
       >
         ƒ
