@@ -2411,7 +2411,7 @@ Let's start the self-listen session!`;
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
-        className={`flex-1 min-h-0 relative ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''}`}
+        className={`flex-1 min-h-0 ${activeTab === 'nomad' || activeTab === 'imagine' ? 'overflow-hidden' : 'overflow-y-auto'} ${activeTab === 'nomad' || activeTab === 'imagine' ? 'p-0' : 'p-4'} ${activeTab === 'fius-games' ? 'flex items-center justify-center' : ''} ${activeTab === 'imagine' ? 'flex flex-col' : ''}`}
         data-testid="chat-messages"
         style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
@@ -3013,7 +3013,7 @@ Let's start the self-listen session!`;
             ];
 
             return (
-              <div className="absolute inset-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {/* Style pills — fixed at top */}
                 <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
