@@ -2617,40 +2617,19 @@ Let's start the self-listen session!`;
               </div>
             ))}
             
-            {/* Thinking Indicator — redesigned */}
+            {/* Thinking Indicator */}
             {isTyping && (
               <div className="flex justify-start mb-2" data-testid="typing-indicator">
                 <div className="flex items-center gap-2">
                   {(settingsToggles.showFiusLogo ?? true) && (
-                    <div className="thinking-logo-wrap flex-shrink-0">
+                    <div className="thinking-logo-wrap">
                       <Logo size="sm" />
                     </div>
                   )}
                   <div className="thinking-cloud">
-                    <div
-                      className="flex items-center gap-2 px-3.5 py-2 rounded-2xl"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        backdropFilter: 'blur(8px)',
-                      }}
-                    >
-                      <div className="flex gap-1 items-center">
-                        {[0, 0.18, 0.36].map((delay, i) => (
-                          <div
-                            key={i}
-                            className="rounded-full bg-zinc-400 dark:bg-zinc-500"
-                            style={{
-                              width: 5, height: 5,
-                              animation: `thinking-dots 1.4s ease-in-out ${delay}s infinite`,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <span className="thinking-label text-zinc-400 dark:text-zinc-400 text-sm font-medium capitalize">
-                        {thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking'}
-                      </span>
-                    </div>
+                    <span className="thinking-label">
+                      {thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking'}
+                    </span>
                   </div>
                 </div>
               </div>
