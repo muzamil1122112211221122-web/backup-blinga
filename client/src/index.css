@@ -940,18 +940,19 @@ body.voice-mode-active [data-message-bar] {
   50%      { transform: scale(1.05); }
 }
 
-/* 3. Each letter slides in from the left and brightens to white */
-@keyframes letter-flow {
-  from { opacity: 0; transform: translateX(-5px); }
-  to   { opacity: 1; transform: translateX(0);    }
-}
-
 .thinking-cloud-wrapper {
   /* chain: reveal first (center-out), then breathe */
   animation:
     cloud-reveal  0.65s cubic-bezier(0.23,1,0.32,1) forwards,
     cloud-breathe 2.6s  ease-in-out 0.65s infinite;
   transform-origin: center center;
+}
+
+/* Shimmer sweep: a narrow white highlight travels left → right through the text.
+   Each "letter" lights up white as the beam passes, then reverts to the base dim color. */
+@keyframes text-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200%  center; }
 }
 
 .thinking-label {
@@ -961,13 +962,21 @@ body.voice-mode-active [data-message-bar] {
   font-style: italic;
   letter-spacing: 0.02em;
   white-space: nowrap;
-}
 
-/* Individual characters — reveal left-to-right, settle at bright white */
-.thinking-char {
-  display: inline-block;
-  opacity: 0;
-  color: rgba(238, 238, 248, 0.96);
-  animation: letter-flow 0.28s cubic-bezier(0.23,1,0.32,1) forwards;
+  /* Narrow white beam sweeping through a dim-gray base */
+  background: linear-gradient(
+    90deg,
+    rgba(168,168,182,0.88) 0%,
+    rgba(168,168,182,0.88) 38%,
+    rgba(255,255,255,1)    50%,
+    rgba(168,168,182,0.88) 62%,
+    rgba(168,168,182,0.88) 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-shimmer 1.8s linear infinite;
+  animation-delay: 0.7s; /* wait for cloud to open first */
 }
 
