@@ -54,6 +54,8 @@ interface SidebarProps {
   onUpdateAiRole?: (id: string, newAiRole: string) => void;
   onSearchOpen?: () => void;
   onOpenSettings?: () => void;
+  onVoiceClick?: () => void;
+  onImagineClick?: () => void;
   user?: {
     email: string;
     username: string;
@@ -75,6 +77,8 @@ export function Sidebar({
   onDeleteProject,
   onEditProject,
   onOpenSettings,
+  onVoiceClick,
+  onImagineClick,
   user,
   onUserRename,
   profilePicture,
@@ -234,12 +238,16 @@ export function Sidebar({
             </Tooltip>
           </div>
 
-          <button className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
+          <button
+            onClick={() => { onVoiceClick?.(); }}
+            className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <img src={voiceIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
-          <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
+          <button
+            onClick={() => { onImagineClick?.(); }}
+            className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
               <img src={imagineIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
               <span className="text-[15px] font-medium">Imagine</span>

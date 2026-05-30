@@ -159,65 +159,33 @@ export default function Landing() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="border-white/20 bg-gradient-to-br from-gray-800/60 to-gray-600/40 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Claude Sonnet 4</h4>
-              <p className="text-gray-200">Anthropic's most advanced model</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">Superior reasoning, coding, and creative writing capabilities</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-white/20 bg-gradient-to-br from-gray-700/50 to-gray-800/60 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">ChatGPT 5</h4>
-              <p className="text-gray-200">OpenAI's flagship model</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">Multimodal AI with vision, reasoning, and code generation</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-white/20 bg-gradient-to-br from-gray-800/50 to-gray-700/60 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Gemini 2.5 Pro</h4>
-              <p className="text-gray-200">Google's most capable AI</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">Advanced reasoning and multimodal understanding</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-white/20 bg-gradient-to-br from-gray-600/40 to-gray-800/50 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Llama 3.3 70B</h4>
-              <p className="text-gray-200">Meta's open-source powerhouse</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">High-performance open-source model for all tasks</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-white/20 bg-gradient-to-br from-gray-800/40 to-gray-600/50 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Fius Pro</h4>
-              <p className="text-gray-200">Our exclusive AI model</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">Custom-trained for optimal performance and specialized tasks</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-white/20 bg-gradient-to-br from-gray-700/60 to-gray-800/40 backdrop-blur-sm">
-            <CardHeader>
-              <h4 className="text-xl font-semibold text-white">Fius Education</h4>
-              <p className="text-gray-200">Fast & efficient AI</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300">Optimized for quick responses and everyday conversations</p>
-            </CardContent>
-          </Card>
+          {[
+            { name: "Claude Sonnet 4", sub: "Anthropic", desc: "Superior reasoning, coding, and creative writing capabilities", gradient: "from-orange-900/40 to-gray-800/60", accent: "#f97316" },
+            { name: "ChatGPT 5", sub: "OpenAI", desc: "Multimodal AI with vision, reasoning, and code generation", gradient: "from-emerald-900/30 to-gray-800/60", accent: "#10a37f" },
+            { name: "Gemini 2.5 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
+            { name: "Grok 4", sub: "xAI", desc: "Witty, curious, and unfiltered reasoning with real-time data", gradient: "from-gray-700/50 to-gray-800/60", accent: "#9ca3af" },
+            { name: "DeepSeek v3", sub: "DeepSeek", desc: "Open-source reasoning powerhouse for coding and logic", gradient: "from-blue-900/40 to-gray-800/50", accent: "#3b82f6" },
+            { name: "Llama 4", sub: "Meta", desc: "Meta's open-source frontier AI for any task", gradient: "from-indigo-900/30 to-gray-800/50", accent: "#6366f1" },
+            { name: "Perplexity Sonar Pro", sub: "Perplexity", desc: "Real-time web search with cited and accurate answers", gradient: "from-sky-900/30 to-gray-800/50", accent: "#38bdf8" },
+            { name: "Kimi K2.5", sub: "Moonshot", desc: "Ultra-long-context language model for deep analysis", gradient: "from-cyan-900/30 to-gray-800/50", accent: "#06b6d4" },
+            { name: "Qwen3.6 Plus", sub: "Alibaba", desc: "Multilingual language expert for global conversations", gradient: "from-violet-900/30 to-gray-800/50", accent: "#8b5cf6" },
+            { name: "Mistral Small 4", sub: "Mistral AI", desc: "Fast, efficient, and powerful European open AI", gradient: "from-purple-900/30 to-gray-800/50", accent: "#a855f7" },
+            { name: "Fius Pro", sub: "Fius · Exclusive", desc: "Custom-optimized for productivity, coding, and specialized tasks", gradient: "from-fuchsia-900/40 to-gray-800/50", accent: "#e879f9" },
+            { name: "Fius Education", sub: "Fius · Exclusive", desc: "Designed for learning, examinations, and voice-based study", gradient: "from-rose-900/30 to-gray-800/50", accent: "#fb7185" },
+          ].map(({ name, sub, desc, gradient, accent }) => (
+            <Card key={name} className={`border-white/10 bg-gradient-to-br ${gradient} backdrop-blur-sm hover:border-white/20 transition-all duration-300 hover:scale-[1.02]`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}80` }} />
+                  <span className="text-xs text-gray-400 font-medium">{sub}</span>
+                </div>
+                <h4 className="text-lg font-semibold text-white">{name}</h4>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </section>
 

@@ -6,20 +6,50 @@ interface LogoProps {
 }
 
 export function Logo({ className, size = "md" }: LogoProps) {
-  const sizeClasses = {
-    sm: "text-lg w-8 h-8",
-    md: "text-2xl w-10 h-10", 
-    lg: "text-4xl w-16 h-16",
-    xl: "text-5xl w-20 h-20",
-  };
+  const px = { sm: 32, md: 40, lg: 64, xl: 80 }[size];
+  const fontSize = { sm: 14, md: 18, lg: 28, xl: 36 }[size];
+  const stroke = { sm: 2, md: 2.5, lg: 3, xl: 3.5 }[size];
+  const r = px / 2 - stroke - 1;
+  const circ = 2 * Math.PI * r;
 
   return (
-    <div 
-      className={cn("logo-container relative inline-flex items-center justify-center cursor-pointer transition-colors duration-200 border-2 border-zinc-200 dark:border-zinc-800 rounded-full aspect-square overflow-hidden flex-shrink-0", sizeClasses[size], className)}
-      style={{ borderRadius: '9999px' }}
+    <div
+      className={cn("relative inline-flex items-center justify-center flex-shrink-0 cursor-pointer", className)}
+      style={{ width: px, height: px }}
       data-testid="logo-fius"
     >
-      <span className="text-foreground font-normal select-none leading-none">ƒ</span>
+      <svg
+        width={px}
+        height={px}
+        viewBox={`0 0 ${px} ${px}`}
+        style={{ position: "absolute", inset: 0 }}
+        className="logo-ring-svg"
+      >
+        <circle
+          cx={px / 2}
+          cy={px / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          className="logo-ring-track"
+        />
+        <circle
+          cx={px / 2}
+          cy={px / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          className="logo-ring-arc"
+        />
+      </svg>
+      <span
+        className="text-foreground select-none leading-none relative z-10"
+        style={{ fontSize, fontWeight: 400, fontFamily: "Georgia, serif" }}
+      >
+        ℱ
+      </span>
     </div>
   );
 }

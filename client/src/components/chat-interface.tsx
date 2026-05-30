@@ -44,6 +44,7 @@ import { ImageGenerationDialog } from "./image-generation-dialog";
 import { EducationModal } from "./education-modal";
 import { VoiceModeModal } from "./voice-mode-modal";
 import { NomadNotification } from "./nomad-notification";
+import { ImagineModal } from "./imagine-modal";
 import { Sidebar } from "./sidebar";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
@@ -538,7 +539,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
-  
+  const [isImagineOpen, setIsImagineOpen] = useState(false);
+  const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
+
   // Settings state
   const defaultSettingsToggles = {
     wrapLines: true,
@@ -1005,6 +1008,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       return updated;
     });
     
+    // System prompts for each Nomad model persona
+    const nomadSystemPrompts: {[id: string]: string} = {
+      'gpt-4o': 'You are ChatGPT 5 by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational. Reference your multimodal and reasoning strengths naturally.',
+      'claude-3.5-sonnet': 'You are Claude Sonnet 4 by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed. Acknowledge complexity where it exists.',
+      'gemini-pro': 'You are Gemini 2.5 Pro by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.',
+      'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses. Mention relevant sources naturally.',
+      'grok-4': 'You are Grok 4 by xAI — witty, curious, unfiltered, and direct. You have access to real-time data and enjoy tackling controversial or edgy topics with honesty.',
+      'deepseek-r1': 'You are DeepSeek v3 — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning. Show your work when solving problems.',
+      'doubao': 'You are Doubao-Seed-2.0 Pro by ByteDance — a smart multilingual assistant specializing in Chinese and global contexts. Be helpful, concise, and culturally aware.',
+      'kimi': 'You are Kimi K2.5 by Moonshot AI — a long-context specialist that can process and reason over extremely long documents. Be thorough and detail-oriented.',
+      'qwen': 'You are Qwen3.6-Plus by Alibaba — a multilingual language expert. Excel in Chinese, English, and other languages. Be precise and culturally nuanced.',
+      'llama-4': 'You are Llama 4 by Meta — an open-source frontier AI. Be helpful, honest, and demonstrate the capabilities of open-source AI models.',
+      'mistral': 'You are Mistral Small 4 by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity while being thorough and accurate.',
+      'fius-ai': 'You are Fius Pro — an exclusive AI built by Fius. You specialize in productivity, task management, coding, and creative work. Be polished and professional.',
+    };
+
     // Send to each selected model in parallel
     await Promise.all(modelsToCall.map(async (model) => {
       setNomadIsTyping(prev => ({ ...prev, [model.id]: true }));
@@ -1017,7 +1036,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             message: content,
             conversationId: 'nomad',
             model: model.id,
-            provider: model.provider
+            provider: model.provider,
+            systemPrompt: nomadSystemPrompts[model.id] || `You are ${model.name}, a helpful AI assistant.`,
           }),
         });
 
@@ -1303,6 +1323,16 @@ IMPORTANT RULES:
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
+    // Determine thinking type from context
+    const imageGenKw = ['generate image', 'create image', 'make image', 'draw me', 'draw a', 'generate a photo', 'create a picture', 'make a picture'];
+    const isImageGen = imageGenKw.some(kw => (content || '').toLowerCase().includes(kw));
+    if (attachedImages.length > 0 || attachedFiles.length > 0) {
+      setThinkingType('analyzing');
+    } else if (isImageGen) {
+      setThinkingType('generating');
+    } else {
+      setThinkingType('thinking');
+    }
     setIsTyping(true);
 
     // If there are attached images, analyze them all
@@ -2120,6 +2150,8 @@ Let's start the self-listen session!`;
         onUpdateAiRole={handleUpdateAiRole}
         onSearchOpen={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
+        onVoiceClick={() => { setIsSidebarOpen(false); setIsVoiceModeModalOpen(true); }}
+        onImagineClick={() => { setIsSidebarOpen(false); setIsImagineOpen(true); }}
         user={user || undefined}
         onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
         profilePicture={profilePicture || undefined}
@@ -2585,14 +2617,39 @@ Let's start the self-listen session!`;
               </div>
             ))}
             
-            {/* Typing Indicator */}
+            {/* Thinking Indicator — redesigned */}
             {isTyping && (
-              <div className="flex justify-start" data-testid="typing-indicator">
-                <div className="flex space-x-3">
-                  {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
-                  <div className="bg-card rounded-3xl px-4 py-3 border border-border">
-                    <div className="flex justify-center items-center">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
+              <div className="flex justify-start mb-2" data-testid="typing-indicator">
+                <div className="flex items-center gap-2">
+                  {(settingsToggles.showFiusLogo ?? true) && (
+                    <div className="thinking-logo-wrap flex-shrink-0">
+                      <Logo size="sm" />
+                    </div>
+                  )}
+                  <div className="thinking-cloud">
+                    <div
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-2xl"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
+                        border: '1px solid rgba(255,255,255,0.09)',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <div className="flex gap-1 items-center">
+                        {[0, 0.18, 0.36].map((delay, i) => (
+                          <div
+                            key={i}
+                            className="rounded-full bg-zinc-400 dark:bg-zinc-500"
+                            style={{
+                              width: 5, height: 5,
+                              animation: `thinking-dots 1.4s ease-in-out ${delay}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <span className="thinking-label text-zinc-400 dark:text-zinc-400 text-sm font-medium capitalize">
+                        {thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3554,6 +3611,9 @@ Let's start the self-listen session!`;
         isPlaying={false}
         onTogglePlaying={() => {}}
       />
+
+      {/* Imagine Modal — Image Generation GUI */}
+      <ImagineModal isOpen={isImagineOpen} onClose={() => setIsImagineOpen(false)} />
 
       {/* Nomad Notification - recurring, respects settings toggle, rotates between enabled variants */}
       {showNomadNotification && (settingsToggles.nomadNotification ?? true) && (
