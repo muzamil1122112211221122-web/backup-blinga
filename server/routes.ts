@@ -593,45 +593,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`Groq failed (${reason}), trying next...`);
               }
             } else if (provider === 'openrouter') {
-              // Use free models to avoid credit costs — try in order of quality
+              // Use free models — no credits needed, just rate limits
               const FREE_MODELS = [
-                'meta-llama/llama-3.1-8b-instruct:free',
-                'mistralai/mistral-7b-instruct:free',
-                'google/gemma-2-9b-it:free',
+                'meta-llama/llama-3.3-70b-instruct:free',
+                'deepseek/deepseek-r1:free',
+                'google/gemini-2.0-flash-exp:free',
+                'qwen/qwen3-8b:free',
+                'deepseek/deepseek-chat-v3-0324:free',
               ];
               let orSuccess = false;
               for (const freeModel of FREE_MODELS) {
-                const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://fius.app',
-                    'X-Title': 'Fius AI',
-                  },
-                  body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: 1500 }),
-                });
-                if (orRes.ok) {
-                  const data = await orRes.json();
-                  const text = data.choices?.[0]?.message?.content;
-                  if (text) {
-                    aiResponse = { content: text, metadata: { model: freeModel, provider: 'OpenRouter', usage: data.usage, attempt } };
-                    console.log(`OpenRouter (${freeModel}) successful for ${model} (${text.length} chars)`);
-                    orSuccess = true;
+                try {
+                  const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                      'HTTP-Referer': 'https://fius.app',
+                      'X-Title': 'Fius AI',
+                    },
+                    body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: 1500 }),
+                  });
+                  if (orRes.ok) {
+                    const data = await orRes.json();
+                    const text = data.choices?.[0]?.message?.content;
+                    if (text) {
+                      aiResponse = { content: text, metadata: { model: freeModel, provider: 'OpenRouter', usage: data.usage, attempt } };
+                      console.log(`OpenRouter (${freeModel}) key ${apiKey.slice(0,8)} successful (${text.length} chars)`);
+                      orSuccess = true;
+                      break;
+                    }
+                  } else if (orRes.status === 401) {
+                    // Invalid key — mark failed and stop trying models on this key
+                    apiManager.markAPIFailed(api, 'Unauthorized');
+                    console.log(`OpenRouter key ${apiKey.slice(0,8)} unauthorized, trying next key...`);
                     break;
+                  } else {
+                    // 402, 429, 503, etc. — try next free model on same key
+                    const errData = await orRes.json().catch(() => ({}));
+                    console.log(`OpenRouter model ${freeModel} returned ${orRes.status}, trying next model...`);
+                    continue;
                   }
-                } else if (orRes.status === 402) {
-                  // Credits issue — try next free model
+                } catch (modelErr: any) {
+                  console.log(`OpenRouter model ${freeModel} error: ${modelErr.message}, trying next...`);
                   continue;
-                } else {
-                  const reason = orRes.status === 429 ? 'Rate limited' : orRes.status === 401 ? 'Unauthorized' : 'API error';
-                  apiManager.markAPIFailed(api, reason);
-                  console.log(`OpenRouter failed (${reason}), trying next key...`);
-                  break;
                 }
               }
               if (!orSuccess && !aiResponse) {
-                console.log(`OpenRouter key exhausted all free models, trying next key...`);
+                console.log(`OpenRouter key ${apiKey.slice(0,8)} exhausted all free models, trying next key...`);
               }
             }
           } catch (err: any) {
@@ -1996,45 +2005,53 @@ Let me provide you with a detailed description instead, or you can try asking ag
           }),
         });
       } else {
-        // OpenRouter API call
-        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-            'X-Title': 'Fius API',
-          },
-          body: JSON.stringify({
-            model: mappedModel,
-            messages: messages, // Use full conversation history
-            temperature: 0.7,
-            max_tokens: maxTokens,
-          }),
-        });
+        // OpenRouter API call — use free models (no credits needed)
+        const OR_FREE_MODELS = [
+          'meta-llama/llama-3.3-70b-instruct:free',
+          'deepseek/deepseek-r1:free',
+          'google/gemini-2.0-flash-exp:free',
+          'qwen/qwen3-8b:free',
+          'deepseek/deepseek-chat-v3-0324:free',
+        ];
+        let orResponse: Response | null = null;
+        for (const freeModel of OR_FREE_MODELS) {
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
+              'X-Title': 'Fius API',
+            },
+            body: JSON.stringify({ model: freeModel, messages, temperature: 0.7, max_tokens: maxTokens }),
+          });
+          if (res.ok) { orResponse = res; break; }
+          if (res.status === 401) { apiManager.markAPIFailed(api, 'Unauthorized'); break; }
+          // 402/429/5xx — try next free model
+          const ed = await res.json().catch(() => ({}));
+          console.log(`callAIService OpenRouter model ${freeModel} returned ${res.status}, trying next...`);
+        }
+        if (!orResponse) {
+          apiManager.markAPIFailed(api, 'All free models failed');
+          lastError = new Error('OpenRouter: all free models unavailable');
+          continue;
+        }
+        response = orResponse;
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = `${provider.toUpperCase()} API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
         
-        // Mark key as failed for credit/billing issues or rate limits
         if (response.status === 402 || response.status === 429 || response.status === 401) {
           const reason = response.status === 402 ? 'Insufficient credits' : 
                         response.status === 429 ? 'Rate limited' : 'Unauthorized';
           apiManager.markAPIFailed(api, reason);
           console.log(`${provider} key failed with ${reason}, trying next key...`);
-          
-          // If OpenRouter failed with credits and we haven't tried Groq yet, try it next
-          if (provider === 'openrouter' && !triedGroq && reason === 'Insufficient credits') {
-            console.log('OpenRouter credits exhausted, switching to Groq...');
-          }
-          
           lastError = new Error(errorMessage);
-          continue; // Try next key immediately
+          continue;
         }
         
-        // For other errors, don't retry
         throw new Error(errorMessage);
       }
 
