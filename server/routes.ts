@@ -540,8 +540,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { role: 'user', content: message },
         ];
 
-        // Try up to 6 times cycling through available APIs (Gemini first, then Groq)
-        for (let attempt = 1; attempt <= 6 && !aiResponse; attempt++) {
+        // Try up to 14 times cycling through all available APIs (Gemini → Groq → OpenRouter)
+        for (let attempt = 1; attempt <= 14 && !aiResponse; attempt++) {
           const api = apiManager.getBestChatAPI();
           if (!api) break;
 
@@ -593,27 +593,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`Groq failed (${reason}), trying next...`);
               }
             } else if (provider === 'openrouter') {
-              const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${apiKey}`,
-                  'Content-Type': 'application/json',
-                  'HTTP-Referer': 'https://fius.app',
-                  'X-Title': 'Fius AI',
-                },
-                body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct', messages: allMessages, temperature: 0.7, max_tokens: 2000 }),
-              });
-              if (orRes.ok) {
-                const data = await orRes.json();
-                const text = data.choices?.[0]?.message?.content;
-                if (text) {
-                  aiResponse = { content: text, metadata: { model: 'llama-3.3-70b-instruct', provider: 'OpenRouter', usage: data.usage, attempt } };
-                  console.log(`OpenRouter key successful for ${model} (${text.length} chars)`);
+              // Use free models to avoid credit costs — try in order of quality
+              const FREE_MODELS = [
+                'meta-llama/llama-3.1-8b-instruct:free',
+                'mistralai/mistral-7b-instruct:free',
+                'google/gemma-2-9b-it:free',
+              ];
+              let orSuccess = false;
+              for (const freeModel of FREE_MODELS) {
+                const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://fius.app',
+                    'X-Title': 'Fius AI',
+                  },
+                  body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: 1500 }),
+                });
+                if (orRes.ok) {
+                  const data = await orRes.json();
+                  const text = data.choices?.[0]?.message?.content;
+                  if (text) {
+                    aiResponse = { content: text, metadata: { model: freeModel, provider: 'OpenRouter', usage: data.usage, attempt } };
+                    console.log(`OpenRouter (${freeModel}) successful for ${model} (${text.length} chars)`);
+                    orSuccess = true;
+                    break;
+                  }
+                } else if (orRes.status === 402) {
+                  // Credits issue — try next free model
+                  continue;
+                } else {
+                  const reason = orRes.status === 429 ? 'Rate limited' : orRes.status === 401 ? 'Unauthorized' : 'API error';
+                  apiManager.markAPIFailed(api, reason);
+                  console.log(`OpenRouter failed (${reason}), trying next key...`);
+                  break;
                 }
-              } else {
-                const reason = orRes.status === 429 ? 'Rate limited' : orRes.status === 401 ? 'Unauthorized' : 'API error';
-                apiManager.markAPIFailed(api, reason);
-                console.log(`OpenRouter failed (${reason}), trying next...`);
+              }
+              if (!orSuccess && !aiResponse) {
+                console.log(`OpenRouter key exhausted all free models, trying next key...`);
               }
             }
           } catch (err: any) {
@@ -1745,9 +1763,14 @@ async function callOpenRouterDirectly(message: string, model: string): Promise<{
       throw new Error('No OpenRouter APIs available');
     }
     
-    // Map model to OpenRouter format if needed
-    const openRouterModel = MODEL_MAPPING[model as keyof typeof MODEL_MAPPING] || model;
-    
+    // Use free models first, fallback to paid model mapping
+    const FREE_OR_MODELS = [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free',
+      'google/gemma-2-9b-it:free',
+    ];
+    const openRouterModel = FREE_OR_MODELS[0];
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1760,7 +1783,7 @@ async function callOpenRouterDirectly(message: string, model: string): Promise<{
         model: openRouterModel,
         messages: [{ role: 'user', content: message }],
         temperature: 0.7,
-        max_tokens: 800
+        max_tokens: 1500
       })
     });
 
