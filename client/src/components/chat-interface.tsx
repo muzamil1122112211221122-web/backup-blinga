@@ -1307,7 +1307,7 @@ IMPORTANT RULES:
       return;
     }
 
-    // Handle Imagine mode — build Pollinations URL directly (no backend needed)
+    // Handle Imagine mode — route through backend for reliable base64 images
     if (activeTab === 'imagine') {
       const IMAGINE_STYLE_SUFFIXES: Record<string, string> = {
         "Photorealistic": "photorealistic, ultra detailed, 8k resolution, sharp focus, hyperrealistic",
@@ -1319,19 +1319,41 @@ IMPORTANT RULES:
         "Sketch": "pencil sketch, graphite drawing, hand drawn, fine lines, black and white",
         "Cinematic": "cinematic photography, movie still, anamorphic lens, dramatic lighting, film grain",
       };
-      const seed = Math.floor(Math.random() * 9999999);
       const styleSuffix = IMAGINE_STYLE_SUFFIXES[imagineStyle] || imagineStyle.toLowerCase();
       const fullPrompt = `${content}, ${styleSuffix}`;
-      const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=768&model=flux&nologo=true&seed=${seed}`;
 
       const userMsgId = Date.now().toString();
       const aiMsgId = (Date.now() + 1).toString();
       setImagineMessages(prev => [
         ...prev,
         { id: userMsgId, role: 'user', content },
-        { id: aiMsgId, role: 'ai', content: '', imageUrl: pollinationsUrl, isGenerating: true },
+        { id: aiMsgId, role: 'ai', content: '', isGenerating: true },
       ]);
       setInputValue("");
+      setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
+
+      try {
+        const res = await fetch('/api/test-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: 'imagine' }),
+        });
+        const data = await res.json();
+        const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
+        if (match?.[1]) {
+          setImagineMessages(prev => prev.map(m =>
+            m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl: match[1] } : m
+          ));
+        } else {
+          setImagineMessages(prev => prev.map(m =>
+            m.id === aiMsgId ? { ...m, isGenerating: false, content: 'Image service is busy right now. Please try again in a moment.' } : m
+          ));
+        }
+      } catch {
+        setImagineMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, isGenerating: false, content: 'Could not connect. Please check your internet and try again.' } : m
+        ));
+      }
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
       return;
     }
@@ -3116,38 +3138,29 @@ Let's start the self-listen session!`;
                             </div>
                           ) : (
                             <div className="w-full">
-                              {msg.imageUrl ? (
-                                <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted" style={{ minHeight: msg.isGenerating ? '160px' : undefined }}>
-                                  {msg.isGenerating && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
-                                      <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                                      <span className="text-xs text-muted-foreground">Generating image…</span>
-                                      <span className="text-[10px] text-muted-foreground/60">~15–30 seconds</span>
-                                    </div>
-                                  )}
+                              {msg.isGenerating ? (
+                                <div className="rounded-2xl border border-border bg-muted flex flex-col items-center justify-center gap-2 py-10">
+                                  <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-xs text-muted-foreground">Generating image…</span>
+                                  <span className="text-[10px] text-muted-foreground/60">~15–25 seconds</span>
+                                </div>
+                              ) : msg.imageUrl ? (
+                                <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted">
                                   <img
                                     src={msg.imageUrl}
                                     alt="Generated"
-                                    className={`w-full h-auto transition-opacity duration-500 ${msg.isGenerating ? 'opacity-0' : 'opacity-100'}`}
-                                    onLoad={() => setImagineMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isGenerating: false } : m))}
-                                    onError={(e) => {
-                                      const t = e.target as HTMLImageElement;
-                                      t.onerror = null;
-                                      setImagineMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isGenerating: false, imageUrl: undefined, content: 'Generation failed. Check your internet connection and try again.' } : m));
-                                    }}
+                                    className="w-full h-auto"
                                   />
-                                  {!msg.isGenerating && (
-                                    <a
-                                      href={msg.imageUrl}
-                                      download="generated.jpg"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
-                                      onClick={e => e.stopPropagation()}
-                                    >
-                                      Save
-                                    </a>
-                                  )}
+                                  <a
+                                    href={msg.imageUrl}
+                                    download="generated.jpg"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    Save
+                                  </a>
                                 </div>
                               ) : (
                                 <p className="text-sm text-muted-foreground px-1">{msg.content}</p>
