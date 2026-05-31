@@ -1529,15 +1529,19 @@ async function generateImageForChat(prompt: string): Promise<{ path: string } | 
   try {
     console.log('Generating real AI image with prompt:', prompt);
     
-    // Use the real AI-powered image generation from OpenRouter
-    const result = await generateImage(prompt, "1024x1024", "standard");
+    // Hard 25s cap so the Imagine modal never hangs infinitely
+    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 25000));
+    const result = await Promise.race([
+      generateImage(prompt, "1024x1024", "standard"),
+      timeoutPromise
+    ]);
     
     if (result && result.url) {
-      console.log('Successfully generated real AI image:', result.url);
+      console.log('Successfully generated real AI image:', result.url.substring(0, 60) + '...');
       return { path: result.url };
     }
     
-    console.log('AI image generation failed, using fallback');
+    console.log('AI image generation timed out or failed, using fallback');
     return null;
   } catch (error) {
     console.error('Error generating AI image for chat:', error);
