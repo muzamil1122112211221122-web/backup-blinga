@@ -411,8 +411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, conversationId, model, provider, systemPrompt: customSystemPrompt, history } = req.body;
+      const { message, originalMessage, conversationId, model, provider, systemPrompt: customSystemPrompt, history } = req.body;
       const user = req.user;
+      // cleanMessage is the user's original query without any web-search context wrapper
+      const cleanMessage: string = originalMessage || message.replace(/^\[Web search results for:[\s\S]*?\[Use the above search results[\s\S]*?\]\s*\nUser:\s*/i, '').trim();
       
       if (!message) {
         return res.status(400).json({ error: 'Message is required' });
@@ -427,13 +429,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'give me image', 'give me a photo'
       ];
       const isImageRequest = imageRequestKeywords.some(kw =>
-        message.toLowerCase().includes(kw.toLowerCase())
+        cleanMessage.toLowerCase().includes(kw.toLowerCase())
       );
 
       if (isImageRequest) {
         try {
           console.log('Image request detected in chat, generating image...');
-          let imagePrompt = message;
+          let imagePrompt = cleanMessage;
           const prefixesToRemove = [
             'generate image of', 'create image of', 'make image of',
             'generate a photo of', 'create a photo of', 'make a photo of',
@@ -469,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (conversationId) {
             const conv = await storage.getConversation(conversationId);
             if (conv) {
-              await storage.createMessage({ conversationId, role: 'user', content: message });
+              await storage.createMessage({ conversationId, role: 'user', content: cleanMessage });
               await storage.createMessage({ conversationId, role: 'assistant', content: aiResponse.content, metadata: aiResponse.metadata });
             }
           }
@@ -505,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createMessage({
             conversationId,
             role: 'user',
-            content: message,
+            content: cleanMessage,
           });
         }
       }

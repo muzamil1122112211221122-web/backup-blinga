@@ -1559,6 +1559,7 @@ IMPORTANT RULES:
         },
         body: JSON.stringify({
           message: enrichedContent,
+          originalMessage: content,
           conversationId: conversationId,
           activeTab: currentTab || activeTab,
         }),
