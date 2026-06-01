@@ -1558,8 +1558,8 @@ async function generateImageForChat(prompt: string): Promise<{ path: string } | 
   try {
     console.log('Generating real AI image with prompt:', prompt);
     
-    // Hard 25s cap so the Imagine modal never hangs infinitely
-    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 25000));
+    // 50s cap — Pollinations HEAD probe is fast (4s×3), Groq SVG fallback needs ~15-20s
+    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 50000));
     const result = await Promise.race([
       generateImage(prompt, "1024x1024", "standard"),
       timeoutPromise

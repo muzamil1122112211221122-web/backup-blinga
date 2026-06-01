@@ -193,70 +193,41 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
 
-  // First try: Pollinations.ai — free tier (no premium params)
-  try {
-    console.log('Using Pollinations.ai (free tier)...');
-    const seed = Math.floor(Math.random() * 1_000_000);
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', photorealistic, high quality')}` +
-      `?width=${w}&height=${h}&seed=${seed}&model=flux`;
+  // Build multiple Pollinations direct URLs with different models/seeds.
+  // We return the URL directly — the browser fetches it, no server-side download needed.
+  // This avoids the 20-second download timeout entirely.
+  const pollinationsAttempts = [
+    { model: 'flux', seed: Math.floor(Math.random() * 1_000_000) },
+    { model: 'flux-realism', seed: Math.floor(Math.random() * 9_000_000) + 1_000_000 },
+    { model: 'flux-pro', seed: Math.floor(Math.random() * 9_000_000) + 2_000_000 },
+  ];
 
-    const imgResponse = await fetch(url, { signal: AbortSignal.timeout(20000) });
-    if (imgResponse.ok) {
-      const contentType = imgResponse.headers.get('content-type') || '';
-      const arrayBuffer = await imgResponse.arrayBuffer();
-      if (contentType.startsWith('image/') && arrayBuffer.byteLength > 1024) {
-        const base64 = Buffer.from(arrayBuffer).toString('base64');
-        console.log(`Pollinations image ready (${Math.round(base64.length / 1024)}KB, ${contentType})`);
-        return { success: true, url: `data:${contentType};base64,${base64}`, revisedPrompt: prompt };
+  for (const attempt of pollinationsAttempts) {
+    try {
+      const directUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', photorealistic, ultra detailed, 8k')}` +
+        `?width=${w}&height=${h}&seed=${attempt.seed}&model=${attempt.model}`;
+      // Quick HEAD probe (4s) to verify Pollinations will serve this request
+      const probe = await fetch(directUrl, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
+      if (probe.ok) {
+        console.log(`Pollinations ${attempt.model} available — returning direct URL`);
+        return { success: true, url: directUrl, revisedPrompt: prompt };
       }
-      console.log(`Pollinations returned non-image payload (type=${contentType}, bytes=${arrayBuffer.byteLength})`);
-    } else {
-      console.log('Pollinations failed:', imgResponse.status);
+      console.log(`Pollinations ${attempt.model} probe returned ${probe.status}, trying next...`);
+    } catch (err) {
+      console.log(`Pollinations ${attempt.model} probe timed out, trying next...`);
     }
-  } catch (error) {
-    console.log('Pollinations error:', error instanceof Error ? error.message : error);
   }
 
-  // Second try: Pollinations with turbo model and different seed
-  try {
-    console.log('Retrying Pollinations.ai with turbo model...');
-    const seed2 = Math.floor(Math.random() * 9_000_000) + 1_000_000;
-    const url2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
-      `?width=${w}&height=${h}&seed=${seed2}&model=turbo`;
-    const imgResponse2 = await fetch(url2, { signal: AbortSignal.timeout(20000) });
-    if (imgResponse2.ok) {
-      const contentType2 = imgResponse2.headers.get('content-type') || '';
-      const arrayBuffer2 = await imgResponse2.arrayBuffer();
-      if (contentType2.startsWith('image/') && arrayBuffer2.byteLength > 1024) {
-        const base64_2 = Buffer.from(arrayBuffer2).toString('base64');
-        console.log(`Pollinations turbo image ready (${Math.round(base64_2.length / 1024)}KB)`);
-        return { success: true, url: `data:${contentType2};base64,${base64_2}`, revisedPrompt: prompt };
-      }
-    } else {
-      console.log('Pollinations turbo failed:', imgResponse2.status);
-    }
-  } catch (error) {
-    console.log('Pollinations turbo error:', error instanceof Error ? error.message : error);
-  }
-
-  // Third try: Gemini image generation (Imagen / Gemini image models)
-  console.log('Pollinations exhausted — trying Gemini image generation...');
-  const geminiResult = await tryGeminiImageGeneration(prompt);
-  if (geminiResult) {
-    console.log('Gemini image generation succeeded');
-    return geminiResult;
-  }
-
-  // Fourth try: Groq-generated SVG illustration
-  console.log('Gemini exhausted — trying Groq SVG illustration...');
+  // Pollinations not responding — fall through to Groq SVG (high-quality illustrated art)
+  console.log('Pollinations unavailable — trying Groq SVG illustration...');
   const groqSvgResult = await tryGroqSvgGeneration(prompt);
   if (groqSvgResult) {
     console.log('Groq SVG illustration succeeded');
     return groqSvgResult;
   }
 
-  // Fifth try: Gemini SVG as last resort
-  console.log('Trying Gemini SVG as last resort...');
+  // Try Gemini SVG as next fallback
+  console.log('Groq exhausted — trying Gemini SVG...');
   const geminiSvgResult = await tryGeminiSvgGeneration(prompt);
   if (geminiSvgResult) {
     console.log('Gemini SVG generation succeeded');
