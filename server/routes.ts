@@ -1559,20 +1559,19 @@ async function describeGeneratedImage(prompt: string): Promise<string> {
 }
 
 // Image generation function for chat
-async function generateImageForChat(prompt: string): Promise<{ path: string } | null> {
+async function generateImageForChat(prompt: string): Promise<{ path: string; fallbackUrls?: string[] } | null> {
   try {
     console.log('Generating real AI image with prompt:', prompt);
     
-    // 50s cap — Pollinations HEAD probe is fast (4s×3), Groq SVG fallback needs ~15-20s
-    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 50000));
+    const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 10000));
     const result = await Promise.race([
       generateImage(prompt, "1024x1024", "standard"),
       timeoutPromise
     ]);
     
     if (result && result.url) {
-      console.log('Successfully generated real AI image:', result.url.substring(0, 60) + '...');
-      return { path: result.url };
+      console.log('Successfully built image URL:', result.url.substring(0, 80) + '...');
+      return { path: result.url, fallbackUrls: (result as any).fallbackUrls || [] };
     }
     
     console.log('AI image generation timed out or failed, using fallback');
