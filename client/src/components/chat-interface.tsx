@@ -442,6 +442,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine'>('ask');
+  const navRef = useRef<HTMLDivElement>(null);
+  const [navPill, setNavPill] = useState({ left: 0, width: 0 });
+  useEffect(() => {
+    const container = navRef.current;
+    if (!container) return;
+    const el = container.querySelector(`[data-testid="tab-${activeTab}"]`) as HTMLElement | null;
+    if (el) setNavPill({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [activeTab]);
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
@@ -2297,14 +2305,26 @@ Let's start the self-listen session!`;
           <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
         </div>
         
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div ref={navRef} className="relative flex items-center space-x-1 sm:space-x-2">
+          {/* sliding active pill */}
+          <div aria-hidden style={{
+            position: 'absolute',
+            left: navPill.left,
+            width: navPill.width,
+            top: 0, bottom: 0,
+            background: 'hsl(var(--secondary))',
+            borderRadius: 16,
+            transition: 'left 0.38s cubic-bezier(0.23,1,0.32,1), width 0.38s cubic-bezier(0.23,1,0.32,1)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }} />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'ask' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'ask' ? 'bg-secondary' : ''}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -2315,10 +2335,10 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'nomad' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'nomad' ? 'bg-secondary' : ''}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -2329,10 +2349,10 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'imagine' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'imagine' ? 'bg-secondary' : ''}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine
@@ -2343,10 +2363,10 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'philosopher' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'philosopher' ? 'bg-secondary' : ''}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
                 data-testid="tab-philosopher"
               >
                 Philosophers & {user?.displayName || user?.username || 'You'}
@@ -2357,10 +2377,10 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={activeTab === 'fius-games' ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl ${activeTab === 'fius-games' ? 'bg-secondary' : ''}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
                 data-testid="tab-fius-games"
               >
                 Fius Games
@@ -3311,7 +3331,7 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Fius Games Tab
-          <div className="absolute inset-0 flex flex-col" style={{ padding: '8px 12px' }}>
+          <div className="absolute inset-0 flex flex-col" style={{ padding: '8px 38px' }}>
             <FiusGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
           </div>
         )}
