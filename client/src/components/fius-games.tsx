@@ -23,11 +23,13 @@ type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
             | 'wordchain' | 'truefalse' | 'speedmath';
 
 interface GameProps { playerName: string; gameLevel: number; onWin: (score: number) => void; onLose: () => void; onBack: () => void; }
+interface ScoreEntry { id: string; game: string; score: number; level: number; date: string; }
 
-// ─── Fragment & Progress Storage ──────────────────────────────────────────────
-const FRAG_KEY  = 'fius_fragments_v1';
-const OWNED_KEY = 'fius_owned_games_v1';
-const LEVEL_KEY = 'fius_game_levels_v1';
+// ─── Fragment & Progress Storage (localStorage fallback) ──────────────────────
+const FRAG_KEY  = 'fius_fragments_v2';
+const OWNED_KEY = 'fius_owned_games_v2';
+const LEVEL_KEY = 'fius_game_levels_v2';
+const SCORES_KEY = 'fius_scores_v2';
 
 function loadFragments(): number { try { return parseInt(localStorage.getItem(FRAG_KEY) || '0', 10) || 0; } catch { return 0; } }
 function saveFragments(n: number) { localStorage.setItem(FRAG_KEY, String(n)); }
@@ -38,6 +40,22 @@ function saveLevels(l: Record<string, number>) { localStorage.setItem(LEVEL_KEY,
 function getGameLevel(id: string): number { const l = loadLevels(); return l[id] || 1; }
 function persistGameLevel(id: string, lv: number) { const l = loadLevels(); l[id] = lv; saveLevels(l); }
 function fragmentsForLevel(lv: number): number { return 4 + lv; }
+
+// ─── Server Sync ───────────────────────────────────────────────────────────────
+async function loadGamesFromServer(): Promise<{ownedGames:string[];fragments:number;levels:Record<string,number>;scores:ScoreEntry[]}|null> {
+  try {
+    const r = await fetch('/api/games/data');
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+let _syncTimer: ReturnType<typeof setTimeout>|null = null;
+function syncToServer(data: {ownedGames:string[];fragments:number;levels:Record<string,number>;scores:ScoreEntry[]}) {
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => {
+    fetch('/api/games/data', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).catch(() => {});
+  }, 400);
+}
 
 // ─── Level Difficulty Mapping ─────────────────────────────────────────────────
 function getDifficulty(lv: number): 'easy' | 'medium' | 'hard' {
@@ -1844,8 +1862,6 @@ const STORE_CATALOG = [
 // ─── LEADERBOARD STORAGE ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const SCORES_KEY = 'fius_scores_v2';
-interface ScoreEntry { id: string; game: string; score: number; level: number; date: string; }
 function loadScores(): ScoreEntry[] { try { return JSON.parse(localStorage.getItem(SCORES_KEY) || '[]'); } catch { return []; } }
 function addScore(gameId: string, gameName: string, score: number, level: number) {
   const all = loadScores();
@@ -1858,7 +1874,7 @@ function addScore(gameId: string, gameName: string, score: number, level: number
 // ─── MAIN GAME HUB ────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface FiusGamesProps { playerName: string; }
+interface FiusGamesProps { playerName: string; userId?: string; }
 
 const FREE_GAMES = [
   { id: 'memory' as GameId,  label: 'Memory Match',   img: imgMemory,  desc: 'Match pairs before time runs out',   category: 'Solo' },
@@ -1869,7 +1885,7 @@ const FREE_GAMES = [
   { id: 'oddword' as GameId, label: 'Odd One Out',    img: imgOddWord, desc: "Find the word that doesn't fit",    category: 'Solo' },
 ];
 
-export function FiusGames({ playerName }: FiusGamesProps) {
+export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [tab, setTab] = useState<'games'|'store'|'leaderboard'>('games');
   const [screen, setScreen] = useState<'menu'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
@@ -1886,13 +1902,37 @@ export function FiusGames({ playerName }: FiusGamesProps) {
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
 
+  // ── Load from server on mount (replaces localStorage if server has data) ──
+  useEffect(() => {
+    loadGamesFromServer().then(data => {
+      if (!data) return;
+      if (data.ownedGames?.length > 0) { setOwnedGames(data.ownedGames); saveOwned(data.ownedGames); }
+      if (data.fragments > 0) { setFragments(data.fragments); saveFragments(data.fragments); }
+      if (data.levels && Object.keys(data.levels).length > 0) { saveLevels(data.levels); }
+      if (data.scores?.length > 0) {
+        localStorage.setItem(SCORES_KEY, JSON.stringify(data.scores));
+        setScores(data.scores);
+      }
+    });
+  }, []);
+
+  // ── Sync helper ───────────────────────────────────────────────────────────
+  const doSync = (overrides: {ownedGames?:string[];fragments?:number;scores?:ScoreEntry[]}) => {
+    const owned  = overrides.ownedGames ?? ownedGames;
+    const frags  = overrides.fragments  ?? fragments;
+    const sc     = overrides.scores     ?? scores;
+    syncToServer({ ownedGames: owned, fragments: frags, levels: loadLevels(), scores: sc });
+  };
+
   const handleWin = (score: number) => {
     const earned = fragmentsForLevel(gameLevel);
     const newFrags = fragments + earned;
     setFragments(newFrags); saveFragments(newFrags);
     setLastScore(score); setLastFrags(earned);
-    if (activeGame) { addScore(activeGame, activeGameLabel, score, gameLevel); setScores(loadScores()); }
+    let newScores = scores;
+    if (activeGame) { addScore(activeGame, activeGameLabel, score, gameLevel); newScores = loadScores(); setScores(newScores); }
     setModal('win');
+    doSync({ fragments: newFrags, scores: newScores });
   };
   const handleLose = () => setModal('lose');
   const handleRetry = () => { setModal(null); setKey(k => k + 1); };
@@ -1902,6 +1942,7 @@ export function FiusGames({ playerName }: FiusGamesProps) {
   const handleBuy = (id: string, price: number) => {
     const nf = fragments - price; const no = [...ownedGames, id];
     setFragments(nf); saveFragments(nf); setOwnedGames(no); saveOwned(no);
+    doSync({ fragments: nf, ownedGames: no });
   };
 
   const onStartGame = (id: GameId, label: string) => {
@@ -1959,7 +2000,7 @@ export function FiusGames({ playerName }: FiusGamesProps) {
         </div>
         {modal === 'win' && <WinModal level={gameLevel} score={lastScore} fragsEarned={lastFrags} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
         {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
-        {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); }} onNo={() => { setModal(null); goToMenu(); }} />}
+        {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); doSync({}); }} onNo={() => { setModal(null); goToMenu(); }} />}
       </div>
     );
   }
@@ -2015,20 +2056,19 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             {filteredFree.length > 0 && (
               <div>
                 <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free</p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-3 gap-2">
                   {filteredFree.map(g => {
                     const lv = getGameLevel(g.id);
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
-                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
-                        style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 110, background: '#1a1a2e' }}>
-                          <img src={g.img} alt={g.label} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 110 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] border border-white/10"
+                        style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 96, background: '#1a1a2e' }}>
+                          <img src={g.img} alt={g.label} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
-                        <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div className="text-white font-bold text-xs leading-tight">{g.label}</div>
-                          <div className="text-zinc-500 text-[10px] mt-0.5 leading-tight line-clamp-1">{g.desc}</div>
-                          <div className="mt-2 flex items-center justify-between">
+                        <div className="p-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div className="text-white font-bold text-xs leading-tight truncate">{g.label}</div>
+                          <div className="mt-1.5 flex items-center justify-between">
                             <LevelBadge level={lv} />
                             <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
                           </div>
@@ -2044,20 +2084,19 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             {myPurchased.length > 0 && (
               <div>
                 <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">My Games</p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-3 gap-2">
                   {myPurchased.map(g => {
                     const lv = getGameLevel(g.id);
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
-                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 110, background: '#0d1f1a' }}>
-                          <img src={g.img} alt={g.name} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 110 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97]"
+                        style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 96, background: '#0d1f1a' }}>
+                          <img src={g.img} alt={g.name} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
-                        <div className="p-2.5" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
-                          <div className="text-white font-bold text-xs leading-tight">{g.name}</div>
-                          <div className="text-zinc-500 text-[10px] mt-0.5 line-clamp-1">{g.desc}</div>
-                          <div className="mt-2 flex items-center justify-between">
+                        <div className="p-2" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
+                          <div className="text-white font-bold text-xs leading-tight truncate">{g.name}</div>
+                          <div className="mt-1.5 flex items-center justify-between">
                             <LevelBadge level={lv} />
                             <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
                           </div>
@@ -2099,34 +2138,30 @@ export function FiusGames({ playerName }: FiusGamesProps) {
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>
               <span className="text-zinc-600 text-[10px]">Balance: <span className="text-blue-400 font-bold flex items-center gap-1 inline-flex"><img src={imgCoins} alt="" className="w-3.5 h-3.5 inline" /> {fragments}</span></span>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {STORE_CATALOG.map(game => {
                 const owned = ownedGames.includes(game.id);
                 const canAfford = fragments >= game.price;
                 return (
                   <div key={game.id}
-                    className="flex flex-col rounded-2xl overflow-hidden transition-all"
-                    style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
-                    <div className="w-full overflow-hidden relative" style={{ height: 100, background: owned ? '#0d1f1a' : '#12121e' }}>
-                      <img src={game.img} alt={game.name} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 100 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                    className="flex flex-col rounded-xl overflow-hidden transition-all"
+                    style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                    <div className="w-full overflow-hidden relative" style={{ height: 88, background: owned ? '#0d1f1a' : '#12121e' }}>
+                      <img src={game.img} alt={game.name} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       {owned && (
                         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
-                          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] text-white" style={{ background: 'rgba(16,185,129,0.85)' }}>
-                            <Check size={9} /> Owned
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] text-white" style={{ background: 'rgba(16,185,129,0.85)' }}>
+                            <Check size={8} /> Owned
                           </div>
                         </div>
                       )}
                     </div>
                     <div className="p-2" style={{ borderTop: owned ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.07)' }}>
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="text-white font-bold text-[11px] flex-1 truncate">{game.name}</span>
-                        <span className="text-[8px] px-1 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}>{game.category}</span>
-                      </div>
-                      <p className="text-zinc-500 text-[9px] mb-2 line-clamp-1">{game.desc}</p>
+                      <div className="text-white font-bold text-xs truncate mb-1.5">{game.name}</div>
                       {!owned && (
                         <button onClick={() => { if (canAfford) handleBuy(game.id, game.price); }}
                           disabled={!canAfford}
-                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-bold transition-all active:scale-95 ${canAfford ? 'text-white' : 'cursor-not-allowed text-zinc-600'}`}
+                          className={`w-full flex items-center justify-center gap-1 py-1 rounded-lg text-[10px] font-bold transition-all active:scale-95 ${canAfford ? 'text-white' : 'cursor-not-allowed text-zinc-600'}`}
                           style={{ background: canAfford ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : 'rgba(39,39,42,0.8)', border: canAfford ? '1px solid rgba(96,165,250,0.4)' : '1px solid rgba(63,63,70,0.8)' }}>
                           <img src={imgCoins} alt="" className="w-3 h-3" /> {game.price}
                         </button>

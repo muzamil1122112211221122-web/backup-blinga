@@ -1293,6 +1293,33 @@ Enhanced version:`;
     }
   });
 
+  // ── Games Data (server-side persistence per user account) ────────────────────
+  app.get('/api/games/data', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const settings = await storage.getUserSettings(userId);
+      const gamesData = (settings as any).gamesData || { ownedGames: [], fragments: 0, levels: {}, scores: [] };
+      res.json(gamesData);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/games/data', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const { ownedGames, fragments, levels, scores } = req.body;
+      const settings = await storage.getUserSettings(userId);
+      (settings as any).gamesData = { ownedGames: ownedGames || [], fragments: fragments || 0, levels: levels || {}, scores: scores || [] };
+      await storage.saveUserSettings(userId, settings);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // API Status endpoint - quick overview
   app.get('/api/status', requireAuth, async (req, res) => {
     try {
