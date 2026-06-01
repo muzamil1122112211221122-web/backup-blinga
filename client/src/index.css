@@ -825,22 +825,31 @@
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling — slim minimal style */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(240, 3.7%, 15.9%);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(240, 5%, 64.9%);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(0, 0%, 98%);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes pop-out {

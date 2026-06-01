@@ -442,19 +442,26 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine'>('ask');
-  const navRef = useRef<HTMLDivElement>(null);
-  const [navPill, setNavPill] = useState({ left: 0, width: 0 });
-  const measureNavPill = useCallback(() => {
-    const container = navRef.current;
-    if (!container) return;
-    const el = container.querySelector(`[data-testid="tab-${activeTab}"]`) as HTMLElement | null;
-    if (el && el.offsetWidth > 0) setNavPill({ left: el.offsetLeft, width: el.offsetWidth });
+  const navContainerRef = useRef<HTMLDivElement>(null);
+  const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, ready: false });
+  useLayoutEffect(() => {
+    const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games'];
+    const measure = () => {
+      const idx = TAB_ORDER.indexOf(activeTab);
+      const btn = tabButtonRefs.current[idx];
+      const container = navContainerRef.current;
+      if (!btn || !container) return;
+      const cRect = container.getBoundingClientRect();
+      const bRect = btn.getBoundingClientRect();
+      if (bRect.width > 0) {
+        setPillStyle({ left: bRect.left - cRect.left, width: bRect.width, ready: true });
+      }
+    };
+    measure();
+    const id = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(id);
   }, [activeTab]);
-  useLayoutEffect(() => { measureNavPill(); }, [measureNavPill]);
-  useEffect(() => {
-    const t = setTimeout(measureNavPill, 50);
-    return () => clearTimeout(t);
-  }, [measureNavPill]);
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
@@ -2310,14 +2317,29 @@ Let's start the self-listen session!`;
           <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
         </div>
         
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div ref={navContainerRef} className="relative flex items-center space-x-1 sm:space-x-2">
+          {/* sliding active pill */}
+          {pillStyle.ready && (
+            <div aria-hidden style={{
+              position: 'absolute',
+              left: pillStyle.left,
+              width: pillStyle.width,
+              top: 0, bottom: 0,
+              background: 'hsl(var(--secondary))',
+              borderRadius: 16,
+              transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }} />
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={el => { tabButtonRefs.current[0] = el; }}
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'ask' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -2328,10 +2350,11 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={el => { tabButtonRefs.current[1] = el; }}
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'nomad' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -2342,10 +2365,11 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={el => { tabButtonRefs.current[2] = el; }}
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'imagine' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine
@@ -2356,10 +2380,11 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={el => { tabButtonRefs.current[3] = el; }}
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'philosopher' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-philosopher"
               >
                 Philosophers & {user?.displayName || user?.username || 'You'}
@@ -2370,10 +2395,11 @@ Let's start the self-listen session!`;
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={el => { tabButtonRefs.current[4] = el; }}
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'fius-games' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-fius-games"
               >
                 Fius Games
@@ -3476,7 +3502,7 @@ Let's start the self-listen session!`;
       )}
       {/* New Unified Message Bar */}
       <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
-        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
+        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedImages.length === 0 && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
             <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
