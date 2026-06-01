@@ -3098,8 +3098,8 @@ Let's start the self-listen session!`;
 
             return (
               <div className="absolute inset-0 flex flex-col overflow-hidden">
-                {/* Style pills — fixed at top */}
-                <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {/* Style pills — centered at top */}
+                <div className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
                   {IMAGINE_STYLE_TAGS.map(style => (
                     <button
@@ -3228,7 +3228,7 @@ Let's start the self-listen session!`;
                   />
                 </div>
                 {/* Category Filter */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
                   {PERSONALITY_CATEGORIES.map(cat => (
                     <button
                       key={cat}

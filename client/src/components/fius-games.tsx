@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, Star, Lock, Check } from "lucide-react";
+import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check } from "lucide-react";
+import imgMemory   from "@assets/apps.54588.14090654178473619.aa2706f7-9244-4d37-b59f-3f87f7589_1780325460748.jpg";
+import imgMaths    from "@assets/258c7d3f-edad-4efa-96e6-7db0099bb856_1780325460748.png";
+import imgWord     from "@assets/maxresdefault_1780325460747.jpg";
+import imgQuiz     from "@assets/horizontal-banner-hands-people-solving-600nw-1039923574_1780325460746.webp";
+import imgCar      from "@assets/Main_1_1780325460746.png";
+import imgOddWord  from "@assets/Gemini_Generated_Image_5dn8ra5dn8ra5dn8_1780325515069.png";
+import imgTTT      from "@assets/unnamed_1780326509544.png";
+import imgHangman  from "@assets/png-clipart-hangman-ahorcado-hangman-word-guessing-game-hangma_1780326509544.png";
+import imgRPS      from "@assets/6727583_1780326509543.png";
+import imgC4       from "@assets/3367465_1780326509543.png";
+import imgMM       from "@assets/images_1780326509542.jpg";
+import imgWC       from "@assets/classic-word-chain-087da1e5_1780326509541.png";
+import imgTF       from "@assets/png-clipart-true-or-false-quiz-trivia-questions-and-answers-ge_1780326509540.png";
+import imgSMR      from "@assets/math-speed-racing-series-200x200_1780326509539.png";
+import imgCoins    from "@assets/pngaaa.com-2802597_1780326509539.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
@@ -252,7 +267,7 @@ function StatPill({ children, red }: { children: React.ReactNode; red?: boolean 
 function FragmentBadge({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', border: '1px solid rgba(96,165,250,0.5)' }}>
-      <span className="text-blue-200 text-sm">🔷</span>
+      <img src={imgCoins} alt="coins" className="w-5 h-5 object-contain" />
       <span className="text-white font-bold text-sm">{count}</span>
     </div>
   );
@@ -421,7 +436,7 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           {streak >= 3 && <StatPill>🔥 {streak}x</StatPill>}
@@ -508,7 +523,7 @@ function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Word {Math.min(round+1,ROUNDS)}/{ROUNDS}</StatPill>
@@ -604,7 +619,7 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>🃏 {matched}/{pairCount}</StatPill>
@@ -672,7 +687,7 @@ function FiusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Q {Math.min(qIndex+1,total)}/{total}</StatPill>
@@ -748,7 +763,7 @@ function FiusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Q {Math.min(qIdx+1,ROUNDS)}/{ROUNDS}</StatPill>
@@ -787,41 +802,92 @@ function FiusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ─── CAR DODGE ────────────────────────────────────────────────────────────────
-function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusCar({ gameLevel, onWin, onLose }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [uiScore, setUiScore] = useState(0);
   const [uiLives, setUiLives] = useState(3);
   const [phase, setPhase] = useState<'intro'|'playing'|'done'>('intro');
   const TARGET = 10 + gameLevel * 3;
-  const SPEED_INIT = 2 + gameLevel * 0.4;
-  const SPAWN_RATE = Math.max(25, 88 - gameLevel * 5);
-  const CW = 210; const CH = 370; const LANE_W = 70; const LANES = 3;
-  const CAR_W = 36; const CAR_H = 52; const OBS_H = 52; const PY = CH - CAR_H - 16;
-  const lx = (l: number) => l * LANE_W + (LANE_W - CAR_W) / 2;
-  const OBS_COLORS = ['#ef4444','#f97316','#a855f7','#eab308','#3b82f6','#ec4899'];
+  const SPEED_INIT = 2.5 + gameLevel * 0.5;
+  const SPAWN_RATE = Math.max(22, 90 - gameLevel * 5);
+  const CW = 240; const CH = 380;
+  const SHOULDER = 18; const RW = CW - 2 * SHOULDER;
+  const LANE_W = RW / 3; const LANES = 3;
+  const CAR_W = 34; const CAR_H = 54; const OBS_H = 54;
+  const PY = CH - CAR_H - 18;
+  const OBS_COLORS = ['#ef4444','#f97316','#a855f7','#eab308','#3b82f6','#ec4899','#14b8a6','#f43f5e'];
   const gs = useRef({ lane: 1, obs: [] as {lane:number;y:number;col:string}[], score: 0, lives: 3, speed: SPEED_INIT, frame: 0, dead: false });
+  const smoothLane = useRef(1.0);
   const raf = useRef(0);
 
   const rr = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
     ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
   };
+  const lx = (l: number) => SHOULDER + l * LANE_W + (LANE_W - CAR_W) / 2;
 
-  const draw = useCallback(() => {
+  const drawCar = (ctx: CanvasRenderingContext2D, x: number, y: number, col: string, isPlayer: boolean) => {
+    const h = isPlayer ? CAR_H : OBS_H;
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(ctx, x+3, y+4, CAR_W, h, 6); ctx.fill();
+    // body
+    ctx.fillStyle = col; rr(ctx, x, y, CAR_W, h, 6); ctx.fill();
+    // roof/cabin highlight
+    ctx.fillStyle = isPlayer ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.15)';
+    rr(ctx, x+6, isPlayer ? y+CAR_H-34 : y+8, CAR_W-12, 14, 3); ctx.fill();
+    // windshield glare
+    ctx.fillStyle = 'rgba(200,240,255,0.45)'; rr(ctx, x+7, isPlayer ? y+CAR_H-32 : y+10, CAR_W-14, 10, 2); ctx.fill();
+    // wheels
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x-3, y+8, 6, 12); ctx.fillRect(x+CAR_W-3, y+8, 6, 12);
+    ctx.fillRect(x-3, y+h-20, 6, 12); ctx.fillRect(x+CAR_W-3, y+h-20, 6, 12);
+    // wheel shine
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(x-2, y+10, 4, 4); ctx.fillRect(x+CAR_W-2, y+10, 4, 4);
+    // headlights / taillights
+    ctx.fillStyle = isPlayer ? '#fef08a' : '#dc2626';
+    ctx.fillRect(x+4, isPlayer ? y+CAR_H-6 : y, CAR_W-8, 4);
+  };
+
+  const draw = useCallback((sl?: number) => {
     const cv = canvasRef.current; if (!cv) return;
     const ctx = cv.getContext('2d')!; const s = gs.current;
-    ctx.fillStyle = '#1c1917'; ctx.fillRect(0,0,CW,CH);
-    ctx.fillStyle = '#292524'; ctx.fillRect(4,0,CW-8,CH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.setLineDash([16,12]); ctx.lineWidth = 2;
-    for (let i = 1; i < LANES; i++) { ctx.beginPath(); ctx.moveTo(i*LANE_W,0); ctx.lineTo(i*LANE_W,CH); ctx.stroke(); }
+    const lerpL = sl ?? smoothLane.current;
+    // sky/horizon
+    const grad = ctx.createLinearGradient(0,0,0,CH/3);
+    grad.addColorStop(0,'#0f172a'); grad.addColorStop(1,'#1e293b');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,CW,CH/3);
+    // road base
+    ctx.fillStyle = '#374151'; ctx.fillRect(0,CH/3,CW,CH);
+    // road surface
+    ctx.fillStyle = '#4b5563'; ctx.fillRect(SHOULDER,CH/3,RW,CH);
+    // yellow shoulders
+    ctx.fillStyle = '#fbbf24'; ctx.fillRect(SHOULDER-4,CH/3,4,CH); ctx.fillRect(SHOULDER+RW,CH/3,4,CH);
+    // animated dashed lane lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.setLineDash([22,18]);
+    ctx.lineDashOffset = -(s.frame * s.speed * 0.9 % 40);
+    for (let i = 1; i < LANES; i++) { const lx2 = SHOULDER + i * LANE_W; ctx.beginPath(); ctx.moveTo(lx2,CH/3); ctx.lineTo(lx2,CH); ctx.stroke(); }
     ctx.setLineDash([]);
-    for (const o of s.obs) { const x = lx(o.lane); ctx.fillStyle = o.col; rr(ctx,x,o.y,CAR_W,OBS_H,6); ctx.fill(); }
-    const px = lx(s.lane);
-    ctx.fillStyle = '#22c55e'; rr(ctx,px,PY,CAR_W,CAR_H,7); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(px+5,PY+8,CAR_W-10,14);
+    // side speed lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+      const bx = 3 + i * 4; const by = ((s.frame * s.speed * 0.7 + i * 60) % (CH * 0.7)) + CH * 0.3;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by + 28); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CW-bx, by); ctx.lineTo(CW-bx, by + 28); ctx.stroke();
+    }
+    // obstacles
+    for (const o of s.obs) { drawCar(ctx, lx(o.lane), o.y, o.col, false); }
+    // player (smooth lane)
+    const px = SHOULDER + lerpL * LANE_W + (LANE_W - CAR_W) / 2;
+    drawCar(ctx, px, PY, '#22c55e', true);
+    // glow under player
+    const grd = ctx.createRadialGradient(px+CAR_W/2, PY+CAR_H, 0, px+CAR_W/2, PY+CAR_H, 28);
+    grd.addColorStop(0,'rgba(34,197,94,0.35)'); grd.addColorStop(1,'rgba(34,197,94,0)');
+    ctx.fillStyle = grd; ctx.fillRect(px-10, PY, CAR_W+20, CAR_H+20);
   }, []);
 
   const startGame = useCallback(() => {
     gs.current = { lane: 1, obs: [], score: 0, lives: 3, speed: SPEED_INIT, frame: 0, dead: false };
+    smoothLane.current = 1.0;
     setUiScore(0); setUiLives(3); setPhase('playing');
   }, [SPEED_INIT]);
 
@@ -831,10 +897,12 @@ function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
     const tick = () => {
       if (s.dead) return;
       s.frame++;
+      // smooth lane lerp
+      smoothLane.current += (s.lane - smoothLane.current) * 0.18;
       if (s.frame % SPAWN_RATE === 0) {
         const occ = s.obs.filter(o => o.y < OBS_H * 1.5).map(o => o.lane);
         let lane = Math.floor(Math.random() * LANES);
-        for (let t = 0; t < 5 && occ.includes(lane); t++) lane = Math.floor(Math.random() * LANES);
+        for (let t = 0; t < 6 && occ.includes(lane); t++) lane = Math.floor(Math.random() * LANES);
         s.obs.push({ lane, y: -OBS_H, col: OBS_COLORS[Math.floor(Math.random()*OBS_COLORS.length)] });
       }
       for (const o of s.obs) o.y += s.speed;
@@ -842,14 +910,14 @@ function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
       s.obs = s.obs.filter(o => {
         if (!hit && o.lane === s.lane && o.y + OBS_H >= PY && o.y <= PY + CAR_H) {
           hit = true; s.lives--; setUiLives(s.lives);
-          if (s.lives <= 0) { s.dead = true; setPhase('done'); setUiScore(s.score); draw(); setTimeout(() => onLose(), 500); return false; }
+          if (s.lives <= 0) { s.dead = true; setPhase('done'); setUiScore(s.score); draw(smoothLane.current); setTimeout(() => onLose(), 600); return false; }
           return false;
         }
-        if (o.y >= CH) { s.score++; setUiScore(s.score); if (s.score >= TARGET) { s.dead = true; setPhase('done'); draw(); setTimeout(() => onWin(s.score * 10), 500); return false; } return false; }
+        if (o.y >= CH) { s.score++; setUiScore(s.score); if (s.score >= TARGET) { s.dead = true; setPhase('done'); draw(smoothLane.current); setTimeout(() => onWin(s.score * 12), 600); return false; } return false; }
         return true;
       });
-      if (s.frame % 280 === 0) s.speed = Math.min(s.speed + 0.5, 16);
-      draw();
+      if (s.frame % 300 === 0) s.speed = Math.min(s.speed + 0.4, 18);
+      draw(smoothLane.current);
       if (!s.dead) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
@@ -859,7 +927,7 @@ function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (phase !== 'playing') return;
-      if (e.key === 'ArrowLeft' || e.key === 'a') gs.current.lane = Math.max(0, gs.current.lane - 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'a') gs.current.lane = Math.max(0, gs.current.lane - 1);
       if (e.key === 'ArrowRight' || e.key === 'd') gs.current.lane = Math.min(2, gs.current.lane + 1);
     };
     window.addEventListener('keydown', onKey);
@@ -870,31 +938,41 @@ function FiusCar({ gameLevel, onWin, onLose, onBack }: GameProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+      <div className="flex items-center justify-end mb-2">
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
-          <StatPill>{'❤️ '.repeat(Math.max(0,uiLives)).trim()||'💀'}</StatPill>
+          <StatPill red={uiLives <= 1}>{'❤️'.repeat(Math.max(0,uiLives))||'💀'}</StatPill>
           <StatPill>🚗 {uiScore}/{TARGET}</StatPill>
         </div>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center gap-3">
         {phase === 'intro' && (
           <div className="text-center">
-            <div className="text-5xl mb-3">🚗</div>
+            <img src={imgCar} alt="Car Dodge" className="w-full max-w-xs rounded-2xl mb-4 object-cover" style={{ maxHeight: 130 }} />
             <h3 className="text-xl font-bold text-white mb-1">Car Dodge — Level {gameLevel}</h3>
-            <p className="text-zinc-400 text-sm mb-1">Dodge <span className="text-white font-bold">{TARGET}</span> cars without crashing 3 times.</p>
-            <p className="text-zinc-500 text-xs mb-5">← → arrow keys or tap buttons below</p>
-            <Button onClick={startGame}>Start Game</Button>
+            <p className="text-zinc-400 text-sm mb-1">Dodge <span className="text-white font-bold">{TARGET}</span> cars to win. You have 3 lives.</p>
+            <p className="text-zinc-500 text-xs mb-5">← → arrow keys or tap the steering buttons</p>
+            <Button onClick={startGame} className="bg-red-600 hover:bg-red-700 px-8">🏁 Start Race</Button>
           </div>
         )}
         {(phase === 'playing' || phase === 'done') && (
-          <div className="flex flex-col items-center gap-3">
-            <canvas ref={canvasRef} width={CW} height={CH} className="rounded-2xl border border-white/10" style={{ imageRendering: 'crisp-edges' }} />
+          <div className="flex flex-col items-center gap-3 w-full">
+            <canvas ref={canvasRef} width={CW} height={CH} className="rounded-2xl border-2 border-white/15 shadow-2xl"
+              style={{ imageRendering: 'auto', boxShadow: '0 0 30px rgba(34,197,94,0.15)' }} />
             {phase === 'playing' && (
-              <div className="flex gap-5">
-                <button onPointerDown={() => { gs.current.lane = Math.max(0, gs.current.lane - 1); }} className="w-16 h-16 rounded-2xl bg-white/10 text-white text-3xl font-bold hover:bg-white/20 active:scale-90 transition-all select-none touch-none">←</button>
-                <button onPointerDown={() => { gs.current.lane = Math.min(2, gs.current.lane + 1); }} className="w-16 h-16 rounded-2xl bg-white/10 text-white text-3xl font-bold hover:bg-white/20 active:scale-90 transition-all select-none touch-none">→</button>
+              <div className="flex gap-6">
+                <button
+                  onPointerDown={() => { gs.current.lane = Math.max(0, gs.current.lane - 1); }}
+                  className="w-20 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 select-none touch-none border-2"
+                  style={{ background: 'linear-gradient(135deg,#1e3a5f,#2563eb)', borderColor: 'rgba(59,130,246,0.5)' }}>
+                  <ChevronLeft size={34} className="text-white" strokeWidth={3} />
+                </button>
+                <button
+                  onPointerDown={() => { gs.current.lane = Math.min(2, gs.current.lane + 1); }}
+                  className="w-20 h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 select-none touch-none border-2"
+                  style={{ background: 'linear-gradient(135deg,#1e3a5f,#2563eb)', borderColor: 'rgba(59,130,246,0.5)' }}>
+                  <ChevronRight size={34} className="text-white" strokeWidth={3} />
+                </button>
               </div>
             )}
           </div>
@@ -971,7 +1049,7 @@ function TicTacToe({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <LevelBadge level={gameLevel} />
       </div>
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -1040,7 +1118,7 @@ function Hangman({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill red={wrong >= maxWrong - 1}>❌ {wrong}/{maxWrong}</StatPill>
@@ -1116,7 +1194,7 @@ function RockPaperScissors({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Round {round}/{rounds}</StatPill>
@@ -1229,7 +1307,7 @@ function ConnectFour({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <div className="flex items-center gap-1 text-xs text-zinc-400">
@@ -1298,7 +1376,7 @@ function Mastermind({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>{guesses.length}/{maxGuesses} tries</StatPill>
@@ -1411,7 +1489,7 @@ function WordChain({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Chain: {chain.length}/{target*2}</StatPill>
@@ -1493,7 +1571,7 @@ function TrueFalseBlitz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           {streak >= 3 && <StatPill>🔥 {streak}x</StatPill>}
@@ -1597,7 +1675,7 @@ function SpeedMathRace({ gameLevel, onWin, onLose, onBack }: GameProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
+        <div />
         <div className="flex gap-2 items-center">
           <LevelBadge level={gameLevel} />
           <StatPill>Round {Math.min(round+1,ROUNDS)}/{ROUNDS}</StatPill>
@@ -1637,14 +1715,14 @@ function SpeedMathRace({ gameLevel, onWin, onLose, onBack }: GameProps) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const STORE_CATALOG = [
-  { id: 'tictactoe' as GameId,   name: 'Tic-Tac-Toe',          emoji: '⭕', price: 30,  desc: 'Classic X vs O against AI',            category: 'vs AI',  color: 'from-blue-600 to-cyan-600' },
-  { id: 'hangman' as GameId,     name: 'Hangman',               emoji: '🎯', price: 25,  desc: 'Guess the word letter by letter',       category: 'Solo',   color: 'from-purple-600 to-pink-600' },
-  { id: 'rps' as GameId,         name: 'Rock Paper Scissors',   emoji: '✊', price: 15,  desc: 'Best of rounds vs clever AI',           category: 'vs AI',  color: 'from-green-600 to-emerald-600' },
-  { id: 'connectfour' as GameId, name: 'Connect Four',          emoji: '🔴', price: 40,  desc: 'Drop pieces, connect four to win',      category: 'vs AI',  color: 'from-red-600 to-orange-600' },
-  { id: 'mastermind' as GameId,  name: 'Mastermind',            emoji: '🔐', price: 35,  desc: 'Crack the secret color code',           category: 'Solo',   color: 'from-yellow-600 to-amber-600' },
-  { id: 'wordchain' as GameId,   name: 'Word Chain',            emoji: '🔗', price: 25,  desc: 'Chain words with AI opponent',          category: 'vs AI',  color: 'from-teal-600 to-cyan-600' },
-  { id: 'truefalse' as GameId,   name: 'True or False Blitz',   emoji: '⚡', price: 20,  desc: 'Lightning-fast T/F quiz rounds',        category: 'Solo',   color: 'from-indigo-600 to-purple-600' },
-  { id: 'speedmath' as GameId,   name: 'Speed Math Race',       emoji: '🏎️', price: 30,  desc: 'Race AI to solve math problems',        category: 'vs AI',  color: 'from-rose-600 to-pink-600' },
+  { id: 'tictactoe' as GameId,   name: 'Tic-Tac-Toe',          img: imgTTT,     price: 30,  desc: 'Classic X vs O against AI',            category: 'vs AI' },
+  { id: 'hangman' as GameId,     name: 'Hangman',               img: imgHangman, price: 25,  desc: 'Guess the word letter by letter',       category: 'Solo' },
+  { id: 'rps' as GameId,         name: 'Rock Paper Scissors',   img: imgRPS,     price: 15,  desc: 'Best of rounds vs clever AI',           category: 'vs AI' },
+  { id: 'connectfour' as GameId, name: 'Connect Four',          img: imgC4,      price: 40,  desc: 'Drop pieces, connect four to win',      category: 'vs AI' },
+  { id: 'mastermind' as GameId,  name: 'Mastermind',            img: imgMM,      price: 35,  desc: 'Crack the secret color code',           category: 'Solo' },
+  { id: 'wordchain' as GameId,   name: 'Word Chain',            img: imgWC,      price: 25,  desc: 'Chain words with AI opponent',          category: 'vs AI' },
+  { id: 'truefalse' as GameId,   name: 'True or False Blitz',   img: imgTF,      price: 20,  desc: 'Lightning-fast T/F quiz rounds',        category: 'Solo' },
+  { id: 'speedmath' as GameId,   name: 'Speed Math Race',       img: imgSMR,     price: 30,  desc: 'Race AI to solve math problems',        category: 'vs AI' },
 ];
 
 
@@ -1669,12 +1747,12 @@ function addScore(gameId: string, gameName: string, score: number, level: number
 interface FiusGamesProps { playerName: string; }
 
 const FREE_GAMES = [
-  { id: 'memory' as GameId,  label: 'Memory Match',   emoji: '🃏', color: '#8b5cf6', bg: 'from-violet-600 to-purple-700',  desc: 'Match pairs before time runs out',   category: 'Solo' },
-  { id: 'maths' as GameId,   label: 'Speed Maths',    emoji: '➕', color: '#0ea5e9', bg: 'from-sky-500 to-blue-700',       desc: 'Solve arithmetic against the clock', category: 'Solo' },
-  { id: 'word' as GameId,    label: 'Word Scramble',  emoji: '📝', color: '#10b981', bg: 'from-emerald-500 to-teal-700',   desc: 'Unscramble hidden words fast',       category: 'Solo' },
-  { id: 'quiz' as GameId,    label: 'Brain Quiz',     emoji: '💡', color: '#f59e0b', bg: 'from-amber-500 to-orange-600',   desc: 'Test your general knowledge',        category: 'Solo' },
-  { id: 'car' as GameId,     label: 'Car Dodge',      emoji: '🏎️', color: '#ef4444', bg: 'from-red-500 to-rose-700',       desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
-  { id: 'oddword' as GameId, label: 'Odd One Out',    emoji: '🔍', color: '#06b6d4', bg: 'from-cyan-500 to-sky-700',       desc: "Find the word that doesn't fit",    category: 'Solo' },
+  { id: 'memory' as GameId,  label: 'Memory Match',   img: imgMemory,  desc: 'Match pairs before time runs out',   category: 'Solo' },
+  { id: 'maths' as GameId,   label: 'Speed Maths',    img: imgMaths,   desc: 'Solve arithmetic against the clock', category: 'Solo' },
+  { id: 'word' as GameId,    label: 'Word Scramble',  img: imgWord,    desc: 'Unscramble hidden words fast',       category: 'Solo' },
+  { id: 'quiz' as GameId,    label: 'Brain Quiz',     img: imgQuiz,    desc: 'Test your general knowledge',        category: 'Solo' },
+  { id: 'car' as GameId,     label: 'Car Dodge',      img: imgCar,     desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
+  { id: 'oddword' as GameId, label: 'Odd One Out',    img: imgOddWord, desc: "Find the word that doesn't fit",    category: 'Solo' },
 ];
 
 export function FiusGames({ playerName }: FiusGamesProps) {
@@ -1692,6 +1770,7 @@ export function FiusGames({ playerName }: FiusGamesProps) {
   const [search, setSearch] = useState('');
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
+  const [lbFilter, setLbFilter] = useState<string>('All');
 
   const handleWin = (score: number) => {
     const earned = fragmentsForLevel(gameLevel);
@@ -1822,17 +1901,19 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             {filteredFree.length > 0 && (
               <div>
                 <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {filteredFree.map(g => {
                     const lv = getGameLevel(g.id);
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
-                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/5"
-                        style={{ background: 'rgba(255,255,255,0.04)' }}>
-                        <div className={`w-full h-16 bg-gradient-to-br ${g.bg} flex items-center justify-center text-3xl`}>{g.emoji}</div>
-                        <div className="p-2.5">
+                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+                        style={{ background: 'rgba(255,255,255,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                        <div className="w-full h-24 overflow-hidden">
+                          <img src={g.img} alt={g.label} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-2.5 border-t border-white/8">
                           <div className="text-white font-bold text-xs leading-tight">{g.label}</div>
-                          <div className="text-zinc-600 text-[10px] mt-0.5 leading-tight line-clamp-1">{g.desc}</div>
+                          <div className="text-zinc-500 text-[10px] mt-0.5 leading-tight line-clamp-1">{g.desc}</div>
                           <div className="mt-2 flex items-center justify-between">
                             <LevelBadge level={lv} />
                             <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
@@ -1849,17 +1930,19 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             {myPurchased.length > 0 && (
               <div>
                 <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">My Games</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   {myPurchased.map(g => {
                     const lv = getGameLevel(g.id);
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
-                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/5"
-                        style={{ background: 'rgba(255,255,255,0.04)' }}>
-                        <div className={`w-full h-16 bg-gradient-to-br ${g.color} flex items-center justify-center text-3xl`}>{g.emoji}</div>
-                        <div className="p-2.5">
+                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
+                        style={{ background: 'rgba(255,255,255,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                        <div className="w-full h-24 overflow-hidden">
+                          <img src={g.img} alt={g.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-2.5 border-t border-white/8">
                           <div className="text-white font-bold text-xs leading-tight">{g.name}</div>
-                          <div className="text-zinc-600 text-[10px] mt-0.5 line-clamp-1">{g.desc}</div>
+                          <div className="text-zinc-500 text-[10px] mt-0.5 line-clamp-1">{g.desc}</div>
                           <div className="mt-2 flex items-center justify-between">
                             <LevelBadge level={lv} />
                             <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
@@ -1897,80 +1980,100 @@ export function FiusGames({ playerName }: FiusGamesProps) {
 
         {/* ── STORE TAB ── */}
         {tab === 'store' && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest flex-1">Premium Games</span>
-              <span className="text-zinc-600 text-[10px]">Balance: <span className="text-blue-400 font-bold">🔷 {fragments}</span></span>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>
+              <span className="text-zinc-600 text-[10px]">Balance: <span className="text-blue-400 font-bold flex items-center gap-1 inline-flex"><img src={imgCoins} alt="" className="w-3.5 h-3.5 inline" /> {fragments}</span></span>
             </div>
-            {STORE_CATALOG.map(game => {
-              const owned = ownedGames.includes(game.id);
-              const canAfford = fragments >= game.price;
-              return (
-                <div key={game.id} className="flex items-center gap-3 p-3 rounded-2xl border border-white/5 transition-all hover:border-white/10"
-                  style={{ background: owned ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.03)' }}>
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${game.color} flex items-center justify-center text-2xl flex-shrink-0`}>{game.emoji}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-white font-bold text-xs">{game.name}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/8 text-zinc-500 font-semibold">{game.category}</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              {STORE_CATALOG.map(game => {
+                const owned = ownedGames.includes(game.id);
+                const canAfford = fragments >= game.price;
+                return (
+                  <div key={game.id}
+                    className="flex flex-col rounded-2xl overflow-hidden border transition-all"
+                    style={{ border: owned ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)', background: owned ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.04)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                    <div className="w-full h-20 overflow-hidden relative">
+                      <img src={game.img} alt={game.name} className="w-full h-full object-cover" />
+                      {owned && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/80 text-white text-[10px] font-bold">
+                            <Check size={9} /> Owned
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-zinc-600 text-[10px] mt-0.5 line-clamp-1">{game.desc}</p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    {owned ? (
-                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
-                        <Check size={10} /> Owned
+                    <div className="p-2 border-t border-white/8">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className="text-white font-bold text-[11px] flex-1 truncate">{game.name}</span>
+                        <span className="text-[8px] px-1 py-0.5 rounded-full bg-white/10 text-zinc-500 font-semibold whitespace-nowrap">{game.category}</span>
                       </div>
-                    ) : (
-                      <button onClick={() => { if (canAfford) { handleBuy(game.id, game.price); } }}
-                        disabled={!canAfford}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${canAfford ? 'bg-blue-600/80 border-blue-500/40 text-white hover:bg-blue-600 hover:scale-105' : 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-not-allowed'}`}>
-                        🔷 {game.price}
-                      </button>
-                    )}
+                      <p className="text-zinc-600 text-[9px] mb-2 line-clamp-1">{game.desc}</p>
+                      {!owned && (
+                        <button onClick={() => { if (canAfford) handleBuy(game.id, game.price); }}
+                          disabled={!canAfford}
+                          className={`w-full flex items-center justify-center gap-1 py-1 rounded-xl text-[10px] font-bold transition-all border ${canAfford ? 'bg-blue-600/80 border-blue-500/40 text-white hover:bg-blue-600 active:scale-95' : 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-not-allowed'}`}>
+                          <img src={imgCoins} alt="" className="w-3 h-3" /> {game.price}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
 
         {/* ── LEADERBOARD TAB ── */}
         {tab === 'leaderboard' && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest flex-1">Top Scores</span>
+            {/* Game filter pills */}
+            <div className="flex gap-1 overflow-x-auto mb-3 pb-1" style={{ scrollbarWidth: 'none' }}>
+              {(['All', ...FREE_GAMES.map(g => g.label), ...STORE_CATALOG.map(g => g.name)]).map(g => (
+                <button key={g} onClick={() => setLbFilter(g)}
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${lbFilter === g ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                  {g}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                Top Scores{lbFilter !== 'All' ? ` · ${lbFilter}` : ''}
+              </span>
               {scores.length > 0 && (
-                <button onClick={() => { localStorage.removeItem(SCORES_KEY); setScores([]); }}
-                  className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors">Clear</button>
+                <button onClick={() => { localStorage.removeItem(SCORES_KEY); setScores([]); setLbFilter('All'); }}
+                  className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors">Clear all</button>
               )}
             </div>
-            {scores.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-4xl mb-3">🏆</div>
-                <p className="text-zinc-600 text-sm font-medium">No scores yet</p>
-                <p className="text-zinc-700 text-xs mt-1">Play games to set records!</p>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {scores.slice(0, 20).map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5"
-                    style={{ background: i === 0 ? 'rgba(251,191,36,0.08)' : i === 1 ? 'rgba(156,163,175,0.06)' : i === 2 ? 'rgba(180,83,9,0.06)' : 'rgba(255,255,255,0.02)' }}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0 ${i === 0 ? 'bg-yellow-500/20 text-yellow-400' : i === 1 ? 'bg-zinc-500/20 text-zinc-400' : i === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-600'}`}>
-                      {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
+            {(() => {
+              const displayed = (lbFilter === 'All' ? scores : scores.filter(s => s.game === lbFilter)).slice(0, 20);
+              return displayed.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-4xl mb-3">🏆</div>
+                  <p className="text-zinc-600 text-sm font-medium">{scores.length === 0 ? 'No scores yet' : `No scores for ${lbFilter}`}</p>
+                  <p className="text-zinc-700 text-xs mt-1">{scores.length === 0 ? 'Play games to set records!' : 'Try this game to get on the board'}</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {displayed.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5"
+                      style={{ background: i === 0 ? 'rgba(251,191,36,0.08)' : i === 1 ? 'rgba(156,163,175,0.06)' : i === 2 ? 'rgba(180,83,9,0.06)' : 'rgba(255,255,255,0.02)' }}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0 ${i === 0 ? 'bg-yellow-500/20 text-yellow-400' : i === 1 ? 'bg-zinc-500/20 text-zinc-400' : i === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-600'}`}>
+                        {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white text-xs font-bold truncate">{s.game}</div>
+                        <div className="text-zinc-600 text-[10px]">Lv {s.level} · {s.date}</div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className={`text-sm font-extrabold ${i === 0 ? 'text-yellow-400' : 'text-white'}`}>{s.score}</div>
+                        <div className="text-zinc-700 text-[9px]">pts</div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white text-xs font-bold">{s.game}</div>
-                      <div className="text-zinc-600 text-[10px]">Level {s.level} · {s.date}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className={`text-sm font-extrabold ${i === 0 ? 'text-yellow-400' : 'text-white'}`}>{s.score}</div>
-                      <div className="text-zinc-700 text-[9px]">pts</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
