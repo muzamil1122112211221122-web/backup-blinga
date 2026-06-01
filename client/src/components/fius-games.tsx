@@ -36,7 +36,7 @@ function saveOwned(ids: string[]) { localStorage.setItem(OWNED_KEY, JSON.stringi
 function loadLevels(): Record<string, number> { try { return JSON.parse(localStorage.getItem(LEVEL_KEY) || '{}'); } catch { return {}; } }
 function saveLevels(l: Record<string, number>) { localStorage.setItem(LEVEL_KEY, JSON.stringify(l)); }
 function getGameLevel(id: string): number { const l = loadLevels(); return l[id] || 1; }
-function setGameLevel(id: string, lv: number) { const l = loadLevels(); l[id] = lv; saveLevels(l); }
+function persistGameLevel(id: string, lv: number) { const l = loadLevels(); l[id] = lv; saveLevels(l); }
 function fragmentsForLevel(lv: number): number { return 4 + lv; }
 
 // ─── Level Difficulty Mapping ─────────────────────────────────────────────────
@@ -828,61 +828,175 @@ function FiusCar({ gameLevel, onWin, onLose }: GameProps) {
   const drawCar = (ctx: CanvasRenderingContext2D, x: number, y: number, col: string, isPlayer: boolean) => {
     const h = isPlayer ? CAR_H : OBS_H;
     // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'; rr(ctx, x+3, y+4, CAR_W, h, 6); ctx.fill();
-    // body
-    ctx.fillStyle = col; rr(ctx, x, y, CAR_W, h, 6); ctx.fill();
-    // roof/cabin highlight
-    ctx.fillStyle = isPlayer ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.15)';
-    rr(ctx, x+6, isPlayer ? y+CAR_H-34 : y+8, CAR_W-12, 14, 3); ctx.fill();
-    // windshield glare
-    ctx.fillStyle = 'rgba(200,240,255,0.45)'; rr(ctx, x+7, isPlayer ? y+CAR_H-32 : y+10, CAR_W-14, 10, 2); ctx.fill();
-    // wheels
-    ctx.fillStyle = '#111';
-    ctx.fillRect(x-3, y+8, 6, 12); ctx.fillRect(x+CAR_W-3, y+8, 6, 12);
-    ctx.fillRect(x-3, y+h-20, 6, 12); ctx.fillRect(x+CAR_W-3, y+h-20, 6, 12);
-    // wheel shine
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.fillRect(x-2, y+10, 4, 4); ctx.fillRect(x+CAR_W-2, y+10, 4, 4);
-    // headlights / taillights
-    ctx.fillStyle = isPlayer ? '#fef08a' : '#dc2626';
-    ctx.fillRect(x+4, isPlayer ? y+CAR_H-6 : y, CAR_W-8, 4);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; rr(ctx, x+2, y+5, CAR_W, h, 8); ctx.fill();
+    ctx.restore();
+    // body gradient
+    const bodyGrad = ctx.createLinearGradient(x, y, x+CAR_W, y+h);
+    bodyGrad.addColorStop(0, col);
+    bodyGrad.addColorStop(0.4, col);
+    bodyGrad.addColorStop(1, 'rgba(0,0,0,0.4)');
+    rr(ctx, x, y, CAR_W, h, 8); ctx.fillStyle = bodyGrad; ctx.fill();
+    // body side shine
+    const shineGrad = ctx.createLinearGradient(x, y, x+CAR_W, y);
+    shineGrad.addColorStop(0, 'rgba(255,255,255,0.18)');
+    shineGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
+    shineGrad.addColorStop(1, 'rgba(0,0,0,0.15)');
+    rr(ctx, x, y, CAR_W, h, 8); ctx.fillStyle = shineGrad; ctx.fill();
+    // --- roof / cabin area ---
+    const roofY = isPlayer ? y+CAR_H-38 : y+6;
+    const roofH = 16;
+    rr(ctx, x+5, roofY, CAR_W-10, roofH, 4);
+    ctx.fillStyle = 'rgba(10,10,20,0.85)'; ctx.fill();
+    // windshield glass
+    const glassGrad = ctx.createLinearGradient(x+6, roofY+1, x+6, roofY+roofH-2);
+    glassGrad.addColorStop(0, 'rgba(150,220,255,0.55)');
+    glassGrad.addColorStop(1, 'rgba(80,150,255,0.2)');
+    rr(ctx, x+6, roofY+1, CAR_W-12, roofH-2, 3);
+    ctx.fillStyle = glassGrad; ctx.fill();
+    // glass glare streak
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    rr(ctx, x+8, roofY+2, 6, 4, 1); ctx.fill();
+    // --- wheel wells ---
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    // front wheels
+    rr(ctx, x-4, y+6, 7, 13, 3); ctx.fill();
+    rr(ctx, x+CAR_W-3, y+6, 7, 13, 3); ctx.fill();
+    // rear wheels
+    rr(ctx, x-4, y+h-19, 7, 13, 3); ctx.fill();
+    rr(ctx, x+CAR_W-3, y+h-19, 7, 13, 3); ctx.fill();
+    // tire rubber
+    ctx.fillStyle = '#1a1a1a';
+    rr(ctx, x-3, y+7, 5, 11, 2); ctx.fill();
+    rr(ctx, x+CAR_W-2, y+7, 5, 11, 2); ctx.fill();
+    rr(ctx, x-3, y+h-18, 5, 11, 2); ctx.fill();
+    rr(ctx, x+CAR_W-2, y+h-18, 5, 11, 2); ctx.fill();
+    // rim circles
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath(); ctx.arc(x-0.5, y+12, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+CAR_W+0.5, y+12, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x-0.5, y+h-13, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+CAR_W+0.5, y+h-13, 2.5, 0, Math.PI*2); ctx.fill();
+    // --- headlights / taillights ---
+    if (isPlayer) {
+      // taillights (bottom) — red glow
+      ctx.fillStyle = '#ef4444';
+      rr(ctx, x+3, y+CAR_H-5, 7, 4, 2); ctx.fill();
+      rr(ctx, x+CAR_W-10, y+CAR_H-5, 7, 4, 2); ctx.fill();
+      ctx.save(); ctx.shadowColor='#ef4444'; ctx.shadowBlur=8;
+      ctx.fillStyle='rgba(239,68,68,0.6)'; ctx.fillRect(x+3, y+CAR_H-5, 7, 4); ctx.restore();
+      // headlights (top visible) — yellow
+      ctx.fillStyle='#fef08a';
+      rr(ctx, x+3, y, 7, 3, 2); ctx.fill();
+      rr(ctx, x+CAR_W-10, y, 7, 3, 2); ctx.fill();
+      // racing stripe
+      ctx.fillStyle='rgba(255,255,255,0.12)';
+      ctx.fillRect(x+CAR_W/2-2, y+4, 4, h-8);
+    } else {
+      // enemy headlights (bottom, facing player)
+      ctx.fillStyle='#fef08a';
+      rr(ctx, x+3, y+OBS_H-5, 7, 4, 2); ctx.fill();
+      rr(ctx, x+CAR_W-10, y+OBS_H-5, 7, 4, 2); ctx.fill();
+      ctx.save(); ctx.shadowColor='#fef08a'; ctx.shadowBlur=10;
+      ctx.fillStyle='rgba(254,240,138,0.7)'; ctx.fillRect(x+3, y+OBS_H-5, 7, 4); ctx.restore();
+      // taillights (top)
+      ctx.fillStyle='#dc2626';
+      rr(ctx, x+3, y, 7, 3, 2); ctx.fill();
+      rr(ctx, x+CAR_W-10, y, 7, 3, 2); ctx.fill();
+    }
   };
 
   const draw = useCallback((sl?: number) => {
     const cv = canvasRef.current; if (!cv) return;
     const ctx = cv.getContext('2d')!; const s = gs.current;
     const lerpL = sl ?? smoothLane.current;
-    // sky/horizon
-    const grad = ctx.createLinearGradient(0,0,0,CH/3);
-    grad.addColorStop(0,'#0f172a'); grad.addColorStop(1,'#1e293b');
-    ctx.fillStyle = grad; ctx.fillRect(0,0,CW,CH/3);
-    // road base
-    ctx.fillStyle = '#374151'; ctx.fillRect(0,CH/3,CW,CH);
+    // ── SKY with city silhouette ──
+    const skyGrad = ctx.createLinearGradient(0,0,0,CH/3+10);
+    skyGrad.addColorStop(0,'#020817'); skyGrad.addColorStop(0.5,'#0c1a3a'); skyGrad.addColorStop(1,'#1a2e50');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0,0,CW,CH/3+10);
+    // stars
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    const starSeed=[3,11,17,23,37,41,53,67,79,83,97,101,107,113,127,131];
+    for(let i=0;i<16;i++){const sx=(starSeed[i]*37+s.frame*0.02)%CW;const sy=(starSeed[(i+3)%16]*13)%(CH/3-8)+4;ctx.fillRect(sx,sy,1,1);}
+    // city building silhouettes
+    const buildH=[28,44,22,52,34,40,18,46,30,38];
+    const buildW=CW/buildH.length;
+    ctx.fillStyle='rgba(15,23,42,0.9)';
+    for(let i=0;i<buildH.length;i++){ctx.fillRect(i*buildW,CH/3-buildH[i],buildW-1,buildH[i]+2);}
+    // building windows
+    ctx.fillStyle='rgba(255,230,100,0.55)';
+    for(let i=0;i<buildH.length;i++){
+      for(let wy=CH/3-buildH[i]+4;wy<CH/3-4;wy+=8){
+        for(let wx=i*buildW+3;wx<(i+1)*buildW-5;wx+=6){
+          if((i*7+wy*3)%5!==0) ctx.fillRect(wx,wy,3,4);
+        }
+      }
+    }
+    // horizon glow
+    const hGlow=ctx.createLinearGradient(0,CH/3-8,0,CH/3+8);
+    hGlow.addColorStop(0,'rgba(251,146,60,0.0)');hGlow.addColorStop(0.5,'rgba(251,146,60,0.18)');hGlow.addColorStop(1,'rgba(251,146,60,0.0)');
+    ctx.fillStyle=hGlow; ctx.fillRect(0,CH/3-8,CW,16);
+    // ── ROAD ──
+    // base asphalt
+    const roadGrad=ctx.createLinearGradient(0,CH/3,0,CH);
+    roadGrad.addColorStop(0,'#2d3748'); roadGrad.addColorStop(1,'#1a202c');
+    ctx.fillStyle=roadGrad; ctx.fillRect(0,CH/3,CW,CH);
     // road surface
-    ctx.fillStyle = '#4b5563'; ctx.fillRect(SHOULDER,CH/3,RW,CH);
-    // yellow shoulders
-    ctx.fillStyle = '#fbbf24'; ctx.fillRect(SHOULDER-4,CH/3,4,CH); ctx.fillRect(SHOULDER+RW,CH/3,4,CH);
-    // animated dashed lane lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.setLineDash([22,18]);
-    ctx.lineDashOffset = -(s.frame * s.speed * 0.9 % 40);
-    for (let i = 1; i < LANES; i++) { const lx2 = SHOULDER + i * LANE_W; ctx.beginPath(); ctx.moveTo(lx2,CH/3); ctx.lineTo(lx2,CH); ctx.stroke(); }
+    const surfGrad=ctx.createLinearGradient(0,CH/3,0,CH);
+    surfGrad.addColorStop(0,'#3d4a5c'); surfGrad.addColorStop(1,'#2a3344');
+    ctx.fillStyle=surfGrad; ctx.fillRect(SHOULDER,CH/3,RW,CH);
+    // road texture lines
+    ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.setLineDash([3,20]);
+    for(let ti=0;ti<5;ti++){ctx.beginPath();ctx.moveTo(SHOULDER+ti*(RW/4),CH/3);ctx.lineTo(SHOULDER+ti*(RW/4),CH);ctx.stroke();}
     ctx.setLineDash([]);
-    // side speed lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
-    for (let i = 0; i < 4; i++) {
-      const bx = 3 + i * 4; const by = ((s.frame * s.speed * 0.7 + i * 60) % (CH * 0.7)) + CH * 0.3;
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by + 28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(CW-bx, by); ctx.lineTo(CW-bx, by + 28); ctx.stroke();
+    // road reflection / wet look
+    const reflGrad=ctx.createLinearGradient(SHOULDER,CH*0.65,SHOULDER+RW,CH*0.65);
+    reflGrad.addColorStop(0,'rgba(255,255,255,0)');reflGrad.addColorStop(0.4,'rgba(255,255,255,0.04)');reflGrad.addColorStop(0.6,'rgba(255,255,255,0.04)');reflGrad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=reflGrad; ctx.fillRect(SHOULDER,CH*0.6,RW,CH*0.4);
+    // shoulder curbs — white+red striped
+    for(let ci=0;ci<10;ci++){
+      const cy=CH/3+ci*(CH*0.7/10);
+      ctx.fillStyle=ci%2===0?'#ef4444':'#f8fafc';
+      ctx.fillRect(SHOULDER-8,cy,8,CH*0.7/10);
+      ctx.fillRect(SHOULDER+RW,cy,8,CH*0.7/10);
+    }
+    // animated dashed center lane lines
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=2.5; ctx.setLineDash([22,18]);
+    ctx.lineDashOffset = -(s.frame * s.speed * 0.9 % 40);
+    for (let i=1;i<LANES;i++){const lx2=SHOULDER+i*LANE_W;ctx.beginPath();ctx.moveTo(lx2,CH/3);ctx.lineTo(lx2,CH);ctx.stroke();}
+    ctx.setLineDash([]);
+    // streetlight poles on sides (animated)
+    const lampOffset=(s.frame*s.speed*0.5)%(CH*0.6);
+    for(let li=0;li<4;li++){
+      const ly=CH/3+((li*(CH*0.6/3)+lampOffset)%(CH*0.6));
+      ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(4,ly);ctx.lineTo(4,ly+40);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(CW-4,ly);ctx.lineTo(CW-4,ly+40);ctx.stroke();
+      // lamp glow
+      const lampGlow=ctx.createRadialGradient(4,ly,0,4,ly,10);
+      lampGlow.addColorStop(0,'rgba(255,220,100,0.4)');lampGlow.addColorStop(1,'rgba(255,220,100,0)');
+      ctx.fillStyle=lampGlow;ctx.fillRect(-6,ly-10,20,20);
+      const lampGlow2=ctx.createRadialGradient(CW-4,ly,0,CW-4,ly,10);
+      lampGlow2.addColorStop(0,'rgba(255,220,100,0.4)');lampGlow2.addColorStop(1,'rgba(255,220,100,0)');
+      ctx.fillStyle=lampGlow2;ctx.fillRect(CW-14,ly-10,20,20);
     }
     // obstacles
     for (const o of s.obs) { drawCar(ctx, lx(o.lane), o.y, o.col, false); }
     // player (smooth lane)
     const px = SHOULDER + lerpL * LANE_W + (LANE_W - CAR_W) / 2;
     drawCar(ctx, px, PY, '#22c55e', true);
-    // glow under player
-    const grd = ctx.createRadialGradient(px+CAR_W/2, PY+CAR_H, 0, px+CAR_W/2, PY+CAR_H, 28);
-    grd.addColorStop(0,'rgba(34,197,94,0.35)'); grd.addColorStop(1,'rgba(34,197,94,0)');
-    ctx.fillStyle = grd; ctx.fillRect(px-10, PY, CAR_W+20, CAR_H+20);
+    // glow under player car
+    const grd = ctx.createRadialGradient(px+CAR_W/2, PY+CAR_H, 0, px+CAR_W/2, PY+CAR_H, 32);
+    grd.addColorStop(0,'rgba(34,197,94,0.45)'); grd.addColorStop(1,'rgba(34,197,94,0)');
+    ctx.fillStyle = grd; ctx.fillRect(px-16, PY, CAR_W+32, CAR_H+24);
+    // speed streak behind player
+    if(s.speed>5){
+      const alpha=Math.min(0.35,(s.speed-5)/20);
+      ctx.fillStyle=`rgba(34,197,94,${alpha})`;
+      ctx.fillRect(px+4,PY+CAR_H,5,Math.min(30,s.speed*4));
+      ctx.fillRect(px+CAR_W-9,PY+CAR_H,5,Math.min(30,s.speed*4));
+    }
   }, []);
 
   const startGame = useCallback(() => {
@@ -1845,7 +1959,7 @@ export function FiusGames({ playerName }: FiusGamesProps) {
         </div>
         {modal === 'win' && <WinModal level={gameLevel} score={lastScore} fragsEarned={lastFrags} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
         {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
-        {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { setGameLevel(gameLevel + 1); setModal(null); setKey(k => k + 1); }} onNo={() => { setModal(null); goToMenu(); }} />}
+        {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); }} onNo={() => { setModal(null); goToMenu(); }} />}
       </div>
     );
   }
@@ -1907,11 +2021,11 @@ export function FiusGames({ playerName }: FiusGamesProps) {
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
                         className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
-                        style={{ background: 'rgba(255,255,255,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                        <div className="w-full h-24 overflow-hidden">
-                          <img src={g.img} alt={g.label} className="w-full h-full object-cover" />
+                        style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 110, background: '#1a1a2e' }}>
+                          <img src={g.img} alt={g.label} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 110 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
-                        <div className="p-2.5 border-t border-white/8">
+                        <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                           <div className="text-white font-bold text-xs leading-tight">{g.label}</div>
                           <div className="text-zinc-500 text-[10px] mt-0.5 leading-tight line-clamp-1">{g.desc}</div>
                           <div className="mt-2 flex items-center justify-between">
@@ -1935,12 +2049,12 @@ export function FiusGames({ playerName }: FiusGamesProps) {
                     const lv = getGameLevel(g.id);
                     return (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
-                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/10"
-                        style={{ background: 'rgba(255,255,255,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                        <div className="w-full h-24 overflow-hidden">
-                          <img src={g.img} alt={g.name} className="w-full h-full object-cover" />
+                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 110, background: '#0d1f1a' }}>
+                          <img src={g.img} alt={g.name} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 110 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
-                        <div className="p-2.5 border-t border-white/8">
+                        <div className="p-2.5" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
                           <div className="text-white font-bold text-xs leading-tight">{g.name}</div>
                           <div className="text-zinc-500 text-[10px] mt-0.5 line-clamp-1">{g.desc}</div>
                           <div className="mt-2 flex items-center justify-between">
@@ -1991,28 +2105,29 @@ export function FiusGames({ playerName }: FiusGamesProps) {
                 const canAfford = fragments >= game.price;
                 return (
                   <div key={game.id}
-                    className="flex flex-col rounded-2xl overflow-hidden border transition-all"
-                    style={{ border: owned ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.08)', background: owned ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.04)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-                    <div className="w-full h-20 overflow-hidden relative">
-                      <img src={game.img} alt={game.name} className="w-full h-full object-cover" />
+                    className="flex flex-col rounded-2xl overflow-hidden transition-all"
+                    style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}>
+                    <div className="w-full overflow-hidden relative" style={{ height: 100, background: owned ? '#0d1f1a' : '#12121e' }}>
+                      <img src={game.img} alt={game.name} className="w-full h-full object-cover object-center" style={{ display: 'block', minHeight: 100 }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       {owned && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/80 text-white text-[10px] font-bold">
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
+                          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full font-bold text-[10px] text-white" style={{ background: 'rgba(16,185,129,0.85)' }}>
                             <Check size={9} /> Owned
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="p-2 border-t border-white/8">
+                    <div className="p-2" style={{ borderTop: owned ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.07)' }}>
                       <div className="flex items-center gap-1 mb-0.5">
                         <span className="text-white font-bold text-[11px] flex-1 truncate">{game.name}</span>
-                        <span className="text-[8px] px-1 py-0.5 rounded-full bg-white/10 text-zinc-500 font-semibold whitespace-nowrap">{game.category}</span>
+                        <span className="text-[8px] px-1 py-0.5 rounded-full font-semibold whitespace-nowrap" style={{ background: 'rgba(255,255,255,0.08)', color: '#9ca3af' }}>{game.category}</span>
                       </div>
-                      <p className="text-zinc-600 text-[9px] mb-2 line-clamp-1">{game.desc}</p>
+                      <p className="text-zinc-500 text-[9px] mb-2 line-clamp-1">{game.desc}</p>
                       {!owned && (
                         <button onClick={() => { if (canAfford) handleBuy(game.id, game.price); }}
                           disabled={!canAfford}
-                          className={`w-full flex items-center justify-center gap-1 py-1 rounded-xl text-[10px] font-bold transition-all border ${canAfford ? 'bg-blue-600/80 border-blue-500/40 text-white hover:bg-blue-600 active:scale-95' : 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-not-allowed'}`}>
+                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[10px] font-bold transition-all active:scale-95 ${canAfford ? 'text-white' : 'cursor-not-allowed text-zinc-600'}`}
+                          style={{ background: canAfford ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : 'rgba(39,39,42,0.8)', border: canAfford ? '1px solid rgba(96,165,250,0.4)' : '1px solid rgba(63,63,70,0.8)' }}>
                           <img src={imgCoins} alt="" className="w-3 h-3" /> {game.price}
                         </button>
                       )}
@@ -2031,14 +2146,15 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             <div className="flex gap-1 overflow-x-auto mb-3 pb-1" style={{ scrollbarWidth: 'none' }}>
               {(['All', ...FREE_GAMES.map(g => g.label), ...STORE_CATALOG.map(g => g.name)]).map(g => (
                 <button key={g} onClick={() => setLbFilter(g)}
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${lbFilter === g ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
+                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${lbFilter === g ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                  style={{ background: lbFilter === g ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : 'rgba(39,39,42,0.8)', border: lbFilter === g ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(63,63,70,0.5)' }}>
                   {g}
                 </button>
               ))}
             </div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                Top Scores{lbFilter !== 'All' ? ` · ${lbFilter}` : ''}
+                🏆 Rankings{lbFilter !== 'All' ? ` · ${lbFilter}` : ''}
               </span>
               {scores.length > 0 && (
                 <button onClick={() => { localStorage.removeItem(SCORES_KEY); setScores([]); setLbFilter('All'); }}
@@ -2047,30 +2163,74 @@ export function FiusGames({ playerName }: FiusGamesProps) {
             </div>
             {(() => {
               const displayed = (lbFilter === 'All' ? scores : scores.filter(s => s.game === lbFilter)).slice(0, 20);
-              return displayed.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="text-4xl mb-3">🏆</div>
-                  <p className="text-zinc-600 text-sm font-medium">{scores.length === 0 ? 'No scores yet' : `No scores for ${lbFilter}`}</p>
-                  <p className="text-zinc-700 text-xs mt-1">{scores.length === 0 ? 'Play games to set records!' : 'Try this game to get on the board'}</p>
+              if (displayed.length === 0) return (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3">🏆</div>
+                  <p className="text-zinc-500 text-sm font-bold">{scores.length === 0 ? 'No scores yet' : `No scores for ${lbFilter}`}</p>
+                  <p className="text-zinc-700 text-xs mt-1">{scores.length === 0 ? 'Win games to claim your spot!' : 'Play this game to get on the board'}</p>
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {displayed.map((s, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5"
-                      style={{ background: i === 0 ? 'rgba(251,191,36,0.08)' : i === 1 ? 'rgba(156,163,175,0.06)' : i === 2 ? 'rgba(180,83,9,0.06)' : 'rgba(255,255,255,0.02)' }}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0 ${i === 0 ? 'bg-yellow-500/20 text-yellow-400' : i === 1 ? 'bg-zinc-500/20 text-zinc-400' : i === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-600'}`}>
-                        {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white text-xs font-bold truncate">{s.game}</div>
-                        <div className="text-zinc-600 text-[10px]">Lv {s.level} · {s.date}</div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className={`text-sm font-extrabold ${i === 0 ? 'text-yellow-400' : 'text-white'}`}>{s.score}</div>
-                        <div className="text-zinc-700 text-[9px]">pts</div>
-                      </div>
+              );
+              const maxScore = displayed[0]?.score || 1;
+              /* Podium for top 3 */
+              const podiumColors = [
+                { bg: 'linear-gradient(135deg,#b45309,#fbbf24)', glow: 'rgba(251,191,36,0.4)', rank: '🥇', label: '1st', h: 72 },
+                { bg: 'linear-gradient(135deg,#6b7280,#d1d5db)', glow: 'rgba(209,213,219,0.3)', rank: '🥈', label: '2nd', h: 52 },
+                { bg: 'linear-gradient(135deg,#92400e,#f97316)', glow: 'rgba(249,115,22,0.3)', rank: '🥉', label: '3rd', h: 40 },
+              ];
+              const top3 = displayed.slice(0, 3);
+              /* Reorder podium: 2nd left, 1st center, 3rd right */
+              const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+              return (
+                <div>
+                  {/* Podium display */}
+                  {top3.length > 0 && (
+                    <div className="flex items-end justify-center gap-2 mb-5 px-2" style={{ height: 130 }}>
+                      {podiumOrder.map((s, pi) => {
+                        const realIdx = top3.indexOf(s);
+                        const pc = podiumColors[realIdx];
+                        return (
+                          <div key={pi} className="flex flex-col items-center flex-1 max-w-[100px]">
+                            <div className="text-lg mb-0.5">{pc.rank}</div>
+                            <div className="text-white font-bold text-[10px] text-center truncate w-full px-1 mb-1">{s.game}</div>
+                            <div className="text-[11px] font-extrabold mb-1" style={{ color: realIdx === 0 ? '#fbbf24' : realIdx === 1 ? '#d1d5db' : '#f97316' }}>{s.score}</div>
+                            <div className="w-full rounded-t-xl flex items-center justify-center text-white font-black text-xs"
+                              style={{ height: pc.h, background: pc.bg, boxShadow: `0 0 16px ${pc.glow}`, minWidth: 60 }}>
+                              {pc.label}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  )}
+                  {/* Rest of scores */}
+                  {displayed.length > 3 && (
+                    <div className="space-y-1.5">
+                      {displayed.slice(3).map((s, i) => {
+                        const rank = i + 4;
+                        const barW = Math.max(8, Math.round((s.score / maxScore) * 100));
+                        return (
+                          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold flex-shrink-0"
+                              style={{ background: 'rgba(255,255,255,0.08)', color: '#71717a' }}>{rank}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white text-[11px] font-bold truncate mb-0.5">{s.game}</div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                                  <div className="h-full rounded-full" style={{ width: `${barW}%`, background: 'linear-gradient(90deg,#3b82f6,#a855f7)', transition: 'width 0.6s ease' }} />
+                                </div>
+                                <span className="text-[9px] text-zinc-600 flex-shrink-0">Lv{s.level}</span>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-sm font-extrabold text-white">{s.score}</div>
+                              <div className="text-[9px] text-zinc-700">pts</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })()}
