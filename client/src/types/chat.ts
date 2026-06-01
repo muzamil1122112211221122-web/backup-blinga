@@ -89,6 +89,22 @@ export const MODEL_OPTIONS = [
     provider: 'fius',
     speed: 'fast',
     intelligence: 'high'
+  },
+  { 
+    id: 'fius-imagine-super', 
+    name: 'Fius Imagine Super', 
+    description: 'Highest quality AI image generation', 
+    provider: 'fius-imagine',
+    speed: 'medium',
+    intelligence: 'highest'
+  },
+  { 
+    id: 'fius-imagine-fast', 
+    name: 'Fius Imagine Fast', 
+    description: 'Rapid AI image generation', 
+    provider: 'fius-imagine',
+    speed: 'fastest',
+    intelligence: 'high'
   }
 ] as const;
 
@@ -99,6 +115,8 @@ export const AVAILABLE_MODELS = [
   'gemini-pro',
   'llama-3.3-70b-versatile',
   'fius-education',
+  'fius-imagine-super',
+  'fius-imagine-fast',
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];

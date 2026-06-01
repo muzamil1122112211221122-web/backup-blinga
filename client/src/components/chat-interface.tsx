@@ -1208,6 +1208,12 @@ IMPORTANT RULES:
     localStorage.removeItem('currentProjectId');
   };
 
+  const tabModelOptions = activeTab === 'ask'
+    ? MODEL_OPTIONS.filter(m => m.provider === 'fius')
+    : activeTab === 'imagine'
+    ? MODEL_OPTIONS.filter(m => m.provider === 'fius-imagine')
+    : MODEL_OPTIONS.filter(m => m.provider !== 'fius-imagine');
+
   const scrollToBottom = useCallback(() => {
     if (chatScrollRef.current) {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
@@ -3208,7 +3214,7 @@ Let's start the self-listen session!`;
                     value={personalitySearch}
                     onChange={e => setPersonalitySearch(e.target.value)}
                     placeholder="Search personalities..."
-                    className="w-full bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full max-w-xs bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 {/* Category Filter */}
@@ -3448,7 +3454,7 @@ Let's start the self-listen session!`;
         <div className="border-t border-border mx-0" />
       )}
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+      <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
           {/* Attached images/files preview - ChatGPT style */}
           {(attachedImages.length > 0 || attachedFiles.length > 0) && (
@@ -3555,12 +3561,13 @@ Let's start the self-listen session!`;
                 data-testid="input-message"
               />
               {/* RIGHT: Model selector + mic + send */}
+              {activeTab !== 'nomad' && (
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                 <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[120px]">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
-                  {MODEL_OPTIONS.map((modelOption) => (
+                  {tabModelOptions.map((modelOption) => (
                     <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${modelOption.provider === 'openai' ? 'bg-emerald-500' : modelOption.provider === 'anthropic' ? 'bg-orange-500' : modelOption.provider === 'google' ? 'bg-blue-500' : 'bg-zinc-500'}`}></div>
@@ -3570,6 +3577,7 @@ Let's start the self-listen session!`;
                   ))}
                 </SelectContent>
               </Select>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -3631,12 +3639,13 @@ Let's start the self-listen session!`;
 
               <div className="flex items-center justify-between px-2 pb-1.5">
                 <div className="flex items-center">
+                  {activeTab !== 'nomad' && (
                   <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                     <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
-                      {MODEL_OPTIONS.map((modelOption) => (
+                      {tabModelOptions.map((modelOption) => (
                         <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                           <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${
@@ -3651,6 +3660,7 @@ Let's start the self-listen session!`;
                       ))}
                     </SelectContent>
                   </Select>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-1.5 sm:space-x-2">
