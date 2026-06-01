@@ -389,8 +389,29 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 function ImagineImageCard({ imageUrl, fallbackUrls }: { imageUrl: string; fallbackUrls: string[] }) {
   const [loading, setLoading] = React.useState(true);
   const [failed, setFailed] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
   const [src, setSrc] = React.useState(imageUrl);
   const fallbackRef = React.useRef(0);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fius-image.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(src, '_blank');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted min-h-[200px]">
@@ -419,16 +440,14 @@ function ImagineImageCard({ imageUrl, fallbackUrls }: { imageUrl: string; fallba
           }}
         />
       )}
-      {!failed && (
-        <a
-          href={src}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors z-20"
-          onClick={e => e.stopPropagation()}
+      {!failed && !loading && (
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors z-20 disabled:opacity-50"
         >
-          Open
-        </a>
+          {downloading ? '…' : '⬇ Download'}
+        </button>
       )}
     </div>
   );
@@ -1406,7 +1425,32 @@ IMPORTANT RULES:
         "Cinematic": "cinematic photography, movie still, anamorphic lens, dramatic lighting, film grain",
       };
       const styleSuffix = IMAGINE_STYLE_SUFFIXES[imagineStyle] || imagineStyle.toLowerCase();
-      const fullPrompt = `${content}, ${styleSuffix}`;
+
+      // Detect if this is an edit of a previous image (not a new image request)
+      const EDIT_KEYWORDS = /\b(instead|change|make it|now make|add|remove|replace|but|more|less|darker|lighter|without|with|color|colour|style|also|edit|modify|update|turn it|now|recolor|should|can you|could you)\b/i;
+
+      // Find the user prompt that produced the last generated image
+      let lastImagePrompt: string | null = null;
+      for (let i = imagineMessages.length - 1; i >= 0; i--) {
+        if (imagineMessages[i].role === 'ai' && imagineMessages[i].imageUrl) {
+          for (let j = i - 1; j >= 0; j--) {
+            if (imagineMessages[j].role === 'user') {
+              lastImagePrompt = imagineMessages[j].content;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      const isEdit = !!lastImagePrompt && EDIT_KEYWORDS.test(content);
+
+      let basePrompt = content;
+      if (isEdit && lastImagePrompt) {
+        // Combine the original subject with the edit instruction
+        basePrompt = `${lastImagePrompt}, ${content}`;
+      }
+
+      const fullPrompt = `${basePrompt}, ${styleSuffix}`;
 
       const userMsgId = Date.now().toString();
       const aiMsgId = (Date.now() + 1).toString();
