@@ -1647,65 +1647,19 @@ const STORE_CATALOG = [
   { id: 'speedmath' as GameId,   name: 'Speed Math Race',       emoji: '🏎️', price: 30,  desc: 'Race AI to solve math problems',        category: 'vs AI',  color: 'from-rose-600 to-pink-600' },
 ];
 
-function GameStore({ fragments, ownedGames, onBuy, onClose }: { fragments: number; ownedGames: string[]; onBuy: (id: string, price: number) => void; onClose: () => void; }) {
-  const [buying, setBuying] = useState<string|null>(null);
 
-  const handleBuy = (id: string, price: number) => {
-    if (fragments < price) return;
-    setBuying(id);
-    setTimeout(() => { onBuy(id, price); setBuying(null); }, 500);
-  };
+// ═══════════════════════════════════════════════════════════════════════════════
+// ─── LEADERBOARD STORAGE ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-white">Game Store</h2>
-          <p className="text-zinc-400 text-xs">Buy games with your blue fragments</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <FragmentBadge count={fragments} />
-          <button onClick={onClose} className="text-zinc-400 hover:text-white text-sm transition-colors">← Back</button>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto grid grid-cols-1 gap-3" style={{ scrollbarWidth: 'thin' }}>
-        {STORE_CATALOG.map(game => {
-          const owned = ownedGames.includes(game.id);
-          const canAfford = fragments >= game.price;
-          return (
-            <div key={game.id} className="rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}>
-              <div className={`flex items-center gap-3 px-4 py-3`}>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${game.color} flex items-center justify-center text-2xl flex-shrink-0`}>{game.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-bold text-sm">{game.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-zinc-400 font-semibold">{game.category}</span>
-                  </div>
-                  <p className="text-zinc-500 text-xs mt-0.5">{game.desc}</p>
-                </div>
-                <div className="flex-shrink-0 ml-2">
-                  {owned ? (
-                    <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">
-                      <Check size={12} /> Owned
-                    </div>
-                  ) : (
-                    <button onClick={() => handleBuy(game.id, game.price)}
-                      disabled={!canAfford || buying === game.id}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all
-                        ${canAfford ? 'hover:scale-105 active:scale-95' : 'opacity-40 cursor-not-allowed'}
-                        ${buying === game.id ? 'animate-pulse' : ''}`}
-                      style={{ background: canAfford ? 'linear-gradient(135deg, #1e40af, #3b82f6)' : 'rgba(255,255,255,0.1)', color: 'white' }}>
-                      {buying === game.id ? '...' : <><span>🔷</span> {game.price}</>}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+const SCORES_KEY = 'fius_scores_v2';
+interface ScoreEntry { id: string; game: string; score: number; level: number; date: string; }
+function loadScores(): ScoreEntry[] { try { return JSON.parse(localStorage.getItem(SCORES_KEY) || '[]'); } catch { return []; } }
+function addScore(gameId: string, gameName: string, score: number, level: number) {
+  const all = loadScores();
+  all.push({ id: gameId, game: gameName, score, level, date: new Date().toLocaleDateString() });
+  all.sort((a, b) => b.score - a.score);
+  localStorage.setItem(SCORES_KEY, JSON.stringify(all.slice(0, 50)));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1715,49 +1669,52 @@ function GameStore({ fragments, ownedGames, onBuy, onClose }: { fragments: numbe
 interface FiusGamesProps { playerName: string; }
 
 const FREE_GAMES = [
-  { id: 'memory' as GameId,  label: 'Fius Memory',    emoji: '🃏', color: '#c026d3', desc: 'Match pairs before time runs out' },
-  { id: 'maths' as GameId,   label: 'Fius Maths',     emoji: '🔢', color: '#0ea5e9', desc: 'Solve arithmetic against the clock' },
-  { id: 'word' as GameId,    label: 'Fius Word',      emoji: '🔤', color: '#7c3aed', desc: 'Unscramble hidden words fast' },
-  { id: 'quiz' as GameId,    label: 'Fius Quiz',      emoji: '🧠', color: '#f97316', desc: 'Test your general knowledge' },
-  { id: 'car' as GameId,     label: 'Car Dodge',       emoji: '🚗', color: '#16a34a', desc: 'Dodge cars for as long as you can' },
-  { id: 'oddword' as GameId, label: 'Odd Word Out',    emoji: '🕵️', color: '#0891b2', desc: 'Find the wrong word in the sentence' },
+  { id: 'memory' as GameId,  label: 'Memory Match',   emoji: '🃏', color: '#8b5cf6', bg: 'from-violet-600 to-purple-700',  desc: 'Match pairs before time runs out',   category: 'Solo' },
+  { id: 'maths' as GameId,   label: 'Speed Maths',    emoji: '➕', color: '#0ea5e9', bg: 'from-sky-500 to-blue-700',       desc: 'Solve arithmetic against the clock', category: 'Solo' },
+  { id: 'word' as GameId,    label: 'Word Scramble',  emoji: '📝', color: '#10b981', bg: 'from-emerald-500 to-teal-700',   desc: 'Unscramble hidden words fast',       category: 'Solo' },
+  { id: 'quiz' as GameId,    label: 'Brain Quiz',     emoji: '💡', color: '#f59e0b', bg: 'from-amber-500 to-orange-600',   desc: 'Test your general knowledge',        category: 'Solo' },
+  { id: 'car' as GameId,     label: 'Car Dodge',      emoji: '🏎️', color: '#ef4444', bg: 'from-red-500 to-rose-700',       desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
+  { id: 'oddword' as GameId, label: 'Odd One Out',    emoji: '🔍', color: '#06b6d4', bg: 'from-cyan-500 to-sky-700',       desc: "Find the word that doesn't fit",    category: 'Solo' },
 ];
 
 export function FiusGames({ playerName }: FiusGamesProps) {
-  const [screen, setScreen] = useState<'menu'|'store'|'game'>('menu');
+  const [tab, setTab] = useState<'games'|'store'|'leaderboard'>('games');
+  const [screen, setScreen] = useState<'menu'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
+  const [activeGameLabel, setActiveGameLabel] = useState('');
   const [gameLevel, setGameLevel] = useState(1);
   const [fragments, setFragments] = useState(() => loadFragments());
   const [ownedGames, setOwnedGames] = useState<string[]>(() => loadOwned());
   const [modal, setModal] = useState<'win'|'lose'|'continue'|null>(null);
   const [lastScore, setLastScore] = useState(0);
   const [lastFrags, setLastFrags] = useState(0);
-  const [key, setKey] = useState(0); // force remount game
+  const [key, setKey] = useState(0);
+  const [search, setSearch] = useState('');
+  const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
+  const [exitConfirm, setExitConfirm] = useState(false);
 
   const handleWin = (score: number) => {
     const earned = fragmentsForLevel(gameLevel);
     const newFrags = fragments + earned;
     setFragments(newFrags); saveFragments(newFrags);
     setLastScore(score); setLastFrags(earned);
+    if (activeGame) { addScore(activeGame, activeGameLabel, score, gameLevel); setScores(loadScores()); }
     setModal('win');
   };
-
-  const handleLose = () => { setModal('lose'); };
-
+  const handleLose = () => setModal('lose');
   const handleRetry = () => { setModal(null); setKey(k => k + 1); };
   const handleLeave = () => { setModal(null); goToMenu(); };
-  const goToMenu = () => { setScreen('menu'); setActiveGame(null); setModal(null); };
+  const goToMenu = () => { setScreen('menu'); setActiveGame(null); setModal(null); setExitConfirm(false); };
 
   const handleBuy = (id: string, price: number) => {
-    const newFrags = fragments - price;
-    const newOwned = [...ownedGames, id];
-    setFragments(newFrags); saveFragments(newFrags);
-    setOwnedGames(newOwned); saveOwned(newOwned);
+    const nf = fragments - price; const no = [...ownedGames, id];
+    setFragments(nf); saveFragments(nf); setOwnedGames(no); saveOwned(no);
   };
 
-  const onStartGame = (id: GameId) => {
+  const onStartGame = (id: GameId, label: string) => {
     const lv = getGameLevel(id);
-    setActiveGame(id); setGameLevel(lv); setScreen('game'); setKey(k => k + 1); setModal(null);
+    setActiveGame(id); setActiveGameLabel(label); setGameLevel(lv);
+    setScreen('game'); setKey(k => k + 1); setModal(null); setExitConfirm(false);
   };
 
   const renderGame = () => {
@@ -1786,148 +1743,236 @@ export function FiusGames({ playerName }: FiusGamesProps) {
   if (screen === 'game') {
     return (
       <div className="flex flex-col h-full relative">
-        {renderGame()}
-        {modal === 'win' && (
-          <WinModal
-            level={gameLevel}
-            score={lastScore}
-            fragsEarned={lastFrags}
-            onContinue={() => setModal('continue')}
-            onLeave={handleLeave}
-          />
-        )}
-        {modal === 'lose' && (
-          <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />
-        )}
-        {modal === 'continue' && (
-          <ContinueModal
-            nextLevel={gameLevel + 1}
-            onYes={() => {
-              const next = gameLevel + 1;
-              if (activeGame) setGameLevel(next);
-              setModal(null);
-              setKey(k => k + 1);
-            }}
-            onNo={() => { setModal(null); goToMenu(); }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // ─── STORE SCREEN ─────────────────────────────────────────────────────────
-  if (screen === 'store') {
-    return (
-      <div className="flex flex-col h-full">
-        <GameStore fragments={fragments} ownedGames={ownedGames} onBuy={handleBuy} onClose={() => setScreen('menu')} />
+        {/* Exit bar */}
+        <div className="flex items-center gap-2 pb-2 mb-1 border-b border-white/10 flex-shrink-0">
+          {exitConfirm ? (
+            <div className="flex items-center gap-2 w-full">
+              <span className="text-xs text-zinc-400 flex-1">Exit this game?</span>
+              <button onClick={goToMenu} className="px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all">Exit</button>
+              <button onClick={() => setExitConfirm(false)} className="px-3 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs transition-all">Keep playing</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 w-full">
+              <button onClick={() => setExitConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition-all">
+                ← Exit Game
+              </button>
+              <span className="text-zinc-600 text-xs flex-1 truncate">{activeGameLabel} · Level {gameLevel}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-h-0 overflow-auto">
+          {renderGame()}
+        </div>
+        {modal === 'win' && <WinModal level={gameLevel} score={lastScore} fragsEarned={lastFrags} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
+        {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
+        {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { setGameLevel(gameLevel + 1); setModal(null); setKey(k => k + 1); }} onNo={() => { setModal(null); goToMenu(); }} />}
       </div>
     );
   }
 
   // ─── MENU SCREEN ──────────────────────────────────────────────────────────
-  const myStoreGames = STORE_CATALOG.filter(g => ownedGames.includes(g.id));
+  const filteredFree = FREE_GAMES.filter(g =>
+    !search || g.label.toLowerCase().includes(search.toLowerCase()) || g.desc.toLowerCase().includes(search.toLowerCase())
+  );
+  const myPurchased = STORE_CATALOG.filter(g => ownedGames.includes(g.id)).filter(g =>
+    !search || g.name.toLowerCase().includes(search.toLowerCase()) || g.desc.toLowerCase().includes(search.toLowerCase())
+  );
+  const storeAvail = STORE_CATALOG.filter(g => !ownedGames.includes(g.id));
 
   return (
     <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
-          <h2 className="text-xl font-extrabold text-white">Game Zone</h2>
-          <p className="text-zinc-400 text-xs mt-0.5">Progress through levels · Earn fragments · Buy more games</p>
+          <h2 className="text-lg font-extrabold text-white tracking-tight">Fius Games</h2>
+          <p className="text-zinc-500 text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
         </div>
-        <div className="flex items-center gap-2">
-          <FragmentBadge count={fragments} />
-          <button onClick={() => setScreen('store')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', border: '1px solid rgba(167,139,250,0.4)' }}>
-            <ShoppingBag size={12} /> Store
-          </button>
-        </div>
+        <FragmentBadge count={fragments} />
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4" style={{ scrollbarWidth: 'thin' }}>
-        {/* Free Games */}
-        <div>
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Free Games</p>
-          <div className="grid grid-cols-1 gap-2">
-            {FREE_GAMES.map(g => {
-              const lv = getGameLevel(g.id);
+      {/* ── Tab Bar ── */}
+      <div className="flex gap-1 mb-3 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0">
+        {(['games','store','leaderboard'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${tab === t ? 'bg-white text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
+            {t === 'games' ? '🎮 Games' : t === 'store' ? '🛒 Store' : '🏆 Leaderboard'}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Search (Games tab only) ── */}
+      {tab === 'games' && (
+        <div className="relative mb-3 flex-shrink-0">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">🔍</span>
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search games..."
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-7 pr-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-all"
+          />
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+
+        {/* ── GAMES TAB ── */}
+        {tab === 'games' && (
+          <div className="space-y-4">
+            {/* Free games */}
+            {filteredFree.length > 0 && (
+              <div>
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredFree.map(g => {
+                    const lv = getGameLevel(g.id);
+                    return (
+                      <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
+                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/5"
+                        style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <div className={`w-full h-16 bg-gradient-to-br ${g.bg} flex items-center justify-center text-3xl`}>{g.emoji}</div>
+                        <div className="p-2.5">
+                          <div className="text-white font-bold text-xs leading-tight">{g.label}</div>
+                          <div className="text-zinc-600 text-[10px] mt-0.5 leading-tight line-clamp-1">{g.desc}</div>
+                          <div className="mt-2 flex items-center justify-between">
+                            <LevelBadge level={lv} />
+                            <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Owned store games */}
+            {myPurchased.length > 0 && (
+              <div>
+                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">My Games</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {myPurchased.map(g => {
+                    const lv = getGameLevel(g.id);
+                    return (
+                      <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
+                        className="flex flex-col rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/5"
+                        style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <div className={`w-full h-16 bg-gradient-to-br ${g.color} flex items-center justify-center text-3xl`}>{g.emoji}</div>
+                        <div className="p-2.5">
+                          <div className="text-white font-bold text-xs leading-tight">{g.name}</div>
+                          <div className="text-zinc-600 text-[10px] mt-0.5 line-clamp-1">{g.desc}</div>
+                          <div className="mt-2 flex items-center justify-between">
+                            <LevelBadge level={lv} />
+                            <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Empty search */}
+            {filteredFree.length === 0 && myPurchased.length === 0 && (
+              <div className="text-center py-10 text-zinc-600 text-sm">No games match "{search}"</div>
+            )}
+
+            {/* Store teaser */}
+            {!search && storeAvail.length > 0 && (
+              <button onClick={() => setTab('store')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all hover:scale-[1.01] border border-purple-500/20"
+                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.08))' }}>
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <Lock size={15} className="text-purple-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-purple-300 font-bold text-xs">{storeAvail.length} more games in Store</div>
+                  <div className="text-zinc-600 text-[10px] mt-0.5">Unlock with 🔷 fragments you earn</div>
+                </div>
+                <ChevronRight size={14} className="text-purple-500 flex-shrink-0" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── STORE TAB ── */}
+        {tab === 'store' && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest flex-1">Premium Games</span>
+              <span className="text-zinc-600 text-[10px]">Balance: <span className="text-blue-400 font-bold">🔷 {fragments}</span></span>
+            </div>
+            {STORE_CATALOG.map(game => {
+              const owned = ownedGames.includes(game.id);
+              const canAfford = fragments >= game.price;
               return (
-                <button key={g.id} onClick={() => onStartGame(g.id)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-2xl text-left transition-all hover:scale-[1.01] active:scale-[0.99]"
-                  style={{ background: `linear-gradient(135deg, ${g.color}22, ${g.color}11)`, border: `1px solid ${g.color}44` }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `${g.color}33` }}>{g.emoji}</div>
+                <div key={game.id} className="flex items-center gap-3 p-3 rounded-2xl border border-white/5 transition-all hover:border-white/10"
+                  style={{ background: owned ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.03)' }}>
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${game.color} flex items-center justify-center text-2xl flex-shrink-0`}>{game.emoji}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white font-bold text-sm">{g.label}</div>
-                    <div className="text-zinc-500 text-xs">{g.desc}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-white font-bold text-xs">{game.name}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/8 text-zinc-500 font-semibold">{game.category}</span>
+                    </div>
+                    <p className="text-zinc-600 text-[10px] mt-0.5 line-clamp-1">{game.desc}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <LevelBadge level={lv} />
-                    <ChevronRight size={14} className="text-zinc-600" />
+                  <div className="flex-shrink-0">
+                    {owned ? (
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+                        <Check size={10} /> Owned
+                      </div>
+                    ) : (
+                      <button onClick={() => { if (canAfford) { handleBuy(game.id, game.price); } }}
+                        disabled={!canAfford}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${canAfford ? 'bg-blue-600/80 border-blue-500/40 text-white hover:bg-blue-600 hover:scale-105' : 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-not-allowed'}`}>
+                        🔷 {game.price}
+                      </button>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
-        </div>
+        )}
 
-        {/* My Store Games */}
-        {myStoreGames.length > 0 && (
+        {/* ── LEADERBOARD TAB ── */}
+        {tab === 'leaderboard' && (
           <div>
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">My Games</p>
-            <div className="grid grid-cols-1 gap-2">
-              {myStoreGames.map(g => {
-                const lv = getGameLevel(g.id);
-                return (
-                  <button key={g.id} onClick={() => onStartGame(g.id)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-2xl text-left transition-all hover:scale-[1.01] active:scale-[0.99]"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-xl flex-shrink-0`}>{g.emoji}</div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest flex-1">Top Scores</span>
+              {scores.length > 0 && (
+                <button onClick={() => { localStorage.removeItem(SCORES_KEY); setScores([]); }}
+                  className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors">Clear</button>
+              )}
+            </div>
+            {scores.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-4xl mb-3">🏆</div>
+                <p className="text-zinc-600 text-sm font-medium">No scores yet</p>
+                <p className="text-zinc-700 text-xs mt-1">Play games to set records!</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {scores.slice(0, 20).map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/5"
+                    style={{ background: i === 0 ? 'rgba(251,191,36,0.08)' : i === 1 ? 'rgba(156,163,175,0.06)' : i === 2 ? 'rgba(180,83,9,0.06)' : 'rgba(255,255,255,0.02)' }}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0 ${i === 0 ? 'bg-yellow-500/20 text-yellow-400' : i === 1 ? 'bg-zinc-500/20 text-zinc-400' : i === 2 ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-600'}`}>
+                      {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-white font-bold text-sm">{g.name}</div>
-                      <div className="text-zinc-500 text-xs">{g.desc}</div>
+                      <div className="text-white text-xs font-bold">{s.game}</div>
+                      <div className="text-zinc-600 text-[10px]">Level {s.level} · {s.date}</div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <LevelBadge level={lv} />
-                      <ChevronRight size={14} className="text-zinc-600" />
+                    <div className="text-right flex-shrink-0">
+                      <div className={`text-sm font-extrabold ${i === 0 ? 'text-yellow-400' : 'text-white'}`}>{s.score}</div>
+                      <div className="text-zinc-700 text-[9px]">pts</div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Store Teaser */}
-        {myStoreGames.length < STORE_CATALOG.length && (
-          <button onClick={() => setScreen('store')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all hover:scale-[1.01]"
-            style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(168,85,247,0.1))', border: '1px solid rgba(167,139,250,0.2)' }}>
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-              <Lock size={16} className="text-purple-400" />
-            </div>
-            <div className="flex-1">
-              <div className="text-purple-300 font-bold text-sm">{STORE_CATALOG.length - myStoreGames.length} more games available</div>
-              <div className="text-zinc-500 text-xs">Visit the Store · Use your 🔷 fragments</div>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-purple-400 font-bold">
-              <ShoppingBag size={12} /> Open
-            </div>
-          </button>
-        )}
-
-        {/* How it works */}
-        <div className="rounded-2xl p-3" style={{ background: 'rgba(30,64,175,0.15)', border: '1px solid rgba(59,130,246,0.2)' }}>
-          <p className="text-blue-300 text-xs font-bold mb-1.5">How levels work</p>
-          <div className="space-y-1">
-            {[
-              '🎮 Pick any game — you start from your saved level',
-              '📈 Win a level to earn 🔷 blue fragments',
-              '🚀 Each level gets harder as you progress',
-              '🏆 Use fragments to unlock games in the Store',
-            ].map((tip, i) => <p key={i} className="text-zinc-400 text-xs">{tip}</p>)}
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -463,6 +463,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine') => {
     document.documentElement.classList.add('preload');
     setActiveTab(tab);
+    if (tab === 'imagine') {
+      setSelectedModel('fius-imagine-fast' as AvailableModel);
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
   };
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
@@ -1546,12 +1549,14 @@ IMPORTANT RULES:
         const result = await response.json();
         console.log('AI response received:', result);
         
-        // Add AI response message
+        // Add AI response message — strip any leaked web-search context
+        let aiContent: string = result.response || '';
+        aiContent = aiContent.replace(/^\[Web search results for:[\s\S]*?\[Use the above search results[\s\S]*?\]\s*\nUser:\s*/i, '').trim();
         const aiMessage: ChatMessage = {
           id: Date.now().toString(),
           conversationId,
           role: 'assistant',
-          content: result.response,
+          content: aiContent,
           createdAt: new Date(),
           metadata: { ...result.metadata, webSources: webSources.length > 0 ? webSources : undefined },
         };
@@ -2272,7 +2277,7 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className="bg-card border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline">
+      <header className="bg-card border border-border backdrop-blur-lg rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between max-w-4xl mx-auto w-[calc(100%-1.5rem)] mt-2 mb-1 relative z-10 glossy-outline">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -2645,18 +2650,23 @@ Let's start the self-listen session!`;
                       {/* Source credits for web-searched responses */}
                       {message.metadata?.webSources && message.metadata.webSources.length > 0 && (
                         <div className="mt-3 pt-2 border-t border-border/40">
-                          <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5 font-medium">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                             Sources
                           </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {message.metadata.webSources.map((src: { title: string; url: string }, i: number) => (
-                              <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors max-w-[220px] truncate">
-                                <svg className="w-2.5 h-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                {src.title}
-                              </a>
-                            ))}
+                          <div className="flex flex-wrap gap-2">
+                            {message.metadata.webSources.map((src: { title: string; url: string }, i: number) => {
+                              let hostname = '';
+                              try { hostname = new URL(src.url).hostname.replace('www.', ''); } catch {}
+                              const faviconUrl = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(src.url)}`;
+                              return (
+                                <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors max-w-[200px]">
+                                  <img src={faviconUrl} alt="" className="w-3.5 h-3.5 rounded-sm flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <span className="truncate font-medium">{hostname || src.title}</span>
+                                </a>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -3208,7 +3218,7 @@ Let's start the self-listen session!`;
                   <p className="text-muted-foreground text-sm">Choose a historical figure to converse with — they will speak in their own authentic style</p>
                 </div>
                 {/* Search */}
-                <div className="mb-3">
+                <div className="mb-3 flex justify-center">
                   <input
                     type="text"
                     value={personalitySearch}
@@ -3555,7 +3565,7 @@ Let's start the self-listen session!`;
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : 'What do you want to know ?'}
+                placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : 'What do you want to know ?'}
                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
@@ -3631,7 +3641,7 @@ Let's start the self-listen session!`;
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Speak to ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
+                  placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
                   className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
