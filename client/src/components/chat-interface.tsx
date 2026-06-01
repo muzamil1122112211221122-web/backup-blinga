@@ -105,7 +105,9 @@ import {
   Square,
   ChevronLeft,
   Check,
-  Palette
+  Palette,
+  FileDown,
+  MessageSquarePlus
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -641,41 +643,106 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineRefImage, setImagineRefImage] = useState<{preview: string; base64: string} | null>(null);
   const imagineUploadRef = useRef<HTMLInputElement>(null);
   const [imagineShuffleKey, setImagineShuffleKey] = useState(0);
-  const IMAGINE_PROMPTS_BASE = [
-    { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",        img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=70&auto=format&fit=crop" },
-    { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",               img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
-    { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",             img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70&auto=format&fit=crop" },
-    { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",               img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
-    { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",            img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
-    { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                 img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
-    { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",                img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
-    { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
-    { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                    img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
-    { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
-    { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",            img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
-    { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",    img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=70&auto=format&fit=crop" },
-    { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",   img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
-    { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",     img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=400&q=70&auto=format&fit=crop" },
-    { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",           img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=400&q=70&auto=format&fit=crop" },
-    { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",    img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
-    { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night",  img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
-    { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",   img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
-    { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                     img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
-    { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=400&q=70&auto=format&fit=crop" },
-    { label: "Bamboo Forest",      prompt: "a peaceful bamboo forest with sunlight filtering through tall green stalks", img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&q=70&auto=format&fit=crop" },
-    { label: "Lavender Fields",    prompt: "endless purple lavender fields in Provence at golden hour",               img: "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&q=70&auto=format&fit=crop" },
-    { label: "Lightning Storm",    prompt: "spectacular lightning storm over a dark cityscape at night",              img: "https://images.unsplash.com/photo-1504253163759-c23fccaebb55?w=400&q=70&auto=format&fit=crop" },
-    { label: "Arctic Tundra",      prompt: "a vast arctic tundra with frozen lakes and ice formations under purple sky", img: "https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=400&q=70&auto=format&fit=crop" },
-  ];
+  const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; img: string}[]> = {
+    "Photorealistic": [
+      { label: "Mountain Sunrise",   prompt: "a breathtaking sunrise over snow-capped mountain peaks with golden rays",        img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Ocean Storm",        prompt: "powerful ocean waves crashing against rocky cliffs in a storm",                   img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
+      { label: "Lion Portrait",      prompt: "a majestic lion in close-up with intense eyes and golden mane",                  img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70&auto=format&fit=crop" },
+      { label: "Aurora Borealis",    prompt: "vivid northern lights dancing over a frozen lake in Iceland",                    img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
+      { label: "Tropical Beach",     prompt: "crystal-clear turquoise water on a pristine tropical beach at noon",             img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
+      { label: "Milky Way Sky",      prompt: "the milky way galaxy reflected in a still alpine lake at midnight",              img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
+      { label: "Desert at Dusk",     prompt: "sweeping sand dunes casting long shadows at golden hour in the Sahara",          img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+      { label: "Tropical Waterfall", prompt: "a lush waterfall cascading into a turquoise jungle pool",                       img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=400&q=70&auto=format&fit=crop" },
+      { label: "Snow Leopard",       prompt: "a rare snow leopard prowling across a Himalayan mountain ridge",                 img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
+      { label: "Volcano Lava",       prompt: "glowing lava flowing into the ocean at night creating steam clouds",             img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=70&auto=format&fit=crop" },
+      { label: "Autumn Forest",      prompt: "a golden autumn forest path lined with maple trees in peak fall colors",         img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
+      { label: "Coral Reef",         prompt: "vibrant coral reef teeming with colorful tropical fish in crystal water",        img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Anime": [
+      { label: "Cherry Blossom Lane", prompt: "a dreamy cherry blossom alley with pink petals falling in soft afternoon light", img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
+      { label: "Bamboo Grove",        prompt: "a serene bamboo forest path with shafts of golden sunlight filtering through",   img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&q=70&auto=format&fit=crop" },
+      { label: "Misty Forest",        prompt: "a magical misty forest with ancient trees and soft glowing spirit lights",       img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Lavender Field",      prompt: "endless lavender fields under a pastel purple sky at twilight",                  img: "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&q=70&auto=format&fit=crop" },
+      { label: "Torii Gate Trail",    prompt: "a long path lined with red torii gates leading through a misty forest",          img: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" },
+      { label: "Sakura River",        prompt: "cherry blossom petals floating on a gentle stream under pink trees",             img: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=70&auto=format&fit=crop" },
+      { label: "Shrine Steps",        prompt: "stone steps leading to a Shinto shrine surrounded by glowing lanterns at dusk",  img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=70&auto=format&fit=crop" },
+      { label: "Rice Terraces",       prompt: "lush green rice terraces cascading down hillsides under a cloudy sky",           img: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=400&q=70&auto=format&fit=crop" },
+      { label: "Mountain Village",    prompt: "a cozy mountain village with snow-covered rooftops under soft falling snow",     img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&q=70&auto=format&fit=crop" },
+      { label: "Sunset Lake",         prompt: "a girl sitting by a tranquil lake watching the sunset paint the sky orange",     img: "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Oil Painting": [
+      { label: "Poppy Meadow",        prompt: "vibrant red poppy flowers swaying in a golden summer meadow",                   img: "https://images.unsplash.com/photo-1490750967868-88df5691cc4c?w=400&q=70&auto=format&fit=crop" },
+      { label: "Rose Garden",         prompt: "an ornate classical rose garden in full bloom with warm sunset light",           img: "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=400&q=70&auto=format&fit=crop" },
+      { label: "Sunflower Field",     prompt: "rows of tall sunflowers turning toward the afternoon sun in Tuscany",            img: "https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=400&q=70&auto=format&fit=crop" },
+      { label: "Venetian Canal",      prompt: "gondolas on a misty canal in Venice with crumbling baroque facades",             img: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=400&q=70&auto=format&fit=crop" },
+      { label: "Autumn Valley",       prompt: "a rich valley ablaze with autumn colors under dramatic cloudy skies",            img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=70&auto=format&fit=crop" },
+      { label: "Old Lighthouse",      prompt: "a weathered lighthouse on a rocky coast battered by dramatic ocean waves",      img: "https://images.unsplash.com/photo-1502209524164-acea936639a2?w=400&q=70&auto=format&fit=crop" },
+      { label: "Wild Horses",         prompt: "wild horses galloping across a green meadow with stormy skies behind them",     img: "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&q=70&auto=format&fit=crop" },
+      { label: "Cobblestone Market",  prompt: "a bustling medieval market on cobblestone streets with colorful awnings",       img: "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=70&auto=format&fit=crop" },
+      { label: "Forest Stream",       prompt: "a mossy stream winding through an ancient oak forest in dappled morning light",  img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "3D Render": [
+      { label: "Neon City",           prompt: "a futuristic neon-lit megacity at night with holographic billboards",            img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Space Station",       prompt: "a sleek orbital space station with Earth glowing in the background",             img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
+      { label: "Crystal Cave",        prompt: "a magical crystal cave filled with glowing blue and purple minerals",            img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
+      { label: "Lightning Storm",     prompt: "a dramatic lightning storm with multiple bolts striking a futuristic city",      img: "https://images.unsplash.com/photo-1504253163759-c23fccaebb55?w=400&q=70&auto=format&fit=crop" },
+      { label: "Cyber Robot",         prompt: "a detailed chrome humanoid robot in a neon-lit industrial facility",             img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&q=70&auto=format&fit=crop" },
+      { label: "Abstract Geometry",   prompt: "intricate geometric crystalline structures floating in a deep space void",       img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
+      { label: "Underwater Base",     prompt: "a futuristic underwater research base with glowing lights and exotic sea life",  img: "https://images.unsplash.com/photo-1551244072-5d12893278bc?w=400&q=70&auto=format&fit=crop" },
+      { label: "Portal Gate",         prompt: "a glowing interdimensional portal surrounded by electric energy in a dark void", img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Watercolor": [
+      { label: "Spring Garden",       prompt: "a blooming spring garden with soft pastel flowers in watercolor style",          img: "https://images.unsplash.com/photo-1490750967868-88df5691cc4c?w=400&q=70&auto=format&fit=crop" },
+      { label: "Rainy Paris",         prompt: "a charming Paris cafe in the rain with colorful umbrellas and wet cobblestones",  img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=70&auto=format&fit=crop" },
+      { label: "Hummingbird",         prompt: "a vibrant hummingbird hovering near tropical flowers in soft morning light",      img: "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=400&q=70&auto=format&fit=crop" },
+      { label: "Magnolia Tree",       prompt: "delicate white magnolia blossoms against a soft blue sky in spring",             img: "https://images.unsplash.com/photo-1456081445129-830eb8d4bfc6?w=400&q=70&auto=format&fit=crop" },
+      { label: "Coastal Village",     prompt: "a picturesque coastal village with pastel-colored houses on a hillside",         img: "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=400&q=70&auto=format&fit=crop" },
+      { label: "Koi Pond",            prompt: "colorful koi fish swimming in a lily pad pond with soft reflections",            img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
+      { label: "Misty Mountains",     prompt: "soft mountain peaks emerging from morning mist in gentle watercolor washes",     img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Tulip Fields",        prompt: "rows of colorful tulips in a Dutch field with a windmill in the background",     img: "https://images.unsplash.com/photo-1431794062232-2a99a5431c6c?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Pixel Art": [
+      { label: "Retro City",          prompt: "a colorful retro pixel art city at night with neon signs and 8-bit cars",        img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
+      { label: "Island Adventure",    prompt: "a tiny pixel art island with palm trees, treasure, and a pirate ship",           img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
+      { label: "Space Battle",        prompt: "a pixel art space battle with retro spaceships and colorful laser beams",        img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
+      { label: "Dungeon Quest",       prompt: "a pixel art dungeon interior with torches, treasure chests, and a hero",         img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+      { label: "Forest Village",      prompt: "a cozy pixel art forest village with mushroom houses and fairy lights at dusk",  img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Sunset Plains",       prompt: "wide pixel art plains with a lone cowboy riding toward a setting 8-bit sun",     img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+      { label: "Underwater World",    prompt: "a bright pixel art underwater scene with coral, fish, and sunken treasure",      img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
+      { label: "Dragon Castle",       prompt: "a pixel art dragon perched on a towering castle with a pixelated stormy sky",    img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Sketch": [
+      { label: "Gothic Cathedral",    prompt: "detailed pencil sketch of a gothic cathedral with intricate stone carvings",     img: "https://images.unsplash.com/photo-1548625149-720754978729?w=400&q=70&auto=format&fit=crop" },
+      { label: "Ancient Oak",         prompt: "fine-line pen sketch of a massive ancient oak tree with twisted branches",       img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Mountain Peak",       prompt: "expressive charcoal sketch of jagged mountain peaks in morning mist",            img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70&auto=format&fit=crop" },
+      { label: "City Skyline",        prompt: "architectural ink sketch of a city skyline with detailed buildings",             img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
+      { label: "Sailing Ship",        prompt: "detailed graphite sketch of a tall sailing ship on rough open seas",             img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=400&q=70&auto=format&fit=crop" },
+      { label: "Wolf Portrait",       prompt: "expressive pencil sketch portrait of a wolf with piercing eyes",                 img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
+      { label: "Cobblestone Alley",   prompt: "fine ink sketch of a narrow cobblestone alley with lanterns and arches",        img: "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=70&auto=format&fit=crop" },
+      { label: "Still Life Flowers",  prompt: "classical pencil still life sketch of flowers in a vase with hatching shadows",  img: "https://images.unsplash.com/photo-1462275646964-a0e3386b89fa?w=400&q=70&auto=format&fit=crop" },
+    ],
+    "Cinematic": [
+      { label: "Desert Road",         prompt: "cinematic wide shot of an empty desert highway stretching to the horizon at dawn", img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+      { label: "Stormy Cliffs",       prompt: "dramatic cinematic shot of a lone figure standing on sea cliffs in a storm",     img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
+      { label: "Golden Hour City",    prompt: "sweeping aerial cinematic shot of a city bathed in golden hour light",           img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
+      { label: "Foggy Bridge",        prompt: "a moody cinematic shot of a suspension bridge disappearing into thick fog",      img: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&q=70&auto=format&fit=crop" },
+      { label: "Night Train",         prompt: "atmospheric shot of a lone train moving through snowy mountains at night",       img: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=400&q=70&auto=format&fit=crop" },
+      { label: "Jungle Temple",       prompt: "cinematic discovery shot of an ancient temple overtaken by jungle vines",        img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=400&q=70&auto=format&fit=crop" },
+      { label: "Neon Rain",           prompt: "a rain-soaked city street at night with neon reflections on wet pavement",      img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
+      { label: "Mountain Hiker",      prompt: "a silhouette of a hiker on a mountain ridge at sunset with epic sky",            img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=70&auto=format&fit=crop" },
+      { label: "Arctic Expedition",   prompt: "cinematic shot of explorers trudging across a vast frozen arctic landscape",     img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
+    ],
+  };
   const shuffledImaginePrompts = React.useMemo(() => {
-    const arr = [...IMAGINE_PROMPTS_BASE];
+    const base = IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE["Photorealistic"];
+    const arr = [...base];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imagineShuffleKey]);
+  }, [imagineShuffleKey, imagineStyle]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled] = useState(true);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
@@ -1355,10 +1422,8 @@ IMPORTANT RULES:
   useEffect(() => {
     if (isHistoryLoad.current) {
       isHistoryLoad.current = false;
-      if (chatScrollRef.current) {
-        chatScrollRef.current.scrollTop = 0;
-      }
-    } else {
+      if (chatScrollRef.current) chatScrollRef.current.scrollTop = 0;
+    } else if (messages.length > 0) {
       scrollToBottom();
     }
   }, [messages, scrollToBottom]);
@@ -1492,23 +1557,27 @@ IMPORTANT RULES:
         basePrompt = `${lastImagePrompt}, ${content}`;
       }
 
-      const fullPrompt = `${basePrompt}, ${styleSuffix}`;
+      const refImageNote = imagineRefImage ? `, based on and editing the reference image provided` : '';
+      const fullPrompt = `${basePrompt}${refImageNote}, ${styleSuffix}`;
 
       const userMsgId = Date.now().toString();
       const aiMsgId = (Date.now() + 1).toString();
+      const userDisplayContent = imagineRefImage ? `🖼️ [Reference image] ${content}` : content;
       setImagineMessages(prev => [
         ...prev,
-        { id: userMsgId, role: 'user', content },
+        { id: userMsgId, role: 'user', content: userDisplayContent },
         { id: aiMsgId, role: 'ai', content: '', isGenerating: true },
       ]);
       setInputValue("");
+      const capturedRefImage = imagineRefImage;
+      setImagineRefImage(null);
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
 
       try {
         const res = await fetch('/api/test-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: 'imagine' }),
+          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: 'imagine', referenceImage: capturedRefImage?.base64 || null }),
         });
         const data = await res.json();
         const match = data.response?.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/);
@@ -1768,8 +1837,39 @@ IMPORTANT RULES:
   const handleCopyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
     setCopiedMessageId(messageId);
-    // Auto-clear the copied state
     setTimeout(() => setCopiedMessageId(null), 1200);
+  };
+
+  const handleMakePDF = (content: string) => {
+    const sanitized = content
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:3px;font-size:0.9em">$1</code>')
+      .replace(/\n/g, '<br/>');
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Chat Export</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:24px;line-height:1.7;color:#1a1a1a;font-size:15px}h1{font-size:18px;color:#6b21a8;margin-bottom:24px;padding-bottom:8px;border-bottom:2px solid #e9d5ff}.content{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px}@media print{body{margin:0;padding:16px}}</style></head><body><h1>Fius — Chat Export</h1><div class="content">${sanitized}</div></body></html>`;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300); }
+  };
+
+  const handleChatInNewChat = async (content: string) => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'New Chat', model: selectedModel }),
+      });
+      if (response.ok) {
+        const newProject = await response.json();
+        setCurrentProjectId(newProject.id);
+        localStorage.setItem('currentProjectId', newProject.id);
+        isHistoryLoad.current = true;
+        setMessages([]);
+        setProjects(prev => [newProject, ...prev]);
+        setActiveTab('ask');
+        setTimeout(() => setInputValue(content), 100);
+      }
+    } catch { /* silent */ }
   };
 
   const handleLikeMessage = (messageId: string) => {
@@ -2654,7 +2754,7 @@ Let's start the self-listen session!`;
         } : undefined}
       >
         {activeTab === 'ask' ? (
-          <div ref={chatScrollRef} className="absolute inset-0 overflow-y-auto p-4 pb-32">
+          <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-32 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
           {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="xl" className="mb-6" />
@@ -2937,6 +3037,32 @@ Let's start the self-listen session!`;
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Retry</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
+                                onClick={() => handleMakePDF(message.content)}
+                              >
+                                <FileDown className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Save as PDF</p></TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
+                                onClick={() => handleChatInNewChat(message.content)}
+                              >
+                                <MessageSquarePlus className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Continue in new chat</p></TooltipContent>
                           </Tooltip>
                         </div>
 
@@ -3254,7 +3380,7 @@ Let's start the self-listen session!`;
 
             return (
               <div className="absolute inset-0 flex flex-col overflow-hidden">
-                {/* Style pills + Upload reference image — top bar */}
+                {/* Style pills — top bar */}
                 <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
                   {IMAGINE_STYLE_TAGS.map(style => (
@@ -3267,54 +3393,6 @@ Let's start the self-listen session!`;
                       {style}
                     </button>
                   ))}
-                  {/* Reference image upload */}
-                  <div className="flex-shrink-0 ml-2 flex items-center gap-1.5">
-                    <input
-                      ref={imagineUploadRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const result = ev.target?.result as string;
-                          const base64 = result.split(',')[1];
-                          setImagineRefImage({ preview: result, base64 });
-                        };
-                        reader.readAsDataURL(file);
-                        e.target.value = '';
-                      }}
-                    />
-                    {imagineRefImage ? (
-                      <div className="relative flex-shrink-0 group">
-                        <img
-                          src={imagineRefImage.preview}
-                          alt="Reference"
-                          className="h-8 w-8 rounded-lg object-cover border-2 border-purple-400 cursor-pointer"
-                          onClick={() => setFullscreenImg(imagineRefImage.preview)}
-                        />
-                        <button
-                          onClick={() => setImagineRefImage(null)}
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[9px] bg-black/80 text-white px-1.5 py-0.5 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                          Reference image
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => imagineUploadRef.current?.click()}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all whitespace-nowrap"
-                      >
-                        <Image className="w-3 h-3" />
-                        Edit image
-                      </button>
-                    )}
-                  </div>
                 </div>
 
                 {/* Main body — photo grid + side panel */}
@@ -3652,17 +3730,34 @@ Let's start the self-listen session!`;
       {/* New Unified Message Bar */}
       <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
 
+        {/* ── Imagine reference image tray ── */}
+        {activeTab === 'imagine' && imagineRefImage && (
+          <div className="mb-2 flex items-center gap-2">
+            <div className="relative flex-shrink-0 group">
+              <img
+                src={imagineRefImage.preview}
+                alt="Reference"
+                className="h-14 w-14 object-cover rounded-xl border-2 border-purple-400 cursor-zoom-in shadow-sm"
+                onClick={() => setFullscreenImg(imagineRefImage.preview)}
+              />
+              <button
+                onClick={() => setImagineRefImage(null)}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all shadow"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <span className="text-xs text-muted-foreground">Reference image attached — describe how to edit or transform it</span>
+          </div>
+        )}
+
         {/* ── Attached images tray — floats ABOVE the bar ── */}
         {attachedImages.length > 0 && (
-          <div className="mb-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 p-2.5 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Attachments</span>
-              <span className="text-[10px] text-zinc-400">{attachedImages.length}/20</span>
-            </div>
+          <div className="mb-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden" style={{ maxWidth: 'calc(2 * 80px + 8px + 20px)' }}>
             <div
               ref={attachTrayRef}
-              className="flex gap-2 overflow-x-auto pb-1"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(160,160,160,0.4) transparent' }}
+              className="flex gap-2 overflow-x-auto p-2"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(160,160,160,0.4) transparent', maxWidth: '100%' }}
             >
               {attachedImages.map((img, i) => (
                 <div key={i} className="relative flex-shrink-0 group">
@@ -3678,6 +3773,9 @@ Let's start the self-listen session!`;
                   >
                     <X className="w-3 h-3" />
                   </button>
+                  {attachedImages.length > 2 && i === attachedImages.length - 1 && (
+                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] rounded px-1">+{attachedImages.length - 2} more</div>
+                  )}
                 </div>
               ))}
             </div>
@@ -3711,6 +3809,22 @@ Let's start the self-listen session!`;
             /* ── Compact: single-row pill layout ── */
             <div className="flex items-center px-2 py-2 gap-1">
               {/* LEFT: Attachment + function-bar buttons */}
+              {/* Imagine upload button — only in imagine tab */}
+              {activeTab === 'imagine' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${imagineRefImage ? 'text-purple-500 bg-purple-500/10 hover:bg-purple-500/20' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
+                      onClick={() => imagineUploadRef.current?.click()}
+                    >
+                      <Camera className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Upload reference image to edit</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <DropdownMenu>
                   <TooltipTrigger asChild>
@@ -4159,6 +4273,24 @@ Let's start the self-listen session!`;
         accept="image/*"
         multiple
         onChange={handleImageUpload}
+        style={{ display: 'none' }}
+      />
+      <input
+        ref={imagineUploadRef}
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const base64 = (ev.target?.result as string)?.split(',')[1] ?? '';
+            const preview = ev.target?.result as string;
+            setImagineRefImage({ preview, base64 });
+          };
+          reader.readAsDataURL(file);
+          e.target.value = '';
+        }}
         style={{ display: 'none' }}
       />
 
