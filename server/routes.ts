@@ -452,6 +452,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          // Rewrite vague user intent into a proper visual image description
+          imagePrompt = await enhanceImagePrompt(imagePrompt);
+
           const generatedImage = await generateImageForChat(imagePrompt);
 
           let aiResponse;
@@ -1558,6 +1561,54 @@ async function describeGeneratedImage(prompt: string): Promise<string> {
   return `A photorealistic image inspired by your prompt: "${prompt}".`;
 }
 
+// Rewrite a vague user prompt into a clear, specific visual image description using Groq
+async function enhanceImagePrompt(rawPrompt: string): Promise<string> {
+  try {
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) return rawPrompt;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert image prompt engineer for AI image generators like Flux and Stable Diffusion.
+The user gives you a short description of what they want. Your job is to rewrite it as a clear, detailed, literal visual image prompt.
+
+RULES:
+- Describe exactly what should appear in the image visually — objects, text, colors, layout, style
+- If the user mentions a banner/poster/card, describe it as a designed graphic with typography and visual elements
+- NEVER interpret metaphors or compound words — "speed math" means "fast math / mathematics", NOT a racing car
+- If the user says "speed math", generate math symbols, equations, numbers, and energetic/fast-paced design — NOT cars
+- Include colors, lighting, composition, and format where relevant
+- Keep it under 80 words
+- Output ONLY the enhanced prompt — no explanation, no quotes`,
+          },
+          { role: 'user', content: rawPrompt },
+        ],
+        temperature: 0.4,
+        max_tokens: 120,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) return rawPrompt;
+    const data = await res.json();
+    const enhanced = data.choices?.[0]?.message?.content?.trim();
+    if (enhanced && enhanced.length > 10) {
+      console.log(`Prompt enhanced: "${rawPrompt}" → "${enhanced}"`);
+      return enhanced;
+    }
+    return rawPrompt;
+  } catch (e) {
+    console.log('Prompt enhancement failed, using original:', e instanceof Error ? e.message : e);
+    return rawPrompt;
+  }
+}
+
 // Image generation function for chat
 async function generateImageForChat(prompt: string): Promise<{ path: string; fallbackUrls?: string[] } | null> {
   try {
@@ -1872,6 +1923,9 @@ async function callAIService(userMessage: string, conversation: any, user?: any)
           break;
         }
       }
+
+      // Rewrite vague user intent into a proper visual image description
+      imagePrompt = await enhanceImagePrompt(imagePrompt);
 
       // Call image generation service
       const generatedImage = await generateImageForChat(imagePrompt);
