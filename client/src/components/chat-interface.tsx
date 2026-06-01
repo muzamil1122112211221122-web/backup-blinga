@@ -553,6 +553,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setActiveTab(tab);
     if (tab === 'imagine') {
       setSelectedModel('fius-imagine-fast' as AvailableModel);
+      setImagineShuffleKey(k => k + 1);
     }
     requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
   };
@@ -637,6 +638,44 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], isGenerating?: boolean}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const imagineScrollRef = useRef<HTMLDivElement>(null);
+  const [imagineRefImage, setImagineRefImage] = useState<{preview: string; base64: string} | null>(null);
+  const imagineUploadRef = useRef<HTMLInputElement>(null);
+  const [imagineShuffleKey, setImagineShuffleKey] = useState(0);
+  const IMAGINE_PROMPTS_BASE = [
+    { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",        img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=70&auto=format&fit=crop" },
+    { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",               img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
+    { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",             img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70&auto=format&fit=crop" },
+    { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",               img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
+    { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",            img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
+    { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                 img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
+    { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",                img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
+    { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
+    { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                    img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
+    { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
+    { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",            img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
+    { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",    img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=70&auto=format&fit=crop" },
+    { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",   img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
+    { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",     img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=400&q=70&auto=format&fit=crop" },
+    { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",           img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=400&q=70&auto=format&fit=crop" },
+    { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",    img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
+    { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night",  img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
+    { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",   img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
+    { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                     img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
+    { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=400&q=70&auto=format&fit=crop" },
+    { label: "Bamboo Forest",      prompt: "a peaceful bamboo forest with sunlight filtering through tall green stalks", img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&q=70&auto=format&fit=crop" },
+    { label: "Lavender Fields",    prompt: "endless purple lavender fields in Provence at golden hour",               img: "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&q=70&auto=format&fit=crop" },
+    { label: "Lightning Storm",    prompt: "spectacular lightning storm over a dark cityscape at night",              img: "https://images.unsplash.com/photo-1504253163759-c23fccaebb55?w=400&q=70&auto=format&fit=crop" },
+    { label: "Arctic Tundra",      prompt: "a vast arctic tundra with frozen lakes and ice formations under purple sky", img: "https://images.unsplash.com/photo-1520466809213-7b9a56adcd45?w=400&q=70&auto=format&fit=crop" },
+  ];
+  const shuffledImaginePrompts = React.useMemo(() => {
+    const arr = [...IMAGINE_PROMPTS_BASE];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imagineShuffleKey]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled] = useState(true);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
@@ -3211,33 +3250,12 @@ Let's start the self-listen session!`;
           // ── Imagine Tab ─────────────────────────────────────────────────────
           (() => {
             const IMAGINE_STYLE_TAGS = ["Photorealistic", "Anime", "Oil Painting", "3D Render", "Watercolor", "Pixel Art", "Sketch", "Cinematic"];
-            const IMAGINE_PROMPTS = [
-              { label: "Sunset Mountains",   prompt: "a breathtaking sunset over snow-capped mountains with golden light",        img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=70&auto=format&fit=crop" },
-              { label: "Cyberpunk City",     prompt: "a neon-lit cyberpunk city at night with flying cars and rain",               img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70&auto=format&fit=crop" },
-              { label: "Majestic Lion",      prompt: "a majestic lion portrait with a dramatic mane in golden light",             img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70&auto=format&fit=crop" },
-              { label: "Cherry Blossoms",    prompt: "a serene Japanese garden with cherry blossom petals falling",               img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
-              { label: "Space Explorer",     prompt: "an astronaut floating in space with Earth and stars behind them",            img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&q=70&auto=format&fit=crop" },
-              { label: "Fantasy Castle",     prompt: "an epic fantasy castle on a clifftop surrounded by clouds",                 img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&auto=format&fit=crop" },
-              { label: "Ocean Waves",        prompt: "massive ocean waves crashing with foam and turquoise water",                img: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70&auto=format&fit=crop" },
-              { label: "Northern Lights",    prompt: "vibrant aurora borealis over a snowy pine forest at night",                img: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=70&auto=format&fit=crop" },
-              { label: "Desert Dunes",       prompt: "vast golden sand dunes in the Sahara desert at sunset",                    img: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70&auto=format&fit=crop" },
-              { label: "Misty Forest",       prompt: "a misty ancient forest with rays of light filtering through tall trees",    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70&auto=format&fit=crop" },
-              { label: "Tropical Beach",     prompt: "a pristine tropical beach with turquoise water and white sand",            img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70&auto=format&fit=crop" },
-              { label: "Volcano Eruption",   prompt: "a dramatic volcano eruption with lava flowing into the ocean at night",    img: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?w=400&q=70&auto=format&fit=crop" },
-              { label: "Snow Leopard",       prompt: "a rare snow leopard perched on a rocky mountain ledge in the Himalayas",   img: "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=400&q=70&auto=format&fit=crop" },
-              { label: "Stormy Sea",         prompt: "a dramatic stormy sea with massive waves and lightning in dark clouds",     img: "https://images.unsplash.com/photo-1505459668311-8dfac7952bf0?w=400&q=70&auto=format&fit=crop" },
-              { label: "Ancient Ruins",      prompt: "ancient moss-covered temple ruins hidden deep in a lush jungle",           img: "https://images.unsplash.com/photo-1563380166-d42abbc1a7bc?w=400&q=70&auto=format&fit=crop" },
-              { label: "Milky Way",          prompt: "the milky way galaxy stretching over a calm mountain lake at midnight",    img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&q=70&auto=format&fit=crop" },
-              { label: "City at Night",      prompt: "a stunning city skyline reflected on water with colorful lights at night",  img: "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=70&auto=format&fit=crop" },
-              { label: "Coral Reef",         prompt: "a vibrant coral reef teeming with tropical fish in crystal clear water",   img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
-              { label: "Autumn Path",        prompt: "a golden autumn forest path covered in fallen leaves",                     img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70&auto=format&fit=crop" },
-              { label: "Waterfall",          prompt: "a majestic waterfall cascading into a turquoise pool in a tropical jungle", img: "https://images.unsplash.com/photo-1546587348-d12660c30c50?w=400&q=70&auto=format&fit=crop" },
-            ];
+            const IMAGINE_PROMPTS = shuffledImaginePrompts;
 
             return (
               <div className="absolute inset-0 flex flex-col overflow-hidden">
-                {/* Style pills — centered at top */}
-                <div className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {/* Style pills + Upload reference image — top bar */}
+                <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                   <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap mr-1">Style:</span>
                   {IMAGINE_STYLE_TAGS.map(style => (
                     <button
@@ -3249,6 +3267,54 @@ Let's start the self-listen session!`;
                       {style}
                     </button>
                   ))}
+                  {/* Reference image upload */}
+                  <div className="flex-shrink-0 ml-2 flex items-center gap-1.5">
+                    <input
+                      ref={imagineUploadRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          const base64 = result.split(',')[1];
+                          setImagineRefImage({ preview: result, base64 });
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    {imagineRefImage ? (
+                      <div className="relative flex-shrink-0 group">
+                        <img
+                          src={imagineRefImage.preview}
+                          alt="Reference"
+                          className="h-8 w-8 rounded-lg object-cover border-2 border-purple-400 cursor-pointer"
+                          onClick={() => setFullscreenImg(imagineRefImage.preview)}
+                        />
+                        <button
+                          onClick={() => setImagineRefImage(null)}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 text-[9px] bg-black/80 text-white px-1.5 py-0.5 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                          Reference image
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => imagineUploadRef.current?.click()}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all whitespace-nowrap"
+                      >
+                        <Image className="w-3 h-3" />
+                        Edit image
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Main body — photo grid + side panel */}
@@ -3588,19 +3654,22 @@ Let's start the self-listen session!`;
 
         {/* ── Attached images tray — floats ABOVE the bar ── */}
         {attachedImages.length > 0 && (
-          <div className="flex items-center gap-2 mb-2">
-            {/* scrollable strip — shows ~2 images at a time */}
+          <div className="mb-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 p-2.5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Attachments</span>
+              <span className="text-[10px] text-zinc-400">{attachedImages.length}/20</span>
+            </div>
             <div
               ref={attachTrayRef}
-              className="flex gap-2 overflow-x-hidden"
-              style={{ width: 'calc(2 * 80px + 8px)' }}
+              className="flex gap-2 overflow-x-auto pb-1"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(160,160,160,0.4) transparent' }}
             >
               {attachedImages.map((img, i) => (
                 <div key={i} className="relative flex-shrink-0 group">
                   <img
                     src={img.preview}
                     alt={`Attached ${i + 1}`}
-                    className="h-20 w-20 object-cover rounded-xl border border-white/20 cursor-zoom-in shadow-md"
+                    className="h-20 w-20 object-cover rounded-xl border border-zinc-300 dark:border-zinc-600 cursor-zoom-in shadow-sm hover:scale-105 transition-transform"
                     onClick={() => setFullscreenImg(img.preview)}
                   />
                   <button
@@ -3612,15 +3681,6 @@ Let's start the self-listen session!`;
                 </div>
               ))}
             </div>
-            {/* scroll-right arrow */}
-            {attachedImages.length > 2 && (
-              <button
-                onClick={() => { if (attachTrayRef.current) attachTrayRef.current.scrollLeft += 88; }}
-                className="flex-shrink-0 w-7 h-7 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 rounded-full flex items-center justify-center transition-all shadow text-zinc-600 dark:text-zinc-300 text-sm"
-              >›</button>
-            )}
-            {/* image count badge */}
-            <span className="text-[10px] text-zinc-400 flex-shrink-0">{attachedImages.length}/20</span>
           </div>
         )}
 
