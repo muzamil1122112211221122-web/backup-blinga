@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -444,12 +444,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine'>('ask');
   const navRef = useRef<HTMLDivElement>(null);
   const [navPill, setNavPill] = useState({ left: 0, width: 0 });
-  useEffect(() => {
+  const measureNavPill = useCallback(() => {
     const container = navRef.current;
     if (!container) return;
     const el = container.querySelector(`[data-testid="tab-${activeTab}"]`) as HTMLElement | null;
-    if (el) setNavPill({ left: el.offsetLeft, width: el.offsetWidth });
+    if (el && el.offsetWidth > 0) setNavPill({ left: el.offsetLeft, width: el.offsetWidth });
   }, [activeTab]);
+  useLayoutEffect(() => { measureNavPill(); }, [measureNavPill]);
+  useEffect(() => {
+    const t = setTimeout(measureNavPill, 50);
+    return () => clearTimeout(t);
+  }, [measureNavPill]);
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');

@@ -2083,8 +2083,9 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
                         className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] border border-white/10"
                         style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 120, background: '#1a1a2e' }}>
-                          <img src={g.img} alt={g.label} className="w-full h-full object-contain" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        <div className="w-full overflow-hidden relative" style={{ height: 120 }}>
+                          <div style={{ position:'absolute', inset:0, backgroundImage:`url(${g.img})`, backgroundSize:'cover', backgroundPosition:'center', filter:'blur(10px) brightness(0.45)', transform:'scale(1.15)', zIndex:0 }} />
+                          <img src={g.img} alt={g.label} className="w-full h-full object-contain" style={{ position:'relative', zIndex:1, display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
                         <div className="p-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                           <div className="text-white font-bold text-xs leading-tight truncate">{g.label}</div>
@@ -2111,8 +2112,9 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
                         className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97]"
                         style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 120, background: '#0d1f1a' }}>
-                          <img src={g.img} alt={g.name} className="w-full h-full object-contain" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        <div className="w-full overflow-hidden relative" style={{ height: 120 }}>
+                          <div style={{ position:'absolute', inset:0, backgroundImage:`url(${g.img})`, backgroundSize:'cover', backgroundPosition:'center', filter:'blur(10px) brightness(0.4)', transform:'scale(1.15)', zIndex:0 }} />
+                          <img src={g.img} alt={g.name} className="w-full h-full object-contain" style={{ position:'relative', zIndex:1, display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
                         <div className="p-2" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
                           <div className="text-white font-bold text-xs leading-tight truncate">{g.name}</div>
@@ -2166,8 +2168,9 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   <div key={game.id}
                     className="flex flex-col rounded-xl overflow-hidden transition-all"
                     style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                    <div className="w-full overflow-hidden relative" style={{ height: 120, background: owned ? '#0d1f1a' : '#12121e' }}>
-                      <img src={game.img} alt={game.name} className="w-full h-full object-contain" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                    <div className="w-full overflow-hidden relative" style={{ height: 120 }}>
+                      <div style={{ position:'absolute', inset:0, backgroundImage:`url(${game.img})`, backgroundSize:'cover', backgroundPosition:'center', filter:'blur(10px) brightness(0.45)', transform:'scale(1.15)', zIndex:0 }} />
+                      <img src={game.img} alt={game.name} className="w-full h-full object-contain" style={{ position:'relative', zIndex:1, display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       {owned && (
                         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
                           <div className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] text-white" style={{ background: 'rgba(16,185,129,0.85)' }}>
