@@ -2310,26 +2310,14 @@ Let's start the self-listen session!`;
           <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
         </div>
         
-        <div ref={navRef} className="relative flex items-center space-x-1 sm:space-x-2">
-          {/* sliding active pill */}
-          <div aria-hidden style={{
-            position: 'absolute',
-            left: navPill.left,
-            width: navPill.width,
-            top: 0, bottom: 0,
-            background: 'hsl(var(--secondary))',
-            borderRadius: 16,
-            transition: 'left 0.38s cubic-bezier(0.23,1,0.32,1), width 0.38s cubic-bezier(0.23,1,0.32,1)',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }} />
+        <div className="flex items-center space-x-1 sm:space-x-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'ask' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -2343,7 +2331,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'nomad' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -2357,7 +2345,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'imagine' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine
@@ -2371,7 +2359,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'philosopher' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-philosopher"
               >
                 Philosophers & {user?.displayName || user?.username || 'You'}
@@ -2385,7 +2373,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-all duration-200 ${activeTab === 'fius-games' ? 'bg-secondary text-foreground font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-fius-games"
               >
                 Fius Games
