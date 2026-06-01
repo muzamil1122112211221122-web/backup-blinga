@@ -564,7 +564,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
-  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, isGenerating?: boolean}[]>([]);
+  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], isGenerating?: boolean}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const imagineScrollRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -1377,10 +1377,12 @@ IMPORTANT RULES:
           body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: 'imagine' }),
         });
         const data = await res.json();
-        const match = data.response?.match(/!\[.*?\]\((.*?)\)/);
-        if (match?.[1]) {
+        const match = data.response?.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/);
+        const imageUrl = match?.[1] || data.metadata?.imagePath;
+        const fallbackUrls: string[] = data.metadata?.fallbackUrls || [];
+        if (imageUrl) {
           setImagineMessages(prev => prev.map(m =>
-            m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl: match[1] } : m
+            m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls } : m
           ));
         } else {
           setImagineMessages(prev => prev.map(m =>
@@ -3213,21 +3215,49 @@ Let's start the self-listen session!`;
                                   <span className="text-[10px] text-muted-foreground/60">~15–25 seconds</span>
                                 </div>
                               ) : msg.imageUrl ? (
-                                <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted">
-                                  <img
-                                    src={msg.imageUrl}
-                                    alt="Generated"
-                                    className="w-full h-auto"
-                                  />
+                                <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted min-h-[200px]">
+                                  {(() => {
+                                    const fallbacks = msg.fallbackUrls || [];
+                                    let fallbackIdx = 0;
+                                    return (
+                                      <>
+                                        {/* Loading spinner — hidden once image loads */}
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 pointer-events-none" id={`img-loading-${msg.id}`}>
+                                          <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                          <span className="text-xs text-muted-foreground">Loading image…</span>
+                                        </div>
+                                        <img
+                                          src={msg.imageUrl}
+                                          alt="Generated"
+                                          className="w-full h-auto relative z-20 opacity-0 transition-opacity duration-300"
+                                          onLoad={e => {
+                                            const img = e.currentTarget;
+                                            img.style.opacity = '1';
+                                            const loader = document.getElementById(`img-loading-${msg.id}`);
+                                            if (loader) loader.style.display = 'none';
+                                          }}
+                                          onError={e => {
+                                            const img = e.currentTarget;
+                                            if (fallbackIdx < fallbacks.length) {
+                                              img.src = fallbacks[fallbackIdx++];
+                                            } else {
+                                              img.style.display = 'none';
+                                              const loader = document.getElementById(`img-loading-${msg.id}`);
+                                              if (loader) loader.innerHTML = '<span style="font-size:12px;color:#888">Could not load image</span>';
+                                            }
+                                          }}
+                                        />
+                                      </>
+                                    );
+                                  })()}
                                   <a
                                     href={msg.imageUrl}
-                                    download="generated.jpg"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
+                                    className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors z-30"
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    Save
+                                    Open
                                   </a>
                                 </div>
                               ) : (

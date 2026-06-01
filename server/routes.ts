@@ -459,7 +459,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const description = await describeGeneratedImage(imagePrompt);
             aiResponse = {
               content: `🎨 **Image Generated**\n\nHere's your image of "${imagePrompt}":\n\n![Generated Image](${generatedImage.path})\n\n${description}`,
-              metadata: { model: 'pollinations-flux', imageGenerated: true, imagePath: generatedImage.path }
+              metadata: {
+                model: 'pollinations-flux',
+                imageGenerated: true,
+                imagePath: generatedImage.path,
+                fallbackUrls: (generatedImage as any).fallbackUrls || [],
+              }
             };
           } else {
             aiResponse = {

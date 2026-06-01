@@ -193,95 +193,28 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
 
-  // Helper: download image from URL and return as base64 data URL
-  async function downloadAsBase64(url: string, timeoutMs: number): Promise<{ url: string; contentType: string } | null> {
-    try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-      if (!r.ok) { console.log(`Download failed: ${r.status} for ${url.substring(0, 80)}`); return null; }
-      const ct = r.headers.get('content-type') || '';
-      if (!ct.startsWith('image/')) { console.log(`Non-image content-type: ${ct}`); return null; }
-      const buf = await r.arrayBuffer();
-      if (buf.byteLength < 2048) { console.log(`Image too small: ${buf.byteLength} bytes`); return null; }
-      const b64 = Buffer.from(buf).toString('base64');
-      console.log(`Downloaded ${Math.round(b64.length / 1024)}KB ${ct} image`);
-      return { url: `data:${ct};base64,${b64}`, contentType: ct };
-    } catch (e) {
-      console.log(`Download error: ${e instanceof Error ? e.message : e}`);
-      return null;
-    }
-  }
+  // Strategy: return a direct Pollinations URL so the *browser* fetches the image.
+  // The browser has the user's IP — not the server's IP — so Pollinations rate limits
+  // never apply. Server responds in <100ms; browser loads the image natively.
+  // We build 3 URL candidates (different models/seeds) as fallbacks embedded in the response.
+  const seed = Math.floor(Math.random() * 9_000_000) + 1;
+  const encodedPrompt = encodeURIComponent(prompt + ', photorealistic, ultra detailed, 8k');
 
-  // Attempt 1: Pollinations flux (server-side download, 12s — faster than before, no premium params)
-  try {
-    console.log('Trying Pollinations flux...');
-    const seed1 = Math.floor(Math.random() * 1_000_000);
-    const url1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', photorealistic, ultra detailed')}?width=${w}&height=${h}&seed=${seed1}&model=flux`;
-    const result1 = await downloadAsBase64(url1, 12000);
-    if (result1) return { success: true, url: result1.url, revisedPrompt: prompt };
-  } catch (e) { console.log('Pollinations flux error:', e); }
+  // Primary: flux (best quality)
+  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux`;
+  // Fallback 1: flux-realism
+  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux-realism`;
+  // Fallback 2: turbo (fastest)
+  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=turbo`;
 
-  // Attempt 2: Hugging Face FLUX.1-schnell (free, no API key, photorealistic quality)
-  try {
-    console.log('Trying HuggingFace FLUX.1-schnell...');
-    const hfRes = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Use-Cache': 'false' },
-      body: JSON.stringify({ inputs: prompt + ', photorealistic, ultra detailed, 8k resolution', parameters: { width: 1024, height: 1024 } }),
-      signal: AbortSignal.timeout(25000),
-    });
-    if (hfRes.ok) {
-      const ct = hfRes.headers.get('content-type') || 'image/jpeg';
-      if (ct.startsWith('image/')) {
-        const buf = await hfRes.arrayBuffer();
-        if (buf.byteLength > 2048) {
-          const b64 = Buffer.from(buf).toString('base64');
-          console.log(`HuggingFace FLUX image ready (${Math.round(b64.length / 1024)}KB)`);
-          return { success: true, url: `data:${ct};base64,${b64}`, revisedPrompt: prompt };
-        }
-      }
-      console.log(`HuggingFace returned unexpected content-type: ${ct}`);
-    } else {
-      const errText = await hfRes.text().catch(() => '');
-      console.log(`HuggingFace failed: ${hfRes.status} — ${errText.substring(0, 120)}`);
-    }
-  } catch (e) { console.log('HuggingFace error:', e instanceof Error ? e.message : e); }
-
-  // Attempt 3: Pollinations turbo model with fresh seed (different IP path)
-  try {
-    console.log('Trying Pollinations turbo...');
-    const seed3 = Math.floor(Math.random() * 9_000_000) + 2_000_000;
-    const url3 = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', high quality, detailed, realistic')}?width=${w}&height=${h}&seed=${seed3}&model=turbo`;
-    const result3 = await downloadAsBase64(url3, 12000);
-    if (result3) return { success: true, url: result3.url, revisedPrompt: prompt };
-  } catch (e) { console.log('Pollinations turbo error:', e); }
-
-  // Attempt 4: HuggingFace Stable Diffusion XL (another free photorealistic model)
-  try {
-    console.log('Trying HuggingFace SDXL...');
-    const sdxlRes = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Use-Cache': 'false' },
-      body: JSON.stringify({ inputs: prompt + ', photorealistic, ultra detailed, masterpiece' }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (sdxlRes.ok) {
-      const ct2 = sdxlRes.headers.get('content-type') || 'image/jpeg';
-      if (ct2.startsWith('image/')) {
-        const buf2 = await sdxlRes.arrayBuffer();
-        if (buf2.byteLength > 2048) {
-          const b64_2 = Buffer.from(buf2).toString('base64');
-          console.log(`HuggingFace SDXL image ready (${Math.round(b64_2.length / 1024)}KB)`);
-          return { success: true, url: `data:${ct2};base64,${b64_2}`, revisedPrompt: prompt };
-        }
-      }
-      console.log(`SDXL unexpected content-type: ${sdxlRes.headers.get('content-type')}`);
-    } else {
-      console.log(`SDXL failed: ${sdxlRes.status}`);
-    }
-  } catch (e) { console.log('HuggingFace SDXL error:', e instanceof Error ? e.message : e); }
-
-  console.log('All image generation attempts failed, returning null');
-  return null;
+  console.log(`Returning direct Pollinations URL (browser will load): ${primaryUrl.substring(0, 80)}...`);
+  // Embed all three as a JSON metadata string so the client can try fallbacks if primary fails
+  return {
+    success: true,
+    url: primaryUrl,
+    revisedPrompt: prompt,
+    fallbackUrls: [fallback1, fallback2],
+  };
 }
 
 
