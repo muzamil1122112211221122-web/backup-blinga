@@ -651,14 +651,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
   };
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
-    () => localStorage.getItem('functionBarStyle') || 'square'
+    () => localStorage.getItem('functionBarStyle') || 'circle'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
     () => localStorage.getItem('messageBarStyle') || 'compact'
   );
 
   useEffect(() => {
-    const handler = () => setFunctionBarStyle(localStorage.getItem('functionBarStyle') || 'square');
+    const handler = () => setFunctionBarStyle(localStorage.getItem('functionBarStyle') || 'circle');
     window.addEventListener('functionBarStyleChanged', handler);
     return () => window.removeEventListener('functionBarStyleChanged', handler);
   }, []);
@@ -2762,7 +2762,7 @@ Let's start the self-listen session!`;
             <h2 className="text-3xl font-bold mb-3 text-foreground">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">Fius is for us!</p>
+            <p className="text-lg text-muted-foreground mb-8">Fly With Us!</p>
             
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">

@@ -50,7 +50,7 @@ export function CustomizeModal({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [localTheme, setLocalTheme] = useState<string>(theme);
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
-    () => localStorage.getItem('functionBarStyle') || 'square'
+    () => localStorage.getItem('functionBarStyle') || 'circle'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
     () => localStorage.getItem('messageBarStyle') || 'compact'
@@ -59,7 +59,7 @@ export function CustomizeModal({
     () => localStorage.getItem('chatBg') || 'plain'
   );
   const originalTheme = useRef<string>(theme);
-  const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'square');
+  const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'circle');
   const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'compact');
   const originalChatBg = useRef<string>(localStorage.getItem('chatBg') || 'plain');
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
@@ -93,10 +93,10 @@ export function CustomizeModal({
       setLocalAiOrder([...aiOrder]);
       setLocalTheme(theme);
       originalTheme.current = theme;
-      const savedStyle = localStorage.getItem('functionBarStyle') || 'square';
+      const savedStyle = localStorage.getItem('functionBarStyle') || 'circle';
       setFunctionBarStyle(savedStyle);
       originalFunctionBarStyle.current = savedStyle;
-      const savedMsgStyle = localStorage.getItem('messageBarStyle') || 'default';
+      const savedMsgStyle = localStorage.getItem('messageBarStyle') || 'compact';
       setMessageBarStyle(savedMsgStyle);
       originalMessageBarStyle.current = savedMsgStyle;
       setIsDirty(false);

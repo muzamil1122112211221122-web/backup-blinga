@@ -104,7 +104,7 @@ export default function Landing() {
               <span>Begin Experience</span>
             </Button>
             <p className="text-lg font-semibold tracking-wide bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent select-none">
-              Fius is for us!
+              Fly With Us!
             </p>
           </div>
 

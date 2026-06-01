@@ -392,7 +392,7 @@ export default function UserInfo() {
           )}
 
           <div className="text-center mt-8">
-            <p className="text-lg text-gray-300 italic">Fius is for us!</p>
+            <p className="text-lg text-gray-300 italic">Fly With Us!</p>
           </div>
         </div>
       </div>
