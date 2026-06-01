@@ -3311,10 +3311,8 @@ Let's start the self-listen session!`;
           </div>
         ) : (
           // Fius Games Tab
-          <div className="absolute inset-0 overflow-y-auto" style={{ paddingTop: 8, paddingBottom: 8 }}>
-            <div className="max-w-lg mx-auto w-full px-3 h-full" style={{ minHeight: 580 }}>
-              <FiusGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
-            </div>
+          <div className="absolute inset-0 flex flex-col" style={{ padding: '8px 12px' }}>
+            <FiusGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
           </div>
         )}
       </div>

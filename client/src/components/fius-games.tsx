@@ -2025,15 +2025,35 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         <FragmentBadge count={fragments} />
       </div>
 
-      {/* ── Tab Bar ── */}
-      <div className="flex gap-1 mb-3 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0">
-        {(['games','store','leaderboard'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`flex-1 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${tab === t ? 'bg-white text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            {t === 'games' ? '🎮 Games' : t === 'store' ? '🛒 Store' : '🏆 Leaderboard'}
-          </button>
-        ))}
-      </div>
+      {/* ── Tab Bar (sliding pill) ── */}
+      {(() => {
+        const TABS = ['games','store','leaderboard'] as const;
+        const idx = TABS.indexOf(tab);
+        return (
+          <div className="relative flex mb-3 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0" style={{ gap: 0 }}>
+            {/* sliding pill */}
+            <div aria-hidden style={{
+              position: 'absolute',
+              top: 4, bottom: 4,
+              left: `calc(${idx} * 33.333% + 4px)`,
+              width: 'calc(33.333% - 8px)',
+              background: 'white',
+              borderRadius: 12,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+              transition: 'left 0.38s cubic-bezier(0.23,1,0.32,1)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }} />
+            {TABS.map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                style={{ flex: 1, position: 'relative', zIndex: 1, border: 'none', background: 'transparent' }}
+                className={`py-2 rounded-xl text-xs font-bold capitalize transition-colors duration-200 ${tab === t ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                {t === 'games' ? '🎮 Games' : t === 'store' ? '🛒 Store' : '🏆 Leaderboard'}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* ── Search (Games tab only) ── */}
       {tab === 'games' && (
@@ -2063,7 +2083,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
                         className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] border border-white/10"
                         style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 96, background: '#1a1a2e' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 120, background: '#1a1a2e' }}>
                           <img src={g.img} alt={g.label} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
                         <div className="p-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -2091,7 +2111,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
                         className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97]"
                         style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden" style={{ height: 96, background: '#0d1f1a' }}>
+                        <div className="w-full overflow-hidden" style={{ height: 120, background: '#0d1f1a' }}>
                           <img src={g.img} alt={g.name} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         </div>
                         <div className="p-2" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
@@ -2146,7 +2166,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   <div key={game.id}
                     className="flex flex-col rounded-xl overflow-hidden transition-all"
                     style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                    <div className="w-full overflow-hidden relative" style={{ height: 88, background: owned ? '#0d1f1a' : '#12121e' }}>
+                    <div className="w-full overflow-hidden relative" style={{ height: 120, background: owned ? '#0d1f1a' : '#12121e' }}>
                       <img src={game.img} alt={game.name} className="w-full h-full object-cover object-center" style={{ display: 'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       {owned && (
                         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
