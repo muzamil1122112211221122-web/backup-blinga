@@ -190,15 +190,15 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Generating photorealistic image for: "${prompt}"`);
 
-  // First try: Pollinations.ai — free, no-auth, fast (2-5s), returns real photographic images
+  const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
+    .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
+
+  // First try: Pollinations.ai — free tier (no premium params)
   try {
-    console.log('Using Pollinations.ai for fast photorealistic image generation...');
-    const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
-      .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
+    console.log('Using Pollinations.ai (free tier)...');
     const seed = Math.floor(Math.random() * 1_000_000);
-    const enhancedPrompt = `${prompt}, photorealistic, ultra detailed, 8k, sharp focus, masterpiece`;
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}` +
-      `?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true&enhance=true`;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', photorealistic, high quality')}` +
+      `?width=${w}&height=${h}&seed=${seed}&model=flux`;
 
     const imgResponse = await fetch(url, { signal: AbortSignal.timeout(20000) });
     if (imgResponse.ok) {
@@ -207,13 +207,9 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
       if (contentType.startsWith('image/') && arrayBuffer.byteLength > 1024) {
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         console.log(`Pollinations image ready (${Math.round(base64.length / 1024)}KB, ${contentType})`);
-        return {
-          success: true,
-          url: `data:${contentType};base64,${base64}`,
-          revisedPrompt: `Photorealistic: ${prompt}`,
-        };
+        return { success: true, url: `data:${contentType};base64,${base64}`, revisedPrompt: prompt };
       }
-      console.log(`Pollinations returned non-image or tiny payload (type=${contentType}, bytes=${arrayBuffer.byteLength}), falling through`);
+      console.log(`Pollinations returned non-image payload (type=${contentType}, bytes=${arrayBuffer.byteLength})`);
     } else {
       console.log('Pollinations failed:', imgResponse.status);
     }
@@ -221,29 +217,52 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
     console.log('Pollinations error:', error instanceof Error ? error.message : error);
   }
 
-  // Second try: Pollinations.ai with different seed (fast retry)
+  // Second try: Pollinations with turbo model and different seed
   try {
-    console.log('Retrying Pollinations.ai with fresh seed...');
-    const [w2, h2] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
-      .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
+    console.log('Retrying Pollinations.ai with turbo model...');
     const seed2 = Math.floor(Math.random() * 9_000_000) + 1_000_000;
-    const url2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', high quality, detailed')}` +
-      `?width=${w2}&height=${h2}&seed=${seed2}&model=flux&nologo=true`;
+    const url2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
+      `?width=${w}&height=${h}&seed=${seed2}&model=turbo`;
     const imgResponse2 = await fetch(url2, { signal: AbortSignal.timeout(20000) });
     if (imgResponse2.ok) {
       const contentType2 = imgResponse2.headers.get('content-type') || '';
       const arrayBuffer2 = await imgResponse2.arrayBuffer();
       if (contentType2.startsWith('image/') && arrayBuffer2.byteLength > 1024) {
         const base64_2 = Buffer.from(arrayBuffer2).toString('base64');
-        console.log(`Pollinations retry image ready (${Math.round(base64_2.length / 1024)}KB)`);
+        console.log(`Pollinations turbo image ready (${Math.round(base64_2.length / 1024)}KB)`);
         return { success: true, url: `data:${contentType2};base64,${base64_2}`, revisedPrompt: prompt };
       }
+    } else {
+      console.log('Pollinations turbo failed:', imgResponse2.status);
     }
   } catch (error) {
-    console.log('Pollinations retry error:', error instanceof Error ? error.message : error);
+    console.log('Pollinations turbo error:', error instanceof Error ? error.message : error);
   }
 
-  // All Pollinations attempts exhausted — return null so caller shows error message
+  // Third try: Gemini image generation (Imagen / Gemini image models)
+  console.log('Pollinations exhausted — trying Gemini image generation...');
+  const geminiResult = await tryGeminiImageGeneration(prompt);
+  if (geminiResult) {
+    console.log('Gemini image generation succeeded');
+    return geminiResult;
+  }
+
+  // Fourth try: Groq-generated SVG illustration
+  console.log('Gemini exhausted — trying Groq SVG illustration...');
+  const groqSvgResult = await tryGroqSvgGeneration(prompt);
+  if (groqSvgResult) {
+    console.log('Groq SVG illustration succeeded');
+    return groqSvgResult;
+  }
+
+  // Fifth try: Gemini SVG as last resort
+  console.log('Trying Gemini SVG as last resort...');
+  const geminiSvgResult = await tryGeminiSvgGeneration(prompt);
+  if (geminiSvgResult) {
+    console.log('Gemini SVG generation succeeded');
+    return geminiSvgResult;
+  }
+
   console.log('All image generation attempts failed, returning null');
   return null;
 }
