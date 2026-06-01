@@ -386,7 +386,7 @@ const readFileAsDataURL = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-function ImagineImageCard({ imageUrl, fallbackUrls }: { imageUrl: string; fallbackUrls: string[] }) {
+function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: string; fallbackUrls: string[]; onExpand?: (src: string) => void }) {
   const [loading, setLoading] = React.useState(true);
   const [failed, setFailed] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
@@ -428,7 +428,8 @@ function ImagineImageCard({ imageUrl, fallbackUrls }: { imageUrl: string; fallba
         <img
           src={src}
           alt="Generated"
-          className="w-full h-auto"
+          className={`w-full h-auto ${onExpand ? 'cursor-zoom-in' : ''}`}
+          onClick={() => !loading && onExpand && onExpand(src)}
           onLoad={() => setLoading(false)}
           onError={() => {
             if (fallbackRef.current < fallbackUrls.length) {
@@ -619,6 +620,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
+  const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
@@ -2691,7 +2694,8 @@ Let's start the self-listen session!`;
                         <img 
                           src={message.imageUrl} 
                           alt="Uploaded image" 
-                          className="max-w-full h-auto rounded-lg shadow-sm border border-border" 
+                          className="max-w-full h-auto rounded-lg shadow-sm border border-border cursor-zoom-in"
+                          onClick={() => setFullscreenImg(message.imageUrl!)}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.onerror = null;
@@ -3307,7 +3311,7 @@ Let's start the self-listen session!`;
                                   <span className="text-[10px] text-muted-foreground/60">~15–25 seconds</span>
                                 </div>
                               ) : msg.imageUrl ? (
-                                <ImagineImageCard imageUrl={msg.imageUrl} fallbackUrls={msg.fallbackUrls || []} />
+                                <ImagineImageCard imageUrl={msg.imageUrl} fallbackUrls={msg.fallbackUrls || []} onExpand={setFullscreenImg} />
                               ) : (
                                 <p className="text-sm text-muted-foreground px-1">{msg.content}</p>
                               )}
@@ -3581,42 +3585,67 @@ Let's start the self-listen session!`;
       )}
       {/* New Unified Message Bar */}
       <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
-        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedImages.length === 0 && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
-          {/* Attached images/files preview - ChatGPT style */}
-          {(attachedImages.length > 0 || attachedFiles.length > 0) && (
-            <div className="px-3 pt-3 pb-1 flex items-start gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent pb-2">
+
+        {/* ── Attached images tray — floats ABOVE the bar ── */}
+        {attachedImages.length > 0 && (
+          <div className="flex items-center gap-2 mb-2">
+            {/* scrollable strip — shows ~2 images at a time */}
+            <div
+              ref={attachTrayRef}
+              className="flex gap-2 overflow-x-hidden"
+              style={{ width: 'calc(2 * 80px + 8px)' }}
+            >
               {attachedImages.map((img, i) => (
-                <div key={i} className="relative inline-block flex-shrink-0 group">
+                <div key={i} className="relative flex-shrink-0 group">
                   <img
                     src={img.preview}
                     alt={`Attached ${i + 1}`}
-                    className="h-20 w-20 object-cover rounded-xl border border-white/10"
+                    className="h-20 w-20 object-cover rounded-xl border border-white/20 cursor-zoom-in shadow-md"
+                    onClick={() => setFullscreenImg(img.preview)}
                   />
                   <button
                     onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {attachedFiles.map((f, i) => (
-                <div key={i} className="relative flex-shrink-0 flex items-center gap-2 bg-black/10 dark:bg-white/5 border border-white/10 rounded-xl px-3 py-2 pr-8 w-[200px]">
-                  <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-black dark:text-white truncate">{f.name}</p>
-                    <p className="text-[10px] text-zinc-500">{f.size}</p>
-                  </div>
-                  <button
-                    onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                    className="absolute top-1.5 right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all shadow"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
             </div>
-          )}
+            {/* scroll-right arrow */}
+            {attachedImages.length > 2 && (
+              <button
+                onClick={() => { if (attachTrayRef.current) attachTrayRef.current.scrollLeft += 88; }}
+                className="flex-shrink-0 w-7 h-7 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 rounded-full flex items-center justify-center transition-all shadow text-zinc-600 dark:text-zinc-300 text-sm"
+              >›</button>
+            )}
+            {/* image count badge */}
+            <span className="text-[10px] text-zinc-400 flex-shrink-0">{attachedImages.length}/20</span>
+          </div>
+        )}
+
+        {/* ── Files tray (inside-bar style kept for non-image files) ── */}
+        {attachedFiles.length > 0 && (
+          <div className="flex gap-2 flex-wrap mb-2">
+            {attachedFiles.map((f, i) => (
+              <div key={i} className="relative flex items-center gap-2 bg-white dark:bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 pr-8 max-w-[200px] shadow-sm">
+                <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-black dark:text-white truncate">{f.name}</p>
+                  <p className="text-[10px] text-zinc-500">{f.size}</p>
+                </div>
+                <button
+                  onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                  className="absolute top-1.5 right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
 
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
@@ -4072,6 +4101,27 @@ Let's start the self-listen session!`;
         onChange={handleImageUpload}
         style={{ display: 'none' }}
       />
+
+      {/* ── Fullscreen image lightbox ── */}
+      {fullscreenImg && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          onClick={() => setFullscreenImg(null)}
+        >
+          <button
+            className="absolute top-4 right-4 w-9 h-9 bg-white/10 hover:bg-white/25 text-white rounded-full flex items-center justify-center transition-all text-lg"
+            onClick={() => setFullscreenImg(null)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={fullscreenImg}
+            alt="Full screen"
+            className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );

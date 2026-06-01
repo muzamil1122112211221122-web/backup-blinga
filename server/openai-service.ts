@@ -200,12 +200,12 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   const seed = Math.floor(Math.random() * 9_000_000) + 1;
   const encodedPrompt = encodeURIComponent(prompt + ', photorealistic, ultra detailed, 8k');
 
-  // Primary: flux (best quality)
-  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux`;
+  // Primary: flux (best quality) — nologo+nofeed prevent Pollinations from serving a cached gallery hit
+  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true&nofeed=true`;
   // Fallback 1: flux-realism
-  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux-realism`;
+  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux-realism&nologo=true&nofeed=true`;
   // Fallback 2: turbo (fastest)
-  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=turbo`;
+  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=turbo&nologo=true&nofeed=true`;
 
   console.log(`Returning direct Pollinations URL (browser will load): ${primaryUrl.substring(0, 80)}...`);
   // Embed all three as a JSON metadata string so the client can try fallbacks if primary fails
