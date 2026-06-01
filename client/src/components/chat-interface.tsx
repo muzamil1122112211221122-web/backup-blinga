@@ -800,6 +800,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   }, []);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isHistoryLoad = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -1213,7 +1214,14 @@ IMPORTANT RULES:
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (isHistoryLoad.current) {
+      isHistoryLoad.current = false;
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = 0;
+      }
+    } else {
+      scrollToBottom();
+    }
   }, [messages, scrollToBottom]);
 
   // Auto-resize textarea
@@ -2216,6 +2224,7 @@ Let's start the self-listen session!`;
             globalCompletedTexts.current.set(msg.id, msg.content);
           }
         });
+        isHistoryLoad.current = true;
         setMessages(messagesWithDates);
       }
     } catch (error) {
