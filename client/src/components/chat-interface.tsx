@@ -1203,6 +1203,7 @@ IMPORTANT RULES:
 
   const handleGoBack = () => {
     setCurrentProjectId(null);
+    isHistoryLoad.current = true;
     setMessages([]);
     localStorage.removeItem('currentProjectId');
   };
@@ -1976,6 +1977,7 @@ IMPORTANT RULES:
         const newProject = await response.json();
         setCurrentProjectId(newProject.id);
         localStorage.setItem('currentProjectId', newProject.id);
+        isHistoryLoad.current = true;
         setMessages([]);
         setProjects(prev => [newProject, ...prev]);
         setIsSidebarOpen(false);
@@ -2005,6 +2007,7 @@ IMPORTANT RULES:
         if (currentProjectId === id) {
           setCurrentProjectId(null);
           localStorage.removeItem('currentProjectId');
+          isHistoryLoad.current = true;
           setMessages([]);
         }
       }
