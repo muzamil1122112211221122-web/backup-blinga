@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, X, Check, ChevronLeft, Edit3 as PenTool, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
@@ -96,6 +97,69 @@ export function Sidebar({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Chat config dialog
+  const [chatConfigOpen, setChatConfigOpen] = useState(false);
+  const [chatConfigId, setChatConfigId] = useState('');
+  const [chatConfigTitle, setChatConfigTitle] = useState('');
+  const [chatConfigRole, setChatConfigRole] = useState('General');
+  const [roleAnswers, setRoleAnswers] = useState<Record<string, string>>({});
+
+  const AI_ROLES: Array<{id: string; label: string; icon: string; questions: Array<{key: string; label: string}>}> = [
+    { id: 'General', label: 'General AI', icon: '✦', questions: [] },
+    { id: 'Chef', label: 'Chef', icon: '🍳', questions: [
+      { key: 'diet', label: 'Dietary needs (e.g. vegetarian, halal)' },
+      { key: 'cuisine', label: 'Favorite cuisine style' },
+      { key: 'skill', label: 'Cooking level (beginner / intermediate / advanced)' },
+    ]},
+    { id: 'Trainer', label: 'Trainer', icon: '💪', questions: [
+      { key: 'goal', label: 'Goal (lose weight / build muscle / endurance)' },
+      { key: 'equipment', label: 'Equipment (gym / home / none)' },
+      { key: 'level', label: 'Fitness level (beginner / intermediate / advanced)' },
+    ]},
+    { id: 'Tutor', label: 'Tutor', icon: '📚', questions: [
+      { key: 'subject', label: 'Subject or topic to focus on' },
+      { key: 'level', label: 'Education level (school / college / self-study)' },
+    ]},
+    { id: 'LifeCoach', label: 'Life Coach', icon: '🧭', questions: [
+      { key: 'focus', label: 'Focus area (career / relationships / mindset / health)' },
+      { key: 'goal', label: 'Main goal you want to achieve' },
+    ]},
+    { id: 'LangTutor', label: 'Language Tutor', icon: '🌍', questions: [
+      { key: 'lang', label: 'Language to learn' },
+      { key: 'level', label: 'Current level (beginner / intermediate / advanced)' },
+    ]},
+    { id: 'Finance', label: 'Finance Advisor', icon: '💰', questions: [
+      { key: 'goal', label: 'Financial goal (save / invest / budget / debt)' },
+      { key: 'risk', label: 'Risk tolerance (low / medium / high)' },
+    ]},
+  ];
+
+  function openChatConfig(chat: { id: string; title: string; aiRole?: string }) {
+    setChatConfigId(chat.id);
+    setChatConfigTitle(chat.title || '');
+    const currentRole = chat.aiRole?.split('\n')[0] || 'General';
+    setChatConfigRole(currentRole);
+    const answers: Record<string, string> = {};
+    if (chat.aiRole) {
+      chat.aiRole.split('\n').slice(1).forEach(line => {
+        const [k, ...v] = line.split(':');
+        if (k && v.length) answers[k.trim()] = v.join(':').trim();
+      });
+    }
+    setRoleAnswers(answers);
+    setChatConfigOpen(true);
+  }
+
+  function saveChatConfig() {
+    if (chatConfigTitle.trim()) onEditProject?.(chatConfigId, chatConfigTitle.trim());
+    const role = AI_ROLES.find(r => r.id === chatConfigRole);
+    const lines = [chatConfigRole];
+    if (role) role.questions.forEach(q => { if (roleAnswers[q.key]) lines.push(`${q.key}: ${roleAnswers[q.key]}`); });
+    onUpdateAiRole?.(chatConfigId, lines.join('\n'));
+    setChatConfigOpen(false);
+    toast({ title: 'Chat settings saved' });
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -337,31 +401,13 @@ export function Sidebar({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditTitle(chat.title);
-                                      setEditingProject(chat.id);
-                                    }}
-                                    className="p-1 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); openChatConfig(chat); }}
+                                    className="p-1 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
                                   >
-                                    <PenTool className="h-3 w-3" />
+                                    <Settings className="h-3 w-3" />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent>Rename</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDeleteProject(chat.id);
-                                    }}
-                                    className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Delete</TooltipContent>
+                                <TooltipContent>Chat settings</TooltipContent>
                               </Tooltip>
                             </div>
                           )}
@@ -515,6 +561,91 @@ export function Sidebar({
           )}
         </div>
       </div>
+      {/* ── Chat Config Dialog ── */}
+      <Dialog open={chatConfigOpen} onOpenChange={setChatConfigOpen}>
+        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Chat Settings</DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400 mt-0.5">Rename this chat, set an AI role, or delete it.</DialogDescription>
+          </DialogHeader>
+          <div className="px-5 py-4 space-y-5 max-h-[70vh] overflow-y-auto">
+
+            {/* Chat name */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Chat Name</label>
+              <Input
+                value={chatConfigTitle}
+                onChange={e => setChatConfigTitle(e.target.value)}
+                placeholder="Chat name"
+                className="h-9 text-sm bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
+              />
+            </div>
+
+            {/* AI Role */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">AI Role</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {AI_ROLES.map(role => (
+                  <button key={role.id}
+                    onClick={() => setChatConfigRole(role.id)}
+                    className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl border text-center transition-all ${
+                      chatConfigRole === role.id
+                        ? 'border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-700'
+                        : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                    }`}>
+                    <span className="text-base leading-none">{role.icon}</span>
+                    <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300 leading-tight">{role.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Role questionnaire */}
+            {(() => {
+              const role = AI_ROLES.find(r => r.id === chatConfigRole);
+              if (!role || role.questions.length === 0) return null;
+              return (
+                <div className="space-y-2.5">
+                  <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Tell the AI about you</label>
+                  {role.questions.map(q => (
+                    <div key={q.key} className="space-y-1">
+                      <label className="text-xs text-zinc-500 dark:text-zinc-400">{q.label}</label>
+                      <Input
+                        value={roleAnswers[q.key] || ''}
+                        onChange={e => setRoleAnswers(prev => ({ ...prev, [q.key]: e.target.value }))}
+                        placeholder="Optional"
+                        className="h-8 text-sm bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Danger zone */}
+            <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4">
+              <button
+                onClick={() => { onDeleteProject(chatConfigId); setChatConfigOpen(false); }}
+                className="w-full py-2 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+              >
+                Delete this chat
+              </button>
+            </div>
+          </div>
+
+          {/* Footer buttons */}
+          <div className="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setChatConfigOpen(false)}
+              className="rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 text-sm">
+              Cancel
+            </Button>
+            <Button size="sm" onClick={saveChatConfig}
+              className="rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 text-sm px-5">
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

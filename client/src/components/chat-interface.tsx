@@ -1717,6 +1717,32 @@ IMPORTANT RULES:
     setPendingAnimationIds(new Set());
   };
 
+  /* ── Answer cache helpers ── */
+  function cacheWordSimilarity(a: string, b: string): number {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+    const wa = new Set(norm(a)); const wb = new Set(norm(b));
+    if (wa.size === 0 || wb.size === 0) return 0;
+    return [...wa].filter(w => wb.has(w)).length / Math.max(wa.size, wb.size);
+  }
+  function extractUserFacts(msg: string): string[] {
+    const facts: string[] = [];
+    const pats: [RegExp, (m: RegExpMatchArray) => string][] = [
+      [/my name is (\w+)/i, m => `User's name is ${m[1]}`],
+      [/(?:call me|i(?:'m| am) called) (\w+)/i, m => `User goes by ${m[1]}`],
+      [/i(?:'m| am) (\d+) years?(?: old)?/i, m => `User is ${m[1]} years old`],
+      [/i(?:'m| am) from ([\w\s]{2,25}?)(?:[.,]|$)/i, m => `User is from ${m[1].trim()}`],
+      [/i (?:love|really like|enjoy) ([\w\s]{2,30}?)(?:[.,]|$)/i, m => `User loves ${m[1].trim()}`],
+      [/i (?:hate|dislike|don't like) ([\w\s]{2,30}?)(?:[.,]|$)/i, m => `User dislikes ${m[1].trim()}`],
+      [/i(?:'m| am) (?:a |an )?([\w\s]{2,25}?) (?:by profession|professionally|for a living)/i, m => `User works as ${m[1].trim()}`],
+      [/i(?:'m| am) allergic to ([\w\s]{2,25}?)(?:[.,]|$)/i, m => `User is allergic to ${m[1].trim()}`],
+      [/i speak ([\w\s]{2,20}?) (?:fluently|well|language)/i, m => `User speaks ${m[1].trim()}`],
+    ];
+    for (const [re, fn] of pats) { const m = msg.match(re); if (m) facts.push(fn(m)); }
+    return facts;
+  }
+  const ANSWER_CACHE_KEY = 'fiusAnswerCache';
+  const MEMORY_KEY = 'fiusMemory';
+
   const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -1757,6 +1783,32 @@ IMPORTANT RULES:
       } catch {
         // proceed without search if it fails
       }
+      // ── Answer cache lookup (skip for greetings/short msgs) ──
+      const skipCacheable = skipSearchPatterns.test(content.trim()) || isShortConversational;
+      if (!skipCacheable) {
+        try {
+          const cache: Array<{q: string; a: string; t: number}> = JSON.parse(localStorage.getItem(ANSWER_CACHE_KEY) || '[]');
+          const hit = cache.find(e => cacheWordSimilarity(content, e.q) >= 0.85);
+          if (hit) {
+            setMessages(prev => [...prev, {
+              id: Date.now().toString(), conversationId, role: 'assistant',
+              content: hit.a, createdAt: new Date(),
+              metadata: { cached: true },
+            } as ChatMessage]);
+            setIsTyping(false);
+            return;
+          }
+        } catch {}
+
+        // ── Inject memory context into enriched content ──
+        try {
+          const memory: string[] = JSON.parse(localStorage.getItem(MEMORY_KEY) || '[]');
+          if (memory.length > 0) {
+            enrichedContent = `[Known about this user: ${memory.slice(0, 10).join('; ')}]\n\n${enrichedContent}`;
+          }
+        } catch {}
+      }
+
       console.log('Making direct API call...');
       const response = await fetch('/api/test-ai', {
         method: 'POST',
@@ -1789,7 +1841,25 @@ IMPORTANT RULES:
         };
 
         setMessages(prev => [...prev, aiMessage]);
-        
+
+        // ── Save Q&A to answer cache + extract user memory facts ──
+        if (!skipCacheable) {
+          try {
+            const cache: Array<{q: string; a: string; t: number}> = JSON.parse(localStorage.getItem(ANSWER_CACHE_KEY) || '[]');
+            cache.unshift({ q: content, a: aiContent, t: Date.now() });
+            if (cache.length > 100) cache.splice(100);
+            localStorage.setItem(ANSWER_CACHE_KEY, JSON.stringify(cache));
+          } catch {}
+          try {
+            const newFacts = extractUserFacts(content);
+            if (newFacts.length > 0) {
+              const existing: string[] = JSON.parse(localStorage.getItem(MEMORY_KEY) || '[]');
+              const merged = [...new Set([...newFacts, ...existing])].slice(0, 20);
+              localStorage.setItem(MEMORY_KEY, JSON.stringify(merged));
+            }
+          } catch {}
+        }
+
         // Auto-speak AI responses in voice-to-voice mode
         if (isVoiceToVoiceMode) {
           // Clean the content for speech by removing markdown and special characters
@@ -3592,30 +3662,40 @@ Let's start the self-listen session!`;
         const renderFunctionBtn = (icon: React.ReactNode, label: string, onClick: () => void, activeStyle?: string, testId?: string) => {
           if (isCircle) {
             return (
-              <button
-                onClick={onClick}
-                data-testid={testId}
-                className="flex flex-col items-center gap-1.5 group w-[5rem]"
-              >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
-                  {icon}
-                </div>
-                <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{label}</span>
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={onClick}
+                    data-testid={testId}
+                    className="flex flex-col items-center gap-1.5 group w-[5rem]"
+                  >
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
+                      {icon}
+                    </div>
+                    <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{label}</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{label}</TooltipContent>
+              </Tooltip>
             );
           }
           return (
-            <Button
-              variant="ghost"
-              className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative min-w-[5rem] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}
-              onClick={onClick}
-              data-testid={testId}
-            >
-              <div className="relative z-10 flex flex-col items-center space-y-1">
-                {icon}
-                <span className="text-[10px] sm:text-xs font-medium">{label}</span>
-              </div>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative min-w-[5rem] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}
+                  onClick={onClick}
+                  data-testid={testId}
+                >
+                  <div className="relative z-10 flex flex-col items-center space-y-1">
+                    {icon}
+                    <span className="text-[10px] sm:text-xs font-medium">{label}</span>
+                  </div>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
           );
         };
 
@@ -3943,13 +4023,23 @@ Let's start the self-listen session!`;
                 <TooltipContent>Enhance prompt</TooltipContent>
               </Tooltip>
               {(isTyping || isAnimatingResponse) ? (
-                <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0" data-testid="button-stop-response">
-                  <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0" data-testid="button-stop-response">
+                      <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Stop response</TooltipContent>
+                </Tooltip>
               ) : (
-                <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0" data-testid="button-send-message">
-                  <ArrowUp className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0" data-testid="button-send-message">
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Send message</TooltipContent>
+                </Tooltip>
               )}
             </div>
           ) : (
