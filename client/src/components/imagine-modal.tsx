@@ -1,17 +1,18 @@
 import { useState, useRef } from "react";
-import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2 } from "lucide-react";
+import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2, Images } from "lucide-react";
 
 const TEMPLATES = [
   { id: 'realistic-portrait', icon: '📸', name: 'Realistic Portrait', desc: 'Ultra-HD photo', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
-  { id: 'pro-headshot', icon: '💼', name: 'Pro Headshot', desc: 'LinkedIn ready', prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait' },
-  { id: 'anime', icon: '✨', name: 'Anime', desc: 'Japanese animation', prompt: 'anime style illustration, vibrant colors, detailed line art, expressive eyes, Studio quality Japanese animation' },
+  { id: 'pro-headshot', icon: '💼', name: 'Pro Headshot', desc: 'LinkedIn ready', prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait photography' },
+  { id: 'anime', icon: '🎌', name: 'Anime', desc: 'Japanese animation', prompt: 'anime style illustration, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, dramatic lighting, high quality Japanese anime art, detailed character design, manga inspired' },
+  { id: 'pixel-art', icon: '🕹️', name: 'Pixel Art', desc: '8-bit retro style', prompt: 'pixel art style, 8-bit retro game art, pixelated low resolution aesthetic, vibrant flat colors, pixel grid visible, NES SNES era video game art style, isometric pixel art' },
   { id: 'ghibli', icon: '🌿', name: 'Ghibli Style', desc: 'Magical & dreamy', prompt: 'Studio Ghibli art style, soft warm colors, magical atmosphere, detailed painterly backgrounds, gentle natural lighting, Miyazaki aesthetic' },
   { id: 'cyberpunk', icon: '🌆', name: 'Cyberpunk', desc: 'Neon future', prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas, cinematic lighting' },
+  { id: '3d-render', icon: '🔮', name: '3D Render', desc: 'Digital realism', prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination, subsurface scattering skin, metallic reflections, Octane render quality, studio HDRI lighting, ultra detailed mesh' },
   { id: 'fantasy', icon: '🐉', name: 'Fantasy Art', desc: 'Epic & magical', prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece' },
   { id: 'oil-painting', icon: '🎨', name: 'Oil Painting', desc: 'Classical art', prompt: 'classical oil painting, impressionist brushwork, rich warm colors, textured canvas, old master technique, museum quality' },
   { id: 'watercolor', icon: '💧', name: 'Watercolor', desc: 'Soft & artistic', prompt: 'delicate watercolor painting, soft transparent washes, wet-on-wet technique, artistic brushstrokes, gentle color gradients' },
   { id: 'sketch', icon: '✏️', name: 'Pencil Sketch', desc: 'Hand-drawn feel', prompt: 'detailed pencil sketch, fine crosshatching, artistic line drawing, graphite shading, hand-drawn quality, sketchbook style' },
-  { id: '3d-render', icon: '🔮', name: '3D Render', desc: 'Digital realism', prompt: '3D rendered artwork, photorealistic materials, ray tracing, cinematic studio lighting, Octane render quality, subsurface scattering' },
   { id: 'cinematic', icon: '🎬', name: 'Cinematic', desc: 'Movie quality', prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded, ARRI cinema' },
   { id: 'architecture', icon: '🏛️', name: 'Architecture', desc: 'Building design', prompt: 'architectural visualization, modern contemporary design, photorealistic render, natural lighting, detailed structural materials' },
   { id: 'interior', icon: '🛋️', name: 'Interior Design', desc: 'Home & spaces', prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality' },
@@ -23,14 +24,15 @@ const TEMPLATES = [
   { id: 'abstract', icon: '🌀', name: 'Abstract', desc: 'Creative flow', prompt: 'abstract digital art, vibrant flowing colors, geometric organic patterns, creative composition, modern contemporary art aesthetic' },
   { id: 'vintage', icon: '📷', name: 'Vintage Film', desc: 'Retro aesthetic', prompt: 'vintage film photography, grain texture, warm sepia and amber tones, analog camera look, nostalgic retro mood, Kodachrome style' },
   { id: 'neon', icon: '🌃', name: 'Neon Art', desc: 'Glowing lights', prompt: 'neon art aesthetic, glowing electric neon signs, dark dramatic background, vivid electric colors, futuristic luminous glow effect' },
-  { id: 'renovation', icon: '🏠', name: 'Renovation', desc: 'Before & after', prompt: 'home renovation visualization, modern remodel design, interior upgrade transformation, architectural improvement render, clean contemporary style' },
   { id: 'wedding', icon: '💍', name: 'Wedding', desc: 'Romantic moments', prompt: 'romantic wedding photography, golden hour backlight, soft bokeh, emotional intimate moments, elegant timeless composition' },
   { id: 'travel', icon: '✈️', name: 'Travel', desc: 'Iconic landmarks', prompt: 'travel photography, iconic landmark, deep blue sky, vibrant saturated colors, editorial quality, wanderlust travel aesthetic' },
   { id: 'poster', icon: '🖼️', name: 'Poster Art', desc: 'Bold graphic', prompt: 'graphic design poster art, bold striking composition, artistic illustration, high impact visual design, clean typography layout' },
 ];
 
 const EDIT_STYLES = [
-  { id: 'anime', name: 'Anime', icon: '✨', prompt: 'anime art style, vibrant anime illustration, detailed anime eyes, Studio quality animation' },
+  { id: 'anime', name: 'Anime', icon: '🎌', prompt: 'anime art style, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, high quality Japanese anime illustration, detailed character design' },
+  { id: 'pixel-art', name: 'Pixel Art', icon: '🕹️', prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, NES SNES era video game art, flat vibrant colors, pixel grid visible, low resolution charm' },
+  { id: '3d-render', name: '3D Render', icon: '🔮', prompt: '3D CGI render, photorealistic 3D model, Blender Cycles render, ray tracing, subsurface scattering, metallic reflections, Octane render quality, studio HDRI lighting' },
   { id: 'ghibli', name: 'Ghibli', icon: '🌿', prompt: 'Studio Ghibli art style, Miyazaki painterly, soft warm colors, magical atmosphere' },
   { id: 'pixar', name: 'Pixar 3D', icon: '🎠', prompt: 'Pixar 3D animation style, smooth subsurface skin, warm cinematic lighting, charming character design' },
   { id: 'cyberpunk', name: 'Cyberpunk', icon: '🌆', prompt: 'cyberpunk neon aesthetic, electric blues and magentas, futuristic, rain reflections' },
@@ -45,12 +47,11 @@ const EDIT_STYLES = [
   { id: 'neon', name: 'Neon Glow', icon: '🌃', prompt: 'neon glow aesthetic, electric light trails, dark background, luminous vivid colors, synthwave' },
   { id: 'retro', name: 'Retro/Vintage', icon: '📷', prompt: 'vintage film photography aesthetic, grain, warm nostalgic tones, retro analog look' },
   { id: 'cinematic', name: 'Cinematic', icon: '🎬', prompt: 'cinematic color grade, film noir lighting, anamorphic flares, Hollywood cinematography' },
-  { id: 'fantasy', name: 'Dark Fantasy', icon: '🔮', prompt: 'dark fantasy art, dramatic magical atmosphere, intricate mystical details, epic dramatic lighting' },
+  { id: 'fantasy', name: 'Dark Fantasy', icon: '🐉', prompt: 'dark fantasy art, dramatic magical atmosphere, intricate mystical details, epic dramatic lighting' },
   { id: 'realistic', name: 'Hyperrealistic', icon: '📸', prompt: 'hyperrealistic photography, photorealistic, 8K ultra-detailed, professional studio lighting' },
   { id: 'abstract', name: 'Abstract', icon: '🌀', prompt: 'abstract expressionist art, fluid shapes, vibrant flowing colors, non-representational art' },
   { id: 'gothic', name: 'Gothic', icon: '🦇', prompt: 'gothic dark aesthetic, dark dramatic atmosphere, ornate Victorian details, moody shadows' },
   { id: 'surreal', name: 'Surrealist', icon: '🌊', prompt: 'surrealist art style, dreamlike impossible scenario, Salvador Dali inspired, otherworldly' },
-  { id: 'portrait', name: 'Painted Portrait', icon: '🖼️', prompt: 'painted portrait style, gallery quality, expressive brushwork, classical portraiture technique' },
   { id: 'storybook', name: 'Storybook', icon: '📖', prompt: 'storybook illustration style, whimsical charming, children book quality, warm inviting colors' },
   { id: 'claymation', name: 'Claymation', icon: '🧸', prompt: 'claymation stop motion style, tactile clay texture, Aardman animation quality, playful 3D' },
   { id: 'vaporwave', name: 'Vaporwave', icon: '🌸', prompt: 'vaporwave aesthetic, pastel pinks and purples, retro 80s computer graphics, nostalgic' },
@@ -83,25 +84,16 @@ const ACCESSORIES = [
   { id: 'flower', name: 'Flower Crown', icon: '🌸' },
 ];
 
-const SHOWCASE_PROMPTS = [
-  'breathtaking mountain sunset with golden clouds and dramatic volumetric lighting, ultra realistic landscape photography',
-  'futuristic neon-lit cyberpunk city at night with rain reflections on streets, cinematic wide shot photography',
-  'serene Japanese cherry blossom garden with petals falling in soft light, Studio Ghibli inspired painting',
-  'majestic snow leopard portrait with dramatic rim lighting, professional wildlife photography, sharp eyes',
-  'stunning aurora borealis over a frozen lake with snow-covered pine trees, long exposure night photography',
-  'epic fantasy wizard casting a lightning spell in an ancient ruins, digital art masterpiece, dramatic lighting',
-  'gorgeous editorial fashion model in flowing silk dress on Paris streets, golden hour photography',
-  'colorful underwater coral reef with tropical fish and sunbeams, crystal clear turquoise water photography',
+const SHOWCASE_IMAGES = [
+  { url: 'https://image.pollinations.ai/prompt/breathtaking%20mountain%20sunset%20golden%20clouds%20volumetric%20lighting%20ultra%20realistic%20landscape%20photography?width=600&height=400&nologo=true&seed=42001', prompt: 'breathtaking mountain sunset with golden clouds' },
+  { url: 'https://image.pollinations.ai/prompt/futuristic%20neon%20cyberpunk%20city%20rain%20reflections%20cinematic%20wide%20shot?width=600&height=400&nologo=true&seed=42002', prompt: 'futuristic neon-lit cyberpunk city at night' },
+  { url: 'https://image.pollinations.ai/prompt/anime%20style%20cherry%20blossom%20garden%20vibrant%20colors%20Studio%20Ghibli%20painting?width=600&height=400&nologo=true&seed=42003', prompt: 'anime style cherry blossom garden painting' },
+  { url: 'https://image.pollinations.ai/prompt/majestic%20snow%20leopard%20portrait%20dramatic%20rim%20lighting%20wildlife%20photography?width=600&height=400&nologo=true&seed=42004', prompt: 'majestic snow leopard portrait' },
 ];
 
 function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}`;
-}
-
-function getShowcaseImages() {
-  const shuffled = [...SHOWCASE_PROMPTS].sort(() => Math.random() - 0.5).slice(0, 4);
-  return shuffled.map(p => ({ url: buildPollinationsUrl(p, 600, 400), prompt: p }));
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux`;
 }
 
 interface GenImage {
@@ -111,11 +103,48 @@ interface GenImage {
   history: string[];
   liked?: boolean;
   disliked?: boolean;
+  loading?: boolean;
+  error?: boolean;
 }
 
 interface ImagineModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+function ImageWithLoader({ src, alt, className, style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  const handleError = () => {
+    setErrored(true);
+    setLoaded(true);
+  };
+
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
+          <Loader2 size={18} className="animate-spin text-purple-400" />
+        </div>
+      )}
+      {errored ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 gap-1">
+          <span className="text-2xl">🖼️</span>
+          <span className="text-zinc-600 text-[10px]">Failed to load</span>
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          className={className}
+          style={{ ...style, opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+          onLoad={() => setLoaded(true)}
+          onError={handleError}
+        />
+      )}
+    </div>
+  );
 }
 
 export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
@@ -124,21 +153,30 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [generatedImages, setGeneratedImages] = useState<GenImage[]>([]);
   const [isGenerating, setIsGenerating]       = useState(false);
   const [activeTemplate, setActiveTemplate]   = useState<typeof TEMPLATES[0] | null>(null);
+  const [imageCount, setImageCount]           = useState(1);
   const [editTarget, setEditTarget]           = useState<GenImage | null>(null);
   const [editStyle, setEditStyle]             = useState('');
   const [editResolution, setEditResolution]   = useState('1:1');
   const [editAccessories, setEditAccessories] = useState<string[]>([]);
   const [editHistory, setEditHistory]         = useState<string[]>([]);
   const [isEditGenerating, setIsEditGenerating] = useState(false);
-  const [showcaseImages]                      = useState(() => getShowcaseImages());
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const uploadRef   = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  /* ── Helpers ── */
-  async function generate(fullPrompt: string, size: string): Promise<string> {
+  /* ── Image generation: Pollinations Flux primary, backend fallback ── */
+  async function generateSingle(fullPrompt: string, size: string, seed?: number): Promise<string> {
+    const [w, h] = size.split('x').map(Number);
+    const pw = w || 1024;
+    const ph = h || 1024;
+    const s = seed ?? Math.floor(Math.random() * 9_999_999);
+
+    // Primary: Pollinations Flux (fast, reliable, no auth needed)
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${pw}&height=${ph}&nologo=true&seed=${s}&model=flux`;
+
+    // Try backend (Gemini/Imagen) as enhancement if available
     try {
       const res = await fetch('/api/generate-image', {
         method: 'POST',
@@ -146,30 +184,58 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         credentials: 'include',
         body: JSON.stringify({ prompt: fullPrompt, size }),
       });
-      const data = await res.json();
-      if (data.success && data.url) return data.url;
-    } catch {}
-    // Pollinations direct fallback
-    const [w, h] = size.split('x').map(Number);
-    return buildPollinationsUrl(fullPrompt, w || 1024, h || 1024);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.url) return data.url;
+      }
+    } catch {
+      // Backend unavailable – fall through to Pollinations
+    }
+
+    return pollinationsUrl;
   }
 
   function getApiSize(resId: string): string {
     return RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
   }
 
-  /* ── Main generate ── */
+  /* ── Main generate (supports 1–4 images in parallel) ── */
   async function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
     setIsGenerating(true);
     const base = prompt.trim();
     const templateSuffix = activeTemplate ? `, ${activeTemplate.prompt}` : '';
     const fullPrompt = base + templateSuffix;
-    const url = await generate(fullPrompt, getApiSize('1:1'));
-    setGeneratedImages(prev => [
-      { id: Date.now().toString(), url, prompt: fullPrompt, history: [url] },
-      ...prev.slice(0, 9),
-    ]);
+    const size = getApiSize('1:1');
+
+    // Create placeholder entries with loading state
+    const placeholders: GenImage[] = Array.from({ length: imageCount }, (_, i) => ({
+      id: `${Date.now()}-${i}`,
+      url: '',
+      prompt: fullPrompt,
+      history: [],
+      loading: true,
+    }));
+    setGeneratedImages(prev => [...placeholders, ...prev].slice(0, 20));
+
+    // Generate all images in parallel with different seeds
+    const seeds = placeholders.map(() => Math.floor(Math.random() * 9_999_999));
+    const promises = seeds.map((seed, i) =>
+      generateSingle(fullPrompt, size, seed).then(url => ({ id: placeholders[i].id, url }))
+    );
+
+    // Update each image as it resolves
+    for (const p of promises) {
+      p.then(({ id, url }) => {
+        setGeneratedImages(prev =>
+          prev.map(img =>
+            img.id === id ? { ...img, url, history: [url], loading: false } : img
+          )
+        );
+      });
+    }
+
+    await Promise.allSettled(promises);
     setIsGenerating(false);
   }
 
@@ -213,7 +279,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     let p = editTarget.prompt;
     if (styleData) p += `, ${styleData.prompt}`;
     if (accNames.length) p += `, wearing ${accNames.join(', ')}`;
-    const url = await generate(p, getApiSize(editResolution));
+    const url = await generateSingle(p, getApiSize(editResolution));
     const newHistory = [...editHistory, url];
     setEditHistory(newHistory);
     const updated: GenImage = { ...editTarget, url, history: newHistory };
@@ -233,7 +299,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         style={{ background: '#080810', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex items-center gap-3 px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <button onClick={() => setEditTarget(null)}
             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors text-sm">
             <ChevronLeft size={16} /> Back to Studio
@@ -253,7 +319,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
             <div>
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Original</p>
               <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/10" style={{ aspectRatio: '1' }}>
-                <img src={originalUrl} alt="original" className="w-full h-full object-cover" />
+                <ImageWithLoader src={originalUrl} alt="original" className="w-full h-full object-cover" />
               </div>
             </div>
 
@@ -261,11 +327,12 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Current Preview</p>
               <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 relative" style={{ aspectRatio: '1' }}>
                 {isEditGenerating && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 gap-2">
                     <Loader2 size={22} className="animate-spin text-purple-400" />
+                    <span className="text-purple-300 text-xs">Applying style…</span>
                   </div>
                 )}
-                <img src={latestUrl} alt="preview" className="w-full h-full object-cover" />
+                <ImageWithLoader src={latestUrl} alt="preview" className="w-full h-full object-cover" />
               </div>
               <button onClick={() => handleDownload(latestUrl, 'fius-edited')}
                 className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
@@ -281,7 +348,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                   {editHistory.map((url, i) => (
                     <div key={i} className="relative group rounded-xl overflow-hidden cursor-pointer"
                       style={{ aspectRatio: '16/9', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <img src={url} alt={`v${i + 1}`} className="w-full h-full object-cover" />
+                      <ImageWithLoader src={url} alt={`v${i + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-2">
                         <span className="text-white text-xs font-semibold">v{i + 1}</span>
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(url, `fius-v${i + 1}`); }}
@@ -354,7 +421,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
               className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
               {isEditGenerating
-                ? <><Loader2 size={16} className="animate-spin" /> Generating changes...</>
+                ? <><Loader2 size={16} className="animate-spin" /> Generating changes…</>
                 : <><Wand2 size={16} /> Apply Changes</>}
             </button>
           </div>
@@ -370,38 +437,41 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     <div className="fixed inset-0 z-50 flex flex-col"
       style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+      {/* Header — logo moved up with reduced padding */}
+      <div className="flex items-center gap-3 px-5 pt-2 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <Sparkles size={16} className="text-white" />
+          <Sparkles size={14} className="text-white" />
         </div>
         <div>
-          <h2 className="text-white font-bold text-base leading-tight">Imagine Studio</h2>
-          <p className="text-zinc-500 text-xs">AI Image Generation & Editing</p>
+          <h2 className="text-white font-bold text-sm leading-tight">Imagine Studio</h2>
+          <p className="text-zinc-500 text-[11px]">AI Image Generation &amp; Editing</p>
         </div>
         <div className="flex-1" />
         <button onClick={onClose}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
-          <X size={16} />
+          className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
+          <X size={15} />
         </button>
       </div>
 
       {/* Scrollable body */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
-        {/* ── Inspiration Gallery ── */}
-        <div className="px-5 pt-5">
+        {/* ── Inspiration Gallery (fixed seeds = consistent images) ── */}
+        <div className="px-5 pt-4">
           <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Inspiration</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {showcaseImages.map((img, i) => (
-              <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer"
+            {SHOWCASE_IMAGES.map((img, i) => (
+              <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
                 style={{ aspectRatio: '3/2' }}
-                onClick={() => { setPrompt(img.prompt.split(',')[0].trim()); textareaRef.current?.focus(); }}>
-                <img src={img.url} alt="showcase"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                onClick={() => { setPrompt(img.prompt); textareaRef.current?.focus(); }}>
+                <ImageWithLoader
+                  src={img.url}
+                  alt="showcase"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                  <span className="text-white text-xs line-clamp-2 leading-snug">{img.prompt.split(',')[0]}</span>
+                  <span className="text-white text-xs line-clamp-2 leading-snug">{img.prompt}</span>
                 </div>
               </div>
             ))}
@@ -409,50 +479,52 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         </div>
 
         {/* ── Generated Images ── */}
-        {(generatedImages.length > 0 || isGenerating) && (
-          <div className="px-5 pt-6">
+        {generatedImages.length > 0 && (
+          <div className="px-5 pt-5">
             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Generated</p>
             <div className="flex flex-col gap-4">
-              {isGenerating && (
-                <div className="flex items-center gap-3 p-4 rounded-2xl"
-                  style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)' }}>
-                  <Loader2 size={15} className="animate-spin text-purple-400 flex-shrink-0" />
-                  <span className="text-purple-300 text-sm">Generating your image…</span>
-                </div>
-              )}
               {generatedImages.map((img, idx) => (
                 <div key={img.id} className="flex gap-3 items-start">
                   {/* Thumbnail */}
                   <div className="rounded-2xl overflow-hidden flex-shrink-0 relative"
                     style={{ width: 180, height: 180, border: '1px solid rgba(255,255,255,0.08)', background: '#111' }}>
-                    <img src={img.url} alt="generated" className="w-full h-full object-cover" />
+                    {img.loading || !img.url ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        <Loader2 size={20} className="animate-spin text-purple-400" />
+                        <span className="text-zinc-600 text-[10px]">Generating…</span>
+                      </div>
+                    ) : (
+                      <ImageWithLoader src={img.url} alt="generated" className="w-full h-full object-cover" />
+                    )}
                   </div>
                   {/* Actions */}
                   <div className="flex flex-col justify-between flex-1 min-w-0 py-0.5 h-[180px]">
                     <p className="text-zinc-400 text-xs leading-relaxed line-clamp-3">{img.prompt}</p>
                     <div className="flex flex-wrap gap-1.5">
-                      <button onClick={() => setGeneratedImages(prev => prev.map(x => x.id === img.id ? { ...x, liked: !x.liked, disliked: false } : x))}
+                      <button
+                        title="Favourite"
+                        onClick={() => setGeneratedImages(prev => prev.map(x => x.id === img.id ? { ...x, liked: !x.liked, disliked: false } : x))}
                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all ${img.liked ? 'text-pink-300' : 'text-zinc-500 hover:text-white'}`}
                         style={img.liked ? { background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.35)' } : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                        ❤️ Like
+                        ❤️ Favourite
                       </button>
                       <button onClick={() => setGeneratedImages(prev => prev.map(x => x.id === img.id ? { ...x, disliked: !x.disliked, liked: false } : x))}
                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all ${img.disliked ? 'text-red-300' : 'text-zinc-500 hover:text-white'}`}
                         style={img.disliked ? { background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)' } : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
                         👎 Dislike
                       </button>
-                      <button onClick={() => openEdit(img)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-purple-300 transition-all"
+                      <button onClick={() => !img.loading && openEdit(img)} disabled={img.loading}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-purple-300 transition-all disabled:opacity-30"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
                         ✏️ Edit
                       </button>
-                      <button onClick={() => handleShare(img.url)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-white transition-all"
+                      <button onClick={() => handleShare(img.url)} disabled={img.loading}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-white transition-all disabled:opacity-30"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
                         📤 Share
                       </button>
-                      <button onClick={() => handleDownload(img.url, `imagine-${idx + 1}`)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-white transition-all"
+                      <button onClick={() => handleDownload(img.url, `imagine-${idx + 1}`)} disabled={img.loading}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-zinc-500 hover:text-white transition-all disabled:opacity-30"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
                         ⬇️ Save
                       </button>
@@ -465,7 +537,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         )}
 
         {/* ── Templates ── */}
-        <div className="px-5 pt-6 pb-3">
+        <div className="px-5 pt-5 pb-3">
           <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Templates</p>
           <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
             {TEMPLATES.map(t => (
@@ -506,6 +578,21 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
             )}
           </div>
         )}
+
+        {/* Image count selector */}
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Images size={13} className="text-zinc-500 flex-shrink-0" />
+          <span className="text-zinc-500 text-[11px]">Images:</span>
+          {[1, 2, 4].map(n => (
+            <button key={n} onClick={() => setImageCount(n)}
+              className="w-7 h-6 rounded-lg text-[11px] font-semibold transition-all"
+              style={imageCount === n
+                ? { background: 'rgba(124,58,237,0.3)', border: '1px solid rgba(167,139,250,0.5)', color: 'white' }
+                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
+              {n}
+            </button>
+          ))}
+        </div>
 
         <div className="flex items-end gap-2 rounded-2xl px-3 py-3"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
