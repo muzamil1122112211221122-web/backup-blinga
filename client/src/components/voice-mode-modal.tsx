@@ -576,20 +576,25 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         </div>
       </div>
 
-      {/* Video PiP — camera or screen preview */}
-      {camMode !== 'off' && (
-        <div className="absolute top-16 right-4 z-50 rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
-          style={{ width: 140, height: 90, background: '#111' }}>
-          <video ref={videoRef} autoPlay muted playsInline
-            className="w-full h-full object-cover"
-            style={{ transform: camMode === 'camera' ? 'scaleX(-1)' : 'none' }} />
-          {camError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <CameraOff className="w-6 h-6 text-white/40" />
-            </div>
-          )}
-        </div>
-      )}
+      {/* Video PiP — always in DOM so videoRef is never null; visibility toggled */}
+      <div className="absolute top-16 right-4 z-50 rounded-2xl overflow-hidden border border-white/20 shadow-2xl transition-all duration-300"
+        style={{ width: 140, height: 90, background: '#111', opacity: camMode !== 'off' ? 1 : 0, pointerEvents: camMode !== 'off' ? 'auto' : 'none' }}>
+        <video ref={videoRef} autoPlay muted playsInline
+          className="w-full h-full object-cover"
+          style={{ transform: camMode === 'camera' ? 'scaleX(-1)' : 'none' }} />
+        {camError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/80 px-2 text-center">
+            <CameraOff className="w-5 h-5 text-white/40" />
+            <span className="text-white/40 text-[9px] leading-tight">{camError.slice(0, 40)}</span>
+          </div>
+        )}
+        {camMode !== 'off' && !camError && (
+          <div className="absolute top-1 left-1 flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-white/50 text-[9px]">{camMode === 'screen' ? 'Screen' : 'Cam'}</span>
+          </div>
+        )}
+      </div>
 
       {/* Top-left: language + voice pickers */}
       <div className="absolute top-4 left-4 z-50 flex gap-1 items-center">

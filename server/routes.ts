@@ -378,6 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      const isNonEnglish = lang !== 'English';
+
       if (wantsStream) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
@@ -385,7 +387,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.flushHeaders();
       }
 
-      // ── Groq streaming (primary — fast tokens, reliable streaming) ──
+      // ── For non-English languages use Gemini first (much better multilingual) ──
+      if (isNonEnglish) {
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (geminiKey) {
+          try {
+            const contents: any[] = historyArr.map(m => ({
+              role: m.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: m.content }],
+            }));
+            contents.push({ role: 'user', parts: [{ text: message }] });
+            const gRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  system_instruction: { parts: [{ text: systemPrompt }] },
+                  contents,
+                  generationConfig: { maxOutputTokens: 150, temperature: 0.7 },
+                }),
+              }
+            );
+            if (gRes.ok) {
+              const gData = await gRes.json();
+              const reply = (gData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+              console.log('[Voice AI] Gemini multilingual:', reply.substring(0, 80));
+              if (reply) {
+                if (wantsStream) {
+                  res.write(`data: ${JSON.stringify({ delta: reply })}\n\n`);
+                  res.write('data: [DONE]\n\n');
+                  res.end();
+                } else {
+                  res.json({ response: reply });
+                }
+                return;
+              }
+            }
+          } catch (err: any) {
+            console.warn('[Voice AI] Gemini multilingual failed:', err?.message);
+          }
+        }
+      }
+
+      // ── Groq streaming (primary for English — fast tokens, reliable streaming) ──
       const groqKey = process.env.GROQ_API_KEY;
       if (groqKey) {
         try {
