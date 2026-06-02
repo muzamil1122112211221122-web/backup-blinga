@@ -3551,10 +3551,32 @@ Let's start the self-listen session!`;
         ) : activeTab === 'imagine' ? (
           // ── Imagine Studio ──────────────────────────────────────────────────
           (() => {
+            // Local style preview images (user-provided assets served from /public)
+            const STYLE_LOCAL_IMAGES: Record<string, string> = {
+              "Photorealistic": "/style-photo.jpg",
+              "Anime":          "/style-anime.png",
+              "Oil Painting":   "/style-oil.jpg",
+              "3D Render":      "/style-3d.jpg",
+              "Watercolor":     "/style-watercolor.jpg",
+              "Pixel Art":      "/style-pixel.jpg",
+              "Sketch":         "/style-sketch.jpg",
+              "Cinematic":      "/style-cinematic.jpg",
+            };
+            const STYLE_DESCRIPTIONS: Record<string, string> = {
+              "Photorealistic": "ultra-photorealistic, 8K resolution, professional camera, sharp focus, hyperrealistic details",
+              "Anime":          "anime illustration, manga style, Japanese animation, vibrant colors, detailed linework, studio ghibli inspired",
+              "Oil Painting":   "classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly",
+              "3D Render":      "photorealistic 3D CGI render, octane render, unreal engine 5, volumetric lighting, subsurface scattering",
+              "Watercolor":     "delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork",
+              "Pixel Art":      "pixel art, 8-bit retro video game style, low-res sprite, bright colors, chunky pixels",
+              "Sketch":         "detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn",
+              "Cinematic":      "cinematic photography, movie still, anamorphic lens, film grain, dramatic Hollywood lighting, color grade",
+            };
             const STYLE_OPTIONS = Object.entries(IMAGINE_PROMPTS_BY_STYLE).map(([name, items]) => ({
               name,
-              previewImg: (items[0] as {img: string}).img,
+              previewImg: STYLE_LOCAL_IMAGES[name] || (items[0] as {img: string}).img,
               firstPrompt: (items[0] as {prompt: string}).prompt,
+              description: STYLE_DESCRIPTIONS[name] || name.toLowerCase(),
             }));
 
             const RESOLUTIONS = [
@@ -3570,16 +3592,16 @@ Let's start the self-listen session!`;
 
             const getApiSize = (resId: string) => RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
 
-            // Fixed edit — keeps the subject/composition, applies a style transformation
+            // Fixed edit — keeps the subject/composition, applies a strong style transformation
             const handleEditApply = async () => {
               if (!imagineEditTarget || imagineEditLoading) return;
               setImagineEditLoading(true);
               const selectedStyle = STYLE_OPTIONS.find(s => s.name === imagineEditStyle);
               const size = getApiSize(imagineEditRes);
-              // Build a prompt that clearly transforms the existing image's subject into the new style
               let p = imagineEditTarget.prompt;
               if (selectedStyle) {
-                p = `${imagineEditTarget.prompt}, reimagined as ${selectedStyle.name} style artwork, maintaining the same subject and composition, ${selectedStyle.previewImg ? '' : ''}high quality`;
+                // Use the full style description for a much stronger style transformation
+                p = `${imagineEditTarget.prompt}, ${selectedStyle.description}, same subject and composition, high quality masterpiece`;
               }
               const seed = Math.floor(Math.random() * 999999);
               let newUrl = '';
@@ -3712,7 +3734,7 @@ Let's start the self-listen session!`;
                     </Tooltip>
                   )}
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'none' }}>
+                <div ref={imagineScrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'none' }}>
                   {!hasResults && (
                     <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
                       <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
@@ -3806,71 +3828,46 @@ Let's start the self-listen session!`;
                     </button>
                   </div>
 
-                  {/* ── Featured gallery: 2-col layout with descriptions ── */}
-                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
+                  {/* ── Featured gallery: 3 equal images + logo ── */}
+                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'none' }}>
                     {imagineGalleryLoading ? (
-                      <div className="flex gap-3">
-                        <div className="flex flex-col gap-3 w-[55%]">
-                          {[0,1].map(i => (
-                            <div key={i} className="flex gap-3">
-                              <div className="flex-shrink-0 rounded-2xl bg-muted animate-pulse" style={{width:110,height:100}} />
-                              <div className="flex-1 space-y-2 pt-1">
-                                <div className="h-3 bg-muted animate-pulse rounded w-3/4"/>
-                                <div className="h-2.5 bg-muted animate-pulse rounded w-full"/>
-                                <div className="h-2.5 bg-muted animate-pulse rounded w-5/6"/>
-                              </div>
-                            </div>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-3">
+                          {[0,1,2].map(i => (
+                            <div key={i} className="rounded-2xl bg-muted animate-pulse" style={{ height: 160 }} />
                           ))}
                         </div>
-                        <div className="flex flex-col gap-3 w-[45%]">
-                          <div className="rounded-2xl bg-muted animate-pulse" style={{height:100}} />
-                          <div className="flex items-center justify-center flex-1">
-                            <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
-                          </div>
+                        <div className="flex items-center justify-center py-2">
+                          <div className="w-24 h-24 rounded-full bg-muted animate-pulse" />
                         </div>
                       </div>
                     ) : (
-                      <div className="flex gap-3">
-                        {/* Left col — 2 large photos with descriptions */}
-                        <div className="flex flex-col gap-4 w-[55%]">
-                          {[ph0, ph1].filter(Boolean).map((item, i) => (
-                            <div key={i}
-                              className="flex gap-3 cursor-pointer group rounded-2xl p-2 hover:bg-accent/50 transition-all"
+                      <div className="space-y-4">
+                        {/* 3 equal-sized photos in a row */}
+                        <div className="grid grid-cols-3 gap-3">
+                          {[ph0, ph1, ph2].filter(Boolean).map((item, i) => (
+                            <button key={i}
+                              className="group flex flex-col gap-2 text-left focus:outline-none"
                               onClick={() => item && setInputValue(item.prompt)}>
-                              <div className="flex-shrink-0 rounded-2xl overflow-hidden border border-border" style={{ width: 110, height: 100 }}>
+                              <div className="w-full rounded-2xl overflow-hidden border border-border flex-shrink-0"
+                                style={{ height: 160 }}>
                                 <img src={item!.url} alt={item!.label}
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60'; }} />
+                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&q=70'; }} />
                               </div>
-                              <div className="flex-1 min-w-0 py-1">
-                                <p className="text-xs font-bold text-foreground leading-tight mb-1">{item!.label}</p>
-                                <p className="text-[11px] text-muted-foreground leading-snug line-clamp-3">{item!.prompt}</p>
-                              </div>
-                            </div>
+                              <p className="text-[11px] font-semibold text-foreground leading-tight truncate px-0.5">{item!.label}</p>
+                            </button>
                           ))}
                         </div>
 
-                        {/* Right col — 1 photo + Fius logo */}
-                        <div className="flex flex-col gap-3 w-[45%]">
-                          {ph2 && (
-                            <div className="cursor-pointer group rounded-2xl overflow-hidden" onClick={() => setInputValue(ph2.prompt)}>
-                              <div className="rounded-2xl overflow-hidden border border-border" style={{ height: 100 }}>
-                                <img src={ph2.url} alt={ph2.label}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60'; }} />
-                              </div>
-                              <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug px-0.5">{ph2.label}</p>
+                        {/* Fius logo circle centered below the photos */}
+                        <div className="flex items-center justify-center py-1">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="rounded-full flex items-center justify-center border-2 border-border bg-accent"
+                              style={{ width: 100, height: 100, boxShadow: '0 6px 24px rgba(0,0,0,0.12)' }}>
+                              <Logo size="xl" />
                             </div>
-                          )}
-                          {/* Fius logo circle */}
-                          <div className="flex items-center justify-center flex-1 pb-2">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center border-2 border-border bg-accent"
-                                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
-                                <Logo size="md" />
-                              </div>
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
-                            </div>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
                           </div>
                         </div>
                       </div>
@@ -3911,8 +3908,8 @@ Let's start the self-listen session!`;
                   </div>
                 </div>
 
-                {/* ═══ RIGHT: Results / Edit panel — always visible ═══ */}
-                <div className="flex flex-col w-[44%] flex-shrink-0 bg-card border-l border-border min-w-0 overflow-hidden">
+                {/* ═══ RIGHT: Results / Edit panel — always visible, narrow ═══ */}
+                <div className="flex flex-col w-[30%] flex-shrink-0 bg-card border-l border-border min-w-0 overflow-hidden">
                   {imagineEditTarget ? renderEditPanel() : renderRightPanel()}
                 </div>
               </div>
