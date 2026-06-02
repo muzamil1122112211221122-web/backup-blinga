@@ -1088,6 +1088,74 @@ Return only the school names as a JSON array of strings. Make them authentic and
     }
   });
 
+  // Quiz generation endpoint
+  app.post('/api/education/generate-quiz', requireAuth, async (req, res) => {
+    try {
+      const { examClass, school, country, educationSystem, topic } = req.body;
+
+      const prompt = `You are an expert examiner. Generate a quiz with exactly 10 multiple-choice questions.
+
+Context:
+- Class/Grade: ${examClass || 'General'}
+- School: ${school || 'General'}
+- Country: ${country || 'General'}
+- Education System: ${educationSystem || 'General'}
+- Topic/Subject: ${topic || 'General Knowledge'}
+
+Rules:
+- Each question must have exactly 4 options (A, B, C, D)
+- Questions should match the education level and curriculum style
+- Include a short hint for each question (max 20 words)
+- Include a brief explanation for the correct answer (max 30 words)
+
+Respond with ONLY valid JSON in this exact format (no markdown, no extra text):
+{
+  "questions": [
+    {
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct": 0,
+      "hint": "Think about...",
+      "explanation": "The answer is A because..."
+    }
+  ]
+}`;
+
+      const apiKey = getAPIKey();
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3.5-sonnet',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.6,
+          max_tokens: 3000,
+        }),
+      });
+
+      if (!response.ok) throw new Error('AI request failed');
+
+      const data = await response.json();
+      const raw = data.choices?.[0]?.message?.content || '';
+
+      let parsed;
+      try {
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+      } catch {
+        return res.status(500).json({ error: 'Failed to parse quiz questions' });
+      }
+
+      res.json(parsed);
+    } catch (error: any) {
+      console.error('Quiz generation error:', error);
+      res.status(500).json({ error: 'Failed to generate quiz' });
+    }
+  });
+
   // Prompt enhancement endpoint
   app.post('/api/enhance-prompt', requireAuth, async (req, res) => {
     try {

@@ -46,6 +46,8 @@ import { VoiceModeModal } from "./voice-mode-modal";
 import { NomadNotification } from "./nomad-notification";
 import { ImagineModal } from "./imagine-modal";
 import { Sidebar } from "./sidebar";
+import { QuizModal, QuizQuestion } from "./quiz-modal";
+import { downloadPptx } from "@/lib/pptx-export";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
 import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableModel, WebSocketMessage } from "../types/chat";
@@ -606,7 +608,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const navContainerRef = useRef<HTMLDivElement>(null);
   const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, ready: false });
-  useLayoutEffect(() => {
+  useEffect(() => {
     const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games'];
     const measure = () => {
       const idx = TAB_ORDER.indexOf(activeTab);
@@ -619,7 +621,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         setPillStyle({ left: bRect.left - cRect.left, width: bRect.width, ready: true });
       }
     };
-    measure();
     const id = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(id);
   }, [activeTab]);
@@ -642,13 +643,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   ];
   const [starterHeading] = useState(() => starterHeadings[Math.floor(Math.random() * starterHeadings.length)]);
   const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine') => {
-    document.documentElement.classList.add('preload');
     setActiveTab(tab);
     if (tab === 'imagine') {
       setSelectedModel('fius-imagine-fast' as AvailableModel);
       setImagineShuffleKey(k => k + 1);
     }
-    requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));
   };
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
     () => localStorage.getItem('functionBarStyle') || 'circle'
@@ -716,6 +715,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
   const [isEducationModalOpen, setIsEducationModalOpen] = useState(false);
   const [educationMode, setEducationMode] = useState<"examination" | "self-listen" | null>(null);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizTitle, setQuizTitle] = useState("Examination");
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
@@ -1497,6 +1500,28 @@ IMPORTANT RULES:
     if (content.toLowerCase() === 'start') {
       setIsVoiceModeModalOpen(true);
       setInputValue("");
+      return;
+    }
+
+    // Detect quiz requests — open quiz modal instead of chat response
+    const quizPattern = /\b(quiz\s+me|take\s+a?\s*quiz|give\s+me\s+a?\s*quiz|start\s+a?\s*quiz|test\s+me|test\s+my\s+knowledge)\b/i;
+    if (quizPattern.test(content)) {
+      const topicMatch = content.match(/(?:on|about|in|for)\s+(.+)/i);
+      const topic = topicMatch ? topicMatch[1].trim().replace(/[?.!]+$/, '') : '';
+      setQuizTitle(topic ? `Quiz — ${topic}` : 'Quick Quiz');
+      setQuizQuestions([]);
+      setQuizLoading(true);
+      setIsQuizOpen(true);
+      setInputValue("");
+      fetch('/api/education/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, examClass: '', school: '', country: '', educationSystem: '' }),
+      })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => { setQuizQuestions(d.questions || []); })
+        .catch(() => { setIsQuizOpen(false); })
+        .finally(() => { setQuizLoading(false); });
       return;
     }
 
@@ -2408,35 +2433,34 @@ IMPORTANT RULES:
   const handleStartExamination = async (data: any) => {
     setIsEducationModalOpen(false);
     setEducationMode("examination");
-    
-    // Create a new conversation for examination
-    const response = await fetch('/api/conversations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: `Examination - ${data.class} (${data.school})`,
-        preset: 'fius-education',
-        model: 'fius-education',
-      }),
-    });
-    
-    if (response.ok) {
-      const newConversation = await response.json();
-      setCurrentProjectId(newConversation.id);
-      setSelectedModel('fius-education');
-      setCurrentPreset('fius-education');
-      
-      // Start examination process - send message directly
-      const examMessage = `I want to take an examination. Here are my details:
-- Class: ${data.class}
-- School: ${data.school}
-- City: ${data.city}, ${data.country}
-- Education System: ${data.educationSystem}
-- Uploaded ${data.uploadedPages?.length || 0} pages for examination
+    setQuizTitle(`Examination — ${data.class}${data.school ? ` · ${data.school}` : ''}`);
+    setQuizQuestions([]);
+    setQuizLoading(true);
+    setIsQuizOpen(true);
 
-Please create a comprehensive test based on my school's examination style and the uploaded materials. After I complete the test, provide detailed feedback with marks and corrections.`;
-      
-      await handleSendMessageDirect(examMessage);
+    try {
+      const response = await fetch('/api/education/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          examClass: data.class,
+          school: data.school,
+          country: data.country,
+          educationSystem: data.educationSystem,
+          topic: data.subject || '',
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setQuizQuestions(result.questions || []);
+      } else {
+        setIsQuizOpen(false);
+      }
+    } catch {
+      setIsQuizOpen(false);
+    } finally {
+      setQuizLoading(false);
     }
   };
 
@@ -2626,9 +2650,9 @@ Let's start the self-listen session!`;
               left: pillStyle.left,
               width: pillStyle.width,
               top: 2, bottom: 2,
-              background: 'white',
+              background: theme === 'dark' ? '#3f3f46' : 'white',
               borderRadius: 14,
-              boxShadow: '0 1px 8px rgba(0,0,0,0.13)',
+              boxShadow: theme === 'dark' ? '0 1px 8px rgba(0,0,0,0.35)' : '0 1px 8px rgba(0,0,0,0.13)',
               transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
               pointerEvents: 'none',
               zIndex: 0,
@@ -3106,19 +3130,38 @@ Let's start the self-listen session!`;
                             </TooltipTrigger>
                             <TooltipContent><p>Retry</p></TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
+                          <DropdownMenu>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
+                                  >
+                                    <FileDown className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Export</p></TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                              <DropdownMenuItem
+                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                                 onClick={() => handleMakePDF(message.content)}
                               >
-                                <FileDown className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Save as PDF</p></TooltipContent>
-                          </Tooltip>
+                                <FileDown className="h-3.5 w-3.5 text-red-500" />
+                                Save as PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                                onClick={() => downloadPptx(message.content)}
+                              >
+                                <FileDown className="h-3.5 w-3.5 text-orange-500" />
+                                PowerPoint (.pptx)
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -4319,6 +4362,15 @@ Let's start the self-listen session!`;
         onClose={() => setIsEducationModalOpen(false)}
         onStartExamination={handleStartExamination}
         onStartSelfListen={handleStartSelfListen}
+      />
+
+      {/* Quiz Modal */}
+      <QuizModal
+        isOpen={isQuizOpen}
+        onClose={() => setIsQuizOpen(false)}
+        questions={quizQuestions}
+        isLoading={quizLoading}
+        title={quizTitle}
       />
 
       {/* Voice Mode Modal */}
