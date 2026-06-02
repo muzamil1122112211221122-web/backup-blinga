@@ -4,7 +4,7 @@ import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2, Im
 const TEMPLATES = [
   { id: 'realistic-portrait', icon: '📸', name: 'Realistic Portrait', desc: 'Ultra-HD photo', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
   { id: 'pro-headshot', icon: '💼', name: 'Pro Headshot', desc: 'LinkedIn ready', prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait photography' },
-  { id: 'anime', icon: '🎌', name: 'Anime', desc: 'Japanese animation', prompt: 'anime style illustration, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, dramatic lighting, high quality Japanese anime art, detailed character design, manga inspired' },
+  { id: 'anime', icon: '🎌', name: 'Anime', desc: 'Japanese animation', prompt: 'anime style illustration, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, dramatic lighting, high quality Japanese anime art, detailed character design, manga inspired, family friendly, fully clothed, SFW, safe for work' },
   { id: 'pixel-art', icon: '🕹️', name: 'Pixel Art', desc: '8-bit retro style', prompt: 'pixel art style, 8-bit retro game art, pixelated low resolution aesthetic, vibrant flat colors, pixel grid visible, NES SNES era video game art style, isometric pixel art' },
   { id: 'ghibli', icon: '🌿', name: 'Ghibli Style', desc: 'Magical & dreamy', prompt: 'Studio Ghibli art style, soft warm colors, magical atmosphere, detailed painterly backgrounds, gentle natural lighting, Miyazaki aesthetic' },
   { id: 'cyberpunk', icon: '🌆', name: 'Cyberpunk', desc: 'Neon future', prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas, cinematic lighting' },
@@ -30,7 +30,7 @@ const TEMPLATES = [
 ];
 
 const EDIT_STYLES = [
-  { id: 'anime', name: 'Anime', icon: '🎌', prompt: 'anime art style, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, high quality Japanese anime illustration, detailed character design' },
+  { id: 'anime', name: 'Anime', icon: '🎌', prompt: 'anime art style, cel-shaded coloring, clean bold outlines, vibrant colors, expressive large eyes, high quality Japanese anime illustration, detailed character design, family friendly, fully clothed, SFW, safe for work' },
   { id: 'pixel-art', name: 'Pixel Art', icon: '🕹️', prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, NES SNES era video game art, flat vibrant colors, pixel grid visible, low resolution charm' },
   { id: '3d-render', name: '3D Render', icon: '🔮', prompt: '3D CGI render, photorealistic 3D model, Blender Cycles render, ray tracing, subsurface scattering, metallic reflections, Octane render quality, studio HDRI lighting' },
   { id: 'ghibli', name: 'Ghibli', icon: '🌿', prompt: 'Studio Ghibli art style, Miyazaki painterly, soft warm colors, magical atmosphere' },
@@ -84,16 +84,20 @@ const ACCESSORIES = [
   { id: 'flower', name: 'Flower Crown', icon: '🌸' },
 ];
 
+const SAFE_NEGATIVE = encodeURIComponent(
+  'nsfw, nude, nudity, naked, sexual, explicit, adult content, pornographic, suggestive, revealing clothing, ecchi, hentai, fan service, cleavage, underwear, lingerie'
+);
+
 const SHOWCASE_IMAGES = [
   { url: 'https://image.pollinations.ai/prompt/breathtaking%20mountain%20sunset%20golden%20clouds%20volumetric%20lighting%20ultra%20realistic%20landscape%20photography?width=600&height=400&nologo=true&seed=42001', prompt: 'breathtaking mountain sunset with golden clouds' },
   { url: 'https://image.pollinations.ai/prompt/futuristic%20neon%20cyberpunk%20city%20rain%20reflections%20cinematic%20wide%20shot?width=600&height=400&nologo=true&seed=42002', prompt: 'futuristic neon-lit cyberpunk city at night' },
-  { url: 'https://image.pollinations.ai/prompt/anime%20style%20cherry%20blossom%20garden%20vibrant%20colors%20Studio%20Ghibli%20painting?width=600&height=400&nologo=true&seed=42003', prompt: 'anime style cherry blossom garden painting' },
+  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime style cherry blossom garden vibrant colors Studio Ghibli painting, family friendly, SFW')}?width=600&height=400&nologo=true&seed=42003&model=flux&negative_prompt=${SAFE_NEGATIVE}&safe=true`, prompt: 'anime style cherry blossom garden painting' },
   { url: 'https://image.pollinations.ai/prompt/majestic%20snow%20leopard%20portrait%20dramatic%20rim%20lighting%20wildlife%20photography?width=600&height=400&nologo=true&seed=42004', prompt: 'majestic snow leopard portrait' },
 ];
 
 function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux&negative_prompt=${SAFE_NEGATIVE}&safe=true`;
 }
 
 interface GenImage {
