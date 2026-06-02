@@ -111,7 +111,8 @@ import {
   Palette,
   FileDown,
   MessageSquarePlus,
-  Video
+  Video,
+  Upload
 } from "lucide-react";
 
 interface ChatInterfaceProps {
