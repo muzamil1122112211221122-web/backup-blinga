@@ -43,6 +43,7 @@ import { CustomizeModal } from "./customize-modal";
 import { ImageGenerationDialog } from "./image-generation-dialog";
 import { EducationModal } from "./education-modal";
 import { VoiceModeModal } from "./voice-mode-modal";
+import { VideoCallModal } from "./video-call-modal";
 import { NomadNotification } from "./nomad-notification";
 import { ImagineModal } from "./imagine-modal";
 import { Sidebar } from "./sidebar";
@@ -109,7 +110,8 @@ import {
   Check,
   Palette,
   FileDown,
-  MessageSquarePlus
+  MessageSquarePlus,
+  Video
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -608,27 +610,43 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const navContainerRef = useRef<HTMLDivElement>(null);
   const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, ready: false });
-  useEffect(() => {
+  const measurePill = () => {
     const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games'];
-    const measure = () => {
-      const idx = TAB_ORDER.indexOf(activeTab);
-      const btn = tabButtonRefs.current[idx];
-      const container = navContainerRef.current;
-      if (!btn || !container) return;
-      // Use offsetLeft relative to the navContainer (position:relative parent)
-      let left = 0;
-      let el: HTMLElement | null = btn;
-      while (el && el !== container) {
-        left += el.offsetLeft;
-        el = el.offsetParent as HTMLElement | null;
-      }
-      if (btn.offsetWidth > 0) {
-        setPillStyle({ left, width: btn.offsetWidth, ready: true });
-      }
+    const idx = TAB_ORDER.indexOf(activeTab);
+    const btn = tabButtonRefs.current[idx];
+    const container = navContainerRef.current;
+    if (!btn || !container) return;
+    const btnRect = btn.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    if (btn.offsetWidth > 0) {
+      setPillStyle({ left, width: btn.offsetWidth, ready: true });
+    }
+  };
+  // Re-expose measurePill as ref so ResizeObserver can call the latest version
+  const measurePillRef = useRef(measurePill);
+  useEffect(() => { measurePillRef.current = measurePill; });
+
+  useEffect(() => {
+    // Measure immediately, after paint, and again 200 ms later (fonts / mobile UI settle)
+    measurePillRef.current();
+    const id1 = requestAnimationFrame(() => measurePillRef.current());
+    const id2 = window.setTimeout(() => measurePillRef.current(), 200);
+
+    // Re-measure whenever the nav bar resizes (address-bar collapse, orientation change, etc.)
+    const container = navContainerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (container && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => measurePillRef.current());
+      ro.observe(container);
+    }
+
+    return () => {
+      cancelAnimationFrame(id1);
+      clearTimeout(id2);
+      ro?.disconnect();
     };
-    const id = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(id);
-  }, [activeTab]);
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
   const [chatBg, setChatBg] = useState<string>(() => localStorage.getItem('chatBg') || 'plain');
   useEffect(() => {
     const handler = () => setChatBg(localStorage.getItem('chatBg') || 'plain');
@@ -739,6 +757,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const abortControllerRef = React.useRef<AbortController | null>(null);
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [isVoiceModeModalOpen, setIsVoiceModeModalOpen] = useState(false);
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
   const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], isGenerating?: boolean}[]>([]);
@@ -2655,9 +2674,9 @@ Let's start the self-listen session!`;
               left: pillStyle.left,
               width: pillStyle.width,
               top: 2, bottom: 2,
-              background: theme === 'dark' ? 'rgba(255,255,255,0.38)' : 'white',
+              background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'white',
               borderRadius: 14,
-              boxShadow: theme === 'dark' ? '0 1px 12px rgba(255,255,255,0.15)' : '0 1px 8px rgba(0,0,0,0.13)',
+              boxShadow: theme === 'dark' ? '0 1px 10px rgba(255,255,255,0.18)' : '0 1px 8px rgba(0,0,0,0.13)',
               transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
               pointerEvents: 'none',
               zIndex: 0,
@@ -2670,7 +2689,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -2685,7 +2704,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -2700,7 +2719,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine
@@ -2715,7 +2734,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-philosopher"
               >
                 <span className="hidden sm:inline">Philosophers & {user?.displayName || user?.username || 'You'}</span>
@@ -2731,7 +2750,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-fius-games"
               >
                 <span className="hidden sm:inline">Fius Games</span>
@@ -2761,6 +2780,21 @@ Let's start the self-listen session!`;
               </Button>
             </TooltipTrigger>
             <TooltipContent>{theme === 'light' ? 'Switch to Dark' : theme === 'dark' ? 'Switch to System' : 'Switch to Light'}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsVideoCallOpen(true)}
+                className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+                data-testid="button-video-call"
+              >
+                <Video className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Video & Screen Share with AI</TooltipContent>
           </Tooltip>
 
           <Tooltip>
@@ -4390,6 +4424,9 @@ Let's start the self-listen session!`;
 
       {/* Imagine Modal — Image Generation GUI */}
       <ImagineModal isOpen={isImagineOpen} onClose={() => setIsImagineOpen(false)} />
+
+      {/* Video Call / Screen Share Modal */}
+      <VideoCallModal isOpen={isVideoCallOpen} onClose={() => setIsVideoCallOpen(false)} />
 
       {/* Nomad Notification - recurring, respects settings toggle, rotates between enabled variants */}
       {showNomadNotification && (settingsToggles.nomadNotification ?? true) && (

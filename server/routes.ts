@@ -243,6 +243,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vision chat — capture a frame from camera/screen and ask AI about it
+  app.post('/api/vision-chat', requireAuth, async (req, res) => {
+    try {
+      const { image, mimeType = 'image/jpeg', message = 'What do you see in this image?' } = req.body;
+      if (!image) return res.status(400).json({ error: 'image required' });
+
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) return res.status(503).json({ error: 'Vision AI not configured.' });
+
+      const body = {
+        contents: [{
+          role: 'user',
+          parts: [
+            { inline_data: { mime_type: mimeType, data: image } },
+            { text: message },
+          ],
+        }],
+        generationConfig: { maxOutputTokens: 600, temperature: 0.7 },
+        systemInstruction: { parts: [{ text: 'You are a helpful visual AI assistant. Describe and analyse what you see concisely and clearly. Keep answers under 3 sentences unless detail is specifically asked for.' }] },
+      };
+
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+
+      if (!geminiRes.ok) {
+        const err = await geminiRes.text();
+        console.warn('[Vision] Gemini error:', err);
+        return res.status(502).json({ error: 'AI vision failed. Try again.' });
+      }
+
+      const data = await geminiRes.json();
+      const response = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'No response from AI.';
+      res.json({ response });
+    } catch (err: any) {
+      console.error('[Vision] error:', err?.message);
+      res.status(500).json({ error: 'Vision request failed.' });
+    }
+  });
+
   // Microsoft Edge TTS — neural voices, free, no API key
   // Uses { audioStream } from toStream() — the correct v2 API
   app.post('/api/tts', requireAuth, async (req, res) => {

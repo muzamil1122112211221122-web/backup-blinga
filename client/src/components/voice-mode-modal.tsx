@@ -101,10 +101,13 @@ interface Props { isOpen: boolean; onClose: () => void; }
 
 export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [phase, setPhase]         = useState<Phase>('idle');
-  const [lang, setLang]           = useState('en-US');
+  const [lang, setLang]           = useState(() => localStorage.getItem('voiceLang') || 'en-US');
   const [showLang, setShowLang]   = useState(false);
   const [showVoice, setShowVoice] = useState(false);
-  const [selSlot, setSelSlot]     = useState(() => getVoicesForLang('en-US')[0].id);
+  const [selSlot, setSelSlot]     = useState(() => {
+    const savedLang = localStorage.getItem('voiceLang') || 'en-US';
+    return getVoicesForLang(savedLang)[0].id;
+  });
   const [bars, setBars]           = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]     = useState('');
   const [liveText, setLiveText]   = useState('');
@@ -126,6 +129,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
   useEffect(() => {
     langRef.current = lang;
+    localStorage.setItem('voiceLang', lang);
     // Auto-switch to first voice of the new language
     const voices = getVoicesForLang(lang);
     const firstId = voices[0].id;
@@ -505,12 +509,13 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       </div>
 
       {/* Top-left: language + voice pickers */}
-      <div className="absolute top-4 left-4 z-50 flex gap-1">
+      <div className="absolute top-4 left-4 z-50 flex gap-1 items-center">
         {/* Language */}
         <div className="relative">
           <button onClick={() => { setShowLang(p => !p); setShowVoice(false); }}
-            className="text-white/40 hover:text-white/70 p-2 transition-colors">
-            <Globe className="w-5 h-5" />
+            className="flex items-center gap-1.5 text-white/60 hover:text-white/90 px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/10">
+            <Globe className="w-4 h-4" />
+            <span className="text-xs font-medium">{LANGUAGES.find(l => l.code === lang)?.label ?? 'English'}</span>
           </button>
           <AnimatePresence>
             {showLang && (
