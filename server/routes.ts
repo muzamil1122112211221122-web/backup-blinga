@@ -312,6 +312,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Speech-to-text — base64 audio → Groq Whisper transcription
+  app.post('/api/stt', requireAuth, async (req, res) => {
+    try {
+      const { audio, lang } = req.body;
+      if (!audio) return res.status(400).json({ error: 'audio required' });
+      const groqKey = process.env.GROQ_API_KEY;
+      if (!groqKey) return res.status(503).json({ error: 'STT not configured' });
+
+      const audioBuffer = Buffer.from(audio, 'base64');
+      const boundary = 'WaveformBoundary' + Math.random().toString(36).slice(2);
+      const langCode = lang ? lang.split('-')[0] : '';
+
+      const parts: Buffer[] = [];
+      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="audio.webm"\r\nContent-Type: audio/webm\r\n\r\n`));
+      parts.push(audioBuffer);
+      parts.push(Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\nwhisper-large-v3\r\n`));
+      if (langCode && langCode !== 'en') {
+        parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\n${langCode}\r\n`));
+      }
+      parts.push(Buffer.from(`--${boundary}--\r\n`));
+      const body = Buffer.concat(parts);
+
+      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqKey}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': String(body.length),
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.warn('[STT] Groq error:', err);
+        return res.status(502).json({ error: 'Transcription failed' });
+      }
+      const data = await response.json();
+      res.json({ text: data.text || '' });
+    } catch (err: any) {
+      console.error('[STT] error:', err?.message);
+      res.status(500).json({ error: 'STT failed' });
+    }
+  });
+
   // Voice AI — streams tokens via SSE so TTS can fire per-sentence during generation
   app.post('/api/voice-ai', requireAuth, async (req, res) => {
     try {

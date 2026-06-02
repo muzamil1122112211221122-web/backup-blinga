@@ -115,22 +115,26 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [camMode, setCamMode]     = useState<CamMode>('off');
   const [camError, setCamError]   = useState('');
 
-  const phaseRef      = useRef<Phase>('idle');
-  const langRef       = useRef('en-US');
-  const selSlotRef    = useRef('male1');
-  const inConvRef     = useRef(false);
-  const collectedRef  = useRef('');
-  const recRef        = useRef<any>(null);
-  const animRef       = useRef<number>();
-  const historyRef    = useRef<HistoryMsg[]>([]);
-  const interimRef    = useRef('');   // last interim transcript — fallback if final never fires
-  const speakSessRef  = useRef(0);    // incremented each speak — used to cancel orphaned playback
-  const curSourceRef  = useRef<AudioBufferSourceNode | null>(null); // currently playing node
-  const audioCtxRef   = useRef<AudioContext | null>(null); // shared, stays unlocked after first tap
-  const videoRef      = useRef<HTMLVideoElement>(null);
-  const streamRef     = useRef<MediaStream | null>(null);
-  const canvasRef     = useRef<HTMLCanvasElement>(null);
-  const camModeRef    = useRef<CamMode>('off');
+  const phaseRef        = useRef<Phase>('idle');
+  const langRef         = useRef('en-US');
+  const selSlotRef      = useRef('male1');
+  const inConvRef       = useRef(false);
+  const collectedRef    = useRef('');
+  const recRef          = useRef<any>(null);
+  const animRef         = useRef<number>();
+  const historyRef      = useRef<HistoryMsg[]>([]);
+  const interimRef      = useRef('');
+  const speakSessRef    = useRef(0);
+  const curSourceRef    = useRef<AudioBufferSourceNode | null>(null);
+  const audioCtxRef     = useRef<AudioContext | null>(null);
+  const videoRef        = useRef<HTMLVideoElement>(null);
+  const streamRef       = useRef<MediaStream | null>(null);
+  const canvasRef       = useRef<HTMLCanvasElement>(null);
+  const camModeRef      = useRef<CamMode>('off');
+  // MediaRecorder STT fallback (used when Web Speech API is blocked in iframe)
+  const useMediaSTTRef   = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef   = useRef<Blob[]>([]);
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
@@ -485,11 +489,81 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     await playbackDone;
   }
 
+  /* ── MediaRecorder STT — fallback when Web Speech API is blocked ── */
+  async function startMediaRecording() {
+    syncPhase('listening');
+    audioChunksRef.current = [];
+    try {
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4';
+      const recorder = new MediaRecorder(micStream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (e: any) => { if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        micStream.getTracks().forEach(t => t.stop());
+        if (!inConvRef.current) return;
+        syncPhase('thinking');
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        // Convert to base64 for server
+        const arrayBuffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+        try {
+          const resp = await fetch('/api/stt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ audio: base64, lang: langRef.current }),
+          });
+          const data = await resp.json();
+          const text = (data.text || '').trim();
+          if (text) {
+            setLiveText(text);
+            collectedRef.current = text;
+            sendToAI(text);
+          } else {
+            const isUrduNow = langRef.current === 'ur-PK';
+            setAiReply(isUrduNow ? 'کچھ نہیں سنا۔ دوبارہ کوشش کریں۔' : 'Nothing heard. Tap mic and try again.');
+            syncPhase('idle');
+            inConvRef.current = false;
+          }
+        } catch {
+          syncPhase('idle');
+          inConvRef.current = false;
+        }
+        mediaRecorderRef.current = null;
+      };
+      recorder.start();
+    } catch (err: any) {
+      setAiReply('Microphone access denied. Please allow mic permissions and try again.');
+      syncPhase('idle');
+      inConvRef.current = false;
+    }
+  }
+
   /* ── Speech recognition ── */
   function startNewTurn() {
     if (!inConvRef.current) return;
+
+    // If we already switched to media recorder STT, use it directly
+    if (useMediaSTTRef.current) {
+      startMediaRecording();
+      return;
+    }
+
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { setAiReply('Speech recognition requires Chrome or Edge.'); return; }
+    if (!SR) {
+      // No Web Speech API at all — fall back to MediaRecorder + Whisper
+      useMediaSTTRef.current = true;
+      startMediaRecording();
+      return;
+    }
 
     if (recRef.current) {
       try { recRef.current.onend = null; recRef.current.abort(); } catch {}
@@ -504,7 +578,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     const rec = new SR();
     recRef.current = rec;
     rec.lang = langRef.current;
-    rec.continuous     = true;   // stay open — don't cut off mid-sentence
+    rec.continuous     = true;
     rec.interimResults = true;
 
     rec.onresult = (e: any) => {
@@ -513,10 +587,10 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
         const t = e.results[i][0].transcript;
         if (e.results[i].isFinal) {
           collectedRef.current += t + ' ';
-          interimRef.current = '';   // final arrived — clear interim cache
+          interimRef.current = '';
         } else {
           interim += t;
-          interimRef.current = interim;  // always keep latest interim as fallback
+          interimRef.current = interim;
         }
       }
       setLiveText(collectedRef.current + interim);
@@ -524,10 +598,18 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onerror = (e: any) => {
       if (e.error === 'aborted') return;
-      if (e.error === 'no-speech') return;   // continuous mode — keep waiting
+      if (e.error === 'no-speech') return;
       if (e.error === 'not-allowed') {
         syncPhase('idle'); inConvRef.current = false;
         setAiReply('Microphone access denied. Allow mic permissions and try again.');
+        return;
+      }
+      if (e.error === 'service-not-allowed' || e.error === 'network') {
+        // Web Speech API blocked (e.g. iframe sandbox) — switch permanently to MediaRecorder + Whisper
+        console.warn('[STT] Switching to Whisper STT — Web Speech API unavailable:', e.error);
+        useMediaSTTRef.current = true;
+        if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
+        if (inConvRef.current) startMediaRecording();
         return;
       }
       console.warn('[STT] error:', e.error);
@@ -535,31 +617,32 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     rec.onend = () => {
       if (phaseRef.current !== 'listening' || !inConvRef.current) return;
-
-      // Use final text, or fall back to any interim text that was captured
       const text = (collectedRef.current + interimRef.current).trim();
       if (text) {
         sendToAI(text);
       } else {
-        // Genuinely heard nothing — stop and go idle
         syncPhase('idle');
         inConvRef.current = false;
         setAiReply('');
       }
     };
 
-    try { rec.start(); } catch (e) { console.error('[STT] start:', e); syncPhase('idle'); }
+    try { rec.start(); } catch (err) { console.error('[STT] start:', err); syncPhase('idle'); }
   }
 
   /* ── Mic button tap ── */
   function handleMicTap() {
     if (phase === 'thinking') return;
     if (phase === 'idle') {
-      // Unlock AudioContext on user gesture (no SpeechSynthesis call — it causes a browser pop sound)
       getAudioCtx().resume();
       inConvRef.current = true;
       startNewTurn();
     } else if (phase === 'listening') {
+      // Stop MediaRecorder STT if active
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
+        return;
+      }
       if (recRef.current) { try { recRef.current.onend = null; recRef.current.stop(); } catch {} recRef.current = null; }
       const text = (collectedRef.current + interimRef.current).trim();
       if (text) sendToAI(text); else { inConvRef.current = false; syncPhase('idle'); }
@@ -573,6 +656,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   function handleClose() {
     inConvRef.current = false;
     if (recRef.current) { try { recRef.current.onend = null; recRef.current.abort(); } catch {} recRef.current = null; }
+    if (mediaRecorderRef.current) { try { mediaRecorderRef.current.stop(); } catch {} mediaRecorderRef.current = null; }
     stopSpeech();
     // Suspend then close — avoids the abrupt audio click/pop that hard-close causes
     if (audioCtxRef.current) {
@@ -592,7 +676,9 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
 
   const isUrdu = lang === 'ur-PK';
+  const isRecording = useMediaSTTRef.current && phase === 'listening';
   const statusLabel =
+    isRecording        ? (isUrdu ? '● ریکارڈ ہو رہا ہے — روکنے کے لیے دبائیں' : '● Recording — tap mic to send') :
     phase === 'listening' ? (isUrdu ? 'سن رہا ہے...' : 'Listening...') :
     phase === 'thinking'  ? (isUrdu ? 'سوچ رہا ہے...' : 'Thinking...') :
     phase === 'speaking'  ? (isUrdu ? 'بول رہا ہے...' : 'Speaking...') :

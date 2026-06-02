@@ -2722,7 +2722,7 @@ Let's start the self-listen session!`;
                 className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
-                Imagine
+                Imagine Studio
               </Button>
             </TooltipTrigger>
             <TooltipContent>AI Image Generation</TooltipContent>
