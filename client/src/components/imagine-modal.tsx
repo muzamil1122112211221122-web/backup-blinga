@@ -4,7 +4,7 @@ import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2, Im
 const TEMPLATES = [
   { id: 'realistic-portrait', icon: '📸', name: 'Realistic Portrait', desc: 'Ultra-HD photo', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
   { id: 'pro-headshot', icon: '💼', name: 'Pro Headshot', desc: 'LinkedIn ready', prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait photography' },
-  { id: 'anime', icon: '🎌', name: 'Anime', desc: 'Japanese animation', prompt: 'shonen anime style illustration, anime boy warrior hero, cel-shaded, bold clean outlines, vibrant colors, action pose, spiky hair, Naruto Dragon Ball One Piece inspired, fully clothed battle outfit, manga panel style, dramatic lighting' },
+  { id: 'anime', icon: '🎌', name: 'Anime', desc: 'Japanese animation', prompt: 'anime scenic landscape, vibrant 2D cel animation background art, Studio Ghibli Makoto Shinkai inspired, rolling hills glowing sky floating islands, bold ink outlines, flat color shading, anime color palette, no characters no people' },
   { id: 'pixel-art', icon: '🕹️', name: 'Pixel Art', desc: '8-bit retro style', prompt: 'pixel art style, 8-bit retro game art, pixelated low resolution aesthetic, vibrant flat colors, pixel grid visible, NES SNES era video game art style, isometric pixel art' },
   { id: 'ghibli', icon: '🌿', name: 'Ghibli Style', desc: 'Magical & dreamy', prompt: 'Studio Ghibli art style, soft warm colors, magical atmosphere, detailed painterly backgrounds, gentle natural lighting, Miyazaki aesthetic' },
   { id: 'cyberpunk', icon: '🌆', name: 'Cyberpunk', desc: 'Neon future', prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas, cinematic lighting' },
@@ -30,7 +30,7 @@ const TEMPLATES = [
 ];
 
 const EDIT_STYLES = [
-  { id: 'anime', name: 'Anime', icon: '🎌', prompt: 'shonen anime style, anime boy hero, cel-shaded, bold outlines, vibrant colors, action pose, spiky hair, Naruto Dragon Ball style, fully clothed battle outfit, manga art style' },
+  { id: 'anime', name: 'Anime', icon: '🎌', prompt: 'anime art style, 2D cel animation look, bold ink outlines, flat vibrant colors, anime color palette, Japanese animation aesthetic, Makoto Shinkai Studio Ghibli style rendering, no characters no people' },
   { id: 'pixel-art', name: 'Pixel Art', icon: '🕹️', prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, NES SNES era video game art, flat vibrant colors, pixel grid visible, low resolution charm' },
   { id: '3d-render', name: '3D Render', icon: '🔮', prompt: '3D CGI render, photorealistic 3D model, Blender Cycles render, ray tracing, subsurface scattering, metallic reflections, Octane render quality, studio HDRI lighting' },
   { id: 'ghibli', name: 'Ghibli', icon: '🌿', prompt: 'Studio Ghibli art style, Miyazaki painterly, soft warm colors, magical atmosphere' },
@@ -89,7 +89,7 @@ const SAFE_NEGATIVE = encodeURIComponent(
 );
 
 const ANIME_SHOWCASE_URL = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-  'shonen anime boy hero warrior, spiky hair, battle armor fully clothed, dramatic action pose, Naruto Dragon Ball style, cel shaded bold outlines, vibrant manga colors, epic background'
+  'anime landscape background art, glowing sunset over floating islands, vibrant 2D cel animation style, Studio Ghibli Makoto Shinkai inspired, bold ink outlines, flat color shading, no characters no people'
 )}?width=600&height=400&nologo=true&seed=55501&model=flux&negative_prompt=${SAFE_NEGATIVE}`;
 
 const SHOWCASE_IMAGES = [
@@ -106,12 +106,10 @@ function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number,
 
 function buildAnimeUrl(basePrompt: string, w = 1024, h = 1024, seed?: number): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  // flux-anime for proper anime look; subject locked to male/shonen so model can't go off-script
-  const safePrompt = `male anime protagonist, shonen anime, boy warrior hero, ${basePrompt}, fully clothed armor or uniform, action battle pose, cel shaded flat colors, bold black ink outlines, manga art style, Dragon Ball Naruto One Piece inspired`;
-  const neg = encodeURIComponent(
-    'female, woman, girl, nsfw, nude, nudity, naked, sexual, explicit, pornographic, hentai, ecchi, fan service, sexy, seductive, cleavage, lingerie, underwear, bikini, revealing clothing, adult content'
-  );
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux-anime&negative_prompt=${neg}`;
+  // flux-anime is unsafe — use flux with very specific anime ART STYLE descriptors
+  // Default to scenery/environment to avoid any character-based content issues
+  const safePrompt = `${basePrompt}, anime 2D illustration art style, cel animation flat shading, bold ink outlines, vibrant anime color palette, Studio Ghibli Makoto Shinkai aesthetic, no people no characters no humans`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux&negative_prompt=${SAFE_NEGATIVE}`;
 }
 
 function buildPixelArtUrl(basePrompt: string, w = 1024, h = 1024, seed?: number): string {
