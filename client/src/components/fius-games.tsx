@@ -2019,7 +2019,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
-          <h2 className="text-lg font-extrabold text-white tracking-tight">Fius Games</h2>
+          <h2 className="text-xl font-black text-white tracking-tight">⚡ Fius Game Zone</h2>
           <p className="text-zinc-500 text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
         </div>
         <FragmentBadge count={fragments} />
@@ -2030,8 +2030,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         const TABS = ['games','store','leaderboard'] as const;
         const idx = TABS.indexOf(tab);
         return (
-          <div className="relative flex mb-3 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0" style={{ gap: 0 }}>
-            {/* sliding pill */}
+          <div className="relative flex mb-4 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0" style={{ gap: 0 }}>
             <div aria-hidden style={{
               position: 'absolute',
               top: 4, bottom: 4,
@@ -2055,99 +2054,89 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         );
       })()}
 
-      {/* ── Search (Games tab only) ── */}
-      {tab === 'games' && (
-        <div className="relative mb-3 flex-shrink-0">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">🔍</span>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search games..."
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-7 pr-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-all"
-          />
-        </div>
-      )}
-
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
-          <div className="space-y-4">
-            {/* Free games */}
-            {filteredFree.length > 0 && (
-              <div>
-                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {filteredFree.map(g => {
-                    const lv = getGameLevel(g.id);
-                    return (
-                      <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
-                        className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97] border border-white/10"
-                        style={{ background: 'rgba(30,30,40,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden relative" style={{ height: 160, background: 'rgba(15,15,22,1)' }}>
-                          <img src={g.img} alt={g.label} className="w-full h-full object-contain" style={{ display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+          <div className="flex flex-col gap-5">
+            {/* Free games 3×2 grid */}
+            <div>
+              <div className="grid grid-cols-3 gap-3">
+                {FREE_GAMES.map(g => {
+                  const lv = getGameLevel(g.id);
+                  return (
+                    <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
+                      className="flex flex-col rounded-3xl overflow-hidden text-left transition-all duration-200 hover:scale-[1.03] active:scale-[0.96]"
+                      style={{
+                        border: '2.5px solid rgba(255,255,255,0.18)',
+                        background: 'rgba(20,20,30,0.98)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                      }}>
+                      <div className="w-full overflow-hidden relative" style={{ height: 120, background: 'rgba(10,10,18,1)' }}>
+                        <img src={g.img} alt={g.label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        <div className="absolute top-2 right-2">
+                          <LevelBadge level={lv} />
                         </div>
-                        <div className="p-2" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div className="text-white font-bold text-xs leading-tight truncate">{g.label}</div>
-                          <div className="mt-1.5 flex items-center justify-between">
-                            <LevelBadge level={lv} />
-                            <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                      </div>
+                      <div className="p-2.5" style={{ borderTop: '2px solid rgba(255,255,255,0.08)' }}>
+                        <div className="text-white font-bold text-xs leading-tight truncate">{g.label}</div>
+                        <div className="text-[9px] text-zinc-500 mt-0.5 uppercase tracking-wide">{g.category}</div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            )}
+            </div>
 
-            {/* Owned store games */}
-            {myPurchased.length > 0 && (
-              <div>
-                <p className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">My Games</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {myPurchased.map(g => {
-                    const lv = getGameLevel(g.id);
-                    return (
+            {/* ── Bought / Owned Games shelf ── */}
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                  Bought Games
+                </span>
+                {myPurchased.length > 0 && (
+                  <span className="text-zinc-600 text-[9px]">{myPurchased.length} owned</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {myPurchased.length > 0 ? (
+                  <>
+                    {myPurchased.slice(0, 3).map(g => (
                       <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
-                        className="flex flex-col rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.97]"
-                        style={{ border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.06)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                        <div className="w-full overflow-hidden relative" style={{ height: 160, background: 'rgba(15,15,22,1)' }}>
-                          <img src={g.img} alt={g.name} className="w-full h-full object-contain" style={{ display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                        </div>
-                        <div className="p-2" style={{ borderTop: '1px solid rgba(16,185,129,0.15)' }}>
-                          <div className="text-white font-bold text-xs leading-tight truncate">{g.name}</div>
-                          <div className="mt-1.5 flex items-center justify-between">
-                            <LevelBadge level={lv} />
-                            <span className="text-[9px] text-zinc-600 font-bold uppercase">{g.category}</span>
-                          </div>
-                        </div>
+                        className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
+                        style={{ border: '2.5px solid rgba(16,185,129,0.6)', boxShadow: '0 0 12px rgba(16,185,129,0.25)' }}>
+                        <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </button>
-                    );
-                  })}
-                </div>
+                    ))}
+                    {myPurchased.length > 3 && (
+                      <button onClick={() => setTab('store')}
+                        className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                        style={{ border: '2.5px solid rgba(255,255,255,0.12)', background: 'rgba(30,30,40,0.95)' }}>
+                        <span className="text-white font-bold text-xs">+{myPurchased.length - 3}</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  STORE_CATALOG.slice(0, 3).map((g, i) => (
+                    <button key={i} onClick={() => setTab('store')}
+                      className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden relative transition-all hover:scale-110 active:scale-95"
+                      style={{ border: '2.5px solid rgba(255,255,255,0.1)' }}>
+                      <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
+                        <Lock size={13} className="text-zinc-300" />
+                      </div>
+                    </button>
+                  ))
+                )}
+                {/* Show all > button */}
+                <button onClick={() => setTab('store')}
+                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                  style={{ border: '2px solid rgba(255,255,255,0.14)', background: 'rgba(30,30,40,0.8)' }}>
+                  <ChevronRight size={16} className="text-zinc-400" />
+                </button>
+                <span className="text-zinc-600 text-[10px] font-medium">Show all bought games</span>
               </div>
-            )}
-
-            {/* Empty search */}
-            {filteredFree.length === 0 && myPurchased.length === 0 && (
-              <div className="text-center py-10 text-zinc-600 text-sm">No games match "{search}"</div>
-            )}
-
-            {/* Store teaser */}
-            {!search && storeAvail.length > 0 && (
-              <button onClick={() => setTab('store')}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all hover:scale-[1.01] border border-purple-500/20"
-                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.08))' }}>
-                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
-                  <Lock size={15} className="text-purple-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-purple-300 font-bold text-xs">{storeAvail.length} more games in Store</div>
-                  <div className="text-zinc-600 text-[10px] mt-0.5">Unlock with 🔷 fragments you earn</div>
-                </div>
-                <ChevronRight size={14} className="text-purple-500 flex-shrink-0" />
-              </button>
-            )}
+            </div>
           </div>
         )}
 

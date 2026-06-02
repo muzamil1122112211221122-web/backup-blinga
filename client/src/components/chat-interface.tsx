@@ -107,6 +107,7 @@ import {
   ToggleLeft,
   Square,
   ChevronLeft,
+  ChevronRight,
   Check,
   Palette,
   FileDown,
@@ -813,6 +814,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineEditHist, setImagineEditHist] = useState<string[]>([]);
   const [imagineEditLoading, setImagineEditLoading] = useState(false);
   const [imagineLikes, setImagineLikes] = useState<Set<string>>(new Set());
+  const [showAllTemplates, setShowAllTemplates] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled] = useState(true);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
@@ -3766,52 +3768,138 @@ Let's start the self-listen session!`;
               </div>
             );
 
+            const STUDIO_TEMPLATES = [
+              { id: 1, name: 'Portrait',   prompt: 'A stunning cinematic portrait with dramatic side lighting, shallow depth of field, professional photography, 8K ultra-detailed' },
+              { id: 2, name: 'Landscape',  prompt: 'A breathtaking mountain landscape at golden hour, misty valleys, epic scenery, professional landscape photography' },
+              { id: 3, name: 'Anime',      prompt: 'Vibrant anime character illustration, detailed expressive eyes, dynamic composition, Studio Ghibli inspired art style' },
+              { id: 4, name: 'Sci-Fi',     prompt: 'Futuristic mega-city skyline at night with neon lights, flying vehicles, holographic ads, cyberpunk aesthetic' },
+              { id: 5, name: 'Fantasy',    prompt: 'Epic fantasy world with ancient dragons soaring over glowing magical castles, ethereal light, digital art masterpiece' },
+              { id: 6, name: 'Abstract',   prompt: 'Abstract expressionist fluid art, vibrant flowing colors, geometric forms merging, high contrast modern digital art' },
+              { id: 7, name: 'Ocean',      prompt: 'Crystal clear tropical ocean at dawn, underwater coral reef visible, stunning natural light, award-winning photography' },
+            ];
+
+            const ph0 = imagineGallery[0];
+            const ph1 = imagineGallery[1];
+            const ph2 = imagineGallery[2];
+
             return (
               <div className="absolute inset-0 flex bg-background">
                 {/* LEFT: Discovery panel */}
                 <div className={`flex flex-col transition-all duration-300 ease-in-out min-w-0 overflow-hidden ${hasResults ? 'flex-1' : 'w-full'} border-r border-border`}>
-                  {/* Inspiration gallery — header */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-1 flex-shrink-0">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                      {imagineStyle} Inspiration — tap to use
+
+                  {/* ── Header ── */}
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
+                    <p className="text-[11px] font-bold text-foreground">
+                      ✦ Imagination Studio
                     </p>
                     <button
                       onClick={() => setImagineShuffleKey(k => k + 1)}
                       disabled={imagineGalleryLoading}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
-                      <RefreshCw className={`w-3 h-3 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> New
+                      <RefreshCw className={`w-3 h-3 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
                   </div>
-                  {/* Inspiration grid */}
+
+                  {/* ── Featured gallery — 2-col layout with descriptions ── */}
                   <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
-                    <div className="grid grid-cols-2 gap-2">
-                      {imagineGalleryLoading
-                        ? Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="rounded-2xl bg-muted animate-pulse border border-border" style={{ aspectRatio: '3/2' }} />
-                          ))
-                        : imagineGallery.map((item, i) => (
-                            <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer border border-border"
-                              style={{ aspectRatio: '3/2' }}
-                              onClick={() => setInputValue(item.prompt)}>
-                              <img src={item.url} alt={item.label}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-2.5">
-                                <span className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.label}</span>
+                    {imagineGalleryLoading ? (
+                      <div className="flex gap-3 h-full">
+                        <div className="flex flex-col gap-3 w-[55%]">
+                          {[0,1].map(i => <div key={i} className="flex gap-2"><div className="w-[45%] rounded-xl bg-muted animate-pulse flex-shrink-0" style={{height:80}} /><div className="flex-1 space-y-1.5 pt-1"><div className="h-2.5 bg-muted animate-pulse rounded w-3/4"/><div className="h-2 bg-muted animate-pulse rounded w-full"/><div className="h-2 bg-muted animate-pulse rounded w-5/6"/></div></div>)}
+                        </div>
+                        <div className="flex flex-col gap-3 w-[45%]">
+                          <div className="rounded-xl bg-muted animate-pulse" style={{height:80}} />
+                          <div className="flex items-center justify-center flex-1">
+                            <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-3">
+                        {/* Left col: 2 featured photos with descriptions */}
+                        <div className="flex flex-col gap-3 w-[55%]">
+                          {[ph0, ph1].filter(Boolean).map((item, i) => (
+                            <div key={i}
+                              className="flex gap-2.5 cursor-pointer group rounded-xl p-1.5 hover:bg-accent/50 transition-all"
+                              onClick={() => item && setInputValue(item.prompt)}>
+                              <div className="flex-shrink-0 rounded-xl overflow-hidden border border-border" style={{ width: 80, height: 72 }}>
+                                <img src={item!.url} alt={item!.label}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.08]"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              </div>
+                              <div className="flex-1 min-w-0 py-0.5">
+                                <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{item!.label}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1 leading-snug line-clamp-3">{item!.prompt}</p>
                               </div>
                             </div>
-                          ))
-                      }
+                          ))}
+                        </div>
+
+                        {/* Right col: 1 photo + Fius logo circle */}
+                        <div className="flex flex-col gap-3 w-[45%]">
+                          {ph2 && (
+                            <div className="cursor-pointer group" onClick={() => setInputValue(ph2.prompt)}>
+                              <div className="rounded-xl overflow-hidden border border-border" style={{ height: 72 }}>
+                                <img src={ph2.url} alt={ph2.label}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.08]"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{ph2.label}</p>
+                            </div>
+                          )}
+                          {/* Fius logo circle */}
+                          <div className="flex items-center justify-center flex-1 min-h-0">
+                            <div className="flex flex-col items-center gap-1.5">
+                              <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-border bg-accent overflow-hidden"
+                                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
+                                <Logo size="sm" />
+                              </div>
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Templates row ── */}
+                  <div className="flex-shrink-0 px-4 py-2.5 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Templates</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-2 overflow-x-auto flex-1 pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                        {(showAllTemplates ? STUDIO_TEMPLATES : STUDIO_TEMPLATES.slice(0, 7)).map((t) => (
+                          <button key={t.id}
+                            onClick={() => setInputValue(t.prompt)}
+                            title={t.name}
+                            className="flex-shrink-0 flex flex-col items-center gap-1 group">
+                            <div className="w-9 h-9 rounded-full border-2 border-border bg-accent flex items-center justify-center text-xs font-extrabold text-foreground transition-all duration-200 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110">
+                              {t.id}
+                            </div>
+                            <span className="text-[9px] text-muted-foreground truncate w-9 text-center leading-tight">{t.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setShowAllTemplates(v => !v)}
+                        className="flex-shrink-0 flex flex-col items-center gap-1 group">
+                        <div className="w-9 h-9 rounded-full border-2 border-border flex items-center justify-center transition-all group-hover:border-primary group-hover:scale-110">
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
+                        </div>
+                        <span className="text-[9px] text-muted-foreground leading-tight">All</span>
+                      </button>
                     </div>
                   </div>
-                  {/* Style selector — below gallery */}
+
+                  {/* ── Style selector ── */}
                   <div className="flex-shrink-0 px-4 py-2 border-t border-border">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Style</p>
                     <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                       {STYLE_OPTIONS.map((style: {name: string; previewImg: string}) => (
                         <button key={style.name} onClick={() => setImagineStyle(style.name)}
                           className={`flex-shrink-0 flex flex-col items-center gap-1 transition-all ${imagineStyle === style.name ? '' : 'opacity-55 hover:opacity-80'}`}
-                          style={{ width: 62 }}>
+                          style={{ width: 56 }}>
                           <div className={`w-full rounded-xl overflow-hidden ${imagineStyle === style.name ? 'ring-2 ring-primary ring-offset-1' : ''}`} style={{ aspectRatio: '1' }}>
                             <img src={style.previewImg} alt={style.name} className="w-full h-full object-cover" />
                           </div>
