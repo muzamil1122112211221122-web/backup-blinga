@@ -3705,7 +3705,7 @@ Let's start the self-listen session!`;
               const origUrl = imagineEditHist[0] ?? imagineEditTarget.url;
               const latestUrl = imagineEditHist[imagineEditHist.length - 1] ?? imagineEditTarget.url;
               return (
-                <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ background: '#080810', fontFamily: SF }}>
+                <div className="absolute inset-0 flex flex-col" style={{ background: '#080810', fontFamily: SF }}>
                   {/* Header */}
                   <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                     <button onClick={() => { setImagineEditTarget(null); setImagineEditHist([]); setImagineEditStyle(''); setImagineEditAcc([]); setImagineEditRes('1:1'); }}
@@ -3716,7 +3716,7 @@ Let's start the self-listen session!`;
                     <span className="text-white/60 text-sm font-medium">✏️ Edit Image</span>
                   </div>
 
-                  <div className="flex flex-1 overflow-hidden">
+                  <div className="flex flex-1 min-h-0 overflow-hidden">
                     {/* Left: images + history */}
                     <div className="flex flex-col w-64 flex-shrink-0 overflow-y-auto p-4 gap-4" style={{ borderRight: '1px solid rgba(255,255,255,0.07)', scrollbarWidth: 'none' }}>
                       <div>
@@ -3825,10 +3825,10 @@ Let's start the self-listen session!`;
 
             // ─── MAIN STUDIO ──────────────────────────────────────────────
             return (
-              <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(160deg,#07070f 0%,#0e0e1a 100%)', fontFamily: SF }}>
+              <div className="absolute inset-0 flex flex-col" style={{ background: 'linear-gradient(160deg,#07070f 0%,#0e0e1a 100%)', fontFamily: SF }}>
 
                 {/* Scrollable body */}
-                <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
                   {/* ── Inspiration Gallery ── */}
                   <div className="px-4 pt-4">

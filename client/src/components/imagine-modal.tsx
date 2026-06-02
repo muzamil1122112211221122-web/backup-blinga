@@ -229,7 +229,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     const originalUrl = editTarget.history?.[0] ?? editTarget.url;
     const latestUrl   = editHistory[editHistory.length - 1] ?? editTarget.url;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden"
+      <div className="fixed inset-0 z-50 flex flex-col"
         style={{ background: '#080810', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
         {/* Header */}
@@ -247,7 +247,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Left sidebar — images + history */}
           <div className="flex flex-col w-72 flex-shrink-0 overflow-y-auto p-4 gap-4" style={{ borderRight: '1px solid rgba(255,255,255,0.07)', scrollbarWidth: 'none' }}>
             <div>
@@ -367,7 +367,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
      MAIN STUDIO
   ──────────────────────────────────────────────────── */
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden"
+    <div className="fixed inset-0 z-50 flex flex-col"
       style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
       {/* Header */}
@@ -388,7 +388,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
         {/* ── Inspiration Gallery ── */}
         <div className="px-5 pt-5">
