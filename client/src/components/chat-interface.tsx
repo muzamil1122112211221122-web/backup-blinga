@@ -3554,25 +3554,8 @@ Let's start the self-listen session!`;
             const STYLE_OPTIONS = Object.entries(IMAGINE_PROMPTS_BY_STYLE).map(([name, items]) => ({
               name,
               previewImg: (items[0] as {img: string}).img,
+              firstPrompt: (items[0] as {prompt: string}).prompt,
             }));
-
-            const EDIT_STYLES = [
-              { id: 'anime', name: 'Anime', prompt: 'anime art style vibrant Japanese animation illustration' },
-              { id: 'ghibli', name: 'Ghibli', prompt: 'Studio Ghibli Miyazaki painterly soft magical style' },
-              { id: 'pixar', name: 'Pixar 3D', prompt: 'Pixar 3D animation smooth subsurface cinematic character' },
-              { id: 'cyberpunk', name: 'Cyberpunk', prompt: 'cyberpunk neon electric blues futuristic rain reflections' },
-              { id: 'watercolor', name: 'Watercolor', prompt: 'soft watercolor painting transparent washes artistic brushstrokes' },
-              { id: 'oil', name: 'Oil Painting', prompt: 'classical oil painting thick brushwork rich textures old master' },
-              { id: 'sketch', name: 'Sketch', prompt: 'detailed pencil sketch crosshatching fine line graphite drawing' },
-              { id: 'comic', name: 'Comic', prompt: 'comic book art bold ink outlines halftone dynamic action lines' },
-              { id: 'neon', name: 'Neon Glow', prompt: 'neon glow electric light trails dark vivid synthwave' },
-              { id: 'cinematic', name: 'Cinematic', prompt: 'cinematic color grade film noir anamorphic Hollywood lighting' },
-              { id: 'hyperreal', name: 'Hyperrealistic', prompt: 'hyperrealistic photography 8K ultra-detailed professional studio' },
-              { id: 'abstract', name: 'Abstract', prompt: 'abstract expressionist fluid shapes vibrant flowing colors' },
-              { id: 'gothic', name: 'Gothic', prompt: 'gothic dark dramatic atmosphere ornate Victorian moody shadows' },
-              { id: 'surreal', name: 'Surrealist', prompt: 'surrealist dreamlike impossible scenario Salvador Dali inspired' },
-              { id: 'vaporwave', name: 'Vaporwave', prompt: 'vaporwave pastel pinks purples retro 80s computer nostalgic' },
-            ];
 
             const RESOLUTIONS = [
               { id: '1:1',  label: 'Square',   apiSize: '1024x1024' },
@@ -3582,28 +3565,23 @@ Let's start the self-listen session!`;
               { id: '3:2',  label: 'Classic',   apiSize: '1536x1024' },
             ];
 
-            const ACCESSORIES = [
-              { id: 'glasses', name: 'Glasses' }, { id: 'sunglasses', name: 'Sunglasses' },
-              { id: 'watch', name: 'Watch' },     { id: 'hat', name: 'Hat' },
-              { id: 'crown', name: 'Crown' },     { id: 'tie', name: 'Tie' },
-              { id: 'earrings', name: 'Earrings' },{ id: 'headphones', name: 'Headphones' },
-              { id: 'scarf', name: 'Scarf' },     { id: 'beard', name: 'Beard' },
-            ];
-
             const aiImages = imagineMessages.filter(m => m.role === 'ai');
             const hasResults = aiImages.length > 0;
 
             const getApiSize = (resId: string) => RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
 
+            // Fixed edit — keeps the subject/composition, applies a style transformation
             const handleEditApply = async () => {
               if (!imagineEditTarget || imagineEditLoading) return;
               setImagineEditLoading(true);
-              const styleObj = EDIT_STYLES.find(s => s.id === imagineEditStyle);
-              const accNames = imagineEditAcc.map(a => ACCESSORIES.find(x => x.id === a)?.name).filter(Boolean);
-              let p = imagineEditTarget.prompt;
-              if (styleObj) p += `, ${styleObj.prompt}`;
-              if (accNames.length) p += `, wearing ${accNames.join(', ')}`;
+              const selectedStyle = STYLE_OPTIONS.find(s => s.name === imagineEditStyle);
               const size = getApiSize(imagineEditRes);
+              // Build a prompt that clearly transforms the existing image's subject into the new style
+              let p = imagineEditTarget.prompt;
+              if (selectedStyle) {
+                p = `${imagineEditTarget.prompt}, reimagined as ${selectedStyle.name} style artwork, maintaining the same subject and composition, ${selectedStyle.previewImg ? '' : ''}high quality`;
+              }
+              const seed = Math.floor(Math.random() * 999999);
               let newUrl = '';
               try {
                 const res = await fetch('/api/generate-image', {
@@ -3611,9 +3589,11 @@ Let's start the self-listen session!`;
                   body: JSON.stringify({ prompt: p, size }),
                 });
                 const data = await res.json();
-                newUrl = data.success && data.url ? data.url : `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 9999999)}`;
+                newUrl = data.success && data.url
+                  ? data.url
+                  : `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${seed}`;
               } catch {
-                newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 9999999)}`;
+                newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${seed}`;
               }
               const newHist = [...imagineEditHist, newUrl];
               setImagineEditHist(newHist);
@@ -3629,6 +3609,7 @@ Let's start the self-listen session!`;
               a.href = url; a.download = `${name}.png`; a.target = '_blank'; a.click();
             };
 
+            // ── Edit Panel ─────────────────────────────────────────────────
             const renderEditPanel = () => {
               if (!imagineEditTarget) return null;
               const latestUrl = imagineEditHist[imagineEditHist.length - 1] ?? imagineEditTarget.url;
@@ -3636,35 +3617,40 @@ Let's start the self-listen session!`;
                 <div className="flex flex-col w-full min-w-0 h-full">
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-shrink-0">
                     <button
-                      onClick={() => { setImagineEditTarget(null); setImagineEditHist([]); setImagineEditStyle(''); setImagineEditAcc([]); setImagineEditRes('1:1'); }}
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      onClick={() => { setImagineEditTarget(null); setImagineEditHist([]); setImagineEditStyle(''); setImagineEditRes('1:1'); }}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                       <ChevronLeft className="w-4 h-4" /> Back
                     </button>
-                    <span className="text-sm font-semibold text-foreground ml-auto">Edit Image</span>
+                    <span className="text-sm font-semibold text-foreground ml-auto">Restyle Image</span>
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" style={{ scrollbarWidth: 'none' }}>
                     <div className="rounded-2xl overflow-hidden border border-border relative">
                       {imagineEditLoading && (
-                        <div className="absolute inset-0 z-10 bg-background/70 flex items-center justify-center">
-                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <div className="absolute inset-0 z-10 bg-background/80 flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground font-medium">Applying style...</span>
                         </div>
                       )}
-                      <img src={latestUrl} alt="editing" className="w-full object-cover" />
+                      <img src={latestUrl} alt="editing" className="w-full object-cover" style={{ maxHeight: 240 }} />
                     </div>
-                    <button onClick={handleEditApply} disabled={imagineEditLoading}
+                    <button onClick={handleEditApply} disabled={imagineEditLoading || !imagineEditStyle}
                       className="w-full py-2.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
                       {imagineEditLoading
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                        : <><Wand2 className="w-4 h-4" /> Apply Changes</>}
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying...</>
+                        : <><Wand2 className="w-4 h-4" /> Apply {imagineEditStyle || 'a style first'}</>}
                     </button>
                     <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Art Style</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {EDIT_STYLES.map(s => (
-                          <button key={s.id}
-                            onClick={() => setImagineEditStyle(imagineEditStyle === s.id ? '' : s.id)}
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${imagineEditStyle === s.id ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}>
-                            {s.name}
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Pick a Style to Apply</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {STYLE_OPTIONS.map(s => (
+                          <button key={s.name}
+                            onClick={() => setImagineEditStyle(imagineEditStyle === s.name ? '' : s.name)}
+                            className={`flex flex-col items-center gap-1.5 p-1.5 rounded-xl transition-all ${imagineEditStyle === s.name ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent'}`}>
+                            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '1' }}>
+                              <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
+                                onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&q=60'; }} />
+                            </div>
+                            <span className={`text-[10px] font-medium truncate w-full text-center leading-tight ${imagineEditStyle === s.name ? 'text-primary' : 'text-muted-foreground'}`}>{s.name}</span>
                           </button>
                         ))}
                       </div>
@@ -3680,30 +3666,23 @@ Let's start the self-listen session!`;
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Accessories</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {ACCESSORIES.map(a => (
-                          <button key={a.id}
-                            onClick={() => setImagineEditAcc((prev: string[]) => prev.includes(a.id) ? prev.filter((x: string) => x !== a.id) : [...prev, a.id])}
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${imagineEditAcc.includes(a.id) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}>
-                            {a.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                     {imagineEditHist.length > 1 && (
                       <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">History ({imagineEditHist.length} versions)</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Versions ({imagineEditHist.length})</p>
                         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                           {imagineEditHist.map((url: string, i: number) => (
-                            <div key={i} className="flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border border-border relative group cursor-pointer"
-                              onClick={() => dlImg(url, `fius-v${i + 1}`)}>
-                              <img src={url} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Download className="w-3 h-3 text-white" />
-                              </div>
-                            </div>
+                            <Tooltip key={i}>
+                              <TooltipTrigger asChild>
+                                <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-border relative group cursor-pointer"
+                                  onClick={() => dlImg(url, `fius-v${i + 1}`)}>
+                                  <img src={url} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Download className="w-3.5 h-3.5 text-white" />
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>Download v{i + 1}</TooltipContent>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -3713,24 +3692,42 @@ Let's start the self-listen session!`;
               );
             };
 
-            const renderResultsPanel = () => (
+            // ── Results Panel ──────────────────────────────────────────────
+            const renderRightPanel = () => (
               <div className="flex flex-col w-full min-w-0 h-full">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-                  <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-primary" /> Generated
+                {/* Header row — only clear button if there are results */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 min-h-0">
+                  <span className="text-sm font-semibold text-foreground">
+                    {hasResults ? `${aiImages.length} image${aiImages.length > 1 ? 's' : ''}` : 'Generate'}
                   </span>
-                  <button onClick={() => setImagineMessages([])}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {hasResults && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button onClick={() => setImagineMessages([])}
+                          className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Clear all</TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'none' }}>
+                  {!hasResults && (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
+                      <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
+                        <Sparkles className="w-7 h-7 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">Ready to create</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt below or tap a style template on the left to generate your first image</p>
+                    </div>
+                  )}
                   {aiImages.map((msg: any, idx: number) => (
                     <div key={msg.id} className="rounded-2xl border border-border overflow-hidden bg-background">
                       {msg.isGenerating ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-10">
-                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                          <span className="text-xs text-muted-foreground">Generating image...</span>
+                        <div className="flex flex-col items-center justify-center gap-3 py-12">
+                          <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                          <span className="text-xs text-muted-foreground font-medium">Creating your image...</span>
                         </div>
                       ) : msg.imageUrl ? (
                         <>
@@ -3738,27 +3735,47 @@ Let's start the self-listen session!`;
                             className="w-full object-cover cursor-zoom-in"
                             onClick={() => setFullscreenImg(msg.imageUrl)} />
                           <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border">
-                            <button onClick={() => dlImg(msg.imageUrl, `imagine-${idx + 1}`)}
-                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                              <Download className="w-3.5 h-3.5" /> Save
-                            </button>
-                            <button onClick={() => navigator.clipboard.writeText(msg.imageUrl)}
-                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                              <Share2 className="w-3.5 h-3.5" /> Share
-                            </button>
-                            <button onClick={() => setImagineLikes((prev: Set<string>) => { const n = new Set(prev); n.has(msg.id) ? n.delete(msg.id) : n.add(msg.id); return n; })}
-                              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all ${imagineLikes.has(msg.id) ? 'text-pink-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
-                              <Heart className={`w-3.5 h-3.5 ${imagineLikes.has(msg.id) ? 'fill-pink-500' : ''}`} />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content });
-                                setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]);
-                                setImagineEditStyle(''); setImagineEditAcc([]); setImagineEditRes('1:1');
-                              }}
-                              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all ml-auto">
-                              <Edit className="w-3.5 h-3.5" /> Edit
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button onClick={() => dlImg(msg.imageUrl, `imagine-${idx + 1}`)}
+                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                  <Download className="w-3.5 h-3.5" /> Save
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Download image</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button onClick={() => navigator.clipboard.writeText(msg.imageUrl)}
+                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                  <Share2 className="w-3.5 h-3.5" /> Share
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Copy image URL</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button onClick={() => setImagineLikes((prev: Set<string>) => { const n = new Set(prev); n.has(msg.id) ? n.delete(msg.id) : n.add(msg.id); return n; })}
+                                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all ${imagineLikes.has(msg.id) ? 'text-pink-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
+                                  <Heart className={`w-3.5 h-3.5 ${imagineLikes.has(msg.id) ? 'fill-pink-500' : ''}`} />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>{imagineLikes.has(msg.id) ? 'Unlike' : 'Like'}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => {
+                                    setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content });
+                                    setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]);
+                                    setImagineEditStyle(''); setImagineEditRes('1:1');
+                                  }}
+                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all ml-auto">
+                                  <Edit className="w-3.5 h-3.5" /> Restyle
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Apply a style to this image</TooltipContent>
+                            </Tooltip>
                           </div>
                         </>
                       ) : null}
@@ -3768,93 +3785,91 @@ Let's start the self-listen session!`;
               </div>
             );
 
-            const STUDIO_TEMPLATES = [
-              { id: 1, name: 'Portrait',   prompt: 'A stunning cinematic portrait with dramatic side lighting, shallow depth of field, professional photography, 8K ultra-detailed' },
-              { id: 2, name: 'Landscape',  prompt: 'A breathtaking mountain landscape at golden hour, misty valleys, epic scenery, professional landscape photography' },
-              { id: 3, name: 'Anime',      prompt: 'Vibrant anime character illustration, detailed expressive eyes, dynamic composition, Studio Ghibli inspired art style' },
-              { id: 4, name: 'Sci-Fi',     prompt: 'Futuristic mega-city skyline at night with neon lights, flying vehicles, holographic ads, cyberpunk aesthetic' },
-              { id: 5, name: 'Fantasy',    prompt: 'Epic fantasy world with ancient dragons soaring over glowing magical castles, ethereal light, digital art masterpiece' },
-              { id: 6, name: 'Abstract',   prompt: 'Abstract expressionist fluid art, vibrant flowing colors, geometric forms merging, high contrast modern digital art' },
-              { id: 7, name: 'Ocean',      prompt: 'Crystal clear tropical ocean at dawn, underwater coral reef visible, stunning natural light, award-winning photography' },
-            ];
-
             const ph0 = imagineGallery[0];
             const ph1 = imagineGallery[1];
             const ph2 = imagineGallery[2];
 
             return (
               <div className="absolute inset-0 flex bg-background">
-                {/* LEFT: Discovery panel */}
-                <div className={`flex flex-col transition-all duration-300 ease-in-out min-w-0 overflow-hidden ${hasResults ? 'flex-1' : 'w-full'} border-r border-border`}>
 
-                  {/* ── Header ── */}
+                {/* ═══ LEFT: Discovery panel ═══ */}
+                <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+
+                  {/* Header */}
                   <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
-                    <p className="text-[11px] font-bold text-foreground">
-                      ✦ Imagination Studio
-                    </p>
+                    <p className="text-sm font-bold text-foreground">✦ Imagination Studio</p>
                     <button
                       onClick={() => setImagineShuffleKey(k => k + 1)}
                       disabled={imagineGalleryLoading}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
-                      <RefreshCw className={`w-3 h-3 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> Refresh
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
+                      <RefreshCw className={`w-3.5 h-3.5 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
                   </div>
 
-                  {/* ── Featured gallery — 2-col layout with descriptions ── */}
+                  {/* ── Featured gallery: 2-col layout with descriptions ── */}
                   <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
                     {imagineGalleryLoading ? (
-                      <div className="flex gap-3 h-full">
+                      <div className="flex gap-3">
                         <div className="flex flex-col gap-3 w-[55%]">
-                          {[0,1].map(i => <div key={i} className="flex gap-2"><div className="w-[45%] rounded-xl bg-muted animate-pulse flex-shrink-0" style={{height:80}} /><div className="flex-1 space-y-1.5 pt-1"><div className="h-2.5 bg-muted animate-pulse rounded w-3/4"/><div className="h-2 bg-muted animate-pulse rounded w-full"/><div className="h-2 bg-muted animate-pulse rounded w-5/6"/></div></div>)}
+                          {[0,1].map(i => (
+                            <div key={i} className="flex gap-3">
+                              <div className="flex-shrink-0 rounded-2xl bg-muted animate-pulse" style={{width:110,height:100}} />
+                              <div className="flex-1 space-y-2 pt-1">
+                                <div className="h-3 bg-muted animate-pulse rounded w-3/4"/>
+                                <div className="h-2.5 bg-muted animate-pulse rounded w-full"/>
+                                <div className="h-2.5 bg-muted animate-pulse rounded w-5/6"/>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                         <div className="flex flex-col gap-3 w-[45%]">
-                          <div className="rounded-xl bg-muted animate-pulse" style={{height:80}} />
+                          <div className="rounded-2xl bg-muted animate-pulse" style={{height:100}} />
                           <div className="flex items-center justify-center flex-1">
-                            <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
+                            <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
                           </div>
                         </div>
                       </div>
                     ) : (
                       <div className="flex gap-3">
-                        {/* Left col: 2 featured photos with descriptions */}
-                        <div className="flex flex-col gap-3 w-[55%]">
+                        {/* Left col — 2 large photos with descriptions */}
+                        <div className="flex flex-col gap-4 w-[55%]">
                           {[ph0, ph1].filter(Boolean).map((item, i) => (
                             <div key={i}
-                              className="flex gap-2.5 cursor-pointer group rounded-xl p-1.5 hover:bg-accent/50 transition-all"
+                              className="flex gap-3 cursor-pointer group rounded-2xl p-2 hover:bg-accent/50 transition-all"
                               onClick={() => item && setInputValue(item.prompt)}>
-                              <div className="flex-shrink-0 rounded-xl overflow-hidden border border-border" style={{ width: 80, height: 72 }}>
+                              <div className="flex-shrink-0 rounded-2xl overflow-hidden border border-border" style={{ width: 110, height: 100 }}>
                                 <img src={item!.url} alt={item!.label}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.08]"
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
+                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60'; }} />
                               </div>
-                              <div className="flex-1 min-w-0 py-0.5">
-                                <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{item!.label}</p>
-                                <p className="text-[10px] text-muted-foreground mt-1 leading-snug line-clamp-3">{item!.prompt}</p>
+                              <div className="flex-1 min-w-0 py-1">
+                                <p className="text-xs font-bold text-foreground leading-tight mb-1">{item!.label}</p>
+                                <p className="text-[11px] text-muted-foreground leading-snug line-clamp-3">{item!.prompt}</p>
                               </div>
                             </div>
                           ))}
                         </div>
 
-                        {/* Right col: 1 photo + Fius logo circle */}
+                        {/* Right col — 1 photo + Fius logo */}
                         <div className="flex flex-col gap-3 w-[45%]">
                           {ph2 && (
-                            <div className="cursor-pointer group" onClick={() => setInputValue(ph2.prompt)}>
-                              <div className="rounded-xl overflow-hidden border border-border" style={{ height: 72 }}>
+                            <div className="cursor-pointer group rounded-2xl overflow-hidden" onClick={() => setInputValue(ph2.prompt)}>
+                              <div className="rounded-2xl overflow-hidden border border-border" style={{ height: 100 }}>
                                 <img src={ph2.url} alt={ph2.label}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.08]"
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
+                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60'; }} />
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-snug">{ph2.label}</p>
+                              <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug px-0.5">{ph2.label}</p>
                             </div>
                           )}
                           {/* Fius logo circle */}
-                          <div className="flex items-center justify-center flex-1 min-h-0">
-                            <div className="flex flex-col items-center gap-1.5">
-                              <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-border bg-accent overflow-hidden"
-                                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.12)' }}>
-                                <Logo size="sm" />
+                          <div className="flex items-center justify-center flex-1 pb-2">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center border-2 border-border bg-accent"
+                                style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
+                                <Logo size="md" />
                               </div>
-                              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
                             </div>
                           </div>
                         </div>
@@ -3862,60 +3877,44 @@ Let's start the self-listen session!`;
                     )}
                   </div>
 
-                  {/* ── Templates row ── */}
-                  <div className="flex-shrink-0 px-4 py-2.5 border-t border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Templates</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-2 overflow-x-auto flex-1 pb-0.5" style={{ scrollbarWidth: 'none' }}>
-                        {(showAllTemplates ? STUDIO_TEMPLATES : STUDIO_TEMPLATES.slice(0, 7)).map((t) => (
-                          <button key={t.id}
-                            onClick={() => setInputValue(t.prompt)}
-                            title={t.name}
-                            className="flex-shrink-0 flex flex-col items-center gap-1 group">
-                            <div className="w-9 h-9 rounded-full border-2 border-border bg-accent flex items-center justify-center text-xs font-extrabold text-foreground transition-all duration-200 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110">
-                              {t.id}
-                            </div>
-                            <span className="text-[9px] text-muted-foreground truncate w-9 text-center leading-tight">{t.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setShowAllTemplates(v => !v)}
-                        className="flex-shrink-0 flex flex-col items-center gap-1 group">
-                        <div className="w-9 h-9 rounded-full border-2 border-border flex items-center justify-center transition-all group-hover:border-primary group-hover:scale-110">
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
-                        </div>
-                        <span className="text-[9px] text-muted-foreground leading-tight">All</span>
+                  {/* ── Style Templates row (circular image thumbnails) ── */}
+                  <div className="flex-shrink-0 px-4 py-3 border-t border-border">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Styles</p>
+                      <button onClick={() => setShowAllTemplates(v => !v)}
+                        className="text-[10px] text-primary hover:underline transition-all">
+                        {showAllTemplates ? 'Show less' : 'Show all'}
                       </button>
                     </div>
-                  </div>
-
-                  {/* ── Style selector ── */}
-                  <div className="flex-shrink-0 px-4 py-2 border-t border-border">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Style</p>
-                    <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                      {STYLE_OPTIONS.map((style: {name: string; previewImg: string}) => (
-                        <button key={style.name} onClick={() => setImagineStyle(style.name)}
-                          className={`flex-shrink-0 flex flex-col items-center gap-1 transition-all ${imagineStyle === style.name ? '' : 'opacity-55 hover:opacity-80'}`}
-                          style={{ width: 56 }}>
-                          <div className={`w-full rounded-xl overflow-hidden ${imagineStyle === style.name ? 'ring-2 ring-primary ring-offset-1' : ''}`} style={{ aspectRatio: '1' }}>
-                            <img src={style.previewImg} alt={style.name} className="w-full h-full object-cover" />
+                    <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                      {(showAllTemplates ? STYLE_OPTIONS : STYLE_OPTIONS.slice(0, 7)).map((s) => (
+                        <button key={s.name}
+                          onClick={() => { setImagineStyle(s.name); setInputValue(s.firstPrompt); }}
+                          title={s.name}
+                          className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
+                          <div className={`w-14 h-14 rounded-full overflow-hidden border-[2.5px] transition-all duration-200 group-hover:scale-110 ${imagineStyle === s.name ? 'border-primary shadow-md' : 'border-border'}`}>
+                            <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
+                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&q=60'; }} />
                           </div>
-                          <span className="text-[10px] font-medium text-foreground w-full text-center leading-tight truncate">{style.name}</span>
+                          <span className={`text-[10px] font-medium truncate w-14 text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
                         </button>
                       ))}
+                      <button
+                        onClick={() => setShowAllTemplates(v => !v)}
+                        className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
+                        <div className="w-14 h-14 rounded-full border-[2.5px] border-dashed border-border flex items-center justify-center bg-accent/50 transition-all group-hover:border-primary group-hover:scale-110">
+                          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground leading-tight">More</span>
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* RIGHT: Results / Edit panel — slides in when images exist */}
-                {hasResults && (
-                  <div className="flex flex-col w-[42%] flex-shrink-0 bg-card border-l border-border min-w-0 overflow-hidden">
-                    {imagineEditTarget ? renderEditPanel() : renderResultsPanel()}
-                  </div>
-                )}
+                {/* ═══ RIGHT: Results / Edit panel — always visible ═══ */}
+                <div className="flex flex-col w-[44%] flex-shrink-0 bg-card border-l border-border min-w-0 overflow-hidden">
+                  {imagineEditTarget ? renderEditPanel() : renderRightPanel()}
+                </div>
               </div>
             );
 
