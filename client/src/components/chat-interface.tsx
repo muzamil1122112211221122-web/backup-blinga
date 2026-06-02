@@ -615,10 +615,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       const btn = tabButtonRefs.current[idx];
       const container = navContainerRef.current;
       if (!btn || !container) return;
-      const cRect = container.getBoundingClientRect();
-      const bRect = btn.getBoundingClientRect();
-      if (bRect.width > 0) {
-        setPillStyle({ left: bRect.left - cRect.left, width: bRect.width, ready: true });
+      // Use offsetLeft relative to the navContainer (position:relative parent)
+      let left = 0;
+      let el: HTMLElement | null = btn;
+      while (el && el !== container) {
+        left += el.offsetLeft;
+        el = el.offsetParent as HTMLElement | null;
+      }
+      if (btn.offsetWidth > 0) {
+        setPillStyle({ left, width: btn.offsetWidth, ready: true });
       }
     };
     const id = requestAnimationFrame(measure);
@@ -2650,9 +2655,9 @@ Let's start the self-listen session!`;
               left: pillStyle.left,
               width: pillStyle.width,
               top: 2, bottom: 2,
-              background: theme === 'dark' ? 'rgba(255,255,255,0.18)' : 'white',
+              background: theme === 'dark' ? 'rgba(255,255,255,0.38)' : 'white',
               borderRadius: 14,
-              boxShadow: theme === 'dark' ? '0 1px 10px rgba(255,255,255,0.1)' : '0 1px 8px rgba(0,0,0,0.13)',
+              boxShadow: theme === 'dark' ? '0 1px 12px rgba(255,255,255,0.15)' : '0 1px 8px rgba(0,0,0,0.13)',
               transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
               pointerEvents: 'none',
               zIndex: 0,
