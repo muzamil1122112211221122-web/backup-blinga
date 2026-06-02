@@ -43,6 +43,14 @@ export interface WebSocketMessage {
 
 export const MODEL_OPTIONS = [
   { 
+    id: 'fius-lite', 
+    name: 'Fius Lite', 
+    description: 'Fast & efficient for everyday tasks', 
+    provider: 'fius',
+    speed: 'fastest',
+    intelligence: 'high'
+  },
+  { 
     id: 'fius-prime', 
     name: 'Fius Pro', 
     description: 'Our most advanced general AI', 
@@ -109,6 +117,7 @@ export const MODEL_OPTIONS = [
 ] as const;
 
 export const AVAILABLE_MODELS = [
+  'fius-lite',
   'fius-prime',        
   'gpt-4o',
   'claude-3.5-sonnet',

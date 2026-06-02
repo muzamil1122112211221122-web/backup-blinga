@@ -597,7 +597,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     });
   }, [messages]);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>("fius-prime");
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>("fius-lite");
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
@@ -706,6 +706,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackMsgId, setFeedbackMsgId] = useState('');
+  const [feedbackType, setFeedbackType] = useState<'like' | 'dislike'>('like');
+  const [feedbackSelected, setFeedbackSelected] = useState<Set<string>>(new Set());
+  const [feedbackText, setFeedbackText] = useState('');
   const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
   const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] = useState(false);
@@ -1928,71 +1933,58 @@ IMPORTANT RULES:
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'New Chat', model: selectedModel }),
+        body: JSON.stringify({ title: 'Continued Chat', model: selectedModel }),
       });
       if (response.ok) {
         const newProject = await response.json();
         setCurrentProjectId(newProject.id);
         localStorage.setItem('currentProjectId', newProject.id);
-        isHistoryLoad.current = true;
-        setMessages([]);
+        isHistoryLoad.current = false;
+        const initMsg: ChatMessage = {
+          id: Date.now().toString(),
+          conversationId: newProject.id,
+          role: 'assistant',
+          content,
+          createdAt: new Date(),
+        };
+        setMessages([initMsg]);
         setProjects(prev => [newProject, ...prev]);
         setActiveTab('ask');
-        setTimeout(() => setInputValue(content), 100);
+        setInputValue('');
       }
     } catch { /* silent */ }
   };
 
   const handleLikeMessage = (messageId: string) => {
-    setLikedMessages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(messageId)) {
-        newSet.delete(messageId);
-      } else {
-        newSet.add(messageId);
-        // Clear dislike immediately for this message
-        setDislikedMessages(current => {
-          const newDisliked = new Set(current);
-          newDisliked.delete(messageId);
-          return newDisliked;
-        });
-        // Auto-clear like after 3 seconds to prevent stuck colors
-        setTimeout(() => {
-          setLikedMessages(current => {
-            const updated = new Set(current);
-            updated.delete(messageId);
-            return updated;
-          });
-        }, 3000);
-      }
-      return newSet;
-    });
+    if (likedMessages.has(messageId)) {
+      setLikedMessages(prev => { const s = new Set(prev); s.delete(messageId); return s; });
+      return;
+    }
+    setLikedMessages(prev => new Set([...prev, messageId]));
+    setDislikedMessages(prev => { const s = new Set(prev); s.delete(messageId); return s; });
+    setFeedbackMsgId(messageId);
+    setFeedbackType('like');
+    setFeedbackSelected(new Set());
+    setFeedbackText('');
+    setFeedbackOpen(true);
   };
 
   const handleDislikeMessage = (messageId: string) => {
-    setDislikedMessages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(messageId)) {
-        newSet.delete(messageId);
-      } else {
-        newSet.add(messageId);
-        // Clear like immediately for this message
-        setLikedMessages(current => {
-          const newLiked = new Set(current);
-          newLiked.delete(messageId);
-          return newLiked;
-        });
-        // Auto-clear dislike after 3 seconds to prevent stuck colors
-        setTimeout(() => {
-          setDislikedMessages(current => {
-            const updated = new Set(current);
-            updated.delete(messageId);
-            return updated;
-          });
-        }, 3000);
-      }
-      return newSet;
-    });
+    if (dislikedMessages.has(messageId)) {
+      setDislikedMessages(prev => { const s = new Set(prev); s.delete(messageId); return s; });
+      return;
+    }
+    setDislikedMessages(prev => new Set([...prev, messageId]));
+    setLikedMessages(prev => { const s = new Set(prev); s.delete(messageId); return s; });
+    setFeedbackMsgId(messageId);
+    setFeedbackType('dislike');
+    setFeedbackSelected(new Set());
+    setFeedbackText('');
+    setFeedbackOpen(true);
+  };
+
+  const submitFeedback = () => {
+    setFeedbackOpen(false);
   };
 
   const handleSpeakMessage = (content: string) => {
@@ -2625,6 +2617,7 @@ Let's start the self-listen session!`;
           <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
         </div>
         
+        <div className="overflow-x-auto max-w-[58vw] sm:max-w-none" style={{scrollbarWidth:'none'}}>
         <div ref={navContainerRef} className="relative flex items-center space-x-1 sm:space-x-2">
           {/* sliding active pill */}
           {pillStyle.ready && (
@@ -2632,9 +2625,10 @@ Let's start the self-listen session!`;
               position: 'absolute',
               left: pillStyle.left,
               width: pillStyle.width,
-              top: 0, bottom: 0,
-              background: 'hsl(var(--secondary))',
-              borderRadius: 16,
+              top: 2, bottom: 2,
+              background: 'white',
+              borderRadius: 14,
+              boxShadow: '0 1px 8px rgba(0,0,0,0.13)',
               transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
               pointerEvents: 'none',
               zIndex: 0,
@@ -2647,7 +2641,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -2662,7 +2656,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -2677,7 +2671,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine
@@ -2692,10 +2686,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-philosopher"
               >
-                Philosophers & {user?.displayName || user?.username || 'You'}
+                <span className="hidden sm:inline">Philosophers & {user?.displayName || user?.username || 'You'}</span>
+                <span className="sm:hidden">Minds</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Chat with historical figures</TooltipContent>
@@ -2707,10 +2702,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-fius-games"
               >
-                Fius Games
+                <span className="hidden sm:inline">Fius Games</span>
+                <span className="sm:hidden">Games</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Play games with AI</TooltipContent>
@@ -2751,6 +2747,7 @@ Let's start the self-listen session!`;
             </TooltipTrigger>
             <TooltipContent>Notifications</TooltipContent>
           </Tooltip>
+        </div>
         </div>
       </header>
       
@@ -4384,6 +4381,62 @@ Let's start the self-listen session!`;
         }}
         style={{ display: 'none' }}
       />
+
+      {/* ── Feedback Dialog ── */}
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full shadow-2xl">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              {feedbackType === 'like' ? 'What did you like?' : 'What went wrong?'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-5 py-4 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(feedbackType === 'like'
+                ? ['Accurate', 'Helpful', 'Well written', 'Clear & concise', 'Creative', 'Other']
+                : ['Inaccurate', 'Not helpful', 'Harmful content', 'Off-topic', 'Too long', 'Too short', 'Other']
+              ).map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setFeedbackSelected(prev => {
+                    const s = new Set(prev);
+                    if (s.has(opt)) s.delete(opt); else s.add(opt);
+                    return new Set(s);
+                  })}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                    feedbackSelected.has(opt)
+                      ? feedbackType === 'like'
+                        ? 'bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300'
+                        : 'bg-red-50 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300'
+                      : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                  }`}
+                >{opt}</button>
+              ))}
+            </div>
+            <textarea
+              value={feedbackText}
+              onChange={e => setFeedbackText(e.target.value)}
+              placeholder="Add more details (optional)"
+              rows={3}
+              className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setFeedbackOpen(false)}
+                className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              >Cancel</button>
+              <button
+                onClick={submitFeedback}
+                className={`px-4 py-2 text-sm font-medium rounded-xl text-white transition-all ${
+                  feedbackType === 'like'
+                    ? 'bg-green-500 hover:bg-green-600'
+                    : 'bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600'
+                }`}
+              >Submit</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Fullscreen image lightbox ── */}
       {fullscreenImg && (

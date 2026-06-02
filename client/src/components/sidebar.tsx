@@ -1,19 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Search, MessageSquare, Mic, Sparkles, Clock, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-
-import searchIcon from "@assets/search_button_1766857136554.png";
-import chatIcon from "@assets/chats_button_1766857136554.png";
-import voiceIcon from "@assets/voice_button_1766857136553.png";
-import imagineIcon from "@assets/imagine_button_1766857136552.png";
-import historyIcon from "@assets/history_button_1766857136551.png";
 
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
@@ -105,33 +99,58 @@ export function Sidebar({
   const [chatConfigRole, setChatConfigRole] = useState('General');
   const [roleAnswers, setRoleAnswers] = useState<Record<string, string>>({});
 
-  const AI_ROLES: Array<{id: string; label: string; icon: string; questions: Array<{key: string; label: string}>}> = [
-    { id: 'General', label: 'General AI', icon: '✦', questions: [] },
-    { id: 'Chef', label: 'Chef', icon: '🍳', questions: [
-      { key: 'diet', label: 'Dietary needs (e.g. vegetarian, halal)' },
-      { key: 'cuisine', label: 'Favorite cuisine style' },
+  type RoleIcon = { Icon: React.ComponentType<{className?: string; style?: React.CSSProperties}>; color: string };
+  const AI_ROLES: Array<{id: string; label: string; iconDef: RoleIcon; questions: Array<{key: string; label: string}>}> = [
+    { id: 'General', label: 'General AI', iconDef: { Icon: Bot, color: '#6366f1' }, questions: [
+      { key: 'name', label: 'What should I call you?' },
+      { key: 'style', label: 'Preferred tone (friendly / formal / concise)' },
+      { key: 'focus', label: 'Main topics you discuss most' },
+    ]},
+    { id: 'Chef', label: 'Chef', iconDef: { Icon: ChefHat, color: '#f59e0b' }, questions: [
+      { key: 'diet', label: 'Dietary restrictions (vegetarian, halal, vegan, etc.)' },
+      { key: 'allergies', label: 'Any food allergies or intolerances?' },
+      { key: 'cuisine', label: 'Favorite cuisine style (Italian, Asian, Middle-Eastern, etc.)' },
       { key: 'skill', label: 'Cooking level (beginner / intermediate / advanced)' },
+      { key: 'servings', label: 'Usual number of people you cook for' },
+      { key: 'equipment', label: 'Kitchen tools available (oven, air fryer, stovetop only, etc.)' },
     ]},
-    { id: 'Trainer', label: 'Trainer', icon: '💪', questions: [
-      { key: 'goal', label: 'Goal (lose weight / build muscle / endurance)' },
-      { key: 'equipment', label: 'Equipment (gym / home / none)' },
+    { id: 'Trainer', label: 'Trainer', iconDef: { Icon: Dumbbell, color: '#ef4444' }, questions: [
+      { key: 'goal', label: 'Primary goal (lose weight / build muscle / improve endurance)' },
+      { key: 'days', label: 'Days per week available to train' },
+      { key: 'equipment', label: 'Equipment access (full gym / home / no equipment)' },
       { key: 'level', label: 'Fitness level (beginner / intermediate / advanced)' },
+      { key: 'injuries', label: 'Any injuries or physical limitations?' },
+      { key: 'age', label: 'Your age range (helps tailor intensity)' },
     ]},
-    { id: 'Tutor', label: 'Tutor', icon: '📚', questions: [
+    { id: 'Tutor', label: 'Tutor', iconDef: { Icon: GraduationCap, color: '#3b82f6' }, questions: [
       { key: 'subject', label: 'Subject or topic to focus on' },
       { key: 'level', label: 'Education level (school / college / self-study)' },
+      { key: 'style', label: 'Learning style (explanations / quizzes / examples / all)' },
+      { key: 'pace', label: 'Preferred pace (slow & thorough / fast & focused)' },
+      { key: 'exam', label: 'Any specific exam or curriculum? (e.g. O-levels, SAT, IGCSE)' },
+      { key: 'weak', label: 'Weakest area in this subject?' },
     ]},
-    { id: 'LifeCoach', label: 'Life Coach', icon: '🧭', questions: [
-      { key: 'focus', label: 'Focus area (career / relationships / mindset / health)' },
+    { id: 'LifeCoach', label: 'Life Coach', iconDef: { Icon: Compass, color: '#10b981' }, questions: [
+      { key: 'focus', label: 'Focus area (career / relationships / mindset / health / productivity)' },
       { key: 'goal', label: 'Main goal you want to achieve' },
+      { key: 'challenge', label: 'Biggest challenge you face right now' },
+      { key: 'timeline', label: 'Timeline you are working with' },
+      { key: 'style', label: 'Coaching style preference (motivational / analytical / gentle / direct)' },
     ]},
-    { id: 'LangTutor', label: 'Language Tutor', icon: '🌍', questions: [
+    { id: 'LangTutor', label: 'Language Tutor', iconDef: { Icon: Globe, color: '#8b5cf6' }, questions: [
       { key: 'lang', label: 'Language to learn' },
+      { key: 'native', label: 'Your native language' },
       { key: 'level', label: 'Current level (beginner / intermediate / advanced)' },
+      { key: 'goal', label: 'Goal (travel / business / fluency / just basics)' },
+      { key: 'method', label: 'Preferred method (grammar rules / conversation / vocab drills)' },
+      { key: 'minutes', label: 'Daily practice time available (in minutes)' },
     ]},
-    { id: 'Finance', label: 'Finance Advisor', icon: '💰', questions: [
-      { key: 'goal', label: 'Financial goal (save / invest / budget / debt)' },
+    { id: 'Finance', label: 'Finance Advisor', iconDef: { Icon: TrendingUp, color: '#059669' }, questions: [
+      { key: 'goal', label: 'Financial goal (save / invest / budget / pay off debt)' },
+      { key: 'income', label: 'Income type (salary / freelance / business / student)' },
       { key: 'risk', label: 'Risk tolerance (low / medium / high)' },
+      { key: 'timeline', label: 'Timeline for your goal (months / years)' },
+      { key: 'currency', label: 'Your country / currency (helps with local context)' },
     ]},
   ];
 
@@ -264,7 +283,7 @@ export function Sidebar({
         <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
-            <img src={searchIcon} className="btn-icon absolute left-3 top-1/2 -translate-y-1/2 h-[22px] w-[22px] object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" alt="Search" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-blue-500 opacity-70 group-focus-within:opacity-100 transition-opacity" />
             <input
               type="text"
               placeholder="Search"
@@ -281,7 +300,7 @@ export function Sidebar({
               onClick={() => onNewProject?.(false)}
               className="flex-1 flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
             >
-              <img src={chatIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover/btn:opacity-100 transition-opacity" alt="Chat" />
+              <MessageSquare className="h-[18px] w-[18px] text-violet-500 opacity-80 group-hover/btn:opacity-100 transition-opacity flex-shrink-0" />
               <span className="text-[15px] font-medium">Chat</span>
             </button>
             <Tooltip>
@@ -305,7 +324,7 @@ export function Sidebar({
           <button
             onClick={() => { onVoiceClick?.(); }}
             className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <img src={voiceIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Voice" />
+            <Mic className="h-[18px] w-[18px] text-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 
@@ -313,17 +332,17 @@ export function Sidebar({
             onClick={() => { onImagineClick?.(); }}
             className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
-              <img src={imagineIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70 group-hover:opacity-100 transition-opacity" alt="Imagine" />
+              <Sparkles className="h-[18px] w-[18px] text-pink-500 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0" />
               <span className="text-[15px] font-medium">Imagine</span>
             </div>
-            <div className="h-1.5 w-1.5 rounded-full bg-blue-500/80 mr-1" />
+            <div className="h-1.5 w-1.5 rounded-full bg-pink-500/80 mr-1" />
           </button>
         </div>
 
         {/* History */}
         <div className="flex-1 overflow-y-auto mt-3 px-3">
           <div className="flex items-center space-x-3 px-3 mb-2 text-zinc-900 dark:text-zinc-100 font-semibold">
-            <img src={historyIcon} className="btn-icon h-[22px] w-[22px] object-contain opacity-70" alt="History" />
+            <Clock className="h-[18px] w-[18px] text-orange-500 opacity-80 flex-shrink-0" />
             <span className="text-[15px]">History</span>
           </div>
 
@@ -585,18 +604,24 @@ export function Sidebar({
             <div className="space-y-2">
               <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">AI Role</label>
               <div className="grid grid-cols-4 gap-1.5">
-                {AI_ROLES.map(role => (
-                  <button key={role.id}
-                    onClick={() => setChatConfigRole(role.id)}
-                    className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl border text-center transition-all ${
-                      chatConfigRole === role.id
-                        ? 'border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-700'
-                        : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-                    }`}>
-                    <span className="text-base leading-none">{role.icon}</span>
-                    <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300 leading-tight">{role.label}</span>
-                  </button>
-                ))}
+                {AI_ROLES.map(role => {
+                  const { Icon, color } = role.iconDef;
+                  const active = chatConfigRole === role.id;
+                  return (
+                    <button key={role.id}
+                      onClick={() => setChatConfigRole(role.id)}
+                      className={`flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl border text-center transition-all ${
+                        active
+                          ? 'border-zinc-300 dark:border-zinc-500 bg-zinc-50 dark:bg-zinc-800 shadow-sm'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      }`}>
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: active ? color + '22' : color + '11' }}>
+                        <Icon className="w-4 h-4" style={{ color }} />
+                      </div>
+                      <span className="text-[9px] font-semibold text-zinc-600 dark:text-zinc-300 leading-tight">{role.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
