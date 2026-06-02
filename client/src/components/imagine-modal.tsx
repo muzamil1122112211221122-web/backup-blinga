@@ -84,20 +84,30 @@ const ACCESSORIES = [
   { id: 'flower', name: 'Flower Crown', icon: '🌸' },
 ];
 
-const SAFE_NEGATIVE = encodeURIComponent(
-  'nsfw, nude, nudity, naked, sexual, explicit, adult content, pornographic, suggestive, revealing clothing, ecchi, hentai, fan service, cleavage, underwear, lingerie'
-);
+const SAFE_NEGATIVE = encodeURIComponent('nsfw, nude, nudity, naked, sexual, explicit, pornographic, hentai, ecchi');
 
 const SHOWCASE_IMAGES = [
-  { url: 'https://image.pollinations.ai/prompt/breathtaking%20mountain%20sunset%20golden%20clouds%20volumetric%20lighting%20ultra%20realistic%20landscape%20photography?width=600&height=400&nologo=true&seed=42001', prompt: 'breathtaking mountain sunset with golden clouds' },
-  { url: 'https://image.pollinations.ai/prompt/futuristic%20neon%20cyberpunk%20city%20rain%20reflections%20cinematic%20wide%20shot?width=600&height=400&nologo=true&seed=42002', prompt: 'futuristic neon-lit cyberpunk city at night' },
-  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime style cherry blossom garden vibrant colors Studio Ghibli painting, family friendly, SFW')}?width=600&height=400&nologo=true&seed=42003&model=flux&negative_prompt=${SAFE_NEGATIVE}&safe=true`, prompt: 'anime style cherry blossom garden painting' },
-  { url: 'https://image.pollinations.ai/prompt/majestic%20snow%20leopard%20portrait%20dramatic%20rim%20lighting%20wildlife%20photography?width=600&height=400&nologo=true&seed=42004', prompt: 'majestic snow leopard portrait' },
+  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('breathtaking mountain sunset golden clouds volumetric lighting ultra realistic landscape photography')}?width=600&height=400&nologo=true&seed=42001&model=flux`, prompt: 'breathtaking mountain sunset with golden clouds' },
+  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('futuristic neon cyberpunk city rain reflections cinematic wide shot')}?width=600&height=400&nologo=true&seed=42002&model=flux`, prompt: 'futuristic neon-lit cyberpunk city at night' },
+  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime girl cherry blossom garden, cel shaded, clean outlines, Studio Ghibli style, fully clothed, family friendly')}?width=600&height=400&nologo=true&seed=42003&model=flux-anime&negative_prompt=${SAFE_NEGATIVE}`, prompt: 'anime style cherry blossom garden painting' },
+  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art landscape village sunset, 16-bit SNES style, isometric pixel art, vibrant colors, retro game')}?width=600&height=400&nologo=true&seed=42004&model=flux`, prompt: 'pixel art village at sunset' },
 ];
 
-function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number): string {
+function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number, model = 'flux'): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux&negative_prompt=${SAFE_NEGATIVE}&safe=true`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=${model}&negative_prompt=${SAFE_NEGATIVE}`;
+}
+
+function buildAnimeUrl(prompt: string, w = 1024, h = 1024, seed?: number): string {
+  const s = seed ?? Math.floor(Math.random() * 9_999_999);
+  const safePrompt = `${prompt}, fully clothed, family friendly, school setting or nature scene`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux-anime&negative_prompt=${SAFE_NEGATIVE}`;
+}
+
+function buildPixelArtUrl(prompt: string, w = 1024, h = 1024, seed?: number): string {
+  const s = seed ?? Math.floor(Math.random() * 9_999_999);
+  const pixelPrompt = `pixel art, ${prompt}, 16-bit retro game sprite, pixelated, SNES pixel art style, vibrant flat colors, no anti-aliasing, low resolution pixel aesthetic`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(pixelPrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux`;
 }
 
 interface GenImage {
@@ -170,15 +180,29 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
 
   if (!isOpen) return null;
 
-  /* ── Image generation: Pollinations Flux primary, backend fallback ── */
+  /* ── Smart URL picker based on style keywords in prompt ── */
+  function smartPollinationsUrl(fullPrompt: string, pw: number, ph: number, s: number): string {
+    const p = fullPrompt.toLowerCase();
+    const isAnime    = p.includes('anime') || p.includes('manga') || p.includes('ghibli') || p.includes('cel-shad') || p.includes('cel shad');
+    const isPixelArt = p.includes('pixel art') || p.includes('8-bit') || p.includes('16-bit') || p.includes('pixelated') || p.includes('pixel grid');
+
+    if (isAnime) {
+      return buildAnimeUrl(fullPrompt, pw, ph, s);
+    }
+    if (isPixelArt) {
+      return buildPixelArtUrl(fullPrompt, pw, ph, s);
+    }
+    return buildPollinationsUrl(fullPrompt, pw, ph, s);
+  }
+
+  /* ── Image generation: smart Pollinations primary, backend fallback ── */
   async function generateSingle(fullPrompt: string, size: string, seed?: number): Promise<string> {
     const [w, h] = size.split('x').map(Number);
     const pw = w || 1024;
     const ph = h || 1024;
     const s = seed ?? Math.floor(Math.random() * 9_999_999);
 
-    // Primary: Pollinations Flux (fast, reliable, no auth needed)
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${pw}&height=${ph}&nologo=true&seed=${s}&model=flux`;
+    const pollinationsUrl = smartPollinationsUrl(fullPrompt, pw, ph, s);
 
     // Try backend (Gemini/Imagen) as enhancement if available
     try {
@@ -441,15 +465,15 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     <div className="fixed inset-0 z-50 flex flex-col"
       style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
-      {/* Header — logo moved up with reduced padding */}
-      <div className="flex items-center gap-3 px-5 pt-2 pb-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 pt-1 pb-1.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <Sparkles size={14} className="text-white" />
+          <Sparkles size={10} className="text-white" />
         </div>
         <div>
-          <h2 className="text-white font-bold text-sm leading-tight">Imagine Studio</h2>
-          <p className="text-zinc-500 text-[11px]">AI Image Generation &amp; Editing</p>
+          <h2 className="text-white font-semibold text-[13px] leading-tight">Imagine Studio</h2>
+          <p className="text-zinc-600 text-[10px] leading-tight">AI Image Generation &amp; Editing</p>
         </div>
         <div className="flex-1" />
         <button onClick={onClose}
