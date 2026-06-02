@@ -55,11 +55,11 @@ export default function UserInfo() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        credentials: "include",
       });
       const data = await res.json();
       if (res.ok) {
         queryClient.setQueryData(["/api/auth/user"], data.user || data);
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
         setLocation("/chat");
       } else {
         setError(data.message || "Login failed.");

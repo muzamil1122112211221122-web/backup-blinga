@@ -1,0 +1,2 @@
+- [Session cookie fix for Replit](session-cookie-replit.md) — SameSite=Lax blocks cookies in Replit iframe; must use SameSite=None + Secure.
+- [Post-login invalidateQueries race](post-login-invalidate-race.md) — calling invalidateQueries after login triggers immediate refetch that races cookie storage, causes 401 redirect loop.

@@ -42,6 +42,9 @@ export function setupAuth(app: Express) {
     console.log("✓ Using file-based session storage (data/sessions).");
   }
 
+  // Detect if running behind HTTPS proxy (Replit always uses HTTPS)
+  const isSecure = !!(process.env.REPL_ID || process.env.REPLIT_DOMAINS || process.env.NODE_ENV === "production");
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "fius-secret-key-change-in-production",
     resave: false,
@@ -51,8 +54,8 @@ export function setupAuth(app: Express) {
     proxy: true,
     cookie: {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: isSecure,
+      sameSite: isSecure ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/",
     },
