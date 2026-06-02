@@ -134,42 +134,55 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
-  /* ── Camera / Screen share helpers ── */
-  const stopCam = useCallback(() => {
+  /* ── Camera / Screen share — media APIs called directly in gesture context ── */
+  function stopCam() {
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
-  }, []);
+  }
 
-  const startCam = useCallback(async (m: 'camera' | 'screen') => {
+  // Called directly from button onClick — must stay synchronous up to the getUserMedia/getDisplayMedia call
+  async function toggleCam(m: 'camera' | 'screen') {
+    if (camModeRef.current === m) {
+      // Turn off
+      stopCam();
+      setCamMode('off');
+      camModeRef.current = 'off';
+      return;
+    }
+    // Stop any existing stream first
     stopCam();
     setCamError('');
+    setCamMode(m);
+    camModeRef.current = m;
     try {
       let stream: MediaStream;
       if (m === 'screen') {
-        stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: false });
+        // getDisplayMedia MUST be called here, directly in the click handler chain
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false });
       } else {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
       }
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}); }
-      stream.getVideoTracks()[0].onended = () => { stopCam(); setCamMode('off'); camModeRef.current = 'off'; };
+      // Attach to video element (always in DOM now)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try { await videoRef.current.play(); } catch {}
+      }
+      // Auto-off when user stops sharing
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        stopCam();
+        setCamMode('off');
+        camModeRef.current = 'off';
+      });
     } catch (err: any) {
-      setCamError(err?.message || 'Camera permission denied.');
+      console.warn('[Camera]', err?.message);
+      setCamError(err?.name === 'NotAllowedError' ? 'Permission denied — allow camera/screen in browser settings.' : (err?.message || 'Could not start.'));
       setCamMode('off');
       camModeRef.current = 'off';
     }
-  }, [stopCam]);
+  }
 
-  const toggleCam = async (m: 'camera' | 'screen') => {
-    if (camModeRef.current === m) {
-      stopCam(); setCamMode('off'); camModeRef.current = 'off';
-    } else {
-      setCamMode(m); camModeRef.current = m;
-      await startCam(m);
-    }
-  };
-
-  const captureFrame = (): string | null => {
+  function captureFrame(): string | null {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.videoWidth === 0) return null;
@@ -179,12 +192,13 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     if (!ctx) return null;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-  };
+  }
 
   // Stop camera when modal closes
   useEffect(() => {
     if (!isOpen) { stopCam(); setCamMode('off'); camModeRef.current = 'off'; }
-  }, [isOpen, stopCam]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   useEffect(() => {
     langRef.current = lang;
@@ -239,29 +253,56 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     }
   }
 
-  /* ── Browser speech — last resort if Edge TTS fails due to network error ── */
+  /* ── Browser speech — find best available voice for the current language ── */
   function speakBrowserFallback(text: string): Promise<void> {
     return new Promise(resolve => {
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = langRef.current;
-      utt.rate = 1.05; utt.pitch = 1;
+      const targetLang = langRef.current;          // e.g. 'ur-PK'
+      const targetBase = targetLang.split('-')[0]; // e.g. 'ur'
+      const voices = window.speechSynthesis.getVoices();
+      // Try exact lang match → base lang match → any voice
+      const best =
+        voices.find(v => v.lang === targetLang) ||
+        voices.find(v => v.lang.startsWith(targetBase)) ||
+        voices[0];
+      if (best) utt.voice = best;
+      utt.lang = targetLang;
+      utt.rate = 1.0; utt.pitch = 1;
       utt.onend = () => resolve();
       utt.onerror = () => resolve();
-      window.speechSynthesis.speak(utt);
+      // Voices may not be loaded yet — wait one tick
+      if (voices.length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          const v2 = window.speechSynthesis.getVoices();
+          const b2 = v2.find(v => v.lang === targetLang) || v2.find(v => v.lang.startsWith(targetBase)) || v2[0];
+          if (b2) utt.voice = b2;
+          window.speechSynthesis.speak(utt);
+        };
+      } else {
+        window.speechSynthesis.speak(utt);
+      }
     });
   }
 
-  /* ── Fetch one TTS chunk — returns raw WAV bytes or null ── */
+  /* ── Fetch one TTS chunk — with timeout so Urdu/Arabic text never hangs forever ── */
   async function fetchChunk(sentence: string, voice: string, signal: AbortSignal): Promise<ArrayBuffer | null> {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8 s max
+      // Combine caller's signal with timeout signal
+      const combinedSignal = signal.aborted ? signal : controller.signal;
+      signal.addEventListener('abort', () => controller.abort(), { once: true });
+
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        signal,
+        signal: combinedSignal,
         body: JSON.stringify({ text: sentence, voice }),
       });
+      clearTimeout(timeout);
       if (!res.ok) return null;
       const { audio } = await res.json();
       if (!audio) return null;
@@ -419,7 +460,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
               remainder += delta;
               setAiReply(accumulated);
               let m: RegExpMatchArray | null;
-              while ((m = remainder.match(/^(.*?[.!?…])\s*/s)) !== null) {
+              while ((m = remainder.match(/^(.*?[.!?…۔؟।])\s*/s)) !== null) {
                 fireSentence(m[1]);
                 remainder = remainder.slice(m[0].length);
               }
