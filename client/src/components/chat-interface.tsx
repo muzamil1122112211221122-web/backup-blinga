@@ -3841,27 +3841,27 @@ Let's start the self-listen session!`;
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        {/* 3 equal-sized photos in a row */}
-                        <div className="grid grid-cols-3 gap-3">
+                      <div className="flex flex-col gap-3 h-full">
+                        {/* 3 equal-sized photos in a row — stretched to fill */}
+                        <div className="grid grid-cols-3 gap-3 flex-1">
                           {[ph0, ph1, ph2].filter(Boolean).map((item, i) => (
                             <button key={i}
                               className="group flex flex-col gap-1.5 text-left focus:outline-none"
                               onClick={() => item && setInputValue(item.prompt)}>
                               <div className="w-full rounded-2xl overflow-hidden border border-border flex-shrink-0"
-                                style={{ height: 200 }}>
+                                style={{ height: 280 }}>
                                 <img src={item!.url} alt={item!.label}
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&q=70'; }} />
+                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80'; }} />
                               </div>
                               <p className="text-[11px] font-semibold text-foreground leading-tight truncate px-0.5">{item!.label}</p>
                             </button>
                           ))}
                         </div>
 
-                        {/* Fius logo — bottom-right, ring only (lineOnly), fills space */}
-                        <div className="flex justify-end pr-1 pb-1">
-                          <Logo size="2xl" lineOnly className="opacity-60 hover:opacity-90 transition-opacity" />
+                        {/* Fius logo — bottom-right, with ƒ, fills remaining space */}
+                        <div className="flex justify-end items-end pr-1 pb-2">
+                          <Logo size="2xl" className="opacity-70 hover:opacity-100 transition-opacity" />
                         </div>
                       </div>
                     )}
@@ -3876,17 +3876,17 @@ Let's start the self-listen session!`;
                         {showAllTemplates ? '← Less' : 'Show all →'}
                       </button>
                     </div>
-                    <div className="flex gap-4 overflow-x-auto pb-1.5" style={{ scrollbarWidth: 'none' }}>
+                    <div className="flex gap-5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
                       {(showAllTemplates ? STYLE_OPTIONS : STYLE_OPTIONS.slice(0, 7)).map((s) => (
                         <button key={s.name}
                           onClick={() => { setImagineStyle(s.name); setInputValue(s.firstPrompt); }}
                           title={s.name}
-                          className="flex-shrink-0 flex flex-col items-center gap-2 group">
-                          <div className={`w-[76px] h-[76px] rounded-full overflow-hidden border-[3px] transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg ${imagineStyle === s.name ? 'border-primary shadow-md ring-2 ring-primary/30 ring-offset-1' : 'border-border'}`}>
+                          className="flex-shrink-0 flex flex-col items-center gap-2.5 group">
+                          <div className={`w-[100px] h-[100px] rounded-full overflow-hidden border-[3px] transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl ${imagineStyle === s.name ? 'border-primary shadow-md ring-2 ring-primary/30 ring-offset-2' : 'border-border'}`}>
                             <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=120&q=70'; }} />
+                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=150&q=80'; }} />
                           </div>
-                          <span className={`text-[11px] font-medium truncate w-[76px] text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
+                          <span className={`text-[11px] font-semibold truncate w-[100px] text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
                         </button>
                       ))}
                     </div>
