@@ -772,7 +772,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const imagineScrollRef = useRef<HTMLDivElement>(null);
   const [imagineRefImage, setImagineRefImage] = useState<{preview: string; base64: string} | null>(null);
   const imagineUploadRef = useRef<HTMLInputElement>(null);
-  const [imagineShuffleKey, setImagineShuffleKey] = useState(0);
+  const [imagineShuffleKey, setImagineShuffleKey] = useState(() => Math.floor(Math.random() * 99999));
+  const [imagineGallery, setImagineGallery] = useState<{url: string; label: string; prompt: string}[]>([]);
+  const [imagineGalleryLoading, setImagineGalleryLoading] = useState(false);
   const shuffledImaginePrompts = React.useMemo(() => {
     const base = IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE["Photorealistic"];
     const arr = [...base];
@@ -783,6 +785,26 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return arr;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagineShuffleKey, imagineStyle]);
+
+  React.useEffect(() => {
+    if (activeTab !== 'imagine') return;
+    setImagineGalleryLoading(true);
+    const fallback = (IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE['Photorealistic'])
+      .slice(0, 6).map((i: any) => ({ url: i.img, label: i.label, prompt: i.prompt }));
+    fetch(`/api/imagine/gallery?style=${encodeURIComponent(imagineStyle)}&seed=${imagineShuffleKey}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then((data: any) => {
+        if (data.success && data.images?.length >= 3) {
+          setImagineGallery(data.images);
+        } else {
+          setImagineGallery(fallback);
+        }
+      })
+      .catch(() => setImagineGallery(fallback))
+      .finally(() => setImagineGalleryLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, imagineStyle, imagineShuffleKey]);
+
   // Imagine Studio state
   const [imagineEditTarget, setImagineEditTarget] = useState<{id: string; url: string; prompt: string} | null>(null);
   const [imagineEditStyle, setImagineEditStyle] = useState('');
@@ -1628,7 +1650,9 @@ IMPORTANT RULES:
       }
 
       const refImageNote = imagineRefImage ? `, based on and editing the reference image provided` : '';
-      const fullPrompt = `${basePrompt}${refImageNote}, ${styleSuffix}`;
+      const fullPrompt = basePrompt.trim()
+        ? `${basePrompt}${refImageNote}, ${styleSuffix}`
+        : styleSuffix;
 
       const userMsgId = Date.now().toString();
       const aiMsgId = (Date.now() + 1).toString();
@@ -3746,8 +3770,42 @@ Let's start the self-listen session!`;
               <div className="absolute inset-0 flex bg-background">
                 {/* LEFT: Discovery panel */}
                 <div className={`flex flex-col transition-all duration-300 ease-in-out min-w-0 overflow-hidden ${hasResults ? 'flex-1' : 'w-full'} border-r border-border`}>
-                  {/* Style selector */}
-                  <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-border">
+                  {/* Inspiration gallery — header */}
+                  <div className="flex items-center justify-between px-4 pt-3 pb-1 flex-shrink-0">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                      {imagineStyle} Inspiration — tap to use
+                    </p>
+                    <button
+                      onClick={() => setImagineShuffleKey(k => k + 1)}
+                      disabled={imagineGalleryLoading}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
+                      <RefreshCw className={`w-3 h-3 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> New
+                    </button>
+                  </div>
+                  {/* Inspiration grid */}
+                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {imagineGalleryLoading
+                        ? Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="rounded-2xl bg-muted animate-pulse border border-border" style={{ aspectRatio: '3/2' }} />
+                          ))
+                        : imagineGallery.map((item, i) => (
+                            <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer border border-border"
+                              style={{ aspectRatio: '3/2' }}
+                              onClick={() => setInputValue(item.prompt)}>
+                              <img src={item.url} alt={item.label}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-2.5">
+                                <span className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.label}</span>
+                              </div>
+                            </div>
+                          ))
+                      }
+                    </div>
+                  </div>
+                  {/* Style selector — below gallery */}
+                  <div className="flex-shrink-0 px-4 py-2 border-t border-border">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Style</p>
                     <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                       {STYLE_OPTIONS.map((style: {name: string; previewImg: string}) => (
@@ -3759,22 +3817,6 @@ Let's start the self-listen session!`;
                           </div>
                           <span className="text-[10px] font-medium text-foreground w-full text-center leading-tight truncate">{style.name}</span>
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Inspiration grid */}
-                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'none' }}>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">Inspiration — tap to use as prompt</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {shuffledImaginePrompts.slice(0, 6).map((item: {label: string; prompt: string; img: string}, i: number) => (
-                        <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer border border-border"
-                          style={{ aspectRatio: '3/2' }}
-                          onClick={() => setInputValue(item.prompt)}>
-                          <img src={item.img} alt={item.label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-2.5">
-                            <span className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.label}</span>
-                          </div>
-                        </div>
                       ))}
                     </div>
                   </div>

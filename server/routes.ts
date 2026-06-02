@@ -1041,6 +1041,65 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
   });
 
   // Image generation endpoint
+  // GET /api/imagine/gallery — fetch fresh style-appropriate images from Wikimedia Commons
+  app.get('/api/imagine/gallery', requireAuth, async (req, res) => {
+    const style = (req.query.style as string) || 'Photorealistic';
+    const seed = Math.abs(parseInt(req.query.seed as string) || 0);
+
+    const STYLE_QUERIES: Record<string, string> = {
+      'Photorealistic': 'landscape nature photography scenic',
+      'Anime': 'anime illustration manga japanese art',
+      'Oil Painting': 'oil painting impressionist artwork canvas',
+      'Watercolor': 'watercolor painting artwork illustration',
+      '3D Render': 'digital art computer graphics render',
+      'Pixel Art': 'pixel art retro game sprite',
+      'Sketch': 'pencil sketch drawing illustration artwork',
+      'Cinematic': 'cinematic photography film scene dramatic',
+    };
+
+    const query = STYLE_QUERIES[style] || 'digital artwork';
+    const offset = seed % 100;
+
+    try {
+      const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(query)}&srlimit=20&sroffset=${offset}&format=json`;
+      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'FiusApp/1.0 (contact@fius.app)' } });
+      if (!searchRes.ok) throw new Error('Search failed');
+      const searchData = await searchRes.json() as any;
+
+      const titles: string[] = (searchData?.query?.search || []).map((r: any) => r.title as string);
+      if (!titles.length) return res.json({ success: true, images: [] });
+
+      const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles.slice(0, 15).join('|'))}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=480&format=json`;
+      const infoRes = await fetch(infoUrl, { headers: { 'User-Agent': 'FiusApp/1.0' } });
+      if (!infoRes.ok) throw new Error('Info fetch failed');
+      const infoData = await infoRes.json() as any;
+
+      const images = (Object.values(infoData?.query?.pages || {}) as any[])
+        .filter((p: any) => {
+          const thumb = p?.imageinfo?.[0]?.thumburl as string | undefined;
+          return thumb && !thumb.includes('.svg') && !thumb.includes('.pdf') && !thumb.includes('.ogv') && !thumb.includes('.ogg');
+        })
+        .map((p: any) => {
+          const rawTitle = (p.title as string)
+            .replace('File:', '')
+            .replace(/\.(jpe?g|png|gif|webp|tiff?)/gi, '')
+            .replace(/_/g, ' ')
+            .trim();
+          return {
+            url: p.imageinfo[0].thumburl as string,
+            label: rawTitle.length > 55 ? rawTitle.slice(0, 55) + '…' : rawTitle,
+            prompt: rawTitle,
+          };
+        })
+        .slice(0, 6);
+
+      return res.json({ success: true, images });
+    } catch (err) {
+      console.error('Imagine gallery error:', err);
+      return res.json({ success: false, images: [] });
+    }
+  });
+
   app.post('/api/generate-image', requireAuth, async (req, res) => {
     try {
       const { prompt, size = "1024x1024", quality = "standard" } = req.body;
