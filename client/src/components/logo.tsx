@@ -3,7 +3,8 @@ import { useMemo } from "react";
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  lineOnly?: boolean;
 }
 
 /**
@@ -33,12 +34,12 @@ function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: num
   return d + "Z";
 }
 
-export function Logo({ className, size = "md" }: LogoProps) {
-  const px    = { sm: 36, md: 46, lg: 70, xl: 86 }[size];
-  const font  = { sm: 19, md: 24, lg: 36, xl: 44 }[size];
-  const sw    = { sm: 1.6, md: 2.0, lg: 2.6, xl: 3.2 }[size];
-  const waves = { sm: 10,  md: 11,  lg: 14,  xl: 16  }[size];
-  const amp   = { sm: 2.3, md: 2.7, lg: 3.8, xl: 4.8 }[size];
+export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
+  const px    = { sm: 36, md: 46, lg: 70, xl: 86, '2xl': 130 }[size];
+  const font  = { sm: 19, md: 24, lg: 36, xl: 44, '2xl': 62  }[size];
+  const sw    = { sm: 1.6, md: 2.0, lg: 2.6, xl: 3.2, '2xl': 4.0 }[size];
+  const waves = { sm: 10,  md: 11,  lg: 14,  xl: 16,  '2xl': 20  }[size];
+  const amp   = { sm: 2.3, md: 2.7, lg: 3.8, xl: 4.8, '2xl': 6.0 }[size];
   const cx = px / 2;
   const cy = px / 2;
   const R  = px / 2 - sw - 2;
@@ -106,21 +107,22 @@ export function Logo({ className, size = "md" }: LogoProps) {
           />
         </path>
 
-        {/* ƒ — optical nudge: glyph visual centre sits left-of and above
-            the SVG advance-width centre, so shift right and up to compensate */}
-        <text
-          x={cx + Math.round(font * 0.06)}
-          y={cy - Math.round(font * 0.06)}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={font}
-          fontWeight="400"
-          fontFamily="Georgia, 'Times New Roman', serif"
-          fill="currentColor"
-          style={{ userSelect: "none" }}
-        >
-          ƒ
-        </text>
+        {/* ƒ — hidden when lineOnly=true */}
+        {!lineOnly && (
+          <text
+            x={cx + Math.round(font * 0.06)}
+            y={cy - Math.round(font * 0.06)}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={font}
+            fontWeight="400"
+            fontFamily="Georgia, 'Times New Roman', serif"
+            fill="currentColor"
+            style={{ userSelect: "none" }}
+          >
+            ƒ
+          </text>
+        )}
       </svg>
     </div>
   );

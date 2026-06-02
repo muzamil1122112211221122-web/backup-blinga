@@ -3736,12 +3736,11 @@ Let's start the self-listen session!`;
                 </div>
                 <div ref={imagineScrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'none' }}>
                   {!hasResults && (
-                    <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
-                      <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center">
-                        <Sparkles className="w-7 h-7 text-muted-foreground" />
-                      </div>
+                    <div className="flex flex-col items-center justify-center h-full gap-4 py-12 text-center px-4">
+                      <div className="w-16 h-0.5 bg-border rounded-full" />
                       <p className="text-sm font-semibold text-foreground">Ready to create</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt below or tap a style template on the left to generate your first image</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt below or pick a style on the left</p>
+                      <div className="w-10 h-0.5 bg-border rounded-full" />
                     </div>
                   )}
                   {aiImages.map((msg: any, idx: number) => (
@@ -3842,15 +3841,15 @@ Let's start the self-listen session!`;
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {/* 3 equal-sized photos in a row */}
                         <div className="grid grid-cols-3 gap-3">
                           {[ph0, ph1, ph2].filter(Boolean).map((item, i) => (
                             <button key={i}
-                              className="group flex flex-col gap-2 text-left focus:outline-none"
+                              className="group flex flex-col gap-1.5 text-left focus:outline-none"
                               onClick={() => item && setInputValue(item.prompt)}>
                               <div className="w-full rounded-2xl overflow-hidden border border-border flex-shrink-0"
-                                style={{ height: 160 }}>
+                                style={{ height: 200 }}>
                                 <img src={item!.url} alt={item!.label}
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
                                   onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&q=70'; }} />
@@ -3860,15 +3859,9 @@ Let's start the self-listen session!`;
                           ))}
                         </div>
 
-                        {/* Fius logo circle centered below the photos */}
-                        <div className="flex items-center justify-center py-1">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="rounded-full flex items-center justify-center border-2 border-border bg-accent"
-                              style={{ width: 100, height: 100, boxShadow: '0 6px 24px rgba(0,0,0,0.12)' }}>
-                              <Logo size="xl" />
-                            </div>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fius AI</span>
-                          </div>
+                        {/* Fius logo — bottom-right, ring only (lineOnly), fills space */}
+                        <div className="flex justify-end pr-1 pb-1">
+                          <Logo size="2xl" lineOnly className="opacity-60 hover:opacity-90 transition-opacity" />
                         </div>
                       </div>
                     )}
@@ -3876,40 +3869,32 @@ Let's start the self-listen session!`;
 
                   {/* ── Style Templates row (circular image thumbnails) ── */}
                   <div className="flex-shrink-0 px-4 py-3 border-t border-border">
-                    <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center justify-between mb-3">
                       <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Styles</p>
                       <button onClick={() => setShowAllTemplates(v => !v)}
-                        className="text-[10px] text-primary hover:underline transition-all">
-                        {showAllTemplates ? 'Show less' : 'Show all'}
+                        className="text-[11px] font-semibold text-primary hover:underline transition-all">
+                        {showAllTemplates ? '← Less' : 'Show all →'}
                       </button>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                    <div className="flex gap-4 overflow-x-auto pb-1.5" style={{ scrollbarWidth: 'none' }}>
                       {(showAllTemplates ? STYLE_OPTIONS : STYLE_OPTIONS.slice(0, 7)).map((s) => (
                         <button key={s.name}
                           onClick={() => { setImagineStyle(s.name); setInputValue(s.firstPrompt); }}
                           title={s.name}
-                          className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
-                          <div className={`w-14 h-14 rounded-full overflow-hidden border-[2.5px] transition-all duration-200 group-hover:scale-110 ${imagineStyle === s.name ? 'border-primary shadow-md' : 'border-border'}`}>
+                          className="flex-shrink-0 flex flex-col items-center gap-2 group">
+                          <div className={`w-[76px] h-[76px] rounded-full overflow-hidden border-[3px] transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg ${imagineStyle === s.name ? 'border-primary shadow-md ring-2 ring-primary/30 ring-offset-1' : 'border-border'}`}>
                             <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&q=60'; }} />
+                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=120&q=70'; }} />
                           </div>
-                          <span className={`text-[10px] font-medium truncate w-14 text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
+                          <span className={`text-[11px] font-medium truncate w-[76px] text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
                         </button>
                       ))}
-                      <button
-                        onClick={() => setShowAllTemplates(v => !v)}
-                        className="flex-shrink-0 flex flex-col items-center gap-1.5 group">
-                        <div className="w-14 h-14 rounded-full border-[2.5px] border-dashed border-border flex items-center justify-center bg-accent/50 transition-all group-hover:border-primary group-hover:scale-110">
-                          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
-                        </div>
-                        <span className="text-[10px] text-muted-foreground leading-tight">More</span>
-                      </button>
                     </div>
                   </div>
                 </div>
 
                 {/* ═══ RIGHT: Results / Edit panel — always visible, narrow ═══ */}
-                <div className="flex flex-col w-[30%] flex-shrink-0 bg-card border-l border-border min-w-0 overflow-hidden">
+                <div className="flex flex-col w-[30%] flex-shrink-0 border-l border-border min-w-0 overflow-hidden">
                   {imagineEditTarget ? renderEditPanel() : renderRightPanel()}
                 </div>
               </div>
