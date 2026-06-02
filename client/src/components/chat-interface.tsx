@@ -1669,30 +1669,26 @@ IMPORTANT RULES:
       setImagineRefImage(null);
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
 
+      // Generate image — try backend first, always fall back to pollinations (no auth, reliable)
+      const seed = Math.floor(Math.random() * 9999999);
+      let imageUrl = '';
       try {
-        const res = await fetch('/api/test-ai', {
+        const res = await fetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: `generate image of ${fullPrompt}`, conversationId: 'imagine', referenceImage: capturedRefImage?.base64 || null }),
+          credentials: 'include',
+          body: JSON.stringify({ prompt: fullPrompt, size: '1024x1024' }),
         });
         const data = await res.json();
-        const match = data.response?.match(/!\[.*?\]\((https?:\/\/[^)]+)\)/);
-        const imageUrl = match?.[1] || data.metadata?.imagePath;
-        const fallbackUrls: string[] = data.metadata?.fallbackUrls || [];
-        if (imageUrl) {
-          setImagineMessages(prev => prev.map(m =>
-            m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls } : m
-          ));
-        } else {
-          setImagineMessages(prev => prev.map(m =>
-            m.id === aiMsgId ? { ...m, isGenerating: false, content: 'Image service is busy right now. Please try again in a moment.' } : m
-          ));
-        }
-      } catch {
-        setImagineMessages(prev => prev.map(m =>
-          m.id === aiMsgId ? { ...m, isGenerating: false, content: 'Could not connect. Please check your internet and try again.' } : m
-        ));
+        if (data.success && data.url) imageUrl = data.url;
+      } catch { /* fall through to pollinations */ }
+      // Pollinations is free, needs no auth, works every time
+      if (!imageUrl) {
+        imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&enhance=true`;
       }
+      setImagineMessages(prev => prev.map(m =>
+        m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, studioPrompt: fullPrompt } : m
+      ));
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
       return;
     }
@@ -3592,30 +3588,34 @@ Let's start the self-listen session!`;
 
             const getApiSize = (resId: string) => RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
 
-            // Fixed edit — keeps the subject/composition, applies a strong style transformation
+            // Restyle/resolution edit — apply style + resolution changes reliably
             const handleEditApply = async () => {
               if (!imagineEditTarget || imagineEditLoading) return;
               setImagineEditLoading(true);
               const selectedStyle = STYLE_OPTIONS.find(s => s.name === imagineEditStyle);
-              const size = getApiSize(imagineEditRes);
-              let p = imagineEditTarget.prompt;
-              if (selectedStyle) {
-                // Use the full style description for a much stronger style transformation
-                p = `${imagineEditTarget.prompt}, ${selectedStyle.description}, same subject and composition, high quality masterpiece`;
-              }
-              const seed = Math.floor(Math.random() * 999999);
+              const apiSize = getApiSize(imagineEditRes);
+              // Parse width/height from apiSize string e.g. "1024x1792"
+              const [wStr, hStr] = apiSize.split('x');
+              const w = parseInt(wStr) || 1024;
+              const h = parseInt(hStr) || 1024;
+              // Build prompt — keep subject, apply style if selected
+              const basePrompt = imagineEditTarget.prompt || 'beautiful image';
+              const p = selectedStyle
+                ? `${basePrompt}, ${selectedStyle.description}, same subject and composition, high quality masterpiece`
+                : `${basePrompt}, high quality, detailed, masterpiece`;
+              const seed = Math.floor(Math.random() * 9999999);
               let newUrl = '';
               try {
                 const res = await fetch('/api/generate-image', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                  body: JSON.stringify({ prompt: p, size }),
+                  body: JSON.stringify({ prompt: p, size: apiSize }),
                 });
                 const data = await res.json();
-                newUrl = data.success && data.url
-                  ? data.url
-                  : `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${seed}`;
-              } catch {
-                newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${seed}`;
+                if (data.success && data.url) newUrl = data.url;
+              } catch { /* fall through */ }
+              // Always-reliable pollinations fallback with correct dimensions
+              if (!newUrl) {
+                newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=${w}&height=${h}&nologo=true&seed=${seed}&enhance=true`;
               }
               const newHist = [...imagineEditHist, newUrl];
               setImagineEditHist(newHist);
@@ -3655,7 +3655,7 @@ Let's start the self-listen session!`;
                       )}
                       <img src={latestUrl} alt="editing" className="w-full object-cover" style={{ maxHeight: 240 }} />
                     </div>
-                    <button onClick={handleEditApply} disabled={imagineEditLoading || !imagineEditStyle}
+                    <button onClick={handleEditApply} disabled={imagineEditLoading}
                       className="w-full py-2.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
                       {imagineEditLoading
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying...</>
@@ -3859,8 +3859,8 @@ Let's start the self-listen session!`;
                           ))}
                         </div>
 
-                        {/* Fius logo — bottom-right, with ƒ, fills remaining space */}
-                        <div className="flex justify-end items-end pr-1 pb-2">
+                        {/* Fius logo — bottom-left */}
+                        <div className="flex justify-start items-end pl-1 pb-2">
                           <Logo size="2xl" className="opacity-70 hover:opacity-100 transition-opacity" />
                         </div>
                       </div>
@@ -3868,14 +3868,8 @@ Let's start the self-listen session!`;
                   </div>
 
                   {/* ── Style Templates row (circular image thumbnails) ── */}
-                  <div className="flex-shrink-0 px-4 py-3 border-t border-border">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Styles</p>
-                      <button onClick={() => setShowAllTemplates(v => !v)}
-                        className="text-[11px] font-semibold text-primary hover:underline transition-all">
-                        {showAllTemplates ? '← Less' : 'Show all →'}
-                      </button>
-                    </div>
+                  <div className="flex-shrink-0 px-4 pt-3 pb-2 border-t border-border">
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Styles</p>
                     <div className="flex gap-5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
                       {(showAllTemplates ? STYLE_OPTIONS : STYLE_OPTIONS.slice(0, 7)).map((s) => (
                         <button key={s.name}
@@ -3890,6 +3884,11 @@ Let's start the self-listen session!`;
                         </button>
                       ))}
                     </div>
+                    {/* Show all — pinned at bottom */}
+                    <button onClick={() => setShowAllTemplates(v => !v)}
+                      className="w-full mt-1 py-1.5 text-[11px] font-semibold text-primary hover:underline transition-all text-center">
+                      {showAllTemplates ? '← Show less' : 'Show all styles →'}
+                    </button>
                   </div>
                 </div>
 
