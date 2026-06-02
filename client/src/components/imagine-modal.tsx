@@ -106,9 +106,12 @@ function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number,
 
 function buildAnimeUrl(basePrompt: string, w = 1024, h = 1024, seed?: number): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  // Force shonen/action framing — avoids adult content by specificity, not just filters
-  const safePrompt = `shonen anime style, anime boy male hero, ${basePrompt}, fully clothed battle outfit, action pose, manga art style, cel shaded, bold black outlines, vibrant colors`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux&negative_prompt=${SAFE_NEGATIVE}`;
+  // flux-anime for proper anime look; subject locked to male/shonen so model can't go off-script
+  const safePrompt = `male anime protagonist, shonen anime, boy warrior hero, ${basePrompt}, fully clothed armor or uniform, action battle pose, cel shaded flat colors, bold black ink outlines, manga art style, Dragon Ball Naruto One Piece inspired`;
+  const neg = encodeURIComponent(
+    'female, woman, girl, nsfw, nude, nudity, naked, sexual, explicit, pornographic, hentai, ecchi, fan service, sexy, seductive, cleavage, lingerie, underwear, bikini, revealing clothing, adult content'
+  );
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux-anime&negative_prompt=${neg}`;
 }
 
 function buildPixelArtUrl(basePrompt: string, w = 1024, h = 1024, seed?: number): string {
@@ -473,14 +476,13 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 pt-1 pb-1.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0"
+      <div className="flex items-center gap-1.5 px-3 pt-0.5 pb-1 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <Sparkles size={10} className="text-white" />
+          <Sparkles size={8} className="text-white" />
         </div>
         <div>
-          <h2 className="text-white font-semibold text-[13px] leading-tight">Imagine Studio</h2>
-          <p className="text-zinc-600 text-[10px] leading-tight">AI Image Generation &amp; Editing</p>
+          <h2 className="text-white font-semibold text-[12px] leading-tight">Imagine Studio</h2>
         </div>
         <div className="flex-1" />
         <button onClick={onClose}
