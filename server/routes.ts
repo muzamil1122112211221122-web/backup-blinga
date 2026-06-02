@@ -315,17 +315,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Voice AI — streams tokens via SSE so TTS can fire per-sentence during generation
   app.post('/api/voice-ai', requireAuth, async (req, res) => {
     try {
-      const { message, history = [], lang = 'English' } = req.body;
+      const { message, history = [], lang = 'English', image } = req.body;
       if (!message) return res.status(400).json({ error: 'message required' });
 
+      // Strong per-language instruction so the model never switches to English
+      const langInstructions: Record<string, string> = {
+        'اردو':    'آپ کو صرف اردو رسم الخط میں جواب دینا ہے۔ کبھی انگریزی یا رومن اردو استعمال نہ کریں۔',
+        'عربي':   'يجب أن تردّ فقط باللغة العربية. لا تستخدم الإنجليزية أبداً.',
+        'हिन्दी': 'आपको केवल हिंदी देवनागरी लिपि में उत्तर देना है। कभी अंग्रेजी का उपयोग न करें।',
+      };
+      const langExtra = langInstructions[lang] ?? `You MUST reply ONLY in ${lang}. Never switch to English.`;
       const systemPrompt =
-        `You are Fius AI, a voice assistant. The user is speaking ${lang}. ` +
-        `STRICT RULES: reply in the EXACT same language/script as the user. ` +
-        `Maximum ONE sentence. No markdown, no bullets, no asterisks. ` +
-        `Plain spoken words only. Be concise and direct.`;
+        `You are Fius AI, a friendly voice assistant. The user is speaking ${lang}. ` +
+        `${langExtra} ` +
+        (image ? 'An image/screen snapshot has been provided — describe what you see AND answer the user\'s question. ' : '') +
+        `STRICT RULES: reply in the EXACT same language. Maximum TWO short sentences. ` +
+        `No markdown, no bullets, no asterisks. Plain spoken words only.`;
 
       const historyArr = (history as { role: string; content: string }[]).slice(-20);
       const wantsStream = req.headers.accept === 'text/event-stream';
+
+      // ── If image is provided, use Gemini vision (non-streaming) then pipe as SSE ──
+      if (image) {
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (!geminiKey) return res.status(503).json({ error: 'Vision AI not configured.' });
+        try {
+          const visionBody = {
+            contents: [{
+              role: 'user',
+              parts: [
+                { inline_data: { mime_type: 'image/jpeg', data: image } },
+                { text: message },
+              ],
+            }],
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: { maxOutputTokens: 200, temperature: 0.8 },
+          };
+          const vRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(visionBody) }
+          );
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            const reply = (vData.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+            if (reply) {
+              if (wantsStream) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.flushHeaders();
+                res.write(`data: ${JSON.stringify({ delta: reply })}\n\n`);
+                res.write('data: [DONE]\n\n');
+                res.end();
+              } else {
+                res.json({ response: reply });
+              }
+              return;
+            }
+          }
+        } catch (err: any) {
+          console.warn('[Voice AI] Gemini vision failed:', err?.message);
+        }
+      }
 
       if (wantsStream) {
         res.setHeader('Content-Type', 'text/event-stream');

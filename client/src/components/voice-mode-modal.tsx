@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Mic, MicOff, X, Globe, AudioLines, Send } from "lucide-react";
+import { Mic, MicOff, X, Globe, AudioLines, Send, Camera, Monitor, CameraOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─────────────────────────────────────────────
@@ -97,6 +97,7 @@ interface HistoryMsg { role: 'user' | 'assistant'; content: string; }
 /* ─────────────────────────────────────────────
    Component
 ───────────────────────────────────────────── */
+type CamMode = 'off' | 'camera' | 'screen';
 interface Props { isOpen: boolean; onClose: () => void; }
 
 export function VoiceModeModal({ isOpen, onClose }: Props) {
@@ -111,6 +112,8 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [bars, setBars]           = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]     = useState('');
   const [liveText, setLiveText]   = useState('');
+  const [camMode, setCamMode]     = useState<CamMode>('off');
+  const [camError, setCamError]   = useState('');
 
   const phaseRef      = useRef<Phase>('idle');
   const langRef       = useRef('en-US');
@@ -124,8 +127,64 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const speakSessRef  = useRef(0);    // incremented each speak — used to cancel orphaned playback
   const curSourceRef  = useRef<AudioBufferSourceNode | null>(null); // currently playing node
   const audioCtxRef   = useRef<AudioContext | null>(null); // shared, stays unlocked after first tap
+  const videoRef      = useRef<HTMLVideoElement>(null);
+  const streamRef     = useRef<MediaStream | null>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null);
+  const camModeRef    = useRef<CamMode>('off');
 
   const syncPhase = (p: Phase) => { phaseRef.current = p; setPhase(p); };
+
+  /* ── Camera / Screen share helpers ── */
+  const stopCam = useCallback(() => {
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
+  const startCam = useCallback(async (m: 'camera' | 'screen') => {
+    stopCam();
+    setCamError('');
+    try {
+      let stream: MediaStream;
+      if (m === 'screen') {
+        stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: false });
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      }
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}); }
+      stream.getVideoTracks()[0].onended = () => { stopCam(); setCamMode('off'); camModeRef.current = 'off'; };
+    } catch (err: any) {
+      setCamError(err?.message || 'Camera permission denied.');
+      setCamMode('off');
+      camModeRef.current = 'off';
+    }
+  }, [stopCam]);
+
+  const toggleCam = async (m: 'camera' | 'screen') => {
+    if (camModeRef.current === m) {
+      stopCam(); setCamMode('off'); camModeRef.current = 'off';
+    } else {
+      setCamMode(m); camModeRef.current = m;
+      await startCam(m);
+    }
+  };
+
+  const captureFrame = (): string | null => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.videoWidth === 0) return null;
+    canvas.width = Math.min(video.videoWidth, 640);
+    canvas.height = Math.round((canvas.width / video.videoWidth) * video.videoHeight);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+  };
+
+  // Stop camera when modal closes
+  useEffect(() => {
+    if (!isOpen) { stopCam(); setCamMode('off'); camModeRef.current = 'off'; }
+  }, [isOpen, stopCam]);
 
   useEffect(() => {
     langRef.current = lang;
@@ -170,10 +229,14 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     return audioCtxRef.current;
   }
 
-  /* ── After all audio finishes — go idle ── */
+  /* ── After all audio finishes — auto-restart listening if still in conversation ── */
   function afterSpeech() {
     curSourceRef.current = null;
-    syncPhase('idle');
+    if (inConvRef.current) {
+      startNewTurn();   // seamless continuous conversation
+    } else {
+      syncPhase('idle');
+    }
   }
 
   /* ── Browser speech — last resort if Edge TTS fails due to network error ── */
@@ -248,6 +311,9 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     syncPhase('thinking');
     setLiveText('');
 
+    // Capture frame if camera/screen is active
+    const frameB64 = camModeRef.current !== 'off' ? captureFrame() : null;
+
     const langLabel = LANGUAGES.find(x => x.code === langRef.current)?.label ?? 'English';
     historyRef.current = [...historyRef.current, { role: 'user', content: text.trim() }];
     if (historyRef.current.length > 30) historyRef.current = historyRef.current.slice(-30);
@@ -318,6 +384,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
           message: text.trim(),
           history: historyRef.current.slice(0, -1),
           lang: langLabel,
+          ...(frameB64 ? { image: frameB64 } : {}),
         }),
       });
 
@@ -483,11 +550,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.45 : 0.22;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
 
+  const isUrdu = lang === 'ur-PK';
   const statusLabel =
-    phase === 'listening' ? 'Listening...' :
-    phase === 'thinking'  ? 'Thinking...' :
-    phase === 'speaking'  ? 'Speaking...' :
-    'Tap mic to start';
+    phase === 'listening' ? (isUrdu ? 'سن رہا ہے...' : 'Listening...') :
+    phase === 'thinking'  ? (isUrdu ? 'سوچ رہا ہے...' : 'Thinking...') :
+    phase === 'speaking'  ? (isUrdu ? 'بول رہا ہے...' : 'Speaking...') :
+    (isUrdu ? 'مائک دبائیں' : 'Tap mic to start');
 
   if (!isOpen) return null;
 
@@ -507,6 +575,21 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
           <span className="text-white/80 text-sm font-medium tracking-wide">{statusLabel}</span>
         </div>
       </div>
+
+      {/* Video PiP — camera or screen preview */}
+      {camMode !== 'off' && (
+        <div className="absolute top-16 right-4 z-50 rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
+          style={{ width: 140, height: 90, background: '#111' }}>
+          <video ref={videoRef} autoPlay muted playsInline
+            className="w-full h-full object-cover"
+            style={{ transform: camMode === 'camera' ? 'scaleX(-1)' : 'none' }} />
+          {camError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+              <CameraOff className="w-6 h-6 text-white/40" />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top-left: language + voice pickers */}
       <div className="absolute top-4 left-4 z-50 flex gap-1 items-center">
@@ -609,7 +692,19 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
       </div>
 
       {/* Buttons */}
-      <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-5 z-50">
+      <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3 z-50 items-center">
+        {/* Camera toggle */}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => toggleCam('camera')}
+          title="Camera"
+          className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-300 ${
+            camMode === 'camera'
+              ? 'bg-blue-500 border-blue-400/40 text-white'
+              : 'bg-zinc-800/80 border-white/10 text-white/50 hover:bg-zinc-700/80 hover:text-white/80'
+          }`}>
+          <Camera className="w-4 h-4" />
+        </motion.button>
+
+        {/* Mic / Send / Interrupt */}
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleMicTap}
           className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all duration-300 ${
             phase === 'listening' ? 'bg-white border-white text-black'
@@ -620,11 +715,27 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
            : phase === 'speaking' ? <MicOff className="w-5 h-5" />
            : <Mic className="w-5 h-5" />}
         </motion.button>
+
+        {/* End call */}
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleClose}
           className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white border border-red-400/30 transition-colors">
           <X className="w-6 h-6" />
         </motion.button>
+
+        {/* Screen share toggle */}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => toggleCam('screen')}
+          title="Screen Share"
+          className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-300 ${
+            camMode === 'screen'
+              ? 'bg-purple-500 border-purple-400/40 text-white'
+              : 'bg-zinc-800/80 border-white/10 text-white/50 hover:bg-zinc-700/80 hover:text-white/80'
+          }`}>
+          <Monitor className="w-4 h-4" />
+        </motion.button>
       </div>
+
+      {/* Hidden canvas for frame capture */}
+      <canvas ref={canvasRef} className="hidden" />
     </div>,
     document.body
   );
