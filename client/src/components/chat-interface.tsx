@@ -791,19 +791,37 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   React.useEffect(() => {
     if (activeTab !== 'imagine') return;
-    // Always use curated local images — never call Wikimedia (returns wrong-style images)
-    const curated = (IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE['Photorealistic'])
+
+    const localCurated = (IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE['Photorealistic'])
       .map((i: any) => ({ url: i.img, label: i.label, prompt: i.prompt }));
-    // Fisher-Yates shuffle seeded by shuffleKey so Refresh button changes order
-    const arr = [...curated];
-    let seed = imagineShuffleKey;
-    for (let i = arr.length - 1; i > 0; i--) {
-      seed = (seed * 1664525 + 1013904223) & 0xffffffff;
-      const j = Math.abs(seed) % (i + 1);
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+
+    // Anime always uses curated local images — no external API (explicit content risk)
+    if (imagineStyle === 'Anime') {
+      const arr = [...localCurated];
+      let seed = imagineShuffleKey;
+      for (let idx = arr.length - 1; idx > 0; idx--) {
+        seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+        const j = Math.abs(seed) % (idx + 1);
+        [arr[idx], arr[j]] = [arr[j], arr[idx]];
+      }
+      setImagineGallery(arr);
+      setImagineGalleryLoading(false);
+      return;
     }
-    setImagineGallery(arr);
-    setImagineGalleryLoading(false);
+
+    // All other styles: fetch varied images from the gallery API, fall back to curated
+    setImagineGalleryLoading(true);
+    fetch(`/api/imagine/gallery?style=${encodeURIComponent(imagineStyle)}&seed=${imagineShuffleKey}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then((data: any) => {
+        if (data.success && data.images?.length >= 3) {
+          setImagineGallery(data.images);
+        } else {
+          setImagineGallery(localCurated);
+        }
+      })
+      .catch(() => setImagineGallery(localCurated))
+      .finally(() => setImagineGalleryLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, imagineStyle, imagineShuffleKey]);
 
