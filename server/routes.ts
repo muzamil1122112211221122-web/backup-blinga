@@ -1046,8 +1046,8 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     const style = (req.query.style as string) || 'Photorealistic';
     const seed = Math.abs(parseInt(req.query.seed as string) || 0);
 
-    // Anime style uses curated local images on the frontend — never pull from Wikimedia
-    if (style === 'Anime') {
+    // These styles use curated AI-generated images on the frontend — never pull from Wikimedia
+    if (style === 'Anime' || style === '3D Render' || style === 'Pixel Art') {
       return res.json({ success: false, images: [] });
     }
 
