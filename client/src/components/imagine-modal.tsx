@@ -1,5 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2, Images } from "lucide-react";
+import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
+import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
+import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
+import animeBoy4 from "@assets/Vwmyh9_1780491124350.jpg";
+import animeBoy5 from "@assets/HD-wallpaper-handsome-anime-boy-handsome-boy-anime_1780491124350.jpg";
+import animeBoy6 from "@assets/HD-wallpaper-handsome-anime-boy-hōtarō-oreki-handsome-boy-anim_1780491124351.jpg";
+
+const ANIME_BOY_IMAGES = [animeBoy1, animeBoy2, animeBoy3, animeBoy4, animeBoy5, animeBoy6];
+
+function shuffleArray<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 
 const TEMPLATES = [
   { id: 'realistic-portrait', icon: '📸', name: 'Realistic Portrait', desc: 'Ultra-HD photo', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
@@ -176,6 +188,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [isGenerating, setIsGenerating]       = useState(false);
   const [activeTemplate, setActiveTemplate]   = useState<typeof TEMPLATES[0] | null>(null);
   const [imageCount, setImageCount]           = useState(1);
+  const shuffledAnime = useMemo(() => shuffleArray(ANIME_BOY_IMAGES), []);
   const [editTarget, setEditTarget]           = useState<GenImage | null>(null);
   const [editStyle, setEditStyle]             = useState('');
   const [editResolution, setEditResolution]   = useState('1:1');
@@ -492,25 +505,46 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       {/* Scrollable body */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
-        {/* ── Inspiration Gallery (fixed seeds = consistent images) ── */}
+        {/* ── Inspiration Gallery ── */}
         <div className="px-5 pt-4">
           <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Inspiration</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {SHOWCASE_IMAGES.map((img, i) => (
-              <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
-                style={{ aspectRatio: '3/2' }}
-                onClick={() => { setPrompt(img.prompt); textareaRef.current?.focus(); }}>
-                <ImageWithLoader
-                  src={img.url}
-                  alt="showcase"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                  <span className="text-white text-xs line-clamp-2 leading-snug">{img.prompt}</span>
+
+          {/* Anime template active → show shuffled local anime boy images */}
+          {activeTemplate?.id === 'anime' ? (
+            <div className="grid grid-cols-3 gap-2">
+              {shuffledAnime.map((src, i) => (
+                <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
+                  style={{ aspectRatio: '3/4' }}
+                  onClick={() => { setPrompt('cool anime boy'); textareaRef.current?.focus(); }}>
+                  <img
+                    src={src}
+                    alt={`anime boy ${i + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+                    <span className="text-white text-xs">Anime boy {i + 1}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {SHOWCASE_IMAGES.map((img, i) => (
+                <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
+                  style={{ aspectRatio: '3/2' }}
+                  onClick={() => { setPrompt(img.prompt); textareaRef.current?.focus(); }}>
+                  <ImageWithLoader
+                    src={img.url}
+                    alt="showcase"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+                    <span className="text-white text-xs line-clamp-2 leading-snug">{img.prompt}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Generated Images ── */}
