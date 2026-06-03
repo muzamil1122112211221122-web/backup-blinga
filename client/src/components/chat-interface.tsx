@@ -1,4 +1,10 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
+import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
+import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
+import animeBoy4 from "@assets/Vwmyh9_1780491124350.jpg";
+import animeBoy5 from "@assets/HD-wallpaper-handsome-anime-boy-handsome-boy-anime_1780491124350.jpg";
+import animeBoy6 from "@assets/HD-wallpaper-handsome-anime-boy-hōtarō-oreki-handsome-boy-anim_1780491124351.jpg";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -484,16 +490,12 @@ const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; i
     { label: "Coral Reef",         prompt: "vibrant coral reef teeming with colorful tropical fish in crystal water",         img: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=400&q=70&auto=format&fit=crop" },
   ],
   "Anime": [
-    { label: "Starry Night (Van Gogh)", prompt: "anime style swirling night sky over a sleeping village, glowing stars and crescent moon, vivid blues and yellows", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/400px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg" },
-    { label: "Cherry Blossom Lane", prompt: "a dreamy anime cherry blossom alley with pink petals falling in soft afternoon light, pastel sky", img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70&auto=format&fit=crop" },
-    { label: "Torii Gate Trail",    prompt: "a long path lined with red torii gates through a misty anime forest at dusk",    img: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=70&auto=format&fit=crop" },
-    { label: "Great Wave",          prompt: "anime version of the great wave, dramatic crashing ocean wave with Mount Fuji in the distance", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/The_Great_Wave_off_Kanagawa.jpg/400px-The_Great_Wave_off_Kanagawa.jpg" },
-    { label: "Bamboo Grove",        prompt: "a serene anime bamboo forest with shafts of golden light and a stone pathway",   img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&q=70&auto=format&fit=crop" },
-    { label: "Shrine Steps",        prompt: "stone steps to a Shinto shrine surrounded by glowing paper lanterns at night, anime style", img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=70&auto=format&fit=crop" },
-    { label: "Sakura River",        prompt: "cherry blossom petals floating on a gentle anime river stream under pink trees",  img: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=400&q=70&auto=format&fit=crop" },
-    { label: "Rice Terraces",       prompt: "lush green anime-style rice terraces at sunset with warm orange skies",          img: "https://images.unsplash.com/photo-1528181304800-259b08848526?w=400&q=70&auto=format&fit=crop" },
-    { label: "Lavender Field",      prompt: "endless anime lavender fields under a pastel purple sky with floating lanterns",  img: "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&q=70&auto=format&fit=crop" },
-    { label: "Mountain Village",    prompt: "a cozy anime mountain village with snow rooftops and warm glowing windows",       img: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&q=70&auto=format&fit=crop" },
+    { label: "Anime Boy — City Sunset",  prompt: "anime boy listening to music on a rooftop at sunset, cherry blossoms, city skyline, cel-shaded", img: animeBoy1 },
+    { label: "Anime Boy — Rain",         prompt: "cool anime boy with white hair and umbrella in the rain, blue coat, confident smile",             img: animeBoy2 },
+    { label: "Anime Boy — Portrait",     prompt: "cute anime boy with white spiky hair and teal eyes, playful expression, dark turtleneck",         img: animeBoy3 },
+    { label: "Anime Boy — Hoodie",       prompt: "anime boy with grey hair holding a phone, black hoodie, contemplative mood, soft shading",         img: animeBoy4 },
+    { label: "Anime Boy — Umbrella",     prompt: "handsome anime boy with blue eyes under umbrella in the rain, black coat, dramatic sky",           img: animeBoy5 },
+    { label: "Anime Boy — Green Eyes",   prompt: "anime boy with green eyes and dark hair in school uniform, soft glowing background, gentle smile",  img: animeBoy6 },
   ],
   "Oil Painting": [
     { label: "Starry Night",        prompt: "a swirling starry night sky over a sleeping village, bold impasto strokes, van gogh oil painting style", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/400px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg" },

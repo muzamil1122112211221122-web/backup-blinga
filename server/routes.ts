@@ -1046,9 +1046,13 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     const style = (req.query.style as string) || 'Photorealistic';
     const seed = Math.abs(parseInt(req.query.seed as string) || 0);
 
+    // Anime style uses curated local images on the frontend — never pull from Wikimedia
+    if (style === 'Anime') {
+      return res.json({ success: false, images: [] });
+    }
+
     const STYLE_QUERIES: Record<string, string> = {
       'Photorealistic': 'landscape nature photography scenic',
-      'Anime': 'anime illustration manga japanese art',
       'Oil Painting': 'oil painting impressionist artwork canvas',
       'Watercolor': 'watercolor painting artwork illustration',
       '3D Render': 'digital art computer graphics render',
