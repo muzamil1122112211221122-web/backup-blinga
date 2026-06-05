@@ -3729,10 +3729,10 @@ Let's start the self-listen session!`;
             // ── Results Panel ──────────────────────────────────────────────
             const renderRightPanel = () => (
               <div className="flex flex-col w-full min-w-0 h-full">
-                {/* Header row — only clear button if there are results */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 min-h-0">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
                   <span className="text-sm font-semibold text-foreground">
-                    {hasResults ? `${aiImages.length} image${aiImages.length > 1 ? 's' : ''}` : 'Generate'}
+                    {hasResults ? `${aiImages.length} image${aiImages.length > 1 ? 's' : ''}` : 'Results'}
                   </span>
                   {hasResults && (
                     <Tooltip>
@@ -3746,74 +3746,114 @@ Let's start the self-listen session!`;
                     </Tooltip>
                   )}
                 </div>
-                <div ref={imagineScrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'none' }}>
-                  {!hasResults && (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 py-12 text-center px-4">
-                      <div className="w-16 h-0.5 bg-border rounded-full" />
+
+                <div ref={imagineScrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: 'none' }}>
+                  {/* Empty state */}
+                  {imagineMessages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
+                      <Sparkles className="w-8 h-8 text-muted-foreground/40" />
                       <p className="text-sm font-semibold text-foreground">Ready to create</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt below or pick a style on the left</p>
-                      <div className="w-10 h-0.5 bg-border rounded-full" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt or pick a style from the gallery</p>
                     </div>
                   )}
-                  {aiImages.map((msg: any, idx: number) => (
-                    <div key={msg.id} className="rounded-2xl border border-border overflow-hidden bg-background">
-                      {msg.isGenerating ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-12">
-                          <Loader2 className="w-7 h-7 animate-spin text-primary" />
-                          <span className="text-xs text-muted-foreground font-medium">Creating your image...</span>
-                        </div>
-                      ) : msg.imageUrl ? (
-                        <>
-                          <img src={msg.imageUrl} alt="generated"
-                            className="w-full object-cover cursor-zoom-in"
-                            onClick={() => setFullscreenImg(msg.imageUrl)} />
-                          <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button onClick={() => dlImg(msg.imageUrl, `imagine-${idx + 1}`)}
-                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                                  <Download className="w-3.5 h-3.5" /> Save
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>Download image</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button onClick={() => navigator.clipboard.writeText(msg.imageUrl)}
-                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                                  <Share2 className="w-3.5 h-3.5" /> Share
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>Copy image URL</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button onClick={() => setImagineLikes((prev: Set<string>) => { const n = new Set(prev); n.has(msg.id) ? n.delete(msg.id) : n.add(msg.id); return n; })}
-                                  className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all ${imagineLikes.has(msg.id) ? 'text-pink-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
-                                  <Heart className={`w-3.5 h-3.5 ${imagineLikes.has(msg.id) ? 'fill-pink-500' : ''}`} />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>{imagineLikes.has(msg.id) ? 'Unlike' : 'Like'}</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  onClick={() => {
-                                    setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content });
-                                    setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]);
-                                    setImagineEditStyle(''); setImagineEditRes('1:1');
-                                  }}
-                                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all ml-auto">
-                                  <Edit className="w-3.5 h-3.5" /> Restyle
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>Apply a style to this image</TooltipContent>
-                            </Tooltip>
+
+                  {/* All messages — user prompts + AI results */}
+                  {imagineMessages.map((msg: any, idx: number) => {
+                    if (msg.role === 'user') {
+                      return (
+                        <div key={msg.id} className="flex justify-end">
+                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 text-xs max-w-[90%] leading-relaxed">
+                            {msg.content}
                           </div>
-                        </>
-                      ) : null}
-                    </div>
-                  ))}
+                        </div>
+                      );
+                    }
+                    /* AI message */
+                    return (
+                      <div key={msg.id} className="rounded-2xl border border-border overflow-hidden bg-background">
+                        {msg.isGenerating ? (
+                          /* Generating animation */
+                          <div className="flex flex-col items-center justify-center gap-3 py-10">
+                            <div className="flex gap-1.5">
+                              {[0, 150, 300].map(delay => (
+                                <div key={delay} className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                                  style={{ animationDelay: `${delay}ms`, animationDuration: '0.9s' }} />
+                              ))}
+                            </div>
+                            <span className="text-[11px] text-muted-foreground font-medium">Creating your image…</span>
+                          </div>
+                        ) : msg.imageUrl ? (
+                          <>
+                            {/* Image with shimmer until loaded */}
+                            <div className="relative w-full bg-muted" style={{ minHeight: 120 }}>
+                              <img
+                                src={msg.imageUrl}
+                                alt="generated"
+                                className="w-full object-cover cursor-zoom-in transition-opacity duration-500"
+                                style={{ opacity: 0 }}
+                                onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+                                onError={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+                                onClick={() => setFullscreenImg(msg.imageUrl)}
+                              />
+                              <div className="absolute inset-0 bg-muted animate-pulse pointer-events-none"
+                                style={{ display: 'none' }}
+                                ref={el => {
+                                  if (!el) return;
+                                  const img = el.previousElementSibling as HTMLImageElement;
+                                  if (img && !img.complete) { el.style.display = 'block'; img.addEventListener('load', () => { el.style.display = 'none'; }, { once: true }); img.addEventListener('error', () => { el.style.display = 'none'; }, { once: true }); }
+                                }}
+                              />
+                            </div>
+                            {/* Action row */}
+                            <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button onClick={() => dlImg(msg.imageUrl, `imagine-${idx + 1}`)}
+                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                    <Download className="w-3.5 h-3.5" /> Save
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Download image</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button onClick={() => navigator.clipboard.writeText(msg.imageUrl)}
+                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                    <Share2 className="w-3.5 h-3.5" /> Share
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Copy image URL</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button onClick={() => setImagineLikes((prev: Set<string>) => { const n = new Set(prev); n.has(msg.id) ? n.delete(msg.id) : n.add(msg.id); return n; })}
+                                    className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all ${imagineLikes.has(msg.id) ? 'text-pink-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
+                                    <Heart className={`w-3.5 h-3.5 ${imagineLikes.has(msg.id) ? 'fill-pink-500' : ''}`} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>{imagineLikes.has(msg.id) ? 'Unlike' : 'Like'}</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => {
+                                      setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content });
+                                      setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]);
+                                      setImagineEditStyle(''); setImagineEditRes('1:1');
+                                    }}
+                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all ml-auto">
+                                    <Edit className="w-3.5 h-3.5" /> Restyle
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Apply a style to this image</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  <div ref={imagineMessagesEndRef} />
                 </div>
               </div>
             );
@@ -4073,7 +4113,7 @@ Let's start the self-listen session!`;
         };
 
         return (
-          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'imagine' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen || true ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
+          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'imagine' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
             <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
