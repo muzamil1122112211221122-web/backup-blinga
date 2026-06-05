@@ -795,16 +795,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const localCurated = (IMAGINE_PROMPTS_BY_STYLE[imagineStyle] || IMAGINE_PROMPTS_BY_STYLE['Photorealistic'])
       .map((i: any) => ({ url: i.img, label: i.label, prompt: i.prompt }));
 
-    // These styles use curated AI-generated images — skip Wikimedia entirely
+    // These styles use curated local images — always show them in fixed order
     if (imagineStyle === 'Anime' || imagineStyle === '3D Render' || imagineStyle === 'Pixel Art') {
-      const arr = [...localCurated];
-      let seed = imagineShuffleKey;
-      for (let idx = arr.length - 1; idx > 0; idx--) {
-        seed = (seed * 1664525 + 1013904223) & 0xffffffff;
-        const j = Math.abs(seed) % (idx + 1);
-        [arr[idx], arr[j]] = [arr[j], arr[idx]];
-      }
-      setImagineGallery(arr);
+      setImagineGallery(localCurated);
       setImagineGalleryLoading(false);
       return;
     }
