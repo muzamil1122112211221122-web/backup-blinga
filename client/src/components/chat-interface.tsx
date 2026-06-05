@@ -2922,7 +2922,7 @@ Let's start the self-listen session!`;
           <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-32 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
           {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
-            <Logo size="4xl" className="mb-6" />
+            <Logo size="2xl" className="mb-6" />
             <h2 className="text-3xl font-bold mb-3 text-foreground">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
             </h2>
@@ -3874,7 +3874,7 @@ Let's start the self-listen session!`;
 
                         {/* Fius logo — centered with equal spacing */}
                         <div className="w-full flex justify-center items-center py-4">
-                          <Logo size="sm" className="opacity-60 hover:opacity-90 transition-opacity" />
+                          <Logo size="md" className="opacity-60 hover:opacity-90 transition-opacity" />
                         </div>
                       </div>
                     )}
