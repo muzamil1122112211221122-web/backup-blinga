@@ -3,7 +3,7 @@ import { useMemo } from "react";
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   lineOnly?: boolean;
 }
 
@@ -35,11 +35,11 @@ function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: num
 }
 
 export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
-  const px    = { sm: 36, md: 46, lg: 70, xl: 86, '2xl': 130 }[size];
-  const font  = { sm: 19, md: 24, lg: 36, xl: 44, '2xl': 62  }[size];
-  const sw    = { sm: 1.6, md: 2.0, lg: 2.6, xl: 3.2, '2xl': 4.0 }[size];
-  const waves = { sm: 10,  md: 11,  lg: 14,  xl: 16,  '2xl': 20  }[size];
-  const amp   = { sm: 2.3, md: 2.7, lg: 3.8, xl: 4.8, '2xl': 6.0 }[size];
+  const px    = { sm: 36, md: 46, lg: 70, xl: 86, '2xl': 130, '3xl': 190, '4xl': 260 }[size];
+  const font  = { sm: 19, md: 24, lg: 36, xl: 44, '2xl': 62,  '3xl': 90,  '4xl': 124 }[size];
+  const sw    = { sm: 1.6, md: 2.0, lg: 2.6, xl: 3.2, '2xl': 4.0, '3xl': 5.0, '4xl': 6.0 }[size];
+  const waves = { sm: 10,  md: 11,  lg: 14,  xl: 16,  '2xl': 20,  '3xl': 24,  '4xl': 28  }[size];
+  const amp   = { sm: 2.3, md: 2.7, lg: 3.8, xl: 4.8, '2xl': 6.0, '3xl': 8.0, '4xl': 10.0 }[size];
   const cx = px / 2;
   const cy = px / 2;
   const R  = px / 2 - sw - 2;
