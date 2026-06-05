@@ -3874,7 +3874,9 @@ Let's start the self-listen session!`;
 
                         {/* Fius logo — centered with equal spacing */}
                         <div className="w-full flex justify-center items-center pt-2 pb-5">
-                          <Logo size="2xl" className="opacity-60 hover:opacity-90 transition-opacity" />
+                          <div style={{ transform: 'scale(1.025)', transformOrigin: 'center' }}>
+                            <Logo size="xl" className="opacity-60 hover:opacity-90 transition-opacity" />
+                          </div>
                         </div>
                       </div>
                     )}
