@@ -5,6 +5,14 @@ import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
 import animeBoy4 from "@assets/Vwmyh9_1780491124350.jpg";
 import animeBoy5 from "@assets/HD-wallpaper-handsome-anime-boy-handsome-boy-anime_1780491124350.jpg";
 import animeBoy6 from "@assets/HD-wallpaper-handsome-anime-boy-hōtarō-oreki-handsome-boy-anim_1780491124351.jpg";
+import render3d1 from "@assets/5e835680417d8f37b203d006_5ad102cf0f7efdaab0f155e6_Who-is-the-_1780675830862.jpeg";
+import render3d2 from "@assets/3d-rendering-box_1780675830864.avif";
+import render3d3 from "@assets/media_1976b43e20a9983ad2b30c4524f9248e32dee7a22_1780675830865.jpg";
+import pixelArt1 from "@assets/how-to-draw-a-rose-pixel-art-featured-image-1200_1780675830865.png";
+import pixelArt2 from "@assets/a1b857df7f3bd73ec2ff9f2ee45b0b67_1780675830866.jpg";
+import pixelArt3 from "@assets/3367465_1780675830867.png";
+import pixelArt4 from "@assets/images_(1)_1780675830868.jpg";
+import pixelArt5 from "@assets/Pixel-art-Creez-un-adorable-cochon-en-quelques-pixels_1780675830868.jpeg";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -509,12 +517,9 @@ const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; i
     { label: "Girl with Balloon",   prompt: "a field ablaze with autumn colors under dramatic oil painted skies, loose impressionist strokes",     img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400&q=70&auto=format&fit=crop" },
   ],
   "3D Render": [
-    { label: "Chrome Robot",        prompt: "a detailed chrome humanoid robot in a neon-lit industrial facility, octane render",                   img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=400&q=80&auto=format&fit=crop" },
-    { label: "Space Station",       prompt: "a sleek orbital space station with Earth glowing below, photorealistic CGI render",                   img: "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=600&h=400&q=80&auto=format&fit=crop" },
-    { label: "Neon Megacity",       prompt: "a futuristic neon-lit megacity at night with holographic billboards and flying cars",                 img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=400&q=80&auto=format&fit=crop" },
-    { label: "Sci-Fi Corridor",     prompt: "a sleek sci-fi spaceship corridor with glowing panels and metallic reflections, unreal engine 5",    img: "https://images.unsplash.com/photo-1581922819941-6ab31ab79afc?w=600&h=400&q=80&auto=format&fit=crop" },
-    { label: "Abstract Geometry",   prompt: "intricate glowing crystalline geometric structures floating in deep space void, blender render",      img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&q=80&auto=format&fit=crop" },
-    { label: "Crystal Cave",        prompt: "a magical glowing crystal cavern with blue and purple mineral formations, photorealistic 3D render",  img: "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=600&h=400&q=80&auto=format&fit=crop" },
+    { label: "Coastal House",       prompt: "a photorealistic 3D render of a modern house on rocky coastal cliffs at dusk, dramatic moody lighting",  img: render3d1 },
+    { label: "3D Box Scene",        prompt: "a clean minimalist 3D product render of geometric shapes with studio lighting and soft shadows",          img: render3d2 },
+    { label: "Interior Scene",      prompt: "a beautiful 3D rendered interior design scene with soft lighting, furniture, and plants",                 img: render3d3 },
   ],
   "Watercolor": [
     { label: "Young Hare",          prompt: "a detailed watercolor study of a hare with soft fur texture, botanical illustration style",           img: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Albrecht_D%C3%BCrer_-_Young_Hare%2C_1502_-_Google_Art_Project.jpg/400px-Albrecht_D%C3%BCrer_-_Young_Hare%2C_1502_-_Google_Art_Project.jpg" },
@@ -527,12 +532,11 @@ const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; i
     { label: "Magnolia Blossom",    prompt: "a close-up of magnolia blossoms in spring, soft pink and white watercolor petals with ink outline",  img: "https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&q=70&auto=format&fit=crop" },
   ],
   "Pixel Art": [
-    { label: "Retro City Night",    prompt: "a colorful 16-bit pixel art city skyline at night with neon signs and 8-bit cars on the streets",    img: `https://image.pollinations.ai/prompt/${encodeURIComponent("pixel art city night neon signs")}?width=40&height=28&nologo=true&seed=11223&model=flux` },
-    { label: "Space Shooter",       prompt: "a retro 8-bit pixel art space shooter game with starfields, enemy ships, and laser beams",           img: `https://image.pollinations.ai/prompt/${encodeURIComponent("space invaders pixel art alien ships lasers stars")}?width=40&height=28&nologo=true&seed=22334&model=flux` },
-    { label: "Dungeon Quest",       prompt: "a moody pixel art dungeon with flickering torches, treasure chests, and a pixelated hero",           img: `https://image.pollinations.ai/prompt/${encodeURIComponent("RPG dungeon torch treasure chest pixel art")}?width=40&height=28&nologo=true&seed=33445&model=flux` },
-    { label: "Mushroom Village",    prompt: "a cozy pixel art forest village with colorful mushroom houses and tiny fairy lights at dusk",         img: `https://image.pollinations.ai/prompt/${encodeURIComponent("pixel art village mushroom houses green grass blue sky")}?width=40&height=28&nologo=true&seed=44556&model=flux` },
-    { label: "Island Adventure",    prompt: "a tiny pixel art tropical island with palm trees, buried treasure, and a pirate ship offshore",       img: `https://image.pollinations.ai/prompt/${encodeURIComponent("tropical island pixel art palm trees ocean pirate ship")}?width=40&height=28&nologo=true&seed=55667&model=flux` },
-    { label: "Dragon Castle",       prompt: "a 16-bit pixel art dragon perched on a towering castle with a stormy pixelated sky",                 img: `https://image.pollinations.ai/prompt/${encodeURIComponent("pixel art dragon castle medieval stormy sky fire")}?width=40&height=28&nologo=true&seed=66778&model=flux` },
+    { label: "Pixel Rose",          prompt: "a detailed 8-bit pixel art rose with red petals and green stem on a white grid background",          img: pixelArt1 },
+    { label: "Pixel Bunny",         prompt: "an adorable 16-bit pixel art bunny character with pink and white colors, retro game sprite style",   img: pixelArt2 },
+    { label: "Dot Portrait",        prompt: "a black and white stipple dot matrix pixel art portrait with fine grid pattern",                     img: pixelArt3 },
+    { label: "Pixel Sonic",         prompt: "a classic 16-bit pixel art Sonic the Hedgehog sprite running, blue and red retro game character",    img: pixelArt4 },
+    { label: "Pixel Pig",           prompt: "a cute 8-bit pixel art pig character with pink colors and black outlines on a grid background",      img: pixelArt5 },
   ],
   "Sketch": [
     { label: "Vitruvian Man",       prompt: "detailed anatomical sketch study of human proportions with geometric overlays, pen and ink, da vinci style", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Da_Vinci_Vitruve_Luc_Viatour.jpg/400px-Da_Vinci_Vitruve_Luc_Viatour.jpg" },
