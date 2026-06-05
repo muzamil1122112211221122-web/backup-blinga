@@ -796,7 +796,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       .map((i: any) => ({ url: i.img, label: i.label, prompt: i.prompt }));
 
     // These styles use curated local images — always show them in fixed order
-    if (imagineStyle === 'Anime' || imagineStyle === '3D Render' || imagineStyle === 'Pixel Art') {
+    if (imagineStyle === 'Anime' || imagineStyle === '3D Render' || imagineStyle === 'Pixel Art' || imagineStyle === 'Cinematic') {
       setImagineGallery(localCurated);
       setImagineGalleryLoading(false);
       return;
