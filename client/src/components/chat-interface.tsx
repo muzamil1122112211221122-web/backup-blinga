@@ -3872,9 +3872,9 @@ Let's start the self-listen session!`;
                           ))}
                         </div>
 
-                        {/* Fius logo — bottom-left */}
-                        <div className="flex justify-start items-end pl-1 pb-2">
-                          <Logo size="2xl" className="opacity-70 hover:opacity-100 transition-opacity" />
+                        {/* Fius logo — centered with equal spacing */}
+                        <div className="flex justify-center items-center py-4">
+                          <Logo size="lg" className="opacity-60 hover:opacity-90 transition-opacity" />
                         </div>
                       </div>
                     )}
