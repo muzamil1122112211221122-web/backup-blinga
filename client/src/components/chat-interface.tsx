@@ -3874,7 +3874,7 @@ Let's start the self-listen session!`;
 
                         {/* Fius logo — centered with equal spacing */}
                         <div className="w-full flex justify-center items-center py-4">
-                          <Logo size="md" className="opacity-60 hover:opacity-90 transition-opacity" />
+                          <Logo size="xl" className="opacity-60 hover:opacity-90 transition-opacity" />
                         </div>
                       </div>
                     )}
