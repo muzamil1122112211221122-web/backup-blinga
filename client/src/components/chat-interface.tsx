@@ -3291,7 +3291,7 @@ Let's start the self-listen session!`;
                                 ) : (
                                   <FileDown className="h-3.5 w-3.5 text-blue-500" />
                                 )}
-                                {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.doc)'}
+                                {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.docx)'}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"

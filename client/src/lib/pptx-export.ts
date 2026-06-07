@@ -1,4 +1,4 @@
-// Professional PPTX generator — colorful, modern design — no external dependencies
+// Professional PPTX generator — reliable solid-fill design, no ph placeholders, no XML comments
 
 function crc32(data: Uint8Array): number {
   const table = new Uint32Array(256);
@@ -11,72 +11,72 @@ function crc32(data: Uint8Array): number {
   for (let i = 0; i < data.length; i++) crc = table[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
   return (crc ^ 0xffffffff) >>> 0;
 }
-
 function enc(s: string) { return new TextEncoder().encode(s); }
 function u16(v: number) { const b = new Uint8Array(2); b[0] = v & 0xff; b[1] = (v >> 8) & 0xff; return b; }
 function u32(v: number) { const b = new Uint8Array(4); b[0] = v & 0xff; b[1] = (v >> 8) & 0xff; b[2] = (v >> 16) & 0xff; b[3] = (v >> 24) & 0xff; return b; }
-function cat(...arr: Uint8Array[]) { const total = arr.reduce((s, a) => s + a.length, 0); const out = new Uint8Array(total); let off = 0; for (const a of arr) { out.set(a, off); off += a.length; } return out; }
-
+function cat(...arr: Uint8Array[]) {
+  const total = arr.reduce((s, a) => s + a.length, 0);
+  const out = new Uint8Array(total); let off = 0;
+  for (const a of arr) { out.set(a, off); off += a.length; }
+  return out;
+}
 interface ZFile { name: string; data: Uint8Array }
-
 function buildZip(files: ZFile[]): Uint8Array {
-  const locals: Uint8Array[] = [];
-  const centrals: Uint8Array[] = [];
+  const locals: Uint8Array[] = [], centrals: Uint8Array[] = [];
   let offset = 0;
   for (const f of files) {
-    const nm = enc(f.name);
-    const crc = crc32(f.data);
-    const sz = f.data.length;
-    const lh = cat(new Uint8Array([0x50, 0x4b, 0x03, 0x04]), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(sz), u32(sz), u16(nm.length), u16(0), nm, f.data);
-    const cd = cat(new Uint8Array([0x50, 0x4b, 0x01, 0x02]), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(sz), u32(sz), u16(nm.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), nm);
+    const nm = enc(f.name), crc = crc32(f.data), sz = f.data.length;
+    const lh = cat(new Uint8Array([0x50,0x4b,0x03,0x04]),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0),nm,f.data);
+    const cd = cat(new Uint8Array([0x50,0x4b,0x01,0x02]),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(sz),u32(sz),u16(nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nm);
     locals.push(lh); centrals.push(cd); offset += lh.length;
   }
   const cdData = cat(...centrals);
-  const eocd = cat(new Uint8Array([0x50, 0x4b, 0x05, 0x06]), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdData.length), u32(offset), u16(0));
+  const eocd = cat(new Uint8Array([0x50,0x4b,0x05,0x06]),u16(0),u16(0),u16(files.length),u16(files.length),u32(cdData.length),u32(offset),u16(0));
   return cat(...locals, cdData, eocd);
 }
-
-function x(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function xEsc(s: string) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-interface Slide { title: string; bullets: string[]; isTitle?: boolean }
+interface Slide { title: string; bullets: string[] }
 
-// Color palette
-const PALETTE = {
-  darkNavy:    '0F0C29',
-  indigo:      '4F46E5',
-  indigoDark:  '3730A3',
-  purple:      '7C3AED',
-  cyan:        '06B6D4',
-  emerald:     '10B981',
-  amber:       'F59E0B',
-  rose:        'F43F5E',
-  white:       'FFFFFF',
-  offWhite:    'F8F8FF',
-  lightSlate:  'CBD5E1',
-  darkText:    '1E293B',
-  mutedText:   '64748B',
+const C = {
+  navy:    '0F0C29',
+  indigo:  '4F46E5',
+  purple:  '7C3AED',
+  cyan:    '06B6D4',
+  emerald: '10B981',
+  amber:   'F59E0B',
+  rose:    'EF4444',
+  white:   'FFFFFF',
+  offWht:  'F8F8FF',
+  darkTxt: '1E293B',
+  muted:   '64748B',
+  lightBg: 'EEF2FF',
 };
 
-// Header bar accent colors per slide (cycles)
-const ACCENT_COLORS = [
-  PALETTE.indigo,
-  PALETTE.purple,
-  PALETTE.cyan,
-  PALETTE.emerald,
-  PALETTE.amber,
-  PALETTE.rose,
-];
+const ACCENT = [C.indigo, C.purple, C.cyan, C.emerald, C.amber, C.rose];
+const BULLET_COLORS = [C.indigo, C.purple, C.cyan, C.emerald, C.amber, C.rose];
 
-function getAccent(idx: number) { return ACCENT_COLORS[idx % ACCENT_COLORS.length]; }
+function accent(i: number) { return ACCENT[i % ACCENT.length]; }
+
+function solidShape(id: number, name: string, x: number, y: number, cx: number, cy: number, fill: string): string {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${fill}"/></a:solidFill><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`;
+}
+
+function textShape(id: number, name: string, x: number, y: number, cx: number, cy: number, anchorV: string, content: string): string {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr anchor="${anchorV}" wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${content}</p:txBody></p:sp>`;
+}
+
+function cleanContent(content: string): string {
+  return content
+    .replace(/\b(as an ai[^.\n]*[.\n]|as a language model[^.\n]*[.\n]|generated by ai[^.\n]*[.\n]|note: i am an ai[^.\n]*[.\n]|disclaimer:[^.\n]*[.\n])/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 function parseSlides(content: string): Slide[] {
-  // Remove AI disclaimer phrases
-  const cleaned = content
-    .replace(/\b(as an ai|as an ai assistant|as a language model|i am an ai|generated by ai|written by ai|note: i am|disclaimer:)[^.\n]*/gi, '')
-    .replace(/^\s*[\-–—]\s*$/gm, '');
-
+  const cleaned = cleanContent(content);
   const lines = cleaned.split('\n');
   const slides: Slide[] = [];
   let cur: Slide | null = null;
@@ -87,28 +87,23 @@ function parseSlides(content: string): Slide[] {
     const hm = line.match(/^#{1,4}\s+(.+)/);
     if (hm) {
       if (cur && (cur.title || cur.bullets.length)) slides.push(cur);
-      cur = { title: hm[1].replace(/\*\*/g, '').replace(/\*/g, ''), bullets: [] };
+      cur = { title: hm[1].replace(/\*\*/g,'').replace(/\*/g,'').trim(), bullets: [] };
     } else {
       if (!cur) cur = { title: '', bullets: [] };
-      const clean = line
-        .replace(/^[-*•▸►]\s*/, '')
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`(.*?)`/g, '$1')
-        .trim();
-      if (clean.length > 1) cur.bullets.push(clean.slice(0, 220));
+      const clean = line.replace(/^[-*•▸►]\s*/,'').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1').replace(/`(.*?)`/g,'$1').trim();
+      if (clean.length > 2) cur.bullets.push(clean.slice(0, 200));
     }
   }
   if (cur && (cur.title || cur.bullets.length)) slides.push(cur);
 
   if (!slides.length) {
-    const text = cleaned.replace(/[#*`]/g, '').trim();
-    slides.push({ title: 'Presentation', bullets: text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 8) });
+    const text = cleaned.replace(/[#*`]/g,'').trim();
+    slides.push({ title: 'Presentation', bullets: text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 7) });
   }
 
-  // Split long slides
   const out: Slide[] = [];
   for (const s of slides) {
+    if (!s.title && !s.bullets.length) continue;
     if (s.bullets.length <= 6) { out.push(s); continue; }
     for (let i = 0; i < s.bullets.length; i += 6)
       out.push({ title: s.title + (i ? ' (cont.)' : ''), bullets: s.bullets.slice(i, i + 6) });
@@ -116,495 +111,102 @@ function parseSlides(content: string): Slide[] {
   return out.slice(0, 40);
 }
 
-// TITLE SLIDE — dark gradient background, large centered title
-function makeTitleSlideXml(title: string, subtitle?: string): string {
-  const sub = subtitle || 'Professional Presentation';
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-       xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <p:cSld>
-    <p:bg>
-      <p:bgPr>
-        <a:gradFill flip="none">
-          <a:gsLst>
-            <a:gs pos="0"><a:srgbClr val="${PALETTE.darkNavy}"/></a:gs>
-            <a:gs pos="60000"><a:srgbClr val="1a1050"/></a:gs>
-            <a:gs pos="100000"><a:srgbClr val="2d0f5e"/></a:gs>
-          </a:gsLst>
-          <a:lin ang="13500000" scaled="0"/>
-        </a:gradFill>
-        <a:effectLst/>
-      </p:bgPr>
-    </p:bg>
-    <p:spTree>
-      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+function makeTitleSlide(title: string, subtitle: string): string {
+  const titlePara = `<a:p><a:pPr algn="l"/><a:r><a:rPr lang="en-US" sz="4000" b="1" dirty="0"><a:solidFill><a:srgbClr val="${C.white}"/></a:solidFill><a:latin typeface="Calibri Light"/></a:rPr><a:t>${xEsc(title)}</a:t></a:r></a:p>`;
+  const subPara = `<a:p><a:pPr algn="l"/><a:r><a:rPr lang="en-US" sz="1800" dirty="0"><a:solidFill><a:srgbClr val="CBD5E1"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>${xEsc(subtitle)}</a:t></a:r></a:p>`;
 
-      <!-- Accent gradient bar at top -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="10" name="TopBar"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="0"/><a:ext cx="9144000" cy="228600"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${PALETTE.indigo}"/></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.purple}"/></a:gs>
-            </a:gsLst>
-            <a:lin ang="0" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
+  const shapes = [
+    solidShape(10, 'BG', 0, 0, 9144000, 6858000, C.navy),
+    solidShape(11, 'TopBar', 0, 0, 9144000, 190500, C.indigo),
+    solidShape(12, 'BottomBar', 0, 6667500, 9144000, 190500, C.purple),
+    solidShape(13, 'LeftStripe', 0, 190500, 95250, 6477000, C.indigo),
+    solidShape(14, 'AccentDot1', 8000000, 500000, 500000, 500000, C.purple),
+    solidShape(15, 'AccentDot2', 8200000, 5900000, 300000, 300000, C.cyan),
+    solidShape(16, 'TitleUnderline', 685800, 3900000, 3200000, 57150, C.indigo),
+    textShape(2, 'TitleBox', 685800, 1700000, 7200000, 2200000, 'ctr', titlePara),
+    textShape(3, 'SubBox', 685800, 4000000, 7200000, 600000, 't', subPara),
+  ].join('');
 
-      <!-- Accent gradient bar at bottom -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="11" name="BottomBar"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="6629400"/><a:ext cx="9144000" cy="228600"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${PALETTE.cyan}"/></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.indigo}"/></a:gs>
-            </a:gsLst>
-            <a:lin ang="0" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
-
-      <!-- Left decorative accent line -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="12" name="LeftLine"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="457200" y="1371600"/><a:ext cx="57150" cy="3657600"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${PALETTE.indigo}"><a:alpha val="80000"/></a:srgbClr></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.cyan}"><a:alpha val="80000"/></a:srgbClr></a:gs>
-            </a:gsLst>
-            <a:lin ang="5400000" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
-
-      <!-- Main Title -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="ctrTitle"/></p:nvPr></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="685800" y="1828800"/><a:ext cx="7772400" cy="2057400"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:noFill/>
-        </p:spPr>
-        <p:txBody>
-          <a:bodyPr anchor="ctr"/>
-          <a:lstStyle/>
-          <a:p>
-            <a:pPr algn="l"/>
-            <a:r>
-              <a:rPr lang="en-US" sz="4000" b="1" dirty="0">
-                <a:solidFill><a:srgbClr val="${PALETTE.white}"/></a:solidFill>
-                <a:latin typeface="Calibri Light"/>
-              </a:rPr>
-              <a:t>${x(title)}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-
-      <!-- Subtitle / thin separator line shape -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="13" name="TitleUnderline"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="685800" y="3886200"/><a:ext cx="3657600" cy="38100"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${PALETTE.indigo}"/></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.cyan}"/></a:gs>
-            </a:gsLst>
-            <a:lin ang="0" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
-
-      <!-- Subtitle text -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="SubTitle"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="subTitle" idx="1"/></p:nvPr></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="685800" y="3962400"/><a:ext cx="7772400" cy="571500"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:noFill/>
-        </p:spPr>
-        <p:txBody>
-          <a:bodyPr anchor="t"/>
-          <a:lstStyle/>
-          <a:p>
-            <a:pPr algn="l"/>
-            <a:r>
-              <a:rPr lang="en-US" sz="1800" dirty="0">
-                <a:solidFill><a:srgbClr val="${PALETTE.lightSlate}"/></a:solidFill>
-                <a:latin typeface="Calibri"/>
-              </a:rPr>
-              <a:t>${x(sub)}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-
-    </p:spTree>
-  </p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sld>`;
+  return wrapSlide(`<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${C.navy}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`, shapes);
 }
 
-// CONTENT SLIDE — white background, colored header bar, styled bullets
-function makeContentSlideXml(slide: Slide, slideIndex: number): string {
-  const accent = getAccent(slideIndex);
-  // lighter version of accent for bullet icons
-  const bulletColors = [PALETTE.indigo, PALETTE.purple, PALETTE.cyan, PALETTE.emerald, PALETTE.amber, PALETTE.rose];
-
-  const bulletRows = slide.bullets.map((b, bi) => {
-    const bColor = bulletColors[bi % bulletColors.length];
-    const isBold = b.startsWith('**') || bi === 0; // bold first bullet or explicitly bolded
-    const cleanB = b.replace(/^\*\*|\*\*$/g, '');
-    return `<a:p>
-          <a:pPr marL="342900" indent="-342900">
-            <a:buClr><a:srgbClr val="${bColor}"/></a:buClr>
-            <a:buFont typeface="Arial"/>
-            <a:buChar char="▸"/>
-          </a:pPr>
-          <a:r>
-            <a:rPr lang="en-US" sz="1800" b="${isBold ? '1' : '0'}" dirty="0">
-              <a:solidFill><a:srgbClr val="${PALETTE.darkText}"/></a:solidFill>
-              <a:latin typeface="Calibri"/>
-            </a:rPr>
-            <a:t>${x(cleanB)}</a:t>
-          </a:r>
-        </a:p>`;
-  }).join('\n');
-
+function makeContentSlide(slide: Slide, idx: number): string {
+  const headerColor = accent(idx);
   const hasTitle = !!slide.title;
 
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-       xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <p:cSld>
-    <p:bg>
-      <p:bgPr>
-        <a:solidFill><a:srgbClr val="${PALETTE.offWhite}"/></a:solidFill>
-        <a:effectLst/>
-      </p:bgPr>
-    </p:bg>
-    <p:spTree>
-      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+  const bodyY = hasTitle ? 1100000 : 200000;
+  const bodyCy = hasTitle ? 5500000 : 6400000;
 
-      ${hasTitle ? `
-      <!-- Header bar with gradient -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="10" name="HeaderBar"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="0"/><a:ext cx="9144000" cy="1028700"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${accent}"/></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.indigoDark}"/></a:gs>
-            </a:gsLst>
-            <a:lin ang="0" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
+  const bulletParagraphs = slide.bullets.map((b, bi) => {
+    const bc = BULLET_COLORS[bi % BULLET_COLORS.length];
+    const clean = b.replace(/^\*\*|\*\*$/g, '');
+    const isBold = bi === 0;
+    return `<a:p><a:pPr marL="342900" indent="-342900"><a:buClr><a:srgbClr val="${bc}"/></a:buClr><a:buFont typeface="Arial" charset="0"/><a:buChar char="&#x25B8;"/></a:pPr><a:r><a:rPr lang="en-US" sz="1800" b="${isBold?'1':'0'}" dirty="0"><a:solidFill><a:srgbClr val="${C.darkTxt}"/></a:solidFill><a:latin typeface="Calibri"/></a:rPr><a:t>${xEsc(clean)}</a:t></a:r></a:p>`;
+  }).join('');
 
-      <!-- Left accent stripe -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="14" name="LeftStripe"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="1028700"/><a:ext cx="57150" cy="5486400"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:solidFill><a:srgbClr val="${accent}"/></a:solidFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
+  const titlePara = hasTitle ? `<a:p><a:pPr algn="l"/><a:r><a:rPr lang="en-US" sz="2600" b="1" dirty="0"><a:solidFill><a:srgbClr val="${C.white}"/></a:solidFill><a:latin typeface="Calibri Light"/></a:rPr><a:t>${xEsc(slide.title)}</a:t></a:r></a:p>` : '';
 
-      <!-- Title text box -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="SlideTitle"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="285750" y="114300"/><a:ext cx="8572500" cy="800100"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:noFill/>
-        </p:spPr>
-        <p:txBody>
-          <a:bodyPr anchor="ctr"/>
-          <a:lstStyle/>
-          <a:p>
-            <a:pPr algn="l"/>
-            <a:r>
-              <a:rPr lang="en-US" sz="2800" b="1" dirty="0">
-                <a:solidFill><a:srgbClr val="${PALETTE.white}"/></a:solidFill>
-                <a:latin typeface="Calibri Light"/>
-              </a:rPr>
-              <a:t>${x(slide.title)}</a:t>
-            </a:r>
-          </a:p>
-        </p:txBody>
-      </p:sp>` : ''}
+  const shapes = [
+    hasTitle ? solidShape(10, 'HeaderBar', 0, 0, 9144000, 950000, headerColor) : '',
+    solidShape(11, 'LeftStripe', 0, hasTitle ? 950000 : 0, 76200, hasTitle ? 5720000 : 6858000, headerColor),
+    solidShape(12, 'BottomLine', 0, 6700800, 9144000, 57150, headerColor),
+    hasTitle ? textShape(2, 'TitleBox', 200000, 90000, 8900000, 770000, 'ctr', titlePara) : '',
+    textShape(3, 'BodyBox', 200000, bodyY, 8900000, bodyCy, 't', bulletParagraphs || `<a:p><a:r><a:rPr lang="en-US" sz="1800" dirty="0"><a:solidFill><a:srgbClr val="${C.muted}"/></a:solidFill></a:rPr><a:t></a:t></a:r></a:p>`),
+    `<p:sp><p:nvSpPr><p:cNvPr id="13" name="PageNum"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="8400000" y="6620000"/><a:ext cx="650000" cy="200000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr><p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="r"/><a:fld id="{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}" type="slidenum"><a:rPr lang="en-US" sz="900" dirty="0"><a:solidFill><a:srgbClr val="${C.muted}"/></a:solidFill></a:rPr><a:t>‹#›</a:t></a:fld></a:p></p:txBody></p:sp>`,
+  ].filter(Boolean).join('');
 
-      <!-- Body content -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="Body"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="171450" y="${hasTitle ? '1142250' : '342900'}"/><a:ext cx="8801100" cy="${hasTitle ? '5143500' : '5943000'}"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:noFill/>
-        </p:spPr>
-        <p:txBody>
-          <a:bodyPr>
-            <a:normAutofit/>
-          </a:bodyPr>
-          <a:lstStyle/>
-          ${bulletRows}
-        </p:txBody>
-      </p:sp>
+  return wrapSlide(`<p:bg><p:bgPr><a:solidFill><a:srgbClr val="${C.offWht}"/></a:solidFill><a:effectLst/></p:bgPr></p:bg>`, shapes);
+}
 
-      <!-- Bottom accent line -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="15" name="BottomLine"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="0" y="6515100"/><a:ext cx="9144000" cy="57150"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:gradFill>
-            <a:gsLst>
-              <a:gs pos="0"><a:srgbClr val="${accent}"/></a:gs>
-              <a:gs pos="100000"><a:srgbClr val="${PALETTE.purple}"/></a:gs>
-            </a:gsLst>
-            <a:lin ang="0" scaled="0"/>
-          </a:gradFill>
-        </p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody>
-      </p:sp>
-
-      <!-- Slide number (bottom right) -->
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="16" name="SlideNum"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
-        <p:spPr>
-          <a:xfrm><a:off x="8229600" y="6400800"/><a:ext cx="685800" cy="228600"/></a:xfrm>
-          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
-          <a:noFill/>
-        </p:spPr>
-        <p:txBody>
-          <a:bodyPr anchor="ctr"/>
-          <a:lstStyle/>
-          <a:p>
-            <a:pPr algn="r"/>
-            <a:fld id="{B6A5A1DA-B0E1-4B97-9E1E-CA0C22D9CCCC}" type="slidenum">
-              <a:rPr lang="en-US" sz="1000" dirty="0">
-                <a:solidFill><a:srgbClr val="${PALETTE.mutedText}"/></a:solidFill>
-              </a:rPr>
-              <a:t>‹#›</a:t>
-            </a:fld>
-          </a:p>
-        </p:txBody>
-      </p:sp>
-
-    </p:spTree>
-  </p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sld>`;
+function wrapSlide(bg: string, shapes: string): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld>${bg}<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${shapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
 }
 
 export async function downloadPptx(content: string, filename = 'fius-presentation') {
-  // Try to AI-format the content first via the server
   let processedContent = content;
   try {
     const res = await fetch('/api/format-for-export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, type: 'pptx' }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.formatted) processedContent = data.formatted;
-    }
-  } catch { /* use original if formatting fails */ }
+    if (res.ok) { const d = await res.json(); if (d.formatted) processedContent = d.formatted; }
+  } catch { /* use original */ }
 
   const slides = parseSlides(processedContent);
+  const presentationTitle = slides[0]?.title || filename.replace(/-/g, ' ');
+  const slideCount = slides.length;
 
-  // Extract presentation title from first slide title or first heading
-  const presentationTitle = slides[0]?.title || filename;
-
-  // Build slide list: title slide first, then content slides
-  const allSlides = [
-    { isTitleSlide: true, title: presentationTitle, subtitle: slides.length > 1 ? `${slides.length - 1} Key Topics` : 'Key Insights' },
-    ...slides.map((s, i) => ({ isTitleSlide: false, slide: s, slideIndex: i })),
+  type SlideEntry = { isTitleSlide: true; title: string; subtitle: string } | { isTitleSlide: false; slide: Slide; slideIndex: number };
+  const allSlides: SlideEntry[] = [
+    { isTitleSlide: true, title: presentationTitle, subtitle: slideCount > 1 ? `${slideCount} Sections` : 'Key Insights' },
+    ...slides.map((s, i) => ({ isTitleSlide: false as const, slide: s, slideIndex: i })),
   ];
 
   const n = allSlides.length;
-  const sRIds = allSlides.map((_, i) => `rId${i + 1}`);
 
-  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
-  ${allSlides.map((_, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('\n  ')}
-  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
-  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
-  <Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
-  <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
-</Types>`;
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>${allSlides.map((_,i)=>`<Override PartName="/ppt/slides/slide${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('')}<Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/></Types>`;
 
-  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
-</Relationships>`;
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>`;
 
-  const presentation = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-                xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-                xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId${n + 1}"/></p:sldMasterIdLst>
-  <p:sldIdLst>${allSlides.map((_, i) => `<p:sldId id="${256 + i}" r:id="${sRIds[i]}"/>`).join('')}</p:sldIdLst>
-  <p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>
-  <p:notesSz cx="6858000" cy="9144000"/>
-</p:presentation>`;
+  const presentation = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId${n+1}"/></p:sldMasterIdLst><p:sldIdLst>${allSlides.map((_,i)=>`<p:sldId id="${256+i}" r:id="rId${i+1}"/>`).join('')}</p:sldIdLst><p:sldSz cx="9144000" cy="6858000" type="screen4x3"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`;
 
-  const presentationRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  ${allSlides.map((_, i) => `<Relationship Id="${sRIds[i]}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i + 1}.xml"/>`).join('\n  ')}
-  <Relationship Id="rId${n + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
-</Relationships>`;
+  const presentationRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${allSlides.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i+1}.xml"/>`).join('')}<Relationship Id="rId${n+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/></Relationships>`;
 
-  const titleSlideRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-</Relationships>`;
+  const slideRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>`;
 
-  const contentSlideRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout2.xml"/>
-</Relationships>`;
+  const slideMaster = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lstStyle><a:lvl1pPr><a:defRPr lang="en-US" sz="3600" b="1"><a:solidFill><a:srgbClr val="${C.darkTxt}"/></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle></p:titleStyle><p:bodyStyle><a:lstStyle><a:lvl1pPr><a:defRPr lang="en-US" sz="1800"><a:solidFill><a:srgbClr val="${C.darkTxt}"/></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle></p:bodyStyle></p:txStyles></p:sldMaster>`;
 
-  const slideMaster = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-             xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>
-    <p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-    </p:spTree></p:cSld>
-  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
-  <p:sldLayoutIdLst>
-    <p:sldLayoutId id="2147483649" r:id="rId1"/>
-    <p:sldLayoutId id="2147483650" r:id="rId2"/>
-  </p:sldLayoutIdLst>
-  <p:txStyles>
-    <p:titleStyle><a:lstStyle><a:lvl1pPr><a:defRPr lang="en-US" sz="3600" b="1"><a:solidFill><a:srgbClr val="${PALETTE.white}"/></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle></p:titleStyle>
-    <p:bodyStyle><a:lstStyle><a:lvl1pPr><a:defRPr lang="en-US" sz="1800"><a:solidFill><a:srgbClr val="${PALETTE.darkText}"/></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle></p:bodyStyle>
-  </p:txStyles>
-</p:sldMaster>`;
+  const slideMasterRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`;
 
-  const slideMasterRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
-  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout2.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
-</Relationships>`;
+  const slideLayout = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 
-  const slideLayout1 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-             xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="ctrTitle" preserve="1">
-  <p:cSld name="Title Slide"><p:spTree>
-    <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-    <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-  </p:spTree></p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sldLayout>`;
+  const slideLayoutRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`;
 
-  const slideLayout1Rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
-</Relationships>`;
+  const theme = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Fius"><a:themeElements><a:clrScheme name="Fius"><a:dk1><a:srgbClr val="${C.darkTxt}"/></a:dk1><a:lt1><a:srgbClr val="${C.white}"/></a:lt1><a:dk2><a:srgbClr val="${C.navy}"/></a:dk2><a:lt2><a:srgbClr val="${C.offWht}"/></a:lt2><a:accent1><a:srgbClr val="${C.indigo}"/></a:accent1><a:accent2><a:srgbClr val="${C.purple}"/></a:accent2><a:accent3><a:srgbClr val="${C.cyan}"/></a:accent3><a:accent4><a:srgbClr val="${C.emerald}"/></a:accent4><a:accent5><a:srgbClr val="${C.amber}"/></a:accent5><a:accent6><a:srgbClr val="${C.rose}"/></a:accent6><a:hlink><a:srgbClr val="${C.indigo}"/></a:hlink><a:folHlink><a:srgbClr val="${C.purple}"/></a:folHlink></a:clrScheme><a:fontScheme name="Fius"><a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Fius"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
 
-  const slideLayout2 = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
-             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-             xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="obj" preserve="1">
-  <p:cSld name="Content"><p:spTree>
-    <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-    <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-  </p:spTree></p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sldLayout>`;
-
-  const slideLayout2Rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
-</Relationships>`;
-
-  const theme = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Fius Professional">
-  <a:themeElements>
-    <a:clrScheme name="Fius">
-      <a:dk1><a:srgbClr val="${PALETTE.darkText}"/></a:dk1>
-      <a:lt1><a:srgbClr val="${PALETTE.white}"/></a:lt1>
-      <a:dk2><a:srgbClr val="${PALETTE.darkNavy}"/></a:dk2>
-      <a:lt2><a:srgbClr val="${PALETTE.offWhite}"/></a:lt2>
-      <a:accent1><a:srgbClr val="${PALETTE.indigo}"/></a:accent1>
-      <a:accent2><a:srgbClr val="${PALETTE.purple}"/></a:accent2>
-      <a:accent3><a:srgbClr val="${PALETTE.cyan}"/></a:accent3>
-      <a:accent4><a:srgbClr val="${PALETTE.emerald}"/></a:accent4>
-      <a:accent5><a:srgbClr val="${PALETTE.amber}"/></a:accent5>
-      <a:accent6><a:srgbClr val="${PALETTE.rose}"/></a:accent6>
-      <a:hlink><a:srgbClr val="${PALETTE.indigo}"/></a:hlink>
-      <a:folHlink><a:srgbClr val="${PALETTE.purple}"/></a:folHlink>
-    </a:clrScheme>
-    <a:fontScheme name="Fius">
-      <a:majorFont><a:latin typeface="Calibri Light"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>
-      <a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont>
-    </a:fontScheme>
-    <a:fmtScheme name="Fius">
-      <a:fillStyleLst>
-        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
-        <a:gradFill flip="none"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="50000"/><a:satMod val="300000"/></a:schemeClr></a:gs><a:gs pos="35000"><a:schemeClr val="phClr"><a:tint val="37000"/><a:satMod val="300000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:tint val="15000"/><a:satMod val="350000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="16200000" scaled="1"/></a:gradFill>
-        <a:gradFill flip="none"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:shade val="51000"/><a:satMod val="130000"/></a:schemeClr></a:gs><a:gs pos="80000"><a:schemeClr val="phClr"><a:shade val="93000"/><a:satMod val="130000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="94000"/><a:satMod val="135000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="16200000" scaled="0"/></a:gradFill>
-      </a:fillStyleLst>
-      <a:lnStyleLst>
-        <a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>
-        <a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>
-        <a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/></a:ln>
-      </a:lnStyleLst>
-      <a:effectStyleLst>
-        <a:effectStyle><a:effectLst/></a:effectStyle>
-        <a:effectStyle><a:effectLst/></a:effectStyle>
-        <a:effectStyle><a:effectLst><a:outerShdw blurRad="40000" dist="23000" dir="5400000" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="35000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle>
-      </a:effectStyleLst>
-      <a:bgFillStyleLst>
-        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
-        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
-        <a:gradFill flip="none"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="40000"/><a:satMod val="350000"/></a:schemeClr></a:gs><a:gs pos="40000"><a:schemeClr val="phClr"><a:tint val="45000"/><a:satMod val="350000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="20000"/><a:satMod val="255000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="16200000" scaled="0"/></a:gradFill>
-      </a:bgFillStyleLst>
-    </a:fmtScheme>
-  </a:themeElements>
-</a:theme>`;
-
-  // Generate slide XMLs
-  const slideXmls = allSlides.map((s, i) => {
-    if ((s as any).isTitleSlide) {
-      return makeTitleSlideXml((s as any).title, (s as any).subtitle);
-    } else {
-      return makeContentSlideXml((s as any).slide, (s as any).slideIndex);
-    }
+  const slideXmls = allSlides.map(s => {
+    if (s.isTitleSlide) return makeTitleSlide(s.title, s.subtitle);
+    return makeContentSlide(s.slide, s.slideIndex);
   });
 
   const files: ZFile[] = [
@@ -615,25 +217,17 @@ export async function downloadPptx(content: string, filename = 'fius-presentatio
     { name: 'ppt/theme/theme1.xml', data: enc(theme) },
     { name: 'ppt/slideMasters/slideMaster1.xml', data: enc(slideMaster) },
     { name: 'ppt/slideMasters/_rels/slideMaster1.xml.rels', data: enc(slideMasterRels) },
-    { name: 'ppt/slideLayouts/slideLayout1.xml', data: enc(slideLayout1) },
-    { name: 'ppt/slideLayouts/_rels/slideLayout1.xml.rels', data: enc(slideLayout1Rels) },
-    { name: 'ppt/slideLayouts/slideLayout2.xml', data: enc(slideLayout2) },
-    { name: 'ppt/slideLayouts/_rels/slideLayout2.xml.rels', data: enc(slideLayout2Rels) },
-    ...slideXmls.map((xml, i) => ({ name: `ppt/slides/slide${i + 1}.xml`, data: enc(xml) })),
-    ...allSlides.map((s, i) => ({
-      name: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
-      data: enc((s as any).isTitleSlide ? titleSlideRels : contentSlideRels),
-    })),
+    { name: 'ppt/slideLayouts/slideLayout1.xml', data: enc(slideLayout) },
+    { name: 'ppt/slideLayouts/_rels/slideLayout1.xml.rels', data: enc(slideLayoutRels) },
+    ...slideXmls.map((xml, i) => ({ name: `ppt/slides/slide${i+1}.xml`, data: enc(xml) })),
+    ...allSlides.map((_, i) => ({ name: `ppt/slides/_rels/slide${i+1}.xml.rels`, data: enc(slideRels) })),
   ];
 
   const zip = buildZip(files);
   const blob = new Blob([zip], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.pptx`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = `${filename}.pptx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
