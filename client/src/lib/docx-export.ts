@@ -83,7 +83,7 @@ interface DocParagraph {
   image?: DocImage;
 }
 
-const PLACEHOLDER_RE = /^(photo|picture|illustration|video|animation|infographic|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i;
+const PLACEHOLDER_RE = /^(image|photo|picture|illustration|video|audio|animation|infographic|interactive element|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i;
 
 function parseDoc(content: string): DocParagraph[] {
   const cleaned = content
@@ -116,24 +116,41 @@ function parseDoc(content: string): DocParagraph[] {
     const h3 = line.match(/^###\s+(.+)/); if (h3) { bulletIdx=0; result.push({ type:'h3', text:cleanText(h3[1]) }); continue; }
     const h4 = line.match(/^####\s+(.+)/);if (h4) { bulletIdx=0; result.push({ type:'h4', text:cleanText(h4[1]) }); continue; }
 
-    const stripped = line.replace(/^[-*•▸►\d.]+\s*/,'').trim();
+    // ── Check for special markers ANYWHERE in the line ──
+    // This handles "▸ Image: [IMAGE: ...]", "- [IMAGE: ...]", plain "[IMAGE: ...]", etc.
 
-    // [IMAGE: query] — real photo to fetch and embed
-    const imgM = stripped.match(/^\[IMAGE:\s*(.+?)\]$/i) || line.match(/^\[IMAGE:\s*(.+?)\]$/i);
-    if (imgM) { result.push({ type: 'image', text: '', imageQuery: imgM[1].trim() }); continue; }
+    // [IMAGE: query] found anywhere in line → real photo to embed
+    const imgAnywhere = line.match(/\[IMAGE:\s*(.+?)\]/i);
+    if (imgAnywhere) { result.push({ type: 'image', text: '', imageQuery: imgAnywhere[1].trim() }); continue; }
 
-    // [QUIZ: question] — quiz callout box
-    const qzM = stripped.match(/^\[QUIZ:\s*(.+?)\]$/i) || line.match(/^\[QUIZ:\s*(.+?)\]$/i);
-    if (qzM) { result.push({ type: 'quiz', text: qzM[1].trim() }); continue; }
+    // [VIDEO:] / [AUDIO:] / [ANIMATION:] → drop entirely (can't embed these)
+    if (/\[(VIDEO|AUDIO|ANIMATION|INTERACTIVE):/i.test(line)) continue;
 
-    // Legacy "Image: ..." still emitted by AI occasionally
+    // [QUIZ: question] found anywhere
+    const qzAnywhere = line.match(/\[QUIZ:\s*(.+?)\]/i);
+    if (qzAnywhere) { result.push({ type: 'quiz', text: qzAnywhere[1].trim() }); continue; }
+
+    const stripped = line.replace(/^[-*+•▸►✦\d.]+\s*/,'').trim();
+
+    // Legacy AI output without brackets: "Image: a photo of tigers"
     const legacyImg = stripped.match(/^image\s*:\s*(.+)/i);
-    if (legacyImg) { result.push({ type: 'image', text: '', imageQuery: legacyImg[1].trim() }); continue; }
+    if (legacyImg) {
+      const inner = legacyImg[1].match(/\[IMAGE:\s*(.+?)\]/i);
+      const query = inner ? inner[1] : legacyImg[1].replace(/\[.*?\]/g,'').trim();
+      if (query.length > 2) result.push({ type: 'image', text: '', imageQuery: query });
+      continue;
+    }
+
+    // Legacy AI output: "Interactive element: ..." / "Quiz: ..."
     const legacyQz = stripped.match(/^(interactive element|quiz)\s*:\s*(.+)/i);
-    if (legacyQz) { result.push({ type: 'quiz', text: legacyQz[2].trim() }); continue; }
+    if (legacyQz) {
+      const qText = legacyQz[2].replace(/\[.*?\]/g,'').trim();
+      if (qText.length > 3) result.push({ type: 'quiz', text: qText });
+      continue;
+    }
 
     if (PLACEHOLDER_RE.test(stripped)) continue;
-    if (line.match(/^[-*•▸►]\s+/)) { result.push({ type:'bullet', text:line.replace(/^[-*•▸►]\s+/,''), bulletIdx:bulletIdx++ }); continue; }
+    if (line.match(/^[-*+•▸►✦]\s+/)) { result.push({ type:'bullet', text:line.replace(/^[-*+•▸►✦]\s+/,''), bulletIdx:bulletIdx++ }); continue; }
     const numM = line.match(/^\d+\.\s+(.+)/); if (numM) { result.push({ type:'numbered', text:numM[1], bulletIdx:bulletIdx++ }); continue; }
     if (line.match(/^[-*_]{3,}$/)) { bulletIdx=0; result.push({ type:'hr', text:'' }); continue; }
     bulletIdx=0;

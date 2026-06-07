@@ -97,8 +97,8 @@ function cleanContent(content: string): string {
     .trim();
 }
 
-// Placeholder prefixes that should NEVER become bullets
-const PLACEHOLDER_RE = /^(photo|picture|illustration|video|animation|infographic|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i;
+// Lines that should never become bullets (generic placeholders)
+const PLACEHOLDER_RE = /^(image|photo|picture|illustration|video|audio|animation|infographic|interactive element|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i;
 
 function parseSlides(content: string): Slide[] {
   const cleaned = cleanContent(content);
@@ -119,22 +119,39 @@ function parseSlides(content: string): Slide[] {
 
     if (!cur) cur = { title: '', bullets: [] };
 
-    // Strip bullet marker first
-    const stripped = line.replace(/^[-*•▸►\d.]+\s*/,'').trim();
+    // ── Check for special markers ANYWHERE in the line (handles "▸ Image: [IMAGE: ...]" etc.) ──
 
-    // [IMAGE: query] marker — real photo to embed
-    const imgM = stripped.match(/^\[IMAGE:\s*(.+?)\]$/i);
-    if (imgM) { cur.imageQuery = cur.imageQuery || imgM[1].trim(); continue; }
+    // [IMAGE: query] found anywhere → real photo to embed
+    const imgAnywhere = line.match(/\[IMAGE:\s*(.+?)\]/i);
+    if (imgAnywhere) { cur.imageQuery = cur.imageQuery || imgAnywhere[1].trim(); continue; }
 
-    // [QUIZ: question] marker — interactive quiz callout
-    const qzM = stripped.match(/^\[QUIZ:\s*(.+?)\]$/i);
-    if (qzM) { cur.quizQuestion = cur.quizQuestion || qzM[1].trim(); continue; }
+    // [VIDEO:] / [AUDIO:] / [ANIMATION:] → drop (can't embed these)
+    if (/\[(VIDEO|AUDIO|ANIMATION|INTERACTIVE):/i.test(line)) continue;
 
-    // Legacy "Image: ..." / "Interactive element: ..." that AI may still emit
-    const legacyImgM = stripped.match(/^image\s*:\s*(.+)/i);
-    if (legacyImgM) { cur.imageQuery = cur.imageQuery || legacyImgM[1].trim(); continue; }
-    const legacyQzM = stripped.match(/^interactive element\s*:\s*(.+)/i) || stripped.match(/^quiz\s*:\s*(.+)/i);
-    if (legacyQzM) { cur.quizQuestion = cur.quizQuestion || legacyQzM[1].trim(); continue; }
+    // [QUIZ: question] found anywhere
+    const qzAnywhere = line.match(/\[QUIZ:\s*(.+?)\]/i);
+    if (qzAnywhere) { cur.quizQuestion = cur.quizQuestion || qzAnywhere[1].trim(); continue; }
+
+    // Strip bullet/number marker to get the content portion
+    const stripped = line.replace(/^[-*+•▸►✦\d.]+\s*/,'').trim();
+
+    // Legacy AI output: "Image: description" or "Image: [IMAGE: ...]"
+    const legacyImg = stripped.match(/^image\s*:\s*(.+)/i);
+    if (legacyImg) {
+      // Extract from inner [IMAGE: ...] if present, else use raw text as query
+      const inner = legacyImg[1].match(/\[IMAGE:\s*(.+?)\]/i);
+      cur.imageQuery = cur.imageQuery || (inner ? inner[1] : legacyImg[1].replace(/\[.*?\]/g,'').trim());
+      continue;
+    }
+
+    // Legacy AI output: "Interactive element: ..." / "Quiz: ..."
+    const legacyQz = stripped.match(/^(interactive element|quiz)\s*:\s*(.+)/i);
+    if (legacyQz) {
+      // Only keep it if it looks like a question, not a [VIDEO:] placeholder
+      const qText = legacyQz[2].replace(/\[.*?\]/g,'').trim();
+      if (qText.length > 3) cur.quizQuestion = cur.quizQuestion || qText;
+      continue;
+    }
 
     if (PLACEHOLDER_RE.test(stripped)) continue;
 
