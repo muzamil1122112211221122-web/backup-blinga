@@ -1205,6 +1205,74 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
     }
   });
 
+  // AI-powered document formatting endpoint for export
+  app.post('/api/format-for-export', requireAuth, async (req, res) => {
+    try {
+      const { content, type } = req.body;
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ success: false, message: 'Content is required' });
+      }
+
+      const isPresentation = type === 'pptx';
+
+      const systemPrompt = isPresentation
+        ? `You are a professional presentation writer. Transform the given content into a clean, well-structured presentation outline using markdown.
+Rules:
+- Use # for the main presentation title (only once, at the top)
+- Use ## for each major section/slide title (4-8 sections ideal)
+- Use bullet points (- ) for slide content, max 5-6 bullets per section, each max 15 words
+- Make headings punchy and specific
+- Remove ANY phrase that sounds like "As an AI", "As a language model", "I was trained", etc.
+- Do NOT add "Written by AI" or similar disclaimers
+- Keep bullet points concise and impactful
+- Focus on key insights, facts, and actionable points
+Output ONLY the markdown, no preamble.`
+        : `You are a professional document writer. Transform the given content into a clean, well-structured document using markdown.
+Rules:
+- Use # for the document title
+- Use ## for major sections
+- Use ### for subsections
+- Use bullet points for lists
+- Bold (**text**) important terms and key facts
+- Remove ANY phrase that sounds like "As an AI", "As a language model", "I was trained", etc.
+- Do NOT add "Written by AI" or similar disclaimers
+- Organize content logically with clear hierarchy
+- Keep paragraphs concise
+Output ONLY the markdown, no preamble.`;
+
+      // Use Groq for fast formatting
+      const groqKey = process.env.GROQ_API_KEY;
+      if (!groqKey) {
+        return res.json({ success: false, formatted: content });
+      }
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Transform this content:\n\n${content.slice(0, 8000)}` }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        return res.json({ success: false, formatted: content });
+      }
+
+      const data = await response.json();
+      const formatted = data.choices?.[0]?.message?.content?.trim() || content;
+      return res.json({ success: true, formatted });
+    } catch (error) {
+      console.error('Format-for-export error:', error);
+      return res.json({ success: false, formatted: req.body.content });
+    }
+  });
+
   // WebSocket connection handling
   wss.on('connection', (ws: WebSocket, req) => {
     const clientId = Math.random().toString(36).substring(7);

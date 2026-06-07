@@ -31,6 +31,67 @@ import { FiusGames } from "./fius-games";
 const globalCompletedTextsModule = new Map<string, string>();
 const globalProgressTextsModule = new Map<string, string>();
 
+// Smart image component with loading skeleton + fallback URL support for Pollinations images
+function GeneratedImageDisplay({ src, alt, className }: { src: string; alt?: string; className?: string }) {
+  const [status, setStatus] = React.useState<'loading' | 'loaded' | 'error'>('loading');
+  const [currentSrc, setCurrentSrc] = React.useState(src);
+  const fallbacksTriedRef = React.useRef(0);
+
+  // Extract fallback URLs embedded in pollinations URLs (different seeds)
+  const buildFallbacks = (url: string): string[] => {
+    try {
+      const u = new URL(url);
+      const base = `${u.origin}${u.pathname}`;
+      const seed = parseInt(u.searchParams.get('seed') || '0');
+      const params = new URLSearchParams(u.search);
+      const fallbacks: string[] = [];
+      for (let i = 1; i <= 3; i++) {
+        params.set('seed', String(seed + i * 100));
+        params.set('model', i === 1 ? 'flux-realism' : i === 2 ? 'turbo' : 'flux');
+        fallbacks.push(`${base}?${params.toString()}`);
+      }
+      return fallbacks;
+    } catch { return []; }
+  };
+
+  const fallbacks = React.useMemo(() => buildFallbacks(src), [src]);
+
+  const handleError = () => {
+    if (fallbacksTriedRef.current < fallbacks.length) {
+      setCurrentSrc(fallbacks[fallbacksTriedRef.current]);
+      fallbacksTriedRef.current++;
+    } else {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div className={`relative my-3 rounded-xl overflow-hidden border border-border shadow-md ${className || ''}`} style={{ maxWidth: '100%' }}>
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50 dark:from-slate-800 dark:to-indigo-900/30" style={{ minHeight: 200 }}>
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin" />
+          </div>
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium">Generating image…</p>
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-rose-50 dark:from-slate-800 dark:to-rose-900/20 p-8" style={{ minHeight: 140 }}>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Image generation timed out — try again</p>
+        </div>
+      )}
+      <img
+        src={currentSrc}
+        alt={alt || 'Generated image'}
+        className="max-w-full h-auto rounded-xl"
+        style={{ display: status === 'error' ? 'none' : 'block', minHeight: status === 'loaded' ? undefined : 200, opacity: status === 'loading' ? 0 : 1, transition: 'opacity 0.3s' }}
+        onLoad={() => setStatus('loaded')}
+        onError={handleError}
+      />
+    </div>
+  );
+}
+
 function getVibrantColor(name: string, secondary = false): string {
   const colors = [
     ['#ef4444', '#dc2626'], // Red gradient
@@ -63,6 +124,7 @@ import { ImagineModal } from "./imagine-modal";
 import { Sidebar } from "./sidebar";
 import { QuizModal, QuizQuestion } from "./quiz-modal";
 import { downloadPptx } from "@/lib/pptx-export";
+import { downloadWordDoc } from "@/lib/docx-export";
 import { useWebSocket } from "../hooks/use-websocket";
 import { useSpeechRecognition, useSpeechSynthesis } from "../hooks/use-speech";
 import { ChatMessage, ChatPreset, AVAILABLE_MODELS, MODEL_OPTIONS, AvailableModel, WebSocketMessage } from "../types/chat";
@@ -756,6 +818,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
+  const [exportingMsgId, setExportingMsgId] = useState<string | null>(null);
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
@@ -1253,18 +1316,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             },
             img: ({src, alt}) => {
               if (!src) return null;
-              return (
-                <img 
-                  src={src} 
-                  alt={alt || "Generated image"} 
-                  className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.style.display = 'none';
-                  }}
-                />
-              );
+              return <GeneratedImageDisplay src={src} alt={alt || "Generated image"} />;
             }
           }}
         >
@@ -3218,7 +3270,7 @@ Let's start the self-listen session!`;
                               </TooltipTrigger>
                               <TooltipContent><p>Export</p></TooltipContent>
                             </Tooltip>
-                            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px]">
                               <DropdownMenuItem
                                 className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                                 onClick={() => handleMakePDF(message.content)}
@@ -3228,10 +3280,33 @@ Let's start the self-listen session!`;
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                onClick={() => downloadPptx(message.content)}
+                                disabled={exportingMsgId === message.id + '-doc'}
+                                onClick={async () => {
+                                  setExportingMsgId(message.id + '-doc');
+                                  try { await downloadWordDoc(message.content); } finally { setExportingMsgId(null); }
+                                }}
                               >
-                                <FileDown className="h-3.5 w-3.5 text-orange-500" />
-                                PowerPoint (.pptx)
+                                {exportingMsgId === message.id + '-doc' ? (
+                                  <svg className="h-3.5 w-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                ) : (
+                                  <FileDown className="h-3.5 w-3.5 text-blue-500" />
+                                )}
+                                {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.doc)'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                                disabled={exportingMsgId === message.id + '-ppt'}
+                                onClick={async () => {
+                                  setExportingMsgId(message.id + '-ppt');
+                                  try { await downloadPptx(message.content); } finally { setExportingMsgId(null); }
+                                }}
+                              >
+                                {exportingMsgId === message.id + '-ppt' ? (
+                                  <svg className="h-3.5 w-3.5 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                ) : (
+                                  <FileDown className="h-3.5 w-3.5 text-orange-500" />
+                                )}
+                                {exportingMsgId === message.id + '-ppt' ? 'AI Designing…' : 'PowerPoint (.pptx)'}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
