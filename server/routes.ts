@@ -1226,8 +1226,9 @@ Rules:
 - Do NOT add "Written by AI" or similar disclaimers
 - Keep bullet points concise and impactful
 - Focus on key insights, facts, and actionable points
-- NEVER include lines like "Image: ...", "Photo: ...", "Video: ...", "Interactive element: ...", "Quiz: ...", "Activity: ...", "Speaker note: ...", "Note: ...", "Caption: ...", "Figure: ...", "Diagram: ...", "Chart: ...", "Infographic: ...", "Illustration: ..." — these are not slide content
-- Only include real informational bullet points that a speaker would say out loud
+- IMAGE HANDLING: When the content references an image, photo, illustration, or visual — convert it to a special marker on its own line: [IMAGE: concise search query describing the image, max 8 words]. Example: if content says "Image: A stunning photo of a peacock" → output [IMAGE: peacock colorful feathers display]. Only include 1 [IMAGE:] per section maximum.
+- QUIZ HANDLING: When the content references a quiz question, interactive element, or test question — convert it to: [QUIZ: the actual question text?]. Only include 1 [QUIZ:] per section maximum.
+- All other "Speaker note:", "Note:", "Caption:", "Video:", "Animation:", "Infographic:", "Activity:", "Exercise:", "Source:", "Reference:" lines should be REMOVED entirely — they are not slide content
 Output ONLY the markdown, no preamble.`
         : `You are a professional document writer. Transform the given content into a clean, well-structured document using markdown.
 Rules:
@@ -1240,8 +1241,9 @@ Rules:
 - Do NOT add "Written by AI" or similar disclaimers
 - Organize content logically with clear hierarchy
 - Keep paragraphs concise
-- NEVER include lines like "Image: ...", "Photo: ...", "Video: ...", "Interactive element: ...", "Quiz: ...", "Activity: ...", "Caption: ...", "Figure: ...", "Diagram: ...", "Chart: ...", "Infographic: ..." — remove them entirely
-- Only include real informational content
+- IMAGE HANDLING: When the content references an image or photo — convert it to [IMAGE: concise 5-word search query] on its own line
+- QUIZ HANDLING: When the content references a quiz or interactive question — convert it to [QUIZ: question text?] on its own line
+- All other "Note:", "Caption:", "Video:", "Animation:", "Source:", "Reference:" lines should be removed
 Output ONLY the markdown, no preamble.`;
 
       // Use Groq for fast formatting
@@ -1274,6 +1276,38 @@ Output ONLY the markdown, no preamble.`;
     } catch (error) {
       console.error('Format-for-export error:', error);
       return res.json({ success: false, formatted: req.body.content });
+    }
+  });
+
+  // Image proxy for PPTX/DOCX export — fetches from Pollinations and returns base64
+  app.post('/api/fetch-image-for-export', requireAuth, async (req, res) => {
+    try {
+      const { query } = req.body;
+      if (!query || typeof query !== 'string') return res.status(400).json({ error: 'Query required' });
+
+      const prompt = encodeURIComponent(`${query.slice(0, 200)}, professional photography, vibrant colors, clean composition`);
+      const seed = Math.floor(Math.random() * 9999);
+      const url = `https://image.pollinations.ai/prompt/${prompt}?width=600&height=400&nologo=true&seed=${seed}`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 22000);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!response.ok) return res.status(502).json({ error: 'Image service error' });
+
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const mimeType = response.headers.get('content-type') || 'image/jpeg';
+        return res.json({ base64, mimeType });
+      } catch (fetchErr: any) {
+        clearTimeout(timeout);
+        if (fetchErr.name === 'AbortError') return res.status(504).json({ error: 'Image fetch timed out' });
+        throw fetchErr;
+      }
+    } catch (error) {
+      console.error('fetch-image-for-export error:', error);
+      return res.status(500).json({ error: 'Failed to fetch image' });
     }
   });
 

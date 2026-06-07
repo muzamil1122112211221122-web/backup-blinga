@@ -1,4 +1,4 @@
-// Professional DOCX generator using WordprocessingML — real .docx format, no external dependencies
+// Professional DOCX generator — WordprocessingML, embedded real images, quiz callouts
 
 function crc32(data: Uint8Array): number {
   const table = new Uint32Array(256);
@@ -39,91 +39,51 @@ function wEsc(s: string): string {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// WordprocessingML color palette
 const D = {
-  indigo:  '4F46E5',
-  indigoD: '3730A3',
-  purple:  '7C3AED',
-  cyan:    '06B6D4',
-  emerald: '10B981',
-  amber:   'F59E0B',
-  rose:    'EF4444',
-  navy:    '0F0C29',
-  white:   'FFFFFF',
-  bgLight: 'EEF2FF',
-  bgCyan:  'ECFEFF',
-  darkTxt: '1E293B',
-  muted:   '64748B',
-  hr:      'C7D2FE',
+  indigo:  '4F46E5', indigoD: '3730A3', purple: '7C3AED',
+  cyan:    '06B6D4', emerald: '10B981', amber:  'F59E0B', rose: 'EF4444',
+  navy:    '0F0C29', white:   'FFFFFF', bgLight: 'EEF2FF',
+  darkTxt: '1E293B', muted:   '64748B', hr:     'C7D2FE',
 };
-
 const BULLET_COLORS = [D.indigo, D.purple, D.cyan, D.emerald, D.amber, D.rose];
 
-// Clean markdown text
 function cleanText(s: string): string {
-  return s
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/`(.*?)`/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .trim();
+  return s.replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1').replace(/`(.*?)`/g,'$1').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').trim();
 }
 
-// Inline markup → w:r runs
 function inlineRuns(text: string, defaultColor = D.darkTxt, defaultSz = '22'): string {
-  const parts: string[] = [];
-  const regex = /\*\*(.*?)\*\*|\*(.*?)\*|`(.*?)`|(.+?)(?=\*\*|\*|`|$)/gs;
-  let lastIdx = 0;
-
-  // Simple approach: split into segments
   const segs: Array<{ bold?: boolean; italic?: boolean; code?: boolean; text: string }> = [];
   let rest = text;
-
   while (rest.length > 0) {
-    const boldM = rest.match(/^\*\*(.*?)\*\*/s);
-    const italM = rest.match(/^\*(.*?)\*/s);
-    const codeM = rest.match(/^`(.*?)`/s);
-
-    if (boldM && boldM.index === 0) {
-      segs.push({ bold: true, text: boldM[1] });
-      rest = rest.slice(boldM[0].length);
-    } else if (italM && italM.index === 0) {
-      segs.push({ italic: true, text: italM[1] });
-      rest = rest.slice(italM[0].length);
-    } else if (codeM && codeM.index === 0) {
-      segs.push({ code: true, text: codeM[1] });
-      rest = rest.slice(codeM[0].length);
-    } else {
-      // Find next special char
-      const nextSpec = rest.search(/\*\*|\*|`/);
-      if (nextSpec === -1) {
-        segs.push({ text: rest });
-        rest = '';
-      } else {
-        segs.push({ text: rest.slice(0, nextSpec) });
-        rest = rest.slice(nextSpec);
-      }
-    }
+    const bM = rest.match(/^\*\*(.*?)\*\*/s), iM = rest.match(/^\*(.*?)\*/s), cM = rest.match(/^`(.*?)`/s);
+    if (bM) { segs.push({ bold: true, text: bM[1] }); rest = rest.slice(bM[0].length); }
+    else if (iM) { segs.push({ italic: true, text: iM[1] }); rest = rest.slice(iM[0].length); }
+    else if (cM) { segs.push({ code: true, text: cM[1] }); rest = rest.slice(cM[0].length); }
+    else { const n = rest.search(/\*\*|\*|`/); if (n===-1) { segs.push({text:rest}); rest=''; } else { segs.push({text:rest.slice(0,n)}); rest=rest.slice(n); } }
   }
-
-  for (const seg of segs) {
-    if (!seg.text) continue;
+  const parts = segs.filter(s=>s.text).map(s => {
     let rPr = `<w:rPr>`;
-    if (seg.bold)   rPr += `<w:b/><w:color w:val="${D.indigoD}"/>`;
-    else if (seg.italic) rPr += `<w:i/><w:color w:val="${D.muted}"/>`;
-    else if (seg.code) rPr += `<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:color w:val="${D.indigo}"/><w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>`;
+    if (s.bold)   rPr += `<w:b/><w:color w:val="${D.indigoD}"/>`;
+    else if (s.italic) rPr += `<w:i/><w:color w:val="${D.muted}"/>`;
+    else if (s.code)   rPr += `<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:color w:val="${D.indigo}"/><w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>`;
     else rPr += `<w:color w:val="${defaultColor}"/>`;
     rPr += `<w:sz w:val="${defaultSz}"/><w:szCs w:val="${defaultSz}"/></w:rPr>`;
-    parts.push(`<w:r>${rPr}<w:t xml:space="preserve">${wEsc(seg.text)}</w:t></w:r>`);
-  }
+    return `<w:r>${rPr}<w:t xml:space="preserve">${wEsc(s.text)}</w:t></w:r>`;
+  });
   return parts.join('') || `<w:r><w:rPr><w:color w:val="${defaultColor}"/><w:sz w:val="${defaultSz}"/></w:rPr><w:t xml:space="preserve">${wEsc(text)}</w:t></w:r>`;
 }
 
+interface DocImage { data: Uint8Array; ext: string; mediaName: string; rId: string; picId: number }
+
 interface DocParagraph {
-  type: 'h1'|'h2'|'h3'|'h4'|'para'|'bullet'|'numbered'|'hr'|'code'|'blank';
+  type: 'h1'|'h2'|'h3'|'h4'|'para'|'bullet'|'numbered'|'hr'|'code'|'blank'|'image'|'quiz';
   text: string;
   bulletIdx?: number;
+  imageQuery?: string;
+  image?: DocImage;
 }
+
+const PLACEHOLDER_RE = /^(photo|picture|illustration|video|animation|infographic|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i;
 
 function parseDoc(content: string): DocParagraph[] {
   const cleaned = content
@@ -132,82 +92,132 @@ function parseDoc(content: string): DocParagraph[] {
 
   const lines = cleaned.split('\n');
   const result: DocParagraph[] = [];
-  let bulletIdx = 0;
-  let inCode = false;
+  let bulletIdx = 0, prevWasBlank = false, inCode = false;
   const codeLines: string[] = [];
-  let prevWasBlank = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
+  for (const raw of lines) {
     const line = raw.trim();
 
     if (inCode) {
-      if (line.startsWith('```')) {
-        inCode = false;
-        result.push({ type: 'code', text: codeLines.join('\n') });
-        codeLines.length = 0;
-      } else {
-        codeLines.push(raw);
-      }
+      if (line.startsWith('```')) { inCode = false; result.push({ type: 'code', text: codeLines.join('\n') }); codeLines.length = 0; }
+      else codeLines.push(raw);
       continue;
     }
-
     if (line.startsWith('```')) { inCode = true; prevWasBlank = false; continue; }
 
     if (!line) {
       if (!prevWasBlank) result.push({ type: 'blank', text: '' });
-      prevWasBlank = true;
-      bulletIdx = 0;
-      continue;
+      prevWasBlank = true; bulletIdx = 0; continue;
     }
     prevWasBlank = false;
 
-    const h1 = line.match(/^#\s+(.+)/);
-    if (h1) { bulletIdx = 0; result.push({ type: 'h1', text: cleanText(h1[1]) }); continue; }
-    const h2 = line.match(/^##\s+(.+)/);
-    if (h2) { bulletIdx = 0; result.push({ type: 'h2', text: cleanText(h2[1]) }); continue; }
-    const h3 = line.match(/^###\s+(.+)/);
-    if (h3) { bulletIdx = 0; result.push({ type: 'h3', text: cleanText(h3[1]) }); continue; }
-    const h4 = line.match(/^####\s+(.+)/);
-    if (h4) { bulletIdx = 0; result.push({ type: 'h4', text: cleanText(h4[1]) }); continue; }
+    const h1 = line.match(/^#\s+(.+)/);   if (h1) { bulletIdx=0; result.push({ type:'h1', text:cleanText(h1[1]) }); continue; }
+    const h2 = line.match(/^##\s+(.+)/);  if (h2) { bulletIdx=0; result.push({ type:'h2', text:cleanText(h2[1]) }); continue; }
+    const h3 = line.match(/^###\s+(.+)/); if (h3) { bulletIdx=0; result.push({ type:'h3', text:cleanText(h3[1]) }); continue; }
+    const h4 = line.match(/^####\s+(.+)/);if (h4) { bulletIdx=0; result.push({ type:'h4', text:cleanText(h4[1]) }); continue; }
 
-    // Skip AI-generated media/element placeholder lines
-    const isPlaceholder = /^(image|photo|picture|illustration|video|animation|infographic|interactive element|quiz|activity|exercise|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i.test(line.replace(/^[-*•▸►\d.]+\s*/,''));
-    if (isPlaceholder) { prevWasBlank = false; continue; }
+    const stripped = line.replace(/^[-*•▸►\d.]+\s*/,'').trim();
 
-    if (line.match(/^[-*•▸►]\s+/)) {
-      const text = line.replace(/^[-*•▸►]\s+/, '');
-      result.push({ type: 'bullet', text, bulletIdx: bulletIdx++ });
-      continue;
-    }
-    const numM = line.match(/^\d+\.\s+(.+)/);
-    if (numM) { result.push({ type: 'numbered', text: numM[1], bulletIdx: bulletIdx++ }); continue; }
+    // [IMAGE: query] — real photo to fetch and embed
+    const imgM = stripped.match(/^\[IMAGE:\s*(.+?)\]$/i) || line.match(/^\[IMAGE:\s*(.+?)\]$/i);
+    if (imgM) { result.push({ type: 'image', text: '', imageQuery: imgM[1].trim() }); continue; }
 
-    if (line.match(/^[-*_]{3,}$/)) { bulletIdx = 0; result.push({ type: 'hr', text: '' }); continue; }
+    // [QUIZ: question] — quiz callout box
+    const qzM = stripped.match(/^\[QUIZ:\s*(.+?)\]$/i) || line.match(/^\[QUIZ:\s*(.+?)\]$/i);
+    if (qzM) { result.push({ type: 'quiz', text: qzM[1].trim() }); continue; }
 
-    bulletIdx = 0;
-    result.push({ type: 'para', text: line });
+    // Legacy "Image: ..." still emitted by AI occasionally
+    const legacyImg = stripped.match(/^image\s*:\s*(.+)/i);
+    if (legacyImg) { result.push({ type: 'image', text: '', imageQuery: legacyImg[1].trim() }); continue; }
+    const legacyQz = stripped.match(/^(interactive element|quiz)\s*:\s*(.+)/i);
+    if (legacyQz) { result.push({ type: 'quiz', text: legacyQz[2].trim() }); continue; }
+
+    if (PLACEHOLDER_RE.test(stripped)) continue;
+    if (line.match(/^[-*•▸►]\s+/)) { result.push({ type:'bullet', text:line.replace(/^[-*•▸►]\s+/,''), bulletIdx:bulletIdx++ }); continue; }
+    const numM = line.match(/^\d+\.\s+(.+)/); if (numM) { result.push({ type:'numbered', text:numM[1], bulletIdx:bulletIdx++ }); continue; }
+    if (line.match(/^[-*_]{3,}$/)) { bulletIdx=0; result.push({ type:'hr', text:'' }); continue; }
+    bulletIdx=0;
+    result.push({ type:'para', text:line });
   }
-
   return result;
 }
 
-function renderParagraph(p: DocParagraph, docTitle: string): string {
+// Word inline drawing XML for an embedded image (EMU: 1 inch = 914400)
+function renderImageParagraph(p: DocParagraph): string {
+  if (!p.image) {
+    // Failed to fetch — render a gray placeholder box with caption
+    return `<w:p><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="E2E8F0"/><w:spacing w:before="120" w:after="120"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="${D.muted}"/><w:sz w:val="20"/><w:i/></w:rPr><w:t xml:space="preserve">&#x1F5BC; ${wEsc(p.imageQuery || 'Image')}</w:t></w:r></w:p>`;
+  }
+  const img = p.image;
+  // 5.5" × 3.67" — fills most of the text column nicely
+  const CX = 5029200, CY = 3352800;
+  return `<w:p>
+  <w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="120"/></w:pPr>
+  <w:r><w:drawing>
+    <wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
+      <wp:extent cx="${CX}" cy="${CY}"/>
+      <wp:effectExtent l="0" t="0" r="0" b="0"/>
+      <wp:docPr id="${img.picId}" name="${img.mediaName}"/>
+      <wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>
+      <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+            <pic:nvPicPr>
+              <pic:cNvPr id="${img.picId}" name="${img.mediaName}"/>
+              <pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr>
+            </pic:nvPicPr>
+            <pic:blipFill>
+              <a:blip r:embed="${img.rId}"/>
+              <a:stretch><a:fillRect/></a:stretch>
+            </pic:blipFill>
+            <pic:spPr bwMode="auto">
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="${CX}" cy="${CY}"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+            </pic:spPr>
+          </pic:pic>
+        </a:graphicData>
+      </a:graphic>
+    </wp:inline>
+  </w:drawing></w:r>
+</w:p>`;
+}
+
+function renderParagraph(p: DocParagraph): string {
   const bColor = BULLET_COLORS[(p.bulletIdx ?? 0) % BULLET_COLORS.length];
 
   switch (p.type) {
-    case 'blank':
-      return `<w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr></w:p>`;
+    case 'image': return renderImageParagraph(p);
 
-    case 'hr':
-      return `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="${D.indigo}"/></w:pBdr><w:spacing w:before="120" w:after="120"/></w:pPr></w:p>`;
+    case 'quiz':
+      return `<w:p>
+  <w:pPr>
+    <w:shd w:val="clear" w:color="auto" w:fill="${D.purple}"/>
+    <w:spacing w:before="160" w:after="40"/>
+    <w:ind w:left="216" w:right="216"/>
+    <w:pBdr><w:left w:val="single" w:sz="36" w:space="4" w:color="FDE68A"/></w:pBdr>
+  </w:pPr>
+  <w:r><w:rPr><w:b/><w:color w:val="FDE68A"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve"> &#x2753; QUIZ  </w:t></w:r>
+  <w:r><w:rPr><w:b/><w:color w:val="${D.white}"/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${wEsc(p.text)}</w:t></w:r>
+</w:p>
+<w:p>
+  <w:pPr>
+    <w:shd w:val="clear" w:color="auto" w:fill="4C1D95"/>
+    <w:spacing w:before="0" w:after="160"/>
+    <w:ind w:left="216" w:right="216"/>
+    <w:pBdr><w:left w:val="single" w:sz="36" w:space="4" w:color="FDE68A"/></w:pBdr>
+  </w:pPr>
+  <w:r><w:rPr><w:color w:val="DDD6FE"/><w:sz w:val="18"/><w:i/></w:rPr><w:t xml:space="preserve"> Think about your answer before reading on...</w:t></w:r>
+</w:p>`;
+
+    case 'blank': return `<w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr></w:p>`;
+
+    case 'hr': return `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="${D.indigo}"/></w:pBdr><w:spacing w:before="120" w:after="120"/></w:pPr></w:p>`;
 
     case 'h1':
       return `<w:p>
   <w:pPr>
     <w:shd w:val="clear" w:color="auto" w:fill="${D.navy}"/>
     <w:spacing w:before="240" w:after="160"/>
-    <w:jc w:val="left"/>
     <w:ind w:left="288" w:right="288"/>
     <w:pBdr><w:left w:val="single" w:sz="48" w:space="4" w:color="${D.indigo}"/></w:pBdr>
   </w:pPr>
@@ -219,7 +229,6 @@ function renderParagraph(p: DocParagraph, docTitle: string): string {
   <w:pPr>
     <w:shd w:val="clear" w:color="auto" w:fill="${D.indigo}"/>
     <w:spacing w:before="200" w:after="120"/>
-    <w:jc w:val="left"/>
     <w:ind w:left="216" w:right="216"/>
   </w:pPr>
   <w:r><w:rPr><w:b/><w:color w:val="${D.white}"/><w:sz w:val="40"/><w:szCs w:val="40"/><w:rFonts w:ascii="Calibri Light" w:hAnsi="Calibri Light"/></w:rPr><w:t xml:space="preserve"> ${wEsc(p.text)}</w:t></w:r>
@@ -253,7 +262,7 @@ function renderParagraph(p: DocParagraph, docTitle: string): string {
     <w:spacing w:before="60" w:after="60"/>
     <w:ind w:left="576" w:hanging="360"/>
   </w:pPr>
-  <w:r><w:rPr><w:b/><w:color w:val="${bColor}"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr><w:t xml:space="preserve">&#x25B8; </w:t></w:r>
+  <w:r><w:rPr><w:b/><w:color w:val="${bColor}"/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">&#x25B8; </w:t></w:r>
   ${inlineRuns(p.text, D.darkTxt, '22')}
 </w:p>`;
     }
@@ -261,28 +270,19 @@ function renderParagraph(p: DocParagraph, docTitle: string): string {
     case 'numbered': {
       const num = (p.bulletIdx ?? 0) + 1;
       return `<w:p>
-  <w:pPr>
-    <w:spacing w:before="60" w:after="60"/>
-    <w:ind w:left="576" w:hanging="360"/>
-  </w:pPr>
+  <w:pPr><w:spacing w:before="60" w:after="60"/><w:ind w:left="576" w:hanging="360"/></w:pPr>
   <w:r><w:rPr><w:b/><w:color w:val="${D.indigo}"/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">${num}. </w:t></w:r>
   ${inlineRuns(p.text, D.darkTxt, '22')}
 </w:p>`;
     }
 
-    case 'code':
-      return `<w:p>
-  <w:pPr>
-    <w:shd w:val="clear" w:color="auto" w:fill="1E293B"/>
-    <w:spacing w:before="80" w:after="80"/>
-    <w:ind w:left="216" w:right="216"/>
-  </w:pPr>
-  ${p.text.split('\n').map((line, li) =>
-    li === 0
-      ? `<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:color w:val="E2E8F0"/><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">${wEsc(line)}</w:t></w:r>`
-      : `</w:p><w:p><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="1E293B"/><w:spacing w:before="0" w:after="0"/><w:ind w:left="216" w:right="216"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:color w:val="E2E8F0"/><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">${wEsc(line)}</w:t></w:r>`
-  ).join('')}
-</w:p>`;
+    case 'code': {
+      const codeLines2 = p.text.split('\n');
+      return codeLines2.map((cl, li) => `<w:p>
+  <w:pPr><w:shd w:val="clear" w:color="auto" w:fill="1E293B"/><w:spacing w:before="${li===0?'80':'0'}" w:after="${li===codeLines2.length-1?'80':'0'}"/><w:ind w:left="216" w:right="216"/></w:pPr>
+  <w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:color w:val="E2E8F0"/><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">${wEsc(cl || ' ')}</w:t></w:r>
+</w:p>`).join('\n');
+    }
 
     case 'para':
     default:
@@ -294,70 +294,39 @@ function renderParagraph(p: DocParagraph, docTitle: string): string {
 }
 
 function buildDocumentXml(paragraphs: DocParagraph[], docTitle: string): string {
-  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
-  const headerBlock = `<w:p>
-  <w:pPr>
-    <w:shd w:val="clear" w:color="auto" w:fill="${D.navy}"/>
-    <w:spacing w:before="0" w:after="0"/>
-    <w:ind w:left="216" w:right="216"/>
-    <w:pBdr><w:left w:val="single" w:sz="48" w:space="4" w:color="${D.indigo}"/></w:pBdr>
-  </w:pPr>
-  <w:r><w:rPr><w:b/><w:color w:val="${D.white}"/><w:sz w:val="32"/><w:rFonts w:ascii="Calibri Light" w:hAnsi="Calibri Light"/></w:rPr><w:t xml:space="preserve"> ✦ FIUS — PROFESSIONAL EXPORT</w:t></w:r>
+  const header = `<w:p>
+  <w:pPr><w:shd w:val="clear" w:color="auto" w:fill="${D.navy}"/><w:spacing w:before="0" w:after="0"/><w:ind w:left="216" w:right="216"/><w:pBdr><w:left w:val="single" w:sz="48" w:space="4" w:color="${D.indigo}"/></w:pBdr></w:pPr>
+  <w:r><w:rPr><w:b/><w:color w:val="${D.white}"/><w:sz w:val="32"/><w:rFonts w:ascii="Calibri Light" w:hAnsi="Calibri Light"/></w:rPr><w:t xml:space="preserve"> &#x2726; FIUS EXPORT</w:t></w:r>
 </w:p>
 <w:p>
-  <w:pPr>
-    <w:shd w:val="clear" w:color="auto" w:fill="${D.navy}"/>
-    <w:spacing w:before="0" w:after="240"/>
-    <w:ind w:left="216" w:right="216"/>
-    <w:pBdr><w:left w:val="single" w:sz="48" w:space="4" w:color="${D.indigo}"/></w:pBdr>
-  </w:pPr>
+  <w:pPr><w:shd w:val="clear" w:color="auto" w:fill="${D.navy}"/><w:spacing w:before="0" w:after="240"/><w:ind w:left="216" w:right="216"/><w:pBdr><w:left w:val="single" w:sz="48" w:space="4" w:color="${D.indigo}"/></w:pBdr></w:pPr>
   <w:r><w:rPr><w:color w:val="94A3B8"/><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve"> ${wEsc(date)}</w:t></w:r>
 </w:p>`;
 
-  const footerHr = `<w:p>
-  <w:pPr>
-    <w:pBdr><w:top w:val="single" w:sz="6" w:space="1" w:color="${D.indigo}"/></w:pBdr>
-    <w:spacing w:before="240" w:after="60"/>
-  </w:pPr>
+  const footer = `<w:p>
+  <w:pPr><w:pBdr><w:top w:val="single" w:sz="6" w:space="1" w:color="${D.indigo}"/></w:pBdr><w:spacing w:before="240" w:after="60"/></w:pPr>
   <w:r><w:rPr><w:color w:val="${D.muted}"/><w:sz w:val="16"/></w:rPr><w:t>Generated by Fius</w:t></w:r>
   <w:r><w:rPr><w:color w:val="${D.muted}"/><w:sz w:val="16"/></w:rPr><w:tab/><w:t>${wEsc(date)}</w:t></w:r>
 </w:p>`;
 
-  const body = paragraphs.map(p => renderParagraph(p, docTitle)).join('\n');
+  const body = paragraphs.map(p => renderParagraph(p)).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document
-  xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
-  xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex"
-  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink"
-  xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
-  xmlns:oel="http://schemas.microsoft.com/office/2019/extlst"
   xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing"
   xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
-  xmlns:w10="urn:schemas-microsoft-com:office:word"
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
   xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
   xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
-  xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"
-  xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex"
-  xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid"
-  xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml"
-  xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash"
-  xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"
-  xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup"
-  xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk"
-  xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"
-  xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
-  mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh wp14">
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="w14">
   <w:body>
-${headerBlock}
+${header}
 ${body}
-${footerHr}
+${footer}
     <w:sectPr>
       <w:pgSz w:w="12240" w:h="15840"/>
       <w:pgMar w:top="1440" w:right="1260" w:bottom="1440" w:left="1260" w:header="720" w:footer="720" w:gutter="0"/>
@@ -367,27 +336,29 @@ ${footerHr}
 }
 
 function buildStylesXml(): string {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:docDefaults>
-    <w:rPrDefault>
-      <w:rPr>
-        <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>
-        <w:sz w:val="22"/><w:szCs w:val="22"/>
-        <w:color w:val="1E293B"/>
-      </w:rPr>
-    </w:rPrDefault>
-    <w:pPrDefault>
-      <w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/></w:pPr>
-    </w:pPrDefault>
-  </w:docDefaults>
-  <w:style w:type="paragraph" w:styleId="Normal" w:default="1">
-    <w:name w:val="Normal"/>
-  </w:style>
-</w:styles>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:color w:val="1E293B"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style></w:styles>`;
+}
+
+async function fetchDocImage(query: string): Promise<{ data: Uint8Array; ext: string } | null> {
+  try {
+    const res = await fetch('/api/fetch-image-for-export', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.base64) return null;
+    const binary = atob(json.base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    const ext = (json.mimeType || '').includes('png') ? 'png' : 'jpg';
+    return { data, ext };
+  } catch { return null; }
 }
 
 export async function downloadWordDoc(content: string, filename = 'fius-document') {
+  // Step 1 — AI reformat
   let processedContent = content;
   try {
     const res = await fetch('/api/format-for-export', {
@@ -397,25 +368,60 @@ export async function downloadWordDoc(content: string, filename = 'fius-document
     if (res.ok) { const d = await res.json(); if (d.formatted) processedContent = d.formatted; }
   } catch { /* use original */ }
 
+  // Step 2 — Parse
   const paragraphs = parseDoc(processedContent);
-  const h1 = paragraphs.find(p => p.type === 'h1');
-  const docTitle = h1?.text || filename.replace(/-/g,' ');
+  const docTitle = paragraphs.find(p=>p.type==='h1')?.text || filename.replace(/-/g,' ');
 
+  // Step 3 — Fetch images in parallel, assign rIds (start at rId2; rId1=styles)
+  const imageParagraphs = paragraphs.filter(p => p.type === 'image' && p.imageQuery);
+  let nextRId = 2, nextPicId = 1;
+  await Promise.all(imageParagraphs.map(async p => {
+    const img = await fetchDocImage(p.imageQuery!);
+    if (img) {
+      const rId = `rId${nextRId++}`;
+      const picId = nextPicId++;
+      const mediaName = `image${picId}.${img.ext}`;
+      p.image = { ...img, rId, picId, mediaName };
+    }
+  }));
+
+  // Step 4 — Build XML
   const documentXml = buildDocumentXml(paragraphs, docTitle);
   const stylesXml = buildStylesXml();
 
-  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  // Step 5 — Media files
+  const mediaFiles: ZFile[] = paragraphs
+    .filter(p => p.image)
+    .map(p => ({ name: `word/media/${p.image!.mediaName}`, data: p.image!.data }));
+
+  const hasJpg = mediaFiles.some(f => f.name.endsWith('.jpg'));
+  const hasPng = mediaFiles.some(f => f.name.endsWith('.png'));
+  const imgContentTypes = [
+    hasJpg ? `<Default Extension="jpg" ContentType="image/jpeg"/>` : '',
+    hasJpg ? `<Default Extension="jpeg" ContentType="image/jpeg"/>` : '',
+    hasPng ? `<Default Extension="png" ContentType="image/png"/>` : '',
+  ].join('');
+
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imgContentTypes}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
 
   const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
 
-  const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  // doc.xml.rels: rId1=styles + rId2..N=images
+  const imageRels = paragraphs
+    .filter(p => p.image)
+    .map(p => `<Relationship Id="${p.image!.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${p.image!.mediaName}"/>`)
+    .join('');
 
+  const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${imageRels}</Relationships>`;
+
+  // Step 6 — Build ZIP
   const files: ZFile[] = [
     { name: '[Content_Types].xml', data: enc(contentTypes) },
     { name: '_rels/.rels', data: enc(rootRels) },
     { name: 'word/document.xml', data: enc(documentXml) },
     { name: 'word/_rels/document.xml.rels', data: enc(docRels) },
     { name: 'word/styles.xml', data: enc(stylesXml) },
+    ...mediaFiles,
   ];
 
   const zip = buildZip(files);
