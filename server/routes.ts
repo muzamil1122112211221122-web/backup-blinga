@@ -1281,30 +1281,62 @@ Output ONLY the markdown, no preamble.`;
 
   // Image proxy for PPTX/DOCX export — fetches from Pollinations and returns base64
   app.post('/api/fetch-image-for-export', requireAuth, async (req, res) => {
-    try {
-      const { query } = req.body;
-      if (!query || typeof query !== 'string') return res.status(400).json({ error: 'Query required' });
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') return res.status(400).json({ error: 'Query required' });
 
-      const prompt = encodeURIComponent(`${query.slice(0, 200)}, professional photography, vibrant colors, clean composition`);
-      const seed = Math.floor(Math.random() * 9999);
-      const url = `https://image.pollinations.ai/prompt/${prompt}?width=600&height=400&nologo=true&seed=${seed}`;
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 22000);
+    // Helper: fetch a URL and return base64 + mimeType, or null on failure
+    async function tryFetch(url: string, timeoutMs: number): Promise<{ base64: string; mimeType: string } | null> {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
       try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!response.ok) return res.status(502).json({ error: 'Image service error' });
-
-        const buffer = await response.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        const mimeType = response.headers.get('content-type') || 'image/jpeg';
-        return res.json({ base64, mimeType });
-      } catch (fetchErr: any) {
-        clearTimeout(timeout);
-        if (fetchErr.name === 'AbortError') return res.status(504).json({ error: 'Image fetch timed out' });
-        throw fetchErr;
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (!r.ok) return null;
+        const ct = r.headers.get('content-type') || 'image/jpeg';
+        if (!ct.startsWith('image/')) return null;
+        const buf = await r.arrayBuffer();
+        if (buf.byteLength < 1000) return null; // reject empty/error responses
+        return { base64: Buffer.from(buf).toString('base64'), mimeType: ct };
+      } catch {
+        clearTimeout(t);
+        return null;
       }
+    }
+
+    try {
+      // Extract keywords from query for use in fallback URLs
+      const keywords = query.toLowerCase()
+        .replace(/[^a-z0-9 ]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2)
+        .slice(0, 3)
+        .join(',');
+      const seed = Math.floor(Math.random() * 9999);
+
+      // Attempt 1: Pollinations.ai (AI-generated photo)
+      const pollinationsPrompt = encodeURIComponent(`${query.slice(0, 200)}, professional photography, vibrant colors, clean composition`);
+      const result1 = await tryFetch(
+        `https://image.pollinations.ai/prompt/${pollinationsPrompt}?width=600&height=400&nologo=true&seed=${seed}`,
+        12000
+      );
+      if (result1) return res.json(result1);
+
+      // Attempt 2: loremflickr — real Flickr photos matched to keywords
+      const result2 = await tryFetch(
+        `https://loremflickr.com/600/400/${encodeURIComponent(keywords || 'nature')}?lock=${seed}`,
+        10000
+      );
+      if (result2) return res.json(result2);
+
+      // Attempt 3: Picsum Photos — deterministic seed, always available
+      const picsumSeed = keywords.replace(/,/g, '-') || 'photo';
+      const result3 = await tryFetch(
+        `https://picsum.photos/seed/${encodeURIComponent(picsumSeed)}-${seed % 100}/600/400`,
+        8000
+      );
+      if (result3) return res.json(result3);
+
+      return res.status(502).json({ error: 'All image services unavailable' });
     } catch (error) {
       console.error('fetch-image-for-export error:', error);
       return res.status(500).json({ error: 'Failed to fetch image' });
