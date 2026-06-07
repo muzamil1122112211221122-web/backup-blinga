@@ -318,9 +318,16 @@ export async function downloadPptx(content: string, filename = 'fius-presentatio
   const slides = parseSlides(processedContent);
   const presentationTitle = slides[0]?.title || filename.replace(/-/g, ' ');
 
-  // Step 3 — Fetch images in parallel for all slides that need one
-  const imageSlides = slides.filter(s => s.imageQuery);
-  await Promise.all(imageSlides.map(async (s, i) => {
+  // Auto-fill imageQuery for every slide that doesn't have one (so every slide gets a photo)
+  for (const s of slides) {
+    if (!s.imageQuery) {
+      const parts = [s.title, s.bullets[0], s.bullets[1]].filter(Boolean);
+      s.imageQuery = parts.join(' ').slice(0, 120) || presentationTitle;
+    }
+  }
+
+  // Step 3 — Fetch images for ALL slides in parallel (pre-assign mediaName by index)
+  await Promise.all(slides.map(async (s, i) => {
     const img = await fetchSlideImage(s.imageQuery!);
     if (img) {
       img.mediaName = `slide_img_${i}.${img.ext}`;

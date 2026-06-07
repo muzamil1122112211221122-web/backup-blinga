@@ -389,26 +389,53 @@ export async function downloadWordDoc(content: string, filename = 'fius-document
   const paragraphs = parseDoc(processedContent);
   const docTitle = paragraphs.find(p=>p.type==='h1')?.text || filename.replace(/-/g,' ');
 
-  // Step 3 — Fetch images in parallel, assign rIds (start at rId2; rId1=styles)
-  const imageParagraphs = paragraphs.filter(p => p.type === 'image' && p.imageQuery);
-  let nextRId = 2, nextPicId = 1;
-  await Promise.all(imageParagraphs.map(async p => {
+  // Step 2.5 — Ensure every section (after each h1/h2) has at least one image paragraph.
+  // Walk through paragraphs, and right after each heading, inject an image if none exists
+  // in that section's content before the next heading.
+  const enriched: DocParagraph[] = [];
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i];
+    enriched.push(p);
+    if (p.type === 'h1' || p.type === 'h2') {
+      // Scan ahead to find if this section already has an image
+      let j = i + 1;
+      let sectionHasImage = false;
+      while (j < paragraphs.length && paragraphs[j].type !== 'h1' && paragraphs[j].type !== 'h2') {
+        if (paragraphs[j].type === 'image') { sectionHasImage = true; break; }
+        j++;
+      }
+      if (!sectionHasImage) {
+        // Inject image right after this heading using heading text as the query
+        enriched.push({ type: 'image', text: '', imageQuery: p.text.slice(0, 120) });
+      }
+    }
+  }
+  // If the whole doc has no images at all, add one at the top using the doc title
+  if (!enriched.some(p => p.type === 'image')) {
+    enriched.splice(1, 0, { type: 'image', text: '', imageQuery: docTitle.slice(0, 120) });
+  }
+
+  // Step 3 — Pre-assign rIds synchronously (avoids race in Promise.all), then fetch all in parallel
+  const imageParagraphs = enriched.filter(p => p.type === 'image' && p.imageQuery);
+  imageParagraphs.forEach((p, i) => {
+    p.image = { data: new Uint8Array(0), ext: 'jpg', rId: `rId${i + 2}`, picId: i + 1, mediaName: `image${i + 1}.jpg` };
+  });
+  await Promise.all(imageParagraphs.map(async (p, i) => {
     const img = await fetchDocImage(p.imageQuery!);
     if (img) {
-      const rId = `rId${nextRId++}`;
-      const picId = nextPicId++;
-      const mediaName = `image${picId}.${img.ext}`;
-      p.image = { ...img, rId, picId, mediaName };
+      p.image = { ...img, rId: `rId${i + 2}`, picId: i + 1, mediaName: `image${i + 1}.${img.ext}` };
+    } else {
+      p.image = undefined; // will render as placeholder text
     }
   }));
 
   // Step 4 — Build XML
-  const documentXml = buildDocumentXml(paragraphs, docTitle);
+  const documentXml = buildDocumentXml(enriched, docTitle);
   const stylesXml = buildStylesXml();
 
-  // Step 5 — Media files
-  const mediaFiles: ZFile[] = paragraphs
-    .filter(p => p.image)
+  // Step 5 — Media files (only images that were actually fetched successfully)
+  const mediaFiles: ZFile[] = enriched
+    .filter(p => p.image && p.image.data.byteLength > 0)
     .map(p => ({ name: `word/media/${p.image!.mediaName}`, data: p.image!.data }));
 
   const hasJpg = mediaFiles.some(f => f.name.endsWith('.jpg'));
@@ -424,8 +451,8 @@ export async function downloadWordDoc(content: string, filename = 'fius-document
   const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
 
   // doc.xml.rels: rId1=styles + rId2..N=images
-  const imageRels = paragraphs
-    .filter(p => p.image)
+  const imageRels = enriched
+    .filter(p => p.image && p.image.data.byteLength > 0)
     .map(p => `<Relationship Id="${p.image!.rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${p.image!.mediaName}"/>`)
     .join('');
 
