@@ -91,7 +91,9 @@ function parseSlides(content: string): Slide[] {
     } else {
       if (!cur) cur = { title: '', bullets: [] };
       const clean = line.replace(/^[-*•▸►]\s*/,'').replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1').replace(/`(.*?)`/g,'$1').trim();
-      if (clean.length > 2) cur.bullets.push(clean.slice(0, 200));
+      // Skip AI-generated media/element placeholders — they're not real slide content
+      const isPlaceholder = /^(image|photo|picture|illustration|video|animation|infographic|interactive element|quiz|activity|exercise|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i.test(clean);
+      if (!isPlaceholder && clean.length > 2) cur.bullets.push(clean.slice(0, 200));
     }
   }
   if (cur && (cur.title || cur.bullets.length)) slides.push(cur);

@@ -1226,6 +1226,8 @@ Rules:
 - Do NOT add "Written by AI" or similar disclaimers
 - Keep bullet points concise and impactful
 - Focus on key insights, facts, and actionable points
+- NEVER include lines like "Image: ...", "Photo: ...", "Video: ...", "Interactive element: ...", "Quiz: ...", "Activity: ...", "Speaker note: ...", "Note: ...", "Caption: ...", "Figure: ...", "Diagram: ...", "Chart: ...", "Infographic: ...", "Illustration: ..." — these are not slide content
+- Only include real informational bullet points that a speaker would say out loud
 Output ONLY the markdown, no preamble.`
         : `You are a professional document writer. Transform the given content into a clean, well-structured document using markdown.
 Rules:
@@ -1238,6 +1240,8 @@ Rules:
 - Do NOT add "Written by AI" or similar disclaimers
 - Organize content logically with clear hierarchy
 - Keep paragraphs concise
+- NEVER include lines like "Image: ...", "Photo: ...", "Video: ...", "Interactive element: ...", "Quiz: ...", "Activity: ...", "Caption: ...", "Figure: ...", "Diagram: ...", "Chart: ...", "Infographic: ..." — remove them entirely
+- Only include real informational content
 Output ONLY the markdown, no preamble.`;
 
       // Use Groq for fast formatting

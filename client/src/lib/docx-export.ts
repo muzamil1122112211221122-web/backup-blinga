@@ -171,6 +171,10 @@ function parseDoc(content: string): DocParagraph[] {
     const h4 = line.match(/^####\s+(.+)/);
     if (h4) { bulletIdx = 0; result.push({ type: 'h4', text: cleanText(h4[1]) }); continue; }
 
+    // Skip AI-generated media/element placeholder lines
+    const isPlaceholder = /^(image|photo|picture|illustration|video|animation|infographic|interactive element|quiz|activity|exercise|speaker note|note|caption|alt text|figure|diagram|chart|graph|map|table|icon|logo|background|footer|header|source|reference|citation)\s*:/i.test(line.replace(/^[-*•▸►\d.]+\s*/,''));
+    if (isPlaceholder) { prevWasBlank = false; continue; }
+
     if (line.match(/^[-*•▸►]\s+/)) {
       const text = line.replace(/^[-*•▸►]\s+/, '');
       result.push({ type: 'bullet', text, bulletIdx: bulletIdx++ });
