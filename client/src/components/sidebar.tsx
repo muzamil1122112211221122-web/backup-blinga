@@ -1,7 +1,32 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Search, MessageSquare, Mic, Sparkles, Clock, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Mic, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
+import searchIcon from "@assets/search_1780877151956.png";
+import chatIcon from "@assets/chat-bubble_1780877151955.png";
+import imagineIcon from "@assets/creativity_1780877151954.png";
+import historyIcon from "@assets/history_1780877151954.png";
+
+function MaskIcon({ src, color, className = "" }: { src: string; color: string; className?: string }) {
+  return (
+    <span
+      className={`inline-block flex-shrink-0 ${className}`}
+      style={{
+        width: 18,
+        height: 18,
+        maskImage: `url(${src})`,
+        WebkitMaskImage: `url(${src})`,
+        maskSize: "contain",
+        maskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        backgroundColor: color,
+      }}
+    />
+  );
+}
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -283,7 +308,9 @@ export function Sidebar({
         <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-blue-500 opacity-70 group-focus-within:opacity-100 transition-opacity" />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70 group-focus-within:opacity-100 transition-opacity">
+              <MaskIcon src={searchIcon} color="#3b82f6" />
+            </div>
             <input
               type="text"
               placeholder="Search"
@@ -300,7 +327,7 @@ export function Sidebar({
               onClick={() => onNewProject?.(false)}
               className="flex-1 flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
             >
-              <MessageSquare className="h-[18px] w-[18px] text-violet-500 opacity-80 group-hover/btn:opacity-100 transition-opacity flex-shrink-0" />
+              <MaskIcon src={chatIcon} color="#8b5cf6" />
               <span className="text-[15px] font-medium">Chat</span>
             </button>
             <Tooltip>
@@ -332,7 +359,7 @@ export function Sidebar({
             onClick={() => { onImagineClick?.(); }}
             className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
             <div className="flex items-center space-x-3">
-              <Sparkles className="h-[18px] w-[18px] text-pink-500 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              <MaskIcon src={imagineIcon} color="#ec4899" />
               <span className="text-[15px] font-medium">Imagine</span>
             </div>
             <div className="h-1.5 w-1.5 rounded-full bg-pink-500/80 mr-1" />
@@ -342,7 +369,7 @@ export function Sidebar({
         {/* History */}
         <div className="flex-1 overflow-y-auto mt-3 px-3">
           <div className="flex items-center space-x-3 px-3 mb-2 text-zinc-900 dark:text-zinc-100 font-semibold">
-            <Clock className="h-[18px] w-[18px] text-amber-500 opacity-80 flex-shrink-0" />
+            <MaskIcon src={historyIcon} color="#f59e0b" />
             <span className="text-[15px]">History</span>
           </div>
 
