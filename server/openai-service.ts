@@ -188,33 +188,48 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Generating photorealistic image for: "${prompt}"`);
+  console.log(`Fius generating image for: "${prompt.slice(0, 80)}..."`);
 
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
 
-  // Strategy: return a direct Pollinations URL so the *browser* fetches the image.
-  // The browser has the user's IP — not the server's IP — so Pollinations rate limits
-  // never apply. Server responds in <100ms; browser loads the image natively.
-  // We build 3 URL candidates (different models/seeds) as fallbacks embedded in the response.
   const seed = Math.floor(Math.random() * 9_000_000) + 1;
-  // Keep the encoded prompt concise — turbo is fastest, flux as fallback
   const encodedPrompt = encodeURIComponent(prompt.slice(0, 300));
 
-  // Primary: turbo (fastest, ~10-15s) — nologo for clean output
-  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=turbo&nologo=true`;
-  // Fallback 1: flux (higher quality)
-  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux&nologo=true`;
-  // Fallback 2: flux-realism
-  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`;
+  // Try multiple generation endpoints server-side, return base64 so the client
+  // sees a data URL with no third-party branding.
+  const candidates = [
+    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`,
+    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`,
+    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`,
+  ];
 
-  console.log(`Returning Pollinations URL (turbo primary, browser will load): ${primaryUrl.substring(0, 100)}...`);
-  return {
-    success: true,
-    url: primaryUrl,
-    revisedPrompt: prompt,
-    fallbackUrls: [fallback1, fallback2],
-  };
+  for (const url of candidates) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 55_000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || 'image/jpeg';
+        if (contentType.startsWith('image/')) {
+          const buffer = await res.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString('base64');
+          console.log(`Fius image generated successfully (${(buffer.byteLength / 1024).toFixed(0)} KB)`);
+          return {
+            success: true,
+            url: `data:${contentType};base64,${base64}`,
+            revisedPrompt: prompt,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn(`Image generation attempt failed, trying next...`);
+    }
+  }
+
+  // All attempts failed — return error so client shows a proper failure state
+  throw new Error('Image generation failed after all attempts. Please try again.');
 }
 
 

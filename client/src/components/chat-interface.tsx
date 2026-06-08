@@ -4347,19 +4347,6 @@ Let's start the self-listen session!`;
         )}
 
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
-          {/* Expand prompt — tiny icon at top-right of the input box */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className="absolute top-1.5 right-2 z-10 w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all opacity-50 hover:opacity-100"
-                onClick={() => setPromptFullscreen(true)}
-                tabIndex={-1}
-              >
-                <Maximize2 className="w-3 h-3" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Expand prompt</TooltipContent>
-          </Tooltip>
 
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
@@ -4445,7 +4432,19 @@ Let's start the self-listen session!`;
                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
               />
-              {/* RIGHT: Model selector + mic + send */}
+              {/* RIGHT: expand + model selector + mic + send */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-50 hover:opacity-100"
+                    onClick={() => setPromptFullscreen(true)}
+                    tabIndex={-1}
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Expand prompt</TooltipContent>
+              </Tooltip>
               {activeTab !== 'nomad' && (
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                 <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[120px]">
@@ -4533,7 +4532,20 @@ Let's start the self-listen session!`;
               </div>
 
               <div className="flex items-center justify-between px-2 pb-1.5">
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
+                  {/* Expand prompt inline, left of model selector */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-50 hover:opacity-100"
+                        onClick={() => setPromptFullscreen(true)}
+                        tabIndex={-1}
+                      >
+                        <Maximize2 className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Expand prompt</TooltipContent>
+                  </Tooltip>
                   {activeTab !== 'nomad' && (
                   <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
                     <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
