@@ -1762,9 +1762,9 @@ IMPORTANT RULES:
       setImagineRefImage(null);
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
 
-      // Generate image — try backend first, always fall back to pollinations (no auth, reliable)
-      const seed = Math.floor(Math.random() * 9999999);
+      // Generate image via Fius backend (returns data URL, no third-party branding)
       let imageUrl = '';
+      let imageError = '';
       try {
         const res = await fetch('/api/generate-image', {
           method: 'POST',
@@ -1773,11 +1773,13 @@ IMPORTANT RULES:
           body: JSON.stringify({ prompt: fullPrompt, size: '1024x1024' }),
         });
         const data = await res.json();
-        if (data.success && data.url) imageUrl = data.url;
-      } catch { /* fall through to pollinations */ }
-      // Pollinations is free, needs no auth, works every time
-      if (!imageUrl) {
-        imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}&enhance=true`;
+        if (data.success && data.url) {
+          imageUrl = data.url;
+        } else {
+          imageError = data.message || 'Generation failed, please try again.';
+        }
+      } catch (err: any) {
+        imageError = 'Connection error — please try again.';
       }
       setImagineMessages(prev => prev.map(m =>
         m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, studioPrompt: fullPrompt } : m
@@ -3690,10 +3692,6 @@ Let's start the self-listen session!`;
                 const data = await res.json();
                 if (data.success && data.url) newUrl = data.url;
               } catch { /* fall through */ }
-              // Always-reliable pollinations fallback with correct dimensions
-              if (!newUrl) {
-                newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=${w}&height=${h}&nologo=true&seed=${seed}&enhance=true`;
-              }
               const newHist = [...imagineEditHist, newUrl];
               setImagineEditHist(newHist);
               setImagineEditTarget((prev: any) => prev ? { ...prev, url: newUrl } : prev);
@@ -4436,11 +4434,11 @@ Let's start the self-listen session!`;
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-50 hover:opacity-100"
+                    className="w-4 h-4 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 opacity-40 hover:opacity-90 self-start mt-1"
                     onClick={() => setPromptFullscreen(true)}
                     tabIndex={-1}
                   >
-                    <Maximize2 className="w-3.5 h-3.5" />
+                    <Maximize2 className="w-2.5 h-2.5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>Expand prompt</TooltipContent>
@@ -4537,11 +4535,11 @@ Let's start the self-listen session!`;
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-50 hover:opacity-100"
+                        className="w-4 h-4 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 opacity-40 hover:opacity-90"
                         onClick={() => setPromptFullscreen(true)}
                         tabIndex={-1}
                       >
-                        <Maximize2 className="w-3.5 h-3.5" />
+                        <Maximize2 className="w-2.5 h-2.5" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>Expand prompt</TooltipContent>

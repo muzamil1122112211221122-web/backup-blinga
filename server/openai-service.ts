@@ -190,46 +190,69 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Fius generating image for: "${prompt.slice(0, 80)}..."`);
 
-  const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
-    .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
-
-  const seed = Math.floor(Math.random() * 9_000_000) + 1;
-  const encodedPrompt = encodeURIComponent(prompt.slice(0, 300));
-
-  // Try multiple generation endpoints server-side, return base64 so the client
-  // sees a data URL with no third-party branding.
-  const candidates = [
-    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`,
-    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`,
-    `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`,
-  ];
-
-  for (const url of candidates) {
+  // ── 1. Gemini native image generation (fast, no branding) ──────────────────
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 55_000);
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || 'image/jpeg';
-        if (contentType.startsWith('image/')) {
-          const buffer = await res.arrayBuffer();
-          const base64 = Buffer.from(buffer).toString('base64');
-          console.log(`Fius image generated successfully (${(buffer.byteLength / 1024).toFixed(0)} KB)`);
-          return {
-            success: true,
-            url: `data:${contentType};base64,${base64}`,
-            revisedPrompt: prompt,
-          };
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 30_000);
+      const gRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+          }),
+          signal: ctrl.signal,
+        }
+      );
+      clearTimeout(t);
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        const parts: any[] = gData?.candidates?.[0]?.content?.parts ?? [];
+        for (const part of parts) {
+          if (part?.inlineData?.mimeType?.startsWith('image/')) {
+            const { data: b64, mimeType } = part.inlineData;
+            console.log(`Fius image ready (Gemini, ${mimeType})`);
+            return { success: true, url: `data:${mimeType};base64,${b64}`, revisedPrompt: prompt };
+          }
         }
       }
     } catch (err) {
-      console.warn(`Image generation attempt failed, trying next...`);
+      console.warn('Gemini image gen failed, trying proxy backup...');
     }
   }
 
-  // All attempts failed — return error so client shows a proper failure state
-  throw new Error('Image generation failed after all attempts. Please try again.');
+  // ── 2. Server-side proxy fallback (hides source from client) ────────────────
+  const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
+    .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
+  const seed = Math.floor(Math.random() * 9_000_000) + 1;
+  const enc = encodeURIComponent(prompt.slice(0, 300));
+  const proxyUrls = [
+    `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`,
+    `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`,
+  ];
+  for (const url of proxyUrls) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 22_000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (r.ok) {
+        const ct = r.headers.get('content-type') || 'image/jpeg';
+        if (ct.startsWith('image/')) {
+          const buf = await r.arrayBuffer();
+          const b64 = Buffer.from(buf).toString('base64');
+          console.log(`Fius image ready (proxy, ${(buf.byteLength / 1024).toFixed(0)} KB)`);
+          return { success: true, url: `data:${ct};base64,${b64}`, revisedPrompt: prompt };
+        }
+      }
+    } catch { /* try next */ }
+  }
+
+  throw new Error('Image generation is busy, please try again in a moment.');
 }
 
 
