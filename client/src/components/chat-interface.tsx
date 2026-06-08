@@ -35,57 +35,85 @@ const globalProgressTextsModule = new Map<string, string>();
 function GeneratedImageDisplay({ src, alt, className }: { src: string; alt?: string; className?: string }) {
   const [status, setStatus] = React.useState<'loading' | 'loaded' | 'error'>('loading');
   const [currentSrc, setCurrentSrc] = React.useState(src);
+  const [elapsed, setElapsed] = React.useState(0);
+  const [retryKey, setRetryKey] = React.useState(0);
   const fallbacksTriedRef = React.useRef(0);
+  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Extract fallback URLs embedded in pollinations URLs (different seeds)
-  const buildFallbacks = (url: string): string[] => {
+  const buildFreshUrl = (url: string, attempt: number): string => {
     try {
       const u = new URL(url);
       const base = `${u.origin}${u.pathname}`;
-      const seed = parseInt(u.searchParams.get('seed') || '0');
-      const params = new URLSearchParams(u.search);
-      const fallbacks: string[] = [];
-      for (let i = 1; i <= 3; i++) {
-        params.set('seed', String(seed + i * 100));
-        params.set('model', i === 1 ? 'flux-realism' : i === 2 ? 'turbo' : 'flux');
-        fallbacks.push(`${base}?${params.toString()}`);
-      }
-      return fallbacks;
-    } catch { return []; }
+      const newSeed = Math.floor(Math.random() * 9_000_000) + 1;
+      const models = ['turbo', 'flux', 'flux-realism'];
+      const model = models[attempt % models.length];
+      return `${base}?width=1024&height=1024&seed=${newSeed}&model=${model}&nologo=true`;
+    } catch { return url; }
   };
 
-  const fallbacks = React.useMemo(() => buildFallbacks(src), [src]);
-
   const handleError = () => {
-    if (fallbacksTriedRef.current < fallbacks.length) {
-      setCurrentSrc(fallbacks[fallbacksTriedRef.current]);
-      fallbacksTriedRef.current++;
+    fallbacksTriedRef.current++;
+    if (fallbacksTriedRef.current <= 3) {
+      setCurrentSrc(buildFreshUrl(src, fallbacksTriedRef.current));
     } else {
       setStatus('error');
     }
   };
 
+  const handleRetry = () => {
+    fallbacksTriedRef.current = 0;
+    setElapsed(0);
+    setStatus('loading');
+    setCurrentSrc(buildFreshUrl(src, 0));
+    setRetryKey(k => k + 1);
+  };
+
+  React.useEffect(() => {
+    if (status !== 'loading') {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [status, retryKey]);
+
+  const loadingMsg = elapsed < 10 ? 'Generating image…'
+    : elapsed < 25 ? `Still working… (${elapsed}s)`
+    : elapsed < 45 ? `This is taking a while… (${elapsed}s)`
+    : `Almost there… (${elapsed}s)`;
+
   return (
     <div className={`relative my-3 rounded-xl overflow-hidden border border-border shadow-md ${className || ''}`} style={{ maxWidth: '100%' }}>
       {status === 'loading' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50 dark:from-slate-800 dark:to-indigo-900/30" style={{ minHeight: 200 }}>
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin" />
-          </div>
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium">Generating image…</p>
+          <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin" />
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 font-medium">{loadingMsg}</p>
+          {elapsed >= 30 && (
+            <button onClick={handleRetry}
+              className="mt-3 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+              Try different seed
+            </button>
+          )}
         </div>
       )}
       {status === 'error' && (
-        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-rose-50 dark:from-slate-800 dark:to-rose-900/20 p-8" style={{ minHeight: 140 }}>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Image generation timed out — try again</p>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-rose-50 dark:from-slate-800 dark:to-rose-900/20 p-8 gap-3" style={{ minHeight: 140 }}>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Image didn't load — Pollinations may be busy</p>
+          <button onClick={handleRetry}
+            className="px-5 py-2 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            ↺ Retry with new seed
+          </button>
         </div>
       )}
       <img
+        key={retryKey}
         src={currentSrc}
         alt={alt || 'Generated image'}
         className="max-w-full h-auto rounded-xl"
         style={{ display: status === 'error' ? 'none' : 'block', minHeight: status === 'loaded' ? undefined : 200, opacity: status === 'loading' ? 0 : 1, transition: 'opacity 0.3s' }}
-        onLoad={() => setStatus('loaded')}
+        onLoad={() => { setStatus('loaded'); if (timerRef.current) clearInterval(timerRef.current); }}
         onError={handleError}
       />
     </div>
@@ -195,7 +223,8 @@ import {
   Heart,
   Loader2,
   Sparkles,
-  Wand2
+  Wand2,
+  Maximize2
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -819,6 +848,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [exportingMsgId, setExportingMsgId] = useState<string | null>(null);
+  const [promptFullscreen, setPromptFullscreen] = useState(false);
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
@@ -1089,8 +1119,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   const [conversationStarters] = useState(() => {
     const shuffled = [...allConversationStarters].sort(() => Math.random() - 0.5);
-    const count = Math.floor(Math.random() * 4) + 3;
-    return shuffled.slice(0, count);
+    return shuffled.slice(0, 3);
   });
 
   const handleStarterClick = (prompt: string) => {
@@ -2983,55 +3012,23 @@ Let's start the self-listen session!`;
             {/* Conversation Starters */}
             <div className="w-full max-w-2xl">
               <h3 className="text-lg font-semibold mb-4 text-foreground">{starterHeading}</h3>
-              {(() => {
-                const StarterBtn = ({ starter, widthClass = "" }: { starter: typeof conversationStarters[0], widthClass?: string }) => (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {conversationStarters.map((s, i) => (
                   <button
-                    onClick={() => handleStarterClick(starter.prompt)}
-                    className={`group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md ${widthClass}`}
+                    key={i}
+                    onClick={() => handleStarterClick(s.prompt)}
+                    className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">{starter.icon}</div>
+                      <div className="flex-shrink-0">{s.icon}</div>
                       <div>
-                        <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{starter.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{starter.description}</p>
+                        <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{s.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{s.description}</p>
                       </div>
                     </div>
                   </button>
-                );
-
-                if (conversationStarters.length === 4) {
-                  return (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                        {conversationStarters.slice(0, 3).map((s, i) => <StarterBtn key={i} starter={s} />)}
-                      </div>
-                      <div className="flex justify-center">
-                        <StarterBtn starter={conversationStarters[3]} widthClass="w-full md:w-1/3" />
-                      </div>
-                    </>
-                  );
-                }
-
-                if (conversationStarters.length === 5) {
-                  return (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                        {conversationStarters.slice(0, 3).map((s, i) => <StarterBtn key={i} starter={s} />)}
-                      </div>
-                      <div className="flex justify-center gap-3">
-                        <StarterBtn starter={conversationStarters[3]} widthClass="w-full md:w-1/3" />
-                        <StarterBtn starter={conversationStarters[4]} widthClass="w-full md:w-1/3" />
-                      </div>
-                    </>
-                  );
-                }
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {conversationStarters.map((s, i) => <StarterBtn key={i} starter={s} />)}
-                  </div>
-                );
-              })()}
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -3271,13 +3268,6 @@ Let's start the self-listen session!`;
                               <TooltipContent><p>Export</p></TooltipContent>
                             </Tooltip>
                             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px]">
-                              <DropdownMenuItem
-                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                onClick={() => handleMakePDF(message.content)}
-                              >
-                                <FileDown className="h-3.5 w-3.5 text-red-500" />
-                                Save as PDF
-                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                                 disabled={exportingMsgId === message.id + '-doc'}
@@ -4506,6 +4496,19 @@ Let's start the self-listen session!`;
                 </TooltipTrigger>
                 <TooltipContent>Enhance prompt</TooltipContent>
               </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                    onClick={() => setPromptFullscreen(true)}
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Expand prompt</TooltipContent>
+              </Tooltip>
               {(isTyping || isAnimatingResponse) ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -4936,6 +4939,62 @@ Let's start the self-listen session!`;
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Fullscreen prompt editor (Gemini-style) ── */}
+      {promptFullscreen && (
+        <div
+          className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPromptFullscreen(false)}
+        >
+          <div
+            className="w-full max-w-3xl bg-white dark:bg-[#303030] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+            style={{ maxHeight: '80vh' }}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-700">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Edit prompt</span>
+              <button
+                onClick={() => setPromptFullscreen(false)}
+                className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+              >
+                <X className="w-4 h-4 text-zinc-500" />
+              </button>
+            </div>
+            <textarea
+              autoFocus
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Escape') setPromptFullscreen(false);
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  setPromptFullscreen(false);
+                  setTimeout(() => textareaRef.current?.focus(), 100);
+                }
+              }}
+              placeholder="Type a detailed prompt here… (Esc to close, ⌘Enter to confirm)"
+              className="flex-1 p-5 text-base bg-transparent text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none placeholder:text-zinc-400 leading-relaxed"
+              style={{ minHeight: 300 }}
+            />
+            <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-200 dark:border-zinc-700">
+              <span className="text-xs text-zinc-400">Press ⌘↵ to confirm · Esc to cancel</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPromptFullscreen(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setPromptFullscreen(false); setTimeout(() => textareaRef.current?.focus(), 100); }}
+                  className="px-5 py-2 rounded-xl text-sm font-semibold bg-zinc-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Fullscreen image lightbox ── */}
       {fullscreenImg && (

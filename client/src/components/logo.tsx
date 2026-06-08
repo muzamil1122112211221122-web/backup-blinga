@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 interface LogoProps {
   className?: string;
@@ -47,83 +47,85 @@ export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
   const wavyPath   = useMemo(() => makeWavyPath(cx, cy, R, waves, amp), [cx, cy, R, waves, amp]);
   const circlePath = useMemo(() => makeWavyPath(cx, cy, R, waves, 0),   [cx, cy, R, waves]);
 
-  /**
-   * 8-second cycle, circle-first, slower morphs for silky feel:
-   *   0%  → 44% : perfect circle  (stays longer; rotation invisible here)
-   *   44% → 62% : slow smooth morph circle → wavy
-   *   62% → 76% : wavy  (rotation creates traveling-wave illusion)
-   *   76% → 94% : slow smooth morph wavy → circle
-   *   94% → 100%: circle again
-   */
   const morphValues     = [circlePath, circlePath, wavyPath, wavyPath, circlePath, circlePath].join(";");
   const morphKeyTimes   = "0; 0.44; 0.62; 0.76; 0.94; 1";
   const morphKeySplines = "0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1";
 
-  return (
-    <div
-      className={cn(
-        "relative inline-flex items-center justify-center flex-shrink-0 cursor-pointer select-none",
-        className
-      )}
-      style={{ width: px, height: px }}
-      data-testid="logo-fius"
-    >
-      {/* Single SVG holds both the animated ring and the ƒ text.
-          text-anchor="middle" + dominant-baseline="central" guarantee
-          true optical centering regardless of glyph metrics. */}
-      <svg
-        width={px} height={px}
-        viewBox={`0 0 ${px} ${px}`}
-        style={{ position: "absolute", inset: 0 }}
-        overflow="visible"
-      >
-        {/* Animated wavy / circle ring */}
-        <path
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={sw}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          strokeOpacity={0.58}
-        >
-          <animate
-            attributeName="d"
-            values={morphValues}
-            keyTimes={morphKeyTimes}
-            keySplines={morphKeySplines}
-            dur="8s"
-            repeatCount="indefinite"
-            calcMode="spline"
-          />
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from={`0 ${cx} ${cy}`}
-            to={`360 ${cx} ${cy}`}
-            dur="10s"
-            repeatCount="indefinite"
-            calcMode="linear"
-            additive="sum"
-          />
-        </path>
+  const containerRef = useRef<HTMLDivElement>(null);
 
-        {/* ƒ — hidden when lineOnly=true */}
-        {!lineOnly && (
-          <text
-            x={cx + Math.round(font * 0.06)}
-            y={cy - Math.round(font * 0.06)}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={font}
-            fontWeight="400"
-            fontFamily="Georgia, 'Times New Roman', serif"
-            fill="currentColor"
-            style={{ userSelect: "none" }}
-          >
-            ƒ
-          </text>
+  const handleClick = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'fius-logo-spin360 0.65s cubic-bezier(0.23, 1, 0.32, 1) forwards';
+  };
+
+  return (
+    <>
+      <style>{`@keyframes fius-logo-spin360 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <div
+        ref={containerRef}
+        className={cn(
+          "relative inline-flex items-center justify-center flex-shrink-0 cursor-pointer select-none",
+          className
         )}
-      </svg>
-    </div>
+        style={{ width: px, height: px }}
+        data-testid="logo-fius"
+        onClick={handleClick}
+      >
+        <svg
+          width={px} height={px}
+          viewBox={`0 0 ${px} ${px}`}
+          style={{ position: "absolute", inset: 0 }}
+          overflow="visible"
+        >
+          <path
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={sw}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            strokeOpacity={0.58}
+          >
+            <animate
+              attributeName="d"
+              values={morphValues}
+              keyTimes={morphKeyTimes}
+              keySplines={morphKeySplines}
+              dur="8s"
+              repeatCount="indefinite"
+              calcMode="spline"
+            />
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from={`0 ${cx} ${cy}`}
+              to={`360 ${cx} ${cy}`}
+              dur="10s"
+              repeatCount="indefinite"
+              calcMode="linear"
+              additive="sum"
+            />
+          </path>
+
+          {!lineOnly && (
+            <text
+              x={cx + Math.round(font * 0.06)}
+              y={cy - Math.round(font * 0.06)}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={font}
+              fontWeight="400"
+              fontFamily="Georgia, 'Times New Roman', serif"
+              fill="currentColor"
+              style={{ userSelect: "none" }}
+            >
+              ƒ
+            </text>
+          )}
+        </svg>
+      </div>
+    </>
   );
 }

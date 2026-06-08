@@ -1901,6 +1901,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
+  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img: string; category: string} | null>(null);
 
   // ── Load from server on mount (replaces localStorage if server has data) ──
   useEffect(() => {
@@ -1977,27 +1978,47 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   if (screen === 'game') {
     return (
       <div className="flex flex-col h-full relative">
-        {/* Exit bar */}
+        {/* Slim game title bar */}
         <div className="flex items-center gap-2 pb-2 mb-1 border-b border-white/10 flex-shrink-0">
-          {exitConfirm ? (
-            <div className="flex items-center gap-2 w-full">
-              <span className="text-xs text-zinc-400 flex-1">Exit this game?</span>
-              <button onClick={goToMenu} className="px-3 py-1 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all">Exit</button>
-              <button onClick={() => setExitConfirm(false)} className="px-3 py-1 rounded-full bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs transition-all">Keep playing</button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 w-full">
-              <button onClick={() => setExitConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition-all">
-                ← Exit Game
-              </button>
-              <span className="text-zinc-600 text-xs flex-1 truncate">{activeGameLabel} · Level {gameLevel}</span>
-            </div>
-          )}
+          <button onClick={() => setExitConfirm(true)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition-all">
+            ← Exit
+          </button>
+          <span className="text-zinc-600 text-xs flex-1 truncate">{activeGameLabel} · Level {gameLevel}</span>
         </div>
+
         <div className="flex-1 min-h-0 overflow-auto">
           {renderGame()}
         </div>
+
+        {/* ── Quit confirmation overlay (proper GUI) ── */}
+        {exitConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}>
+            <div className="w-72 rounded-3xl text-center overflow-hidden"
+              style={{ background: 'linear-gradient(160deg,rgba(18,18,30,0.99),rgba(38,16,58,0.99))', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 32px 80px rgba(0,0,0,0.9)' }}>
+              <div className="pt-8 px-6 pb-6">
+                <div className="text-6xl mb-3">🎮</div>
+                <h3 className="text-2xl font-black text-white mb-1">Quit Game?</h3>
+                <p className="text-zinc-400 text-sm mb-1">{activeGameLabel}</p>
+                <p className="text-zinc-600 text-xs mb-6">Level {gameLevel} · Progress will be lost</p>
+                <button onClick={goToMenu}
+                  className="w-full py-3.5 mb-2.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.97]"
+                  style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 6px 20px rgba(220,38,38,0.45)' }}>
+                  🚪 Leave Game
+                </button>
+                <button onClick={() => setExitConfirm(false)}
+                  className="w-full py-3.5 rounded-2xl font-bold text-zinc-200 text-sm transition-all hover:scale-[1.02] active:scale-[0.97]"
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                  🎯 Keep Playing
+                </button>
+              </div>
+              <div className="px-6 pb-5 pt-0">
+                <div className="text-zinc-700 text-[10px] font-medium tracking-wide uppercase">Fius Game Zone</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {modal === 'win' && <WinModal level={gameLevel} score={lastScore} fragsEarned={lastFrags} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
         {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
         {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); doSync({}); }} onNo={() => { setModal(null); goToMenu(); }} />}
@@ -2015,7 +2036,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const storeAvail = STORE_CATALOG.filter(g => !ownedGames.includes(g.id));
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
+    <div className="relative flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
@@ -2058,29 +2079,24 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
 
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
-          <div className="flex flex-col gap-5">
-            {/* Free games 3×2 grid */}
+          <div className="flex flex-col gap-6">
+            {/* Free games — circular icon grid */}
             <div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">Free Games</div>
+              <div className="grid grid-cols-3 gap-4">
                 {FREE_GAMES.map(g => {
                   const lv = getGameLevel(g.id);
                   return (
-                    <button key={g.id} onClick={() => onStartGame(g.id, g.label)}
-                      className="flex flex-col rounded-3xl overflow-hidden text-left transition-all duration-200 hover:scale-[1.03] active:scale-[0.96]"
-                      style={{
-                        border: '2.5px solid rgba(255,255,255,0.18)',
-                        background: 'rgba(20,20,30,0.98)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                      }}>
-                      <div className="w-full overflow-hidden relative" style={{ height: 120, background: 'rgba(10,10,18,1)' }}>
-                        <img src={g.img} alt={g.label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" style={{ display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                        <div className="absolute top-2 right-2">
-                          <LevelBadge level={lv} />
-                        </div>
+                    <button key={g.id}
+                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, img: g.img, category: g.category })}
+                      className="flex flex-col items-center gap-2 group transition-all duration-200 active:scale-95">
+                      <div className="w-20 h-20 rounded-full overflow-hidden transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-blue-400/70 flex-shrink-0"
+                        style={{ border: '2.5px solid rgba(255,255,255,0.2)', boxShadow: '0 6px 20px rgba(0,0,0,0.55)' }}>
+                        <img src={g.img} alt={g.label} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </div>
-                      <div className="p-2.5" style={{ borderTop: '2px solid rgba(255,255,255,0.08)' }}>
-                        <div className="text-white font-bold text-xs leading-tight truncate">{g.label}</div>
-                        <div className="text-[9px] text-zinc-500 mt-0.5 uppercase tracking-wide">{g.category}</div>
+                      <div className="text-center">
+                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{g.label}</div>
+                        <LevelBadge level={lv} />
                       </div>
                     </button>
                   );
@@ -2090,52 +2106,49 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
 
             {/* ── Bought / Owned Games shelf ── */}
             <div>
-              <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                  Bought Games
+                  Owned Games
                 </span>
                 {myPurchased.length > 0 && (
                   <span className="text-zinc-600 text-[9px]">{myPurchased.length} owned</span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
-                {myPurchased.length > 0 ? (
-                  <>
-                    {myPurchased.slice(0, 3).map(g => (
-                      <button key={g.id} onClick={() => onStartGame(g.id, g.name)}
-                        className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
-                        style={{ border: '2.5px solid rgba(16,185,129,0.6)', boxShadow: '0 0 12px rgba(16,185,129,0.25)' }}>
+              {myPurchased.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4">
+                  {myPurchased.map(g => (
+                    <button key={g.id}
+                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
+                      className="flex flex-col items-center gap-2 group transition-all duration-200 active:scale-95">
+                      <div className="w-20 h-20 rounded-full overflow-hidden transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-emerald-400/70"
+                        style={{ border: '2.5px solid rgba(16,185,129,0.6)', boxShadow: '0 0 16px rgba(16,185,129,0.28)' }}>
                         <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                      </button>
-                    ))}
-                    {myPurchased.length > 3 && (
-                      <button onClick={() => setTab('store')}
-                        className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                        style={{ border: '2.5px solid rgba(255,255,255,0.12)', background: 'rgba(30,30,40,0.95)' }}>
-                        <span className="text-white font-bold text-xs">+{myPurchased.length - 3}</span>
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  STORE_CATALOG.slice(0, 3).map((g, i) => (
+                      </div>
+                      <div className="text-center">
+                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{g.name}</div>
+                        <div className="text-[9px] text-emerald-500 font-bold mt-0.5">✓ Owned</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {STORE_CATALOG.slice(0, 3).map((g, i) => (
                     <button key={i} onClick={() => setTab('store')}
-                      className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden relative transition-all hover:scale-110 active:scale-95"
+                      className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden relative transition-all hover:scale-110 active:scale-95"
                       style={{ border: '2.5px solid rgba(255,255,255,0.1)' }}>
                       <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
-                        <Lock size={13} className="text-zinc-300" />
+                        <Lock size={14} className="text-zinc-300" />
                       </div>
                     </button>
-                  ))
-                )}
-                {/* Show all > button */}
-                <button onClick={() => setTab('store')}
-                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                  style={{ border: '2px solid rgba(255,255,255,0.14)', background: 'rgba(30,30,40,0.8)' }}>
-                  <ChevronRight size={16} className="text-zinc-400" />
-                </button>
-                <span className="text-zinc-600 text-[10px] font-medium">Show all bought games</span>
-              </div>
+                  ))}
+                  <button onClick={() => setTab('store')}
+                    className="text-blue-400 text-xs font-bold hover:text-blue-300 transition-colors ml-1">
+                    Visit Store →
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2143,39 +2156,63 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         {/* ── STORE TAB ── */}
         {tab === 'store' && (
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>
-              <span className="text-zinc-600 text-[10px]">Balance: <span className="text-blue-400 font-bold flex items-center gap-1 inline-flex"><img src={imgCoins} alt="" className="w-3.5 h-3.5 inline" /> {fragments}</span></span>
+              <span className="text-zinc-600 text-[10px] flex items-center gap-1">
+                <img src={imgCoins} alt="" className="w-3.5 h-3.5" />
+                <span className="text-blue-400 font-bold">{fragments}</span> fragments
+              </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <div className="grid grid-cols-3 gap-4">
               {STORE_CATALOG.map(game => {
                 const owned = ownedGames.includes(game.id);
                 const canAfford = fragments >= game.price;
                 return (
-                  <div key={game.id}
-                    className="flex flex-col rounded-xl overflow-hidden transition-all"
-                    style={{ border: owned ? '1px solid rgba(16,185,129,0.4)' : '1px solid rgba(255,255,255,0.1)', background: owned ? 'rgba(16,185,129,0.08)' : 'rgba(25,25,35,0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
-                    <div className="w-full overflow-hidden relative" style={{ height: 160, background: 'rgba(15,15,22,1)' }}>
-                      <img src={game.img} alt={game.name} className="w-full h-full object-contain" style={{ display:'block' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                      {owned && (
-                        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }}>
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] text-white" style={{ background: 'rgba(16,185,129,0.85)' }}>
-                            <Check size={8} /> Owned
+                  <div key={game.id} className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (owned) {
+                          setSelectedGameInfo({ id: game.id, label: game.name, desc: game.desc, img: game.img, category: game.category });
+                        } else if (canAfford) {
+                          handleBuy(game.id, game.price);
+                        }
+                      }}
+                      disabled={!owned && !canAfford}
+                      className="flex flex-col items-center gap-0 group w-full transition-all duration-200 active:scale-95 disabled:opacity-50">
+                      <div className="w-20 h-20 rounded-full overflow-hidden relative transition-all duration-200 group-hover:scale-110 flex-shrink-0"
+                        style={{
+                          border: owned ? '2.5px solid rgba(16,185,129,0.7)' : canAfford ? '2.5px solid rgba(59,130,246,0.6)' : '2.5px solid rgba(255,255,255,0.15)',
+                          boxShadow: owned ? '0 0 18px rgba(16,185,129,0.3)' : canAfford ? '0 6px 20px rgba(59,130,246,0.3)' : '0 6px 20px rgba(0,0,0,0.5)'
+                        }}>
+                        <img src={game.img} alt={game.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        {!owned && !canAfford && (
+                          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                            <Lock size={16} className="text-zinc-400" />
                           </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-2" style={{ borderTop: owned ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.07)' }}>
-                      <div className="text-white font-bold text-xs truncate mb-1.5">{game.name}</div>
-                      {!owned && (
-                        <button onClick={() => { if (canAfford) handleBuy(game.id, game.price); }}
-                          disabled={!canAfford}
-                          className={`w-full flex items-center justify-center gap-1 py-1 rounded-lg text-[10px] font-bold transition-all active:scale-95 ${canAfford ? 'text-white' : 'cursor-not-allowed text-zinc-600'}`}
-                          style={{ background: canAfford ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : 'rgba(39,39,42,0.8)', border: canAfford ? '1px solid rgba(96,165,250,0.4)' : '1px solid rgba(63,63,70,0.8)' }}>
-                          <img src={imgCoins} alt="" className="w-3 h-3" /> {game.price}
-                        </button>
-                      )}
-                    </div>
+                        )}
+                        {owned && (
+                          <div className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.95)' }}>
+                            <Check size={10} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-center mt-1.5">
+                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{game.name}</div>
+                        {owned ? (
+                          <div className="text-[9px] text-emerald-500 font-bold mt-0.5">Tap to play</div>
+                        ) : canAfford ? (
+                          <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                            <img src={imgCoins} alt="" className="w-2.5 h-2.5" />
+                            <span className="text-[9px] text-blue-400 font-bold">{game.price}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                            <img src={imgCoins} alt="" className="w-2.5 h-2.5" />
+                            <span className="text-[9px] text-zinc-600 font-bold">{game.price}</span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
                   </div>
                 );
               })}
@@ -2281,6 +2318,47 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
       </div>
+
+      {/* ── Game Info Modal ── */}
+      {selectedGameInfo && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
+          onClick={() => setSelectedGameInfo(null)}>
+          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center"
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'linear-gradient(160deg,rgba(15,15,28,0.99),rgba(32,14,52,0.99))', border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 32px 80px rgba(0,0,0,0.85)' }}>
+            <div className="pt-8 pb-0 flex flex-col items-center">
+              <div className="w-28 h-28 rounded-full overflow-hidden shadow-2xl"
+                style={{ border: '3px solid rgba(255,255,255,0.22)', boxShadow: '0 0 40px rgba(99,102,241,0.45)' }}>
+                <img src={selectedGameInfo.img} alt={selectedGameInfo.label} className="w-full h-full object-cover" />
+              </div>
+            </div>
+            <div className="px-6 pt-4 pb-6 w-full">
+              <h3 className="text-xl font-black text-white mb-1 tracking-tight">{selectedGameInfo.label}</h3>
+              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-3"
+                style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+                {selectedGameInfo.category}
+              </div>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-4">{selectedGameInfo.desc}</p>
+              <div className="flex items-center justify-center gap-2 mb-5">
+                <span className="text-zinc-500 text-xs">Your level:</span>
+                <LevelBadge level={getGameLevel(selectedGameInfo.id)} />
+              </div>
+              <button
+                onClick={() => { onStartGame(selectedGameInfo.id, selectedGameInfo.label); setSelectedGameInfo(null); }}
+                className="w-full py-3.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.97] mb-2"
+                style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', boxShadow: '0 6px 24px rgba(99,102,241,0.5)' }}>
+                ▶ Play Game
+              </button>
+              <button
+                onClick={() => setSelectedGameInfo(null)}
+                className="w-full py-2.5 rounded-2xl text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -198,17 +198,17 @@ export async function generateImage(prompt: string, size: string = "1024x1024", 
   // never apply. Server responds in <100ms; browser loads the image natively.
   // We build 3 URL candidates (different models/seeds) as fallbacks embedded in the response.
   const seed = Math.floor(Math.random() * 9_000_000) + 1;
-  const encodedPrompt = encodeURIComponent(prompt + ', photorealistic, ultra detailed, 8k');
+  // Keep the encoded prompt concise — turbo is fastest, flux as fallback
+  const encodedPrompt = encodeURIComponent(prompt.slice(0, 300));
 
-  // Primary: flux (best quality) — nologo+nofeed prevent Pollinations from serving a cached gallery hit
-  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true&nofeed=true`;
-  // Fallback 1: flux-realism
-  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux-realism&nologo=true&nofeed=true`;
-  // Fallback 2: turbo (fastest)
-  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=turbo&nologo=true&nofeed=true`;
+  // Primary: turbo (fastest, ~10-15s) — nologo for clean output
+  const primaryUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed}&model=turbo&nologo=true`;
+  // Fallback 1: flux (higher quality)
+  const fallback1 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 1}&model=flux&nologo=true`;
+  // Fallback 2: flux-realism
+  const fallback2 = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`;
 
-  console.log(`Returning direct Pollinations URL (browser will load): ${primaryUrl.substring(0, 80)}...`);
-  // Embed all three as a JSON metadata string so the client can try fallbacks if primary fails
+  console.log(`Returning Pollinations URL (turbo primary, browser will load): ${primaryUrl.substring(0, 100)}...`);
   return {
     success: true,
     url: primaryUrl,

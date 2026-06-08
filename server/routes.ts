@@ -608,7 +608,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'picture of', 'image of', 'photo of', 'generate a photo', 'create a photo',
         'make a photo', 'generate a picture', 'create a picture', 'make a picture',
         'show me a photo', 'show me an image', 'show me a picture',
-        'give me image', 'give me a photo'
+        'give me image', 'give me a photo', 'give me a picture',
+        'imagine a', 'imagine an', 'visualize', 'paint a', 'paint an', 'paint me',
+        'sketch a', 'sketch an', 'sketch me', 'illustrate', 'depict',
+        'show me a ', 'show me an ', 'render a', 'render an',
+        'generate me a', 'create a drawing', 'create an image',
       ];
       const isImageRequest = imageRequestKeywords.some(kw =>
         cleanMessage.toLowerCase().includes(kw.toLowerCase())

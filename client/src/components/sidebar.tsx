@@ -12,8 +12,8 @@ function MaskIcon({ src, color, className = "" }: { src: string; color: string; 
     <span
       className={`inline-block flex-shrink-0 ${className}`}
       style={{
-        width: 18,
-        height: 18,
+        width: 24,
+        height: 24,
         maskImage: `url(${src})`,
         WebkitMaskImage: `url(${src})`,
         maskSize: "contain",
@@ -317,7 +317,7 @@ export function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="sidebar-search-input"
-              className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 focus:bg-zinc-200/80 dark:focus:bg-zinc-800/80 transition-all outline-none border border-zinc-200 dark:border-zinc-800/30 focus:border-zinc-300 dark:focus:border-zinc-700/50 text-[15px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500"
+              className="w-full pl-12 pr-4 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 focus:bg-zinc-200/80 dark:focus:bg-zinc-800/80 transition-all outline-none border border-zinc-200 dark:border-zinc-800/30 focus:border-zinc-300 dark:focus:border-zinc-700/50 text-[15px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500"
             />
           </div>
 
