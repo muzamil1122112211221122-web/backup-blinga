@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Mic, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
 import searchIcon from "@assets/search_1780877151956.png";
 import chatIcon from "@assets/chat-bubble_1780877151955.png";
 import imagineIcon from "@assets/creativity_1780877151954.png";
 import historyIcon from "@assets/history_1780877151954.png";
+import audioIcon from "@assets/audio_1780878961468.png";
 
 function MaskIcon({ src, color, className = "" }: { src: string; color: string; className?: string }) {
   return (
@@ -294,7 +295,9 @@ export function Sidebar({
         style={{ pointerEvents: 'auto' }}
       >
         <div className="p-3 flex items-center justify-between">
-          <Logo size="sm" />
+          <div style={{ transform: 'scale(0.85)', transformOrigin: 'left center' }}>
+            <Logo size="sm" />
+          </div>
           {closeButtonPosition === 'top' && (
             <button
               onClick={onClose}
@@ -351,7 +354,7 @@ export function Sidebar({
           <button
             onClick={() => { onVoiceClick?.(); }}
             className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <Mic className="h-[18px] w-[18px] text-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+            <MaskIcon src={audioIcon} color="#10b981" className="opacity-80 group-hover:opacity-100 transition-opacity" />
             <span className="text-[15px] font-medium">Voice</span>
           </button>
 

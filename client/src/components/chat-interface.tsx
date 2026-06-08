@@ -4464,6 +4464,17 @@ Let's start the self-listen session!`;
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
+                  <button
+                    className="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-60 hover:opacity-100"
+                    onClick={() => setPromptFullscreen(true)}
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Expand prompt</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -4495,19 +4506,6 @@ Let's start the self-listen session!`;
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Enhance prompt</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
-                    onClick={() => setPromptFullscreen(true)}
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Expand prompt</TooltipContent>
               </Tooltip>
               {(isTyping || isAnimatingResponse) ? (
                 <Tooltip>
