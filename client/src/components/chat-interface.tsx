@@ -3849,24 +3849,12 @@ Let's start the self-listen session!`;
                           </div>
                         ) : msg.imageUrl ? (
                           <>
-                            {/* Image with shimmer until loaded */}
-                            <div className="relative w-full bg-muted" style={{ minHeight: 120 }}>
-                              <img
+                            {/* Image using GeneratedImageDisplay for proper loading & retry */}
+                            <div className="cursor-zoom-in" onClick={() => setFullscreenImg(msg.imageUrl)}>
+                              <GeneratedImageDisplay
                                 src={msg.imageUrl}
                                 alt="generated"
-                                className="w-full object-cover cursor-zoom-in transition-opacity duration-500"
-                                style={{ opacity: 0 }}
-                                onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                                onError={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                                onClick={() => setFullscreenImg(msg.imageUrl)}
-                              />
-                              <div className="absolute inset-0 bg-muted animate-pulse pointer-events-none"
-                                style={{ display: 'none' }}
-                                ref={el => {
-                                  if (!el) return;
-                                  const img = el.previousElementSibling as HTMLImageElement;
-                                  if (img && !img.complete) { el.style.display = 'block'; img.addEventListener('load', () => { el.style.display = 'none'; }, { once: true }); img.addEventListener('error', () => { el.style.display = 'none'; }, { once: true }); }
-                                }}
+                                className="w-full"
                               />
                             </div>
                             {/* Action row */}
@@ -4359,6 +4347,19 @@ Let's start the self-listen session!`;
         )}
 
         <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
+          {/* Expand prompt — tiny icon at top-right of the input box */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="absolute top-1.5 right-2 z-10 w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all opacity-50 hover:opacity-100"
+                onClick={() => setPromptFullscreen(true)}
+                tabIndex={-1}
+              >
+                <Maximize2 className="w-3 h-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Expand prompt</TooltipContent>
+          </Tooltip>
 
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
@@ -4462,17 +4463,6 @@ Let's start the self-listen session!`;
                 </SelectContent>
               </Select>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors flex-shrink-0 opacity-60 hover:opacity-100"
-                    onClick={() => setPromptFullscreen(true)}
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Expand prompt</TooltipContent>
-              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

@@ -311,7 +311,7 @@ export function Sidebar({
         <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 opacity-70 group-focus-within:opacity-100 transition-opacity">
+            <div className="absolute left-3 top-[54%] -translate-y-1/2 opacity-70 group-focus-within:opacity-100 transition-opacity">
               <MaskIcon src={searchIcon} color="#3b82f6" />
             </div>
             <input

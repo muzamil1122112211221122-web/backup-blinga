@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check } from "lucide-react";
-import imgMemory   from "@assets/apps.54588.14090654178473619.aa2706f7-9244-4d37-b59f-3f87f7589_1780325460748.jpg";
-import imgMaths    from "@assets/258c7d3f-edad-4efa-96e6-7db0099bb856_1780325460748.png";
-import imgWord     from "@assets/maxresdefault_1780325460747.jpg";
-import imgQuiz     from "@assets/horizontal-banner-hands-people-solving-600nw-1039923574_1780325460746.webp";
-import imgCar      from "@assets/Main_1_1780325460746.png";
-import imgOddWord  from "@assets/Gemini_Generated_Image_5dn8ra5dn8ra5dn8_1780325515069.png";
+import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check, Layers, Zap, Car, HelpCircle, Shuffle } from "lucide-react";
 import imgTTT      from "@assets/unnamed_1780326509544.png";
 import imgHangman  from "@assets/png-clipart-hangman-ahorcado-hangman-word-guessing-game-hangma_1780326509544.png";
 import imgRPS      from "@assets/6727583_1780326509543.png";
@@ -1876,13 +1870,14 @@ function addScore(gameId: string, gameName: string, score: number, level: number
 
 interface FiusGamesProps { playerName: string; userId?: string; }
 
-const FREE_GAMES = [
-  { id: 'memory' as GameId,  label: 'Memory Match',   img: imgMemory,  desc: 'Match pairs before time runs out',   category: 'Solo' },
-  { id: 'maths' as GameId,   label: 'Speed Maths',    img: imgMaths,   desc: 'Solve arithmetic against the clock', category: 'Solo' },
-  { id: 'word' as GameId,    label: 'Word Scramble',  img: imgWord,    desc: 'Unscramble hidden words fast',       category: 'Solo' },
-  { id: 'quiz' as GameId,    label: 'Brain Quiz',     img: imgQuiz,    desc: 'Test your general knowledge',        category: 'Solo' },
-  { id: 'car' as GameId,     label: 'Car Dodge',      img: imgCar,     desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
-  { id: 'oddword' as GameId, label: 'Odd One Out',    img: imgOddWord, desc: "Find the word that doesn't fit",    category: 'Solo' },
+type FreeGameIcon = { Icon: React.ComponentType<{className?: string}>; gradient: string; shadow: string };
+const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; desc: string; category: string}> = [
+  { id: 'memory',  label: 'Memory Match',  icon: { Icon: Layers,      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.5)'  }, desc: 'Match pairs before time runs out',   category: 'Solo'   },
+  { id: 'maths',   label: 'Speed Maths',   icon: { Icon: Calculator,  gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', shadow: 'rgba(59,130,246,0.5)'  }, desc: 'Solve arithmetic against the clock', category: 'Solo'   },
+  { id: 'word',    label: 'Word Scramble', icon: { Icon: BookOpen,    gradient: 'linear-gradient(135deg,#10b981,#34d399)', shadow: 'rgba(16,185,129,0.5)'  }, desc: 'Unscramble hidden words fast',       category: 'Solo'   },
+  { id: 'quiz',    label: 'Brain Quiz',    icon: { Icon: HelpCircle,  gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', shadow: 'rgba(245,158,11,0.5)'  }, desc: 'Test your general knowledge',        category: 'Solo'   },
+  { id: 'car',     label: 'Car Dodge',     icon: { Icon: Zap,         gradient: 'linear-gradient(135deg,#ef4444,#f43f5e)', shadow: 'rgba(239,68,68,0.5)'   }, desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
+  { id: 'oddword', label: 'Odd One Out',   icon: { Icon: Shuffle,     gradient: 'linear-gradient(135deg,#ec4899,#a855f7)', shadow: 'rgba(236,72,153,0.5)'  }, desc: "Find the word that doesn't fit",    category: 'Solo'   },
 ];
 
 export function FiusGames({ playerName, userId }: FiusGamesProps) {
@@ -1901,7 +1896,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
-  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img: string; category: string} | null>(null);
+  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
 
   // ── Load from server on mount (replaces localStorage if server has data) ──
   useEffect(() => {
@@ -2086,13 +2081,14 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               <div className="grid grid-cols-3 gap-4">
                 {FREE_GAMES.map(g => {
                   const lv = getGameLevel(g.id);
+                  const { Icon, gradient, shadow } = g.icon;
                   return (
                     <button key={g.id}
-                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, img: g.img, category: g.category })}
+                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
                       className="flex flex-col items-center gap-2 group transition-all duration-200 active:scale-95">
-                      <div className="w-20 h-20 rounded-full overflow-hidden transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-blue-400/70 flex-shrink-0"
-                        style={{ border: '2.5px solid rgba(255,255,255,0.2)', boxShadow: '0 6px 20px rgba(0,0,0,0.55)' }}>
-                        <img src={g.img} alt={g.label} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/30"
+                        style={{ background: gradient, boxShadow: `0 6px 24px ${shadow}` }}>
+                        <Icon className="w-9 h-9 text-white" />
                       </div>
                       <div className="text-center">
                         <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{g.label}</div>
@@ -2327,10 +2323,17 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
             onClick={e => e.stopPropagation()}
             style={{ background: 'linear-gradient(160deg,rgba(15,15,28,0.99),rgba(32,14,52,0.99))', border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 32px 80px rgba(0,0,0,0.85)' }}>
             <div className="pt-8 pb-0 flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full overflow-hidden shadow-2xl"
-                style={{ border: '3px solid rgba(255,255,255,0.22)', boxShadow: '0 0 40px rgba(99,102,241,0.45)' }}>
-                <img src={selectedGameInfo.img} alt={selectedGameInfo.label} className="w-full h-full object-cover" />
-              </div>
+              {selectedGameInfo.icon ? (
+                <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-2xl"
+                  style={{ background: selectedGameInfo.icon.gradient, boxShadow: `0 0 40px ${selectedGameInfo.icon.shadow}`, border: '3px solid rgba(255,255,255,0.22)' }}>
+                  <selectedGameInfo.icon.Icon className="w-14 h-14 text-white" />
+                </div>
+              ) : (
+                <div className="w-28 h-28 rounded-full overflow-hidden shadow-2xl"
+                  style={{ border: '3px solid rgba(255,255,255,0.22)', boxShadow: '0 0 40px rgba(99,102,241,0.45)' }}>
+                  <img src={selectedGameInfo.img} alt={selectedGameInfo.label} className="w-full h-full object-cover" />
+                </div>
+              )}
             </div>
             <div className="px-6 pt-4 pb-6 w-full">
               <h3 className="text-xl font-black text-white mb-1 tracking-tight">{selectedGameInfo.label}</h3>
