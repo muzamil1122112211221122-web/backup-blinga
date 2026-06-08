@@ -188,106 +188,17 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Fius generating image: "${prompt.slice(0, 80)}..."`);
-
-  const geminiKey = process.env.GEMINI_API_KEY;
-
-  // ── Strategy 1: Imagen 3 via predict endpoint (dedicated image model) ──────
-  if (geminiKey) {
-    for (const model of ['imagen-3.0-fast-generate-001', 'imagen-3.0-generate-002']) {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 45_000);
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              instances: [{ prompt }],
-              parameters: { sampleCount: 1, aspectRatio: '1:1' },
-            }),
-            signal: ctrl.signal,
-          }
-        );
-        clearTimeout(t);
-        const data = await res.json();
-        if (!res.ok) { console.warn(`${model}: ${data?.error?.message}`); continue; }
-        const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
-        const mime = data?.predictions?.[0]?.mimeType || 'image/png';
-        if (b64) {
-          console.log(`✓ Fius image ready via ${model}`);
-          return { success: true, url: `data:${mime};base64,${b64}`, revisedPrompt: prompt };
-        }
-      } catch (e: any) { console.warn(`${model} failed: ${e.message}`); }
-    }
-
-    // ── Strategy 2: Gemini Flash image generation ──────────────────────────────
-    for (const model of ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp-image-generation']) {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 45_000);
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseModalities: ['IMAGE'] },
-            }),
-            signal: ctrl.signal,
-          }
-        );
-        clearTimeout(t);
-        const data = await res.json();
-        if (!res.ok) { console.warn(`${model}: ${data?.error?.message}`); continue; }
-        const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-        for (const part of parts) {
-          if (part?.inlineData?.mimeType?.startsWith('image/')) {
-            console.log(`✓ Fius image ready via ${model}`);
-            return {
-              success: true,
-              url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
-              revisedPrompt: prompt,
-            };
-          }
-        }
-      } catch (e: any) { console.warn(`${model} failed: ${e.message}`); }
-    }
-  }
-
-  // ── Strategy 3: Server-side proxy (downloads image bytes, hides source) ────
+  console.log(`Fius Studio generating image…`);
+  // Server returns candidate URLs — the browser fetches the actual image data
+  // (browser-origin requests are not subject to API rate limits from the generator service)
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
   const seed = Math.floor(Math.random() * 9_000_000) + 1;
-  const enc = encodeURIComponent(prompt.slice(0, 300));
-  const proxyUrls = [
-    `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`,
-    `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`,
-    `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`,
-  ];
-  for (const url of proxyUrls) {
-    try {
-      console.log(`Trying proxy…`);
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 50_000);
-      const r = await fetch(url, { signal: ctrl.signal, redirect: 'follow' });
-      clearTimeout(t);
-      const ct = r.headers.get('content-type') || '';
-      console.log(`Proxy → ${r.status} ${ct}`);
-      if (r.ok && ct.startsWith('image/')) {
-        const buf = await r.arrayBuffer();
-        if (buf.byteLength > 1000) {
-          const b64 = Buffer.from(buf).toString('base64');
-          console.log(`✓ Fius image ready via proxy (${(buf.byteLength / 1024).toFixed(0)} KB)`);
-          return { success: true, url: `data:${ct.split(';')[0]};base64,${b64}`, revisedPrompt: prompt };
-        }
-      }
-    } catch (e: any) { console.warn(`Proxy failed: ${e.message}`); }
-  }
-
-  throw new Error('Image generation is busy right now — please try again in a moment.');
+  const enc = encodeURIComponent(prompt.slice(0, 400));
+  const primary   = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`;
+  const fallback1 = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`;
+  const fallback2 = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`;
+  return { success: true, url: primary, fallbackUrls: [fallback1, fallback2], revisedPrompt: prompt };
 }
 
 

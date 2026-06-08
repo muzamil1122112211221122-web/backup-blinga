@@ -99,7 +99,7 @@ function GeneratedImageDisplay({ src, alt, className }: { src: string; alt?: str
       )}
       {status === 'error' && (
         <div className="flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-rose-50 dark:from-slate-800 dark:to-rose-900/20 p-8 gap-3" style={{ minHeight: 140 }}>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Image didn't load — Pollinations may be busy</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Image didn't load — Fius Studio is busy, please retry</p>
           <button onClick={handleRetry}
             className="px-5 py-2 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
@@ -863,7 +863,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
-  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], isGenerating?: boolean, studioPrompt?: string, editHistory?: string[]}[]>([]);
+  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], imageError?: string, isGenerating?: boolean, studioPrompt?: string, editHistory?: string[]}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const imagineScrollRef = useRef<HTMLDivElement>(null);
   const [imagineRefImage, setImagineRefImage] = useState<{preview: string; base64: string} | null>(null);
@@ -1762,8 +1762,9 @@ IMPORTANT RULES:
       setImagineRefImage(null);
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
 
-      // Generate image via Fius backend (returns data URL, no third-party branding)
+      // Generate image via Fius Studio backend
       let imageUrl = '';
+      let fallbackUrls: string[] = [];
       let imageError = '';
       try {
         const res = await fetch('/api/generate-image', {
@@ -1775,14 +1776,15 @@ IMPORTANT RULES:
         const data = await res.json();
         if (data.success && data.url) {
           imageUrl = data.url;
+          fallbackUrls = data.fallbackUrls || [];
         } else {
-          imageError = data.message || 'Generation failed, please try again.';
+          imageError = data.message || 'Image generation failed — please try again.';
         }
-      } catch (err: any) {
+      } catch {
         imageError = 'Connection error — please try again.';
       }
       setImagineMessages(prev => prev.map(m =>
-        m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, studioPrompt: fullPrompt } : m
+        m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls, imageError, studioPrompt: fullPrompt } : m
       ));
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
       return;
@@ -3845,16 +3847,26 @@ Let's start the self-listen session!`;
                             </div>
                             <span className="text-[11px] text-muted-foreground font-medium">Creating your image…</span>
                           </div>
+                        ) : msg.imageError ? (
+                          <div className="flex flex-col items-center justify-center gap-3 py-8 px-4">
+                            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                              <span className="text-rose-500 text-lg">✕</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">{msg.imageError}</p>
+                            <button
+                              className="px-4 py-1.5 rounded-full text-xs font-semibold text-white"
+                              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+                              onClick={() => handleSendMessage(msg.studioPrompt || '')}
+                            >↺ Try Again</button>
+                          </div>
                         ) : msg.imageUrl ? (
                           <>
-                            {/* Image using GeneratedImageDisplay for proper loading & retry */}
-                            <div className="cursor-zoom-in" onClick={() => setFullscreenImg(msg.imageUrl)}>
-                              <GeneratedImageDisplay
-                                src={msg.imageUrl}
-                                alt="generated"
-                                className="w-full"
-                              />
-                            </div>
+                            {/* Image using ImagineImageCard for loading skeleton + fallback retry */}
+                            <ImagineImageCard
+                              imageUrl={msg.imageUrl}
+                              fallbackUrls={msg.fallbackUrls || []}
+                              onExpand={(src) => setFullscreenImg(src)}
+                            />
                             {/* Action row */}
                             <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border">
                               <Tooltip>
@@ -4445,7 +4457,7 @@ Let's start the self-listen session!`;
               </Tooltip>
               {activeTab !== 'nomad' && (
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-400 hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none flex-shrink-0 max-w-[120px]">
+                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[72px] max-w-[130px]">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
