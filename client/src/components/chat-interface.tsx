@@ -507,10 +507,46 @@ const readFileAsDataURL = (file: File): Promise<string> =>
 
 function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: string; fallbackUrls: string[]; onExpand?: (src: string) => void }) {
   const [loading, setLoading] = React.useState(true);
-  const [failed, setFailed] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
+  const [elapsed, setElapsed] = React.useState(0);
+  const [attempt, setAttempt] = React.useState(0);
   const [src, setSrc] = React.useState(imageUrl);
-  const fallbackRef = React.useRef(0);
+  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Build a fresh URL with a new random seed from the original base prompt URL
+  const freshUrl = React.useCallback((baseUrl: string) => {
+    try {
+      const u = new URL(baseUrl);
+      u.searchParams.set('seed', String(Math.floor(Math.random() * 9_000_000) + 1));
+      const models = ['flux', 'turbo', 'flux-realism', 'flux-pro', 'flux-schnell'];
+      u.searchParams.set('model', models[Math.floor(Math.random() * models.length)]);
+      return u.toString();
+    } catch { return baseUrl; }
+  }, []);
+
+  React.useEffect(() => {
+    if (!loading) { if (timerRef.current) clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loading, attempt]);
+
+  // Auto-retry with a fresh seed every 40 seconds while still loading
+  React.useEffect(() => {
+    if (!loading) { if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); return; }
+    retryTimeoutRef.current = setTimeout(() => {
+      setElapsed(0);
+      setAttempt(a => a + 1);
+      setSrc(freshUrl(imageUrl));
+    }, 40_000);
+    return () => { if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); };
+  }, [loading, attempt, imageUrl, freshUrl]);
+
+  const handleManualRetry = () => {
+    setElapsed(0);
+    setAttempt(a => a + 1);
+    setSrc(freshUrl(imageUrl));
+  };
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -519,53 +555,54 @@ function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: stri
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'fius-image.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = 'fius-image.jpg';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
-      window.open(src, '_blank');
-    } finally {
-      setDownloading(false);
-    }
+    } catch { window.open(src, '_blank'); }
+    finally { setDownloading(false); }
   };
+
+  const statusMsg = elapsed < 12 ? 'Fius Studio is generating…'
+    : elapsed < 28 ? `Still generating… (${elapsed}s)`
+    : `Almost ready… (${elapsed}s) — auto-retrying soon`;
 
   return (
     <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted min-h-[200px]">
-      {loading && !failed && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 pointer-events-none">
-          <div className="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-muted-foreground">Loading image…</span>
-          <span className="text-[10px] text-muted-foreground/60">May take 10–20 seconds</span>
+      {loading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-10" style={{ minHeight: 200 }}>
+          <div className="w-8 h-8 border-[3px] border-purple-200 border-t-purple-500 rounded-full animate-spin" />
+          <span className="text-xs text-muted-foreground font-medium text-center px-4">{statusMsg}</span>
+          {elapsed >= 20 && (
+            <button onClick={handleManualRetry}
+              className="mt-1 px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:scale-105"
+              style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+              ↺ Try new seed
+            </button>
+          )}
         </div>
       )}
-      {failed ? (
-        <div className="flex items-center justify-center h-[200px] text-xs text-muted-foreground">Could not load image</div>
-      ) : (
-        <img
-          src={src}
-          alt="Generated"
-          className={`w-full h-auto ${onExpand ? 'cursor-zoom-in' : ''}`}
-          onClick={() => !loading && onExpand && onExpand(src)}
-          onLoad={() => setLoading(false)}
-          onError={() => {
-            if (fallbackRef.current < fallbackUrls.length) {
-              setSrc(fallbackUrls[fallbackRef.current++]);
-            } else {
-              setLoading(false);
-              setFailed(true);
-            }
-          }}
-        />
-      )}
-      {!failed && !loading && (
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors z-20 disabled:opacity-50"
-        >
+      <img
+        key={`${attempt}-${src}`}
+        src={src}
+        alt="Generated"
+        className={`w-full h-auto transition-opacity duration-500 ${loading ? 'opacity-0' : 'opacity-100'} ${onExpand ? 'cursor-zoom-in' : ''}`}
+        onClick={() => !loading && onExpand && onExpand(src)}
+        onLoad={() => { setLoading(false); if (timerRef.current) clearInterval(timerRef.current); if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); }}
+        onError={() => {
+          // Try provided fallbacks first, then generate fresh seeds indefinitely
+          const allUrls = [imageUrl, ...fallbackUrls];
+          const nextIdx = attempt + 1;
+          const nextBase = allUrls[nextIdx % allUrls.length];
+          setTimeout(() => {
+            setElapsed(0);
+            setAttempt(nextIdx);
+            setSrc(freshUrl(nextBase));
+          }, 3000);
+        }}
+      />
+      {!loading && (
+        <button onClick={handleDownload} disabled={downloading}
+          className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-lg transition-colors z-20 disabled:opacity-50">
           {downloading ? '…' : '⬇ Download'}
         </button>
       )}
@@ -4457,10 +4494,10 @@ Let's start the self-listen session!`;
               </Tooltip>
               {activeTab !== 'nomad' && (
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                <SelectTrigger className="h-7 px-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[72px] max-w-[130px]">
+                <SelectTrigger className="h-7 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[80px] max-w-[140px]">
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                <SelectContent forceMount className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
                   {tabModelOptions.map((modelOption) => (
                     <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                       <div className="flex items-center gap-2">
@@ -4558,10 +4595,10 @@ Let's start the self-listen session!`;
                   </Tooltip>
                   {activeTab !== 'nomad' && (
                   <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                    <SelectTrigger className="h-8 px-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 !focus:ring-0 focus:outline-none !focus:outline-none focus-visible:ring-0 !focus-visible:ring-0 focus-visible:outline-none !focus-visible:outline-none focus-visible:ring-offset-0 !focus-visible:ring-offset-0 transition-all rounded-full select-none outline-none !outline-0">
+                    <SelectTrigger className="h-8 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[80px] max-w-[140px]">
                       <SelectValue placeholder="Model" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                    <SelectContent forceMount className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
                       {tabModelOptions.map((modelOption) => (
                         <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
                           <div className="flex items-center gap-2">
