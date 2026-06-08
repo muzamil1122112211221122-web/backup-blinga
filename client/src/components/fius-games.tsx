@@ -1074,7 +1074,9 @@ function FiusCar({ gameLevel, onWin, onLose }: GameProps) {
       <div className="flex-1 flex flex-col items-center justify-center gap-3">
         {phase === 'intro' && (
           <div className="text-center">
-            <img src={imgCar} alt="Car Dodge" className="w-full max-w-xs rounded-2xl mb-4 object-cover" style={{ maxHeight: 130 }} />
+            <div className="w-full max-w-xs rounded-2xl mb-4 flex items-center justify-center" style={{ height: 130, background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)' }}>
+              <Car className="w-16 h-16 text-white" />
+            </div>
             <h3 className="text-xl font-bold text-white mb-1">Car Dodge — Level {gameLevel}</h3>
             <p className="text-zinc-400 text-sm mb-1">Dodge <span className="text-white font-bold">{TARGET}</span> cars to win. You have 3 lives.</p>
             <p className="text-zinc-500 text-xs mb-5">← → arrow keys or tap the steering buttons</p>

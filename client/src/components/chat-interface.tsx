@@ -4434,7 +4434,7 @@ Let's start the self-listen session!`;
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    className="w-4 h-4 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 opacity-40 hover:opacity-90 self-start mt-1"
+                    className={`w-4 h-4 flex items-center justify-center transition-all flex-shrink-0 self-start mt-1 ${inputValue.trim() ? 'text-zinc-600 dark:text-zinc-300 opacity-90 hover:opacity-100 scale-110' : 'text-zinc-400 opacity-30 hover:opacity-60'}`}
                     onClick={() => setPromptFullscreen(true)}
                     tabIndex={-1}
                   >
@@ -4535,7 +4535,7 @@ Let's start the self-listen session!`;
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        className="w-4 h-4 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 opacity-40 hover:opacity-90"
+                        className={`w-4 h-4 flex items-center justify-center transition-all flex-shrink-0 ${inputValue.trim() ? 'text-zinc-600 dark:text-zinc-300 opacity-90 hover:opacity-100 scale-110' : 'text-zinc-400 opacity-30 hover:opacity-60'}`}
                         onClick={() => setPromptFullscreen(true)}
                         tabIndex={-1}
                       >
