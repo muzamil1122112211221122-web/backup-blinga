@@ -506,7 +506,8 @@ const readFileAsDataURL = (file: File): Promise<string> =>
   });
 
 function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: string; fallbackUrls: string[]; onExpand?: (src: string) => void }) {
-  const [loading, setLoading] = React.useState(true);
+  const isBase64 = imageUrl.startsWith('data:');
+  const [loading, setLoading] = React.useState(!isBase64);
   const [downloading, setDownloading] = React.useState(false);
   const [elapsed, setElapsed] = React.useState(0);
   const [attempt, setAttempt] = React.useState(0);
@@ -514,66 +515,63 @@ function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: stri
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const retryTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Build a fresh URL with a new random seed from the original base prompt URL
   const freshUrl = React.useCallback((baseUrl: string) => {
+    if (baseUrl.startsWith('data:')) return baseUrl;
     try {
       const u = new URL(baseUrl);
       u.searchParams.set('seed', String(Math.floor(Math.random() * 9_000_000) + 1));
-      const models = ['flux', 'turbo', 'flux-realism', 'flux-pro', 'flux-schnell'];
+      const models = ['flux', 'turbo', 'flux-schnell', 'flux-realism'];
       u.searchParams.set('model', models[Math.floor(Math.random() * models.length)]);
       return u.toString();
     } catch { return baseUrl; }
   }, []);
 
   React.useEffect(() => {
-    if (!loading) { if (timerRef.current) clearInterval(timerRef.current); return; }
+    if (!loading || isBase64) return;
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [loading, attempt]);
+  }, [loading, attempt, isBase64]);
 
-  // Auto-retry with a fresh seed every 40 seconds while still loading
   React.useEffect(() => {
-    if (!loading) { if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); return; }
+    if (!loading || isBase64) return;
     retryTimeoutRef.current = setTimeout(() => {
-      setElapsed(0);
-      setAttempt(a => a + 1);
-      setSrc(freshUrl(imageUrl));
-    }, 40_000);
+      setElapsed(0); setAttempt(a => a + 1); setSrc(freshUrl(imageUrl));
+    }, 35_000);
     return () => { if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); };
-  }, [loading, attempt, imageUrl, freshUrl]);
-
-  const handleManualRetry = () => {
-    setElapsed(0);
-    setAttempt(a => a + 1);
-    setSrc(freshUrl(imageUrl));
-  };
+  }, [loading, attempt, imageUrl, freshUrl, isBase64]);
 
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const res = await fetch(src);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'fius-image.jpg';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (src.startsWith('data:')) {
+        const a = document.createElement('a');
+        a.href = src; a.download = 'fius-image.jpg';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      } else {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'fius-image.jpg';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     } catch { window.open(src, '_blank'); }
     finally { setDownloading(false); }
   };
 
-  const statusMsg = elapsed < 12 ? 'Fius Studio is generating…'
-    : elapsed < 28 ? `Still generating… (${elapsed}s)`
-    : `Almost ready… (${elapsed}s) — auto-retrying soon`;
+  const statusMsg = elapsed < 15 ? 'Fius Studio is generating your image…'
+    : elapsed < 30 ? `Still working… (${elapsed}s)`
+    : `Taking a bit longer… auto-retrying soon`;
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted min-h-[200px]">
+    <div className="rounded-2xl overflow-hidden border border-border shadow-sm relative bg-muted" style={{ minHeight: loading ? 200 : 0 }}>
       {loading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-10" style={{ minHeight: 200 }}>
+        <div className="flex flex-col items-center justify-center gap-2.5 py-14">
           <div className="w-8 h-8 border-[3px] border-purple-200 border-t-purple-500 rounded-full animate-spin" />
           <span className="text-xs text-muted-foreground font-medium text-center px-4">{statusMsg}</span>
-          {elapsed >= 20 && (
-            <button onClick={handleManualRetry}
+          {elapsed >= 22 && (
+            <button onClick={() => { setElapsed(0); setAttempt(a => a + 1); setSrc(freshUrl(imageUrl)); }}
               className="mt-1 px-4 py-1.5 rounded-full text-xs font-semibold text-white transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
               ↺ Try new seed
@@ -582,22 +580,16 @@ function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: stri
         </div>
       )}
       <img
-        key={`${attempt}-${src}`}
+        key={`${attempt}-${src.slice(0, 60)}`}
         src={src}
         alt="Generated"
-        className={`w-full h-auto transition-opacity duration-500 ${loading ? 'opacity-0' : 'opacity-100'} ${onExpand ? 'cursor-zoom-in' : ''}`}
-        onClick={() => !loading && onExpand && onExpand(src)}
+        className={`w-full h-auto transition-opacity duration-300 ${loading ? 'hidden' : 'block'} ${onExpand ? 'cursor-zoom-in' : ''}`}
+        onClick={() => onExpand && onExpand(src)}
         onLoad={() => { setLoading(false); if (timerRef.current) clearInterval(timerRef.current); if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current); }}
         onError={() => {
-          // Try provided fallbacks first, then generate fresh seeds indefinitely
-          const allUrls = [imageUrl, ...fallbackUrls];
-          const nextIdx = attempt + 1;
-          const nextBase = allUrls[nextIdx % allUrls.length];
-          setTimeout(() => {
-            setElapsed(0);
-            setAttempt(nextIdx);
-            setSrc(freshUrl(nextBase));
-          }, 3000);
+          const allUrls = [imageUrl, ...fallbackUrls].filter(u => !u.startsWith('data:'));
+          const nextBase = allUrls[(attempt + 1) % Math.max(allUrls.length, 1)] || imageUrl;
+          setTimeout(() => { setElapsed(0); setAttempt(a => a + 1); setSrc(freshUrl(nextBase)); }, 2000);
         }}
       />
       {!loading && (

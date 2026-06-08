@@ -187,18 +187,78 @@ async function tryGroqSvgGeneration(prompt: string): Promise<{ success: boolean;
   return null;
 }
 
+async function fetchPollinationsImage(url: string, model: string): Promise<{ b64: string; ct: string } | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Referer': 'https://pollinations.ai/',
+      },
+    });
+    clearTimeout(timer);
+    const ct = response.headers.get('content-type') ?? '';
+    if (response.ok && ct.startsWith('image/')) {
+      const buf = await response.arrayBuffer();
+      console.log(`✓ Image fetched (model=${model}, ${(buf.byteLength / 1024).toFixed(0)}KB)`);
+      return { b64: Buffer.from(buf).toString('base64'), ct };
+    }
+    console.log(`✗ Pollinations ${model}: HTTP ${response.status}`);
+  } catch (err) {
+    clearTimeout(timer);
+    console.log(`✗ Pollinations ${model}: ${err instanceof Error ? err.message : err}`);
+  }
+  return null;
+}
+
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
   console.log(`Fius Studio generating image…`);
-  // Server returns candidate URLs — the browser fetches the actual image data
-  // (browser-origin requests are not subject to API rate limits from the generator service)
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
-  const seed = Math.floor(Math.random() * 9_000_000) + 1;
   const enc = encodeURIComponent(prompt.slice(0, 400));
-  const primary   = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed}&model=flux&nologo=true`;
-  const fallback1 = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 1}&model=turbo&nologo=true`;
-  const fallback2 = `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed + 2}&model=flux-realism&nologo=true`;
-  return { success: true, url: primary, fallbackUrls: [fallback1, fallback2], revisedPrompt: prompt };
+  const mkUrl = (model: string) => {
+    const seed = Math.floor(Math.random() * 9_000_000) + 1;
+    return `https://image.pollinations.ai/prompt/${enc}?width=${w}&height=${h}&seed=${seed}&model=${model}&nologo=true&enhance=false`;
+  };
+
+  // Race 3 models in parallel — fastest wins
+  const candidates = [
+    { model: 'flux',         url: mkUrl('flux') },
+    { model: 'turbo',        url: mkUrl('turbo') },
+    { model: 'flux-schnell', url: mkUrl('flux-schnell') },
+  ];
+
+  const result = await Promise.any(
+    candidates.map(({ model, url }) =>
+      fetchPollinationsImage(url, model).then(r => {
+        if (!r) throw new Error(`${model} failed`);
+        return r;
+      })
+    )
+  ).catch(() => null);
+
+  if (result) {
+    return { success: true, url: `data:${result.ct};base64,${result.b64}`, fallbackUrls: [] as string[], revisedPrompt: prompt };
+  }
+
+  // All parallel attempts failed — fall back one more time sequentially with flux-realism
+  console.log('Parallel attempts failed, trying flux-realism…');
+  const fallbackResult = await fetchPollinationsImage(mkUrl('flux-realism'), 'flux-realism');
+  if (fallbackResult) {
+    return { success: true, url: `data:${fallbackResult.ct};base64,${fallbackResult.b64}`, fallbackUrls: [] as string[], revisedPrompt: prompt };
+  }
+
+  // Truly stuck — return a direct URL so the client can attempt it
+  console.log('All image generation attempts failed, returning direct URL');
+  return {
+    success: true,
+    url: mkUrl('flux'),
+    fallbackUrls: [mkUrl('turbo')] as string[],
+    revisedPrompt: prompt,
+  };
 }
 
 

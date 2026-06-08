@@ -1126,6 +1126,7 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
       res.json({
         success: true,
         url: result.url,
+        fallbackUrls: result.fallbackUrls ?? [],
         revisedPrompt: result.revisedPrompt,
         originalPrompt: prompt.trim()
       });
