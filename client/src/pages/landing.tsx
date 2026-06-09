@@ -25,7 +25,7 @@ export default function Landing() {
     },
     {
       icon: <Bot className="w-8 h-8 text-green-500" />,
-      title: "Multiple AI Models", 
+      title: "Multiple AI Models",
       description: "Access Claude Sonnet 4, ChatGPT 5, Gemini 2.5 Pro, Llama 3.3 70B, plus our exclusive Fius models"
     },
     {
@@ -46,186 +46,170 @@ export default function Landing() {
       <div
         className={`fixed inset-0 bg-black z-[200] transition-opacity duration-500 pointer-events-none ${showOverlay ? 'opacity-100' : 'opacity-0'}`}
       />
-      {/* Simple background gradient */}
-      <div className="absolute inset-0 bg-gradient-radial from-gray-800/20 via-transparent to-transparent"></div>
-      
-      {/* Minimal stars for atmosphere */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full opacity-60"></div>
-        <div className="absolute top-40 right-32 w-0.5 h-0.5 bg-white rounded-full opacity-40"></div>
-        <div className="absolute bottom-32 left-40 w-0.5 h-0.5 bg-white rounded-full opacity-50"></div>
-        <div className="absolute top-1/3 right-20 w-1 h-1 bg-white rounded-full opacity-30"></div>
-        <div className="absolute bottom-20 right-20 w-0.5 h-0.5 bg-white rounded-full opacity-70"></div>
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-radial from-gray-800/20 via-transparent to-transparent" />
+
+      {/* Stars */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full opacity-60" />
+        <div className="absolute top-40 right-32 w-0.5 h-0.5 bg-white rounded-full opacity-40" />
+        <div className="absolute bottom-32 left-40 w-0.5 h-0.5 bg-white rounded-full opacity-50" />
+        <div className="absolute top-1/3 right-20 w-1 h-1 bg-white rounded-full opacity-30" />
+        <div className="absolute bottom-20 right-20 w-0.5 h-0.5 bg-white rounded-full opacity-70" />
       </div>
-      
-      {/* Content overlay */}
-      <div className="relative z-10 min-h-screen">
-      {/* Floating Island Header */}
-      <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-6">
-        <header className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-8 py-3 w-full max-w-5xl" style={{boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)'}}>
-            <div className="flex items-center space-x-3">
-              <img src="/fius-logo.png" alt="Fius" className="w-7 h-7 object-contain" />
-              <h1 className="text-xl font-bold text-white">Fius</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button 
-                onClick={(e) => handleGetStarted(e, 'header')}
-                className={`bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-6 py-2 rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-2 shadow-lg hero-btn ${navigatingBtn === 'header' ? 'animate-pop-out' : ''}`}
-                data-testid="button-start-chat"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Begin Experience</span>
-              </Button>
-            </div>
+
+      {/* ── Floating Island Header ── */}
+      <div className="fixed top-3 sm:top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-6">
+        <header
+          className="flex items-center justify-between bg-gradient-to-r from-gray-700 via-gray-800 to-gray-500 backdrop-blur-lg rounded-full px-4 sm:px-8 py-2.5 sm:py-3 w-full max-w-5xl"
+          style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)' }}
+        >
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <img src="/fius-logo.png" alt="Fius" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+            <h1 className="text-lg sm:text-xl font-bold text-white">Fius</h1>
+          </div>
+          <Button
+            onClick={(e) => handleGetStarted(e, 'header')}
+            className={`bg-gradient-to-r from-gray-700 via-gray-800 to-black text-white hover:opacity-90 px-3 sm:px-6 py-1.5 sm:py-2 text-sm rounded-full transition-all duration-300 hover:scale-110 flex items-center space-x-1.5 sm:space-x-2 shadow-lg hero-btn ${navigatingBtn === 'header' ? 'animate-pop-out' : ''}`}
+            data-testid="button-start-chat"
+          >
+            <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline sm:inline">Begin Experience</span>
+            <span className="xs:hidden sm:hidden">Start</span>
+          </Button>
         </header>
       </div>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-6 pt-36 pb-20">
-        <div className="text-center max-w-4xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Chat with the
-            <span className="bg-gradient-to-r from-gray-300 via-gray-600 to-gray-300 bg-clip-text text-transparent"> Future </span>
-            of AI
-          </h2>
-          <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-            Experience next-generation AI conversations with multiple models, voice integration,
-            and real-time chat capabilities all in one beautiful interface.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <Button 
-              onClick={(e) => handleGetStarted(e, 'hero')}
-              size="lg"
-              className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 px-16 py-8 text-2xl rounded-full flex items-center justify-center space-x-4 will-change-transform hero-btn ${navigatingBtn === 'hero' ? 'animate-pop-out' : ''}`}
-              style={{boxShadow: navigatingBtn === 'hero' ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)'}}
-              data-testid="button-hero-start"
-            >
-              <MessageCircle className="w-6 h-6" />
-              <span>Begin Experience</span>
-            </Button>
-            <p className="text-lg font-semibold tracking-wide bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent select-none">
-              Fly With Us!
+      {/* ── Content ── */}
+      <div className="relative z-10 min-h-screen">
+
+        {/* Hero Section — extra top padding for fixed header */}
+        <section className="container mx-auto px-6 pt-28 sm:pt-36 pb-16 sm:pb-20">
+          <div className="text-center max-w-4xl mx-auto">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-5 sm:mb-6 leading-tight">
+              Chat with the
+              <span className="bg-gradient-to-r from-gray-300 via-gray-600 to-gray-300 bg-clip-text text-transparent"> Future </span>
+              of AI
+            </h2>
+            <p className="text-base sm:text-xl text-gray-300 mb-8 leading-relaxed px-2 sm:px-0">
+              Experience next-generation AI conversations with multiple models, voice integration,
+              and real-time chat capabilities all in one beautiful interface.
+            </p>
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
+              <Button
+                onClick={(e) => handleGetStarted(e, 'hero')}
+                size="lg"
+                className={`bg-gradient-to-r from-white via-gray-400 to-gray-700 text-gray-900 px-10 sm:px-16 py-6 sm:py-8 text-xl sm:text-2xl rounded-full flex items-center justify-center space-x-3 sm:space-x-4 will-change-transform hero-btn ${navigatingBtn === 'hero' ? 'animate-pop-out' : ''}`}
+                style={{ boxShadow: navigatingBtn === 'hero' ? 'none' : '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 -3px 0 rgba(255,255,255,0.95), inset 0 -10px 24px rgba(255,255,255,0.18)' }}
+                data-testid="button-hero-start"
+              >
+                <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>Begin Experience</span>
+              </Button>
+              <p className="text-base sm:text-lg font-semibold tracking-wide bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent select-none">
+                Fly With Us!
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="container mx-auto px-6 py-16 sm:py-20">
+          <div className="text-center mb-12 sm:mb-16">
+            <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4">Why Choose Fius?</h3>
+            <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
+              Powerful features designed to enhance your AI conversation experience
             </p>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {features.map((feature, index) => (
+              <Card
+                key={index}
+                className="group hover:shadow-xl transition-all duration-200 hover:scale-102 border-white/20 bg-black/80"
+                data-testid={`card-feature-${index}`}
+              >
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto mb-4 p-3 bg-white/10 rounded-xl group-hover:bg-white/15 transition-colors duration-200">
+                    {feature.icon}
+                  </div>
+                  <h4 className="text-xl font-semibold text-white">{feature.title}</h4>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <p className="text-gray-300 leading-relaxed">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
 
-        </div>
-      </section>
+        {/* AI Models Showcase */}
+        <section className="container mx-auto px-6 py-16 sm:py-20">
+          <div className="text-center mb-12 sm:mb-16">
+            <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4">Powered by Leading AI Models</h3>
+            <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">
+              Access the most advanced AI models in the industry, plus our exclusive Fius models
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {[
+              { name: "Claude Sonnet 4", sub: "Anthropic", desc: "Superior reasoning, coding, and creative writing capabilities", gradient: "from-orange-900/40 to-gray-800/60", accent: "#f97316" },
+              { name: "ChatGPT 5", sub: "OpenAI", desc: "Multimodal AI with vision, reasoning, and code generation", gradient: "from-emerald-900/30 to-gray-800/60", accent: "#10a37f" },
+              { name: "Gemini 2.5 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
+              { name: "Grok 4", sub: "xAI", desc: "Witty, curious, and unfiltered reasoning with real-time data", gradient: "from-gray-700/50 to-gray-800/60", accent: "#9ca3af" },
+              { name: "DeepSeek v3", sub: "DeepSeek", desc: "Open-source reasoning powerhouse for coding and logic", gradient: "from-blue-900/40 to-gray-800/50", accent: "#3b82f6" },
+              { name: "Llama 4", sub: "Meta", desc: "Meta's open-source frontier AI for any task", gradient: "from-indigo-900/30 to-gray-800/50", accent: "#6366f1" },
+              { name: "Perplexity Sonar Pro", sub: "Perplexity", desc: "Real-time web search with cited and accurate answers", gradient: "from-sky-900/30 to-gray-800/50", accent: "#38bdf8" },
+              { name: "Kimi K2.5", sub: "Moonshot", desc: "Ultra-long-context language model for deep analysis", gradient: "from-cyan-900/30 to-gray-800/50", accent: "#06b6d4" },
+              { name: "Qwen3.6 Plus", sub: "Alibaba", desc: "Multilingual language expert for global conversations", gradient: "from-violet-900/30 to-gray-800/50", accent: "#8b5cf6" },
+              { name: "Mistral Small 4", sub: "Mistral AI", desc: "Fast, efficient, and powerful European open AI", gradient: "from-purple-900/30 to-gray-800/50", accent: "#a855f7" },
+              { name: "Fius Pro", sub: "Fius · Exclusive", desc: "Custom-optimized for productivity, coding, and specialized tasks", gradient: "from-fuchsia-900/40 to-gray-800/50", accent: "#e879f9" },
+              { name: "Fius Education", sub: "Fius · Exclusive", desc: "Designed for learning, examinations, and voice-based study", gradient: "from-rose-900/30 to-gray-800/50", accent: "#fb7185" },
+            ].map(({ name, sub, desc, gradient, accent }) => (
+              <Card key={name} className={`border-white/10 bg-gradient-to-br ${gradient} backdrop-blur-sm hover:border-white/20 transition-all duration-300 hover:scale-[1.02]`}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}80` }} />
+                    <span className="text-xs text-gray-400 font-medium">{sub}</span>
+                  </div>
+                  <h4 className="text-lg font-semibold text-white">{name}</h4>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
 
-      {/* Features Section */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h3 className="text-4xl font-bold text-white mb-4">
-            Why Choose Fius?
-          </h3>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Powerful features designed to enhance your AI conversation experience
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <Card 
-              key={index}
-              className="group hover:shadow-xl transition-all duration-200 hover:scale-102 border-white/20 bg-black/80"
-              data-testid={`card-feature-${index}`}
+        {/* CTA */}
+        <section className="bg-gradient-to-r from-white via-gray-400 to-gray-700 py-16 sm:py-20">
+          <div className="container mx-auto px-6 text-center">
+            <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Ready to Get Started?</h3>
+            <p className="text-base sm:text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+              Join thousands of users already experiencing the future of AI conversations
+            </p>
+            <Button
+              onClick={(e) => handleGetStarted(e, 'cta')}
+              size="lg"
+              className={`bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl hero-btn ${navigatingBtn === 'cta' ? 'animate-pop-out' : ''}`}
+              data-testid="button-cta-start"
             >
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-4 p-3 bg-white/10 rounded-xl group-hover:bg-white/15 transition-colors duration-200">
-                  {feature.icon}
-                </div>
-                <h4 className="text-xl font-semibold text-white">
-                  {feature.title}
-                </h4>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-300 leading-relaxed">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+              Start Your Journey
+            </Button>
+          </div>
+        </section>
 
-      {/* AI Models Showcase Section */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h3 className="text-4xl font-bold text-white mb-4">
-            Powered by Leading AI Models
-          </h3>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Access the most advanced AI models in the industry, plus our exclusive Fius models
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { name: "Claude Sonnet 4", sub: "Anthropic", desc: "Superior reasoning, coding, and creative writing capabilities", gradient: "from-orange-900/40 to-gray-800/60", accent: "#f97316" },
-            { name: "ChatGPT 5", sub: "OpenAI", desc: "Multimodal AI with vision, reasoning, and code generation", gradient: "from-emerald-900/30 to-gray-800/60", accent: "#10a37f" },
-            { name: "Gemini 2.5 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
-            { name: "Grok 4", sub: "xAI", desc: "Witty, curious, and unfiltered reasoning with real-time data", gradient: "from-gray-700/50 to-gray-800/60", accent: "#9ca3af" },
-            { name: "DeepSeek v3", sub: "DeepSeek", desc: "Open-source reasoning powerhouse for coding and logic", gradient: "from-blue-900/40 to-gray-800/50", accent: "#3b82f6" },
-            { name: "Llama 4", sub: "Meta", desc: "Meta's open-source frontier AI for any task", gradient: "from-indigo-900/30 to-gray-800/50", accent: "#6366f1" },
-            { name: "Perplexity Sonar Pro", sub: "Perplexity", desc: "Real-time web search with cited and accurate answers", gradient: "from-sky-900/30 to-gray-800/50", accent: "#38bdf8" },
-            { name: "Kimi K2.5", sub: "Moonshot", desc: "Ultra-long-context language model for deep analysis", gradient: "from-cyan-900/30 to-gray-800/50", accent: "#06b6d4" },
-            { name: "Qwen3.6 Plus", sub: "Alibaba", desc: "Multilingual language expert for global conversations", gradient: "from-violet-900/30 to-gray-800/50", accent: "#8b5cf6" },
-            { name: "Mistral Small 4", sub: "Mistral AI", desc: "Fast, efficient, and powerful European open AI", gradient: "from-purple-900/30 to-gray-800/50", accent: "#a855f7" },
-            { name: "Fius Pro", sub: "Fius · Exclusive", desc: "Custom-optimized for productivity, coding, and specialized tasks", gradient: "from-fuchsia-900/40 to-gray-800/50", accent: "#e879f9" },
-            { name: "Fius Education", sub: "Fius · Exclusive", desc: "Designed for learning, examinations, and voice-based study", gradient: "from-rose-900/30 to-gray-800/50", accent: "#fb7185" },
-          ].map(({ name, sub, desc, gradient, accent }) => (
-            <Card key={name} className={`border-white/10 bg-gradient-to-br ${gradient} backdrop-blur-sm hover:border-white/20 transition-all duration-300 hover:scale-[1.02]`}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}80` }} />
-                  <span className="text-xs text-gray-400 font-medium">{sub}</span>
-                </div>
-                <h4 className="text-lg font-semibold text-white">{name}</h4>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-white via-gray-400 to-gray-700 py-20">
-        <div className="container mx-auto px-6 text-center">
-          <h3 className="text-4xl font-bold text-gray-900 mb-4">
-            Ready to Get Started?
-          </h3>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Join thousands of users already experiencing the future of AI conversations
-          </p>
-          <Button 
-            onClick={(e) => handleGetStarted(e, 'cta')}
-            size="lg"
-            className={`bg-black text-white hover:bg-gray-900 border border-white/30 px-8 py-4 text-lg rounded-full transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl hero-btn ${navigatingBtn === 'cta' ? 'animate-pop-out' : ''}`}
-            data-testid="button-cta-start"
-          >
-            Start Your Journey
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="text-center">
+        {/* Footer */}
+        <footer className="bg-gray-900 text-white py-12">
+          <div className="container mx-auto px-6 text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <img src="/fius-logo.png" alt="Fius" className="w-8 h-8 object-contain" />
               <h4 className="text-2xl font-bold">Fius</h4>
             </div>
-            <p className="text-gray-400 mb-6">
-              The future of AI conversations, today.
-            </p>
-            <p className="text-gray-500 text-sm">
-              © 2025 Fius. All rights reserved.
-            </p>
+            <p className="text-gray-400 mb-6">The future of AI conversations, today.</p>
+            <p className="text-gray-500 text-sm">© 2025 Fius. All rights reserved.</p>
           </div>
-        </div>
-      </footer>
+        </footer>
       </div>
     </div>
   );
