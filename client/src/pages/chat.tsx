@@ -2,9 +2,12 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ChatInterface } from "../components/chat-interface";
+import { MobileChatInterface } from "../components/mobile-chat-interface";
+import { useIsMobileOrTablet } from "../hooks/use-mobile";
 
 export default function Chat() {
   const [, navigate] = useLocation();
+  const isMobileOrTablet = useIsMobileOrTablet();
 
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -25,8 +28,10 @@ export default function Chat() {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect to /start in useEffect
+  if (!user) return null;
+
+  if (isMobileOrTablet) {
+    return <MobileChatInterface onShowAuth={() => navigate("/start")} />;
   }
 
   return (

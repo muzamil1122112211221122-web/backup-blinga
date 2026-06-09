@@ -17,3 +17,17 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+export function useIsMobileOrTablet() {
+  const [is, setIs] = React.useState<boolean>(false)
+
+  React.useEffect(() => {
+    const check = () => setIs(window.innerWidth < 1024)
+    const mql = window.matchMedia("(max-width: 1023px)")
+    mql.addEventListener("change", check)
+    check()
+    return () => mql.removeEventListener("change", check)
+  }, [])
+
+  return is
+}
