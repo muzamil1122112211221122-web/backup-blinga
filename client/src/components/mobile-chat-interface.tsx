@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FiusGames } from "./fius-games";
+import { Logo } from "./logo";
 import {
   MessageCircle, Sparkles, Brain, Globe, Gamepad2,
   Plus, X, ArrowUp, Menu, Check, ChevronRight,
   LogOut, Trash2, Clock, Wand2, Download,
   ChevronLeft, Paperclip, Mic, AudioLines,
-  Camera, FileText, Image,
+  Camera, FileText, Image, Search, PenTool, Settings, Link,
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -457,9 +458,17 @@ function ConvDrawer({
 }
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, setModel }: {
+const SUGGESTION_CARDS = [
+  { icon: <Search className="w-5 h-5 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into topics", prompt: "Analyze the benefits of renewable energy" },
+  { icon: <PenTool className="w-5 h-5 text-blue-400" />,  title: "Creative writing",    desc: "Stories and content",  prompt: "Write a short story about time travel" },
+  { icon: <Brain className="w-5 h-5 text-purple-400" />,  title: "Brainstorm ideas",    desc: "Generate fresh concepts", prompt: "Give me 10 creative business ideas for 2025" },
+];
+
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, setModel, user, onVoiceMode, onSettings, onIntegration }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; model: string; setModel: (m: string) => void;
+  user?: { username: string; email: string; displayName?: string };
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const [expandImg, setExpandImg] = useState<string|null>(null);
@@ -496,11 +505,59 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
 
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping && (
-          <div className="flex flex-col items-center justify-center h-full py-16 gap-4 text-center">
-            <FiusAvatar size={52} />
-            <div>
-              <p className="text-base font-semibold text-white">Ask Fius anything</p>
-              <p className="text-sm text-zinc-500 mt-1">AI answers, always at hand</p>
+          <div className="flex flex-col items-center justify-center min-h-full pb-6 gap-0 text-center">
+            {/* Logo */}
+            <Logo size="xl" className="mb-5 text-white" />
+
+            {/* Welcome text */}
+            <h2 className="text-2xl font-bold text-white mb-1">
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : user?.username ? `Welcome back, ${user.username}!` : "Welcome to Fius"}
+            </h2>
+            <p className="text-sm text-zinc-400 mb-6">Fly With Us!</p>
+
+            {/* Suggestion heading */}
+            <p className="text-xs font-semibold text-zinc-400 mb-3 tracking-wide">What's on your mind? For example:</p>
+
+            {/* Suggestion cards */}
+            <div className="w-full flex flex-col gap-2.5 mb-6">
+              {SUGGESTION_CARDS.map((card, i) => (
+                <button key={i} onClick={() => { setInput(card.prompt); }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/10 bg-white/5 text-left active:scale-[0.98] transition-all hover:bg-white/8">
+                  <div className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center flex-shrink-0 border border-white/10">
+                    {card.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">{card.title}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{card.desc}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+
+            {/* Quick action buttons */}
+            <div className="flex items-center gap-6">
+              <button onClick={onIntegration}
+                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
+                  <Link className="w-5 h-5 text-zinc-300" />
+                </div>
+                <span className="text-[10px] text-zinc-500 font-medium text-center leading-tight">Integration<br/>Answer</span>
+              </button>
+              <button onClick={onVoiceMode}
+                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
+                  <AudioLines className="w-5 h-5 text-zinc-300" />
+                </div>
+                <span className="text-[10px] text-zinc-500 font-medium">Voice Mode</span>
+              </button>
+              <button onClick={onSettings}
+                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
+                  <Settings className="w-5 h-5 text-zinc-300" />
+                </div>
+                <span className="text-[10px] text-zinc-500 font-medium">Settings</span>
+              </button>
             </div>
           </div>
         )}
@@ -517,7 +574,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
       <InputBar value={input} onChange={setInput} onSend={onSend} onStop={onStop}
         placeholder="What do you want to know?" isTyping={isTyping}
         model={model} onModelClick={() => setShowModels(true)}
-        onVoice={() => {}} />
+        onVoice={onVoiceMode} />
     </>
   );
 }
@@ -950,8 +1007,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         </button>
 
         <div className="flex items-center gap-2">
-          <FiusAvatar size={22} />
-          <span className="font-bold text-white text-sm tracking-tight">{tabLabel[tab]}</span>
+          <Logo size="sm" className="text-white" />
+          <span className="font-bold text-white text-sm tracking-tight">Fius</span>
         </div>
 
         {tab !== "games" ? (
@@ -970,7 +1027,11 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         {tab === "ask" && (
           <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
             onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
-            model={askModel} setModel={setAskModel} />
+            model={askModel} setModel={setAskModel}
+            user={user}
+            onVoiceMode={() => {}}
+            onSettings={() => {}}
+            onIntegration={() => {}} />
         )}
         {tab === "imagine" && (
           <ImagineTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput} onSend={handleImagSend} />
