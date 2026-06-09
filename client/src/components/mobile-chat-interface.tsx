@@ -4,7 +4,6 @@ import { FiusGames } from "./fius-games";
 import { Logo } from "./logo";
 import { Sidebar } from "./sidebar";
 import { VoiceModeModal } from "./voice-mode-modal";
-import { CustomizeModal } from "./customize-modal";
 import { useTheme } from "./theme-provider";
 import {
   MessageCircle, Sparkles, Brain, Globe, Gamepad2,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import { format, isToday, isYesterday } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -384,6 +384,202 @@ function PCInputBar({
             <div className="bg-emerald-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">Listening...</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Settings Sheet ────────────────────────────────────────────────────
+function MobileSettingsSheet({
+  isOpen, onClose, user, profilePicture, onProfilePictureChange, onUserRename,
+}: {
+  isOpen: boolean; onClose: () => void;
+  user?: { username: string; email: string; displayName?: string };
+  profilePicture?: string;
+  onProfilePictureChange?: (dataUrl: string) => void;
+  onUserRename?: (name: string) => void;
+}) {
+  const { theme, setTheme } = useTheme();
+  const [section, setSection] = useState<"main" | "account">("main");
+  const [displayName, setDisplayName] = useState(user?.displayName || user?.username || "");
+  const picInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (!isOpen) setSection("main"); }, [isOpen]);
+  useEffect(() => { setDisplayName(user?.displayName || user?.username || ""); }, [user]);
+
+  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { if (ev.target?.result) onProfilePictureChange?.(ev.target.result as string); };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveName = async () => {
+    if (!displayName.trim()) return;
+    try {
+      await apiRequest("PATCH", "/api/auth/user", { username: displayName.trim() });
+      onUserRename?.(displayName.trim());
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    } catch { /* silent */ }
+  };
+
+  if (!isOpen) return null;
+
+  const initials = (user?.displayName || user?.username || "?").charAt(0).toUpperCase();
+
+  const THEME_OPTIONS = [
+    { value: "light", icon: <Sun className="w-4 h-4 text-yellow-500" />, label: "Light" },
+    { value: "dark",  icon: <Moon className="w-4 h-4 text-blue-400" />, label: "Dark" },
+    { value: "system",icon: <Monitor className="w-4 h-4 text-foreground" />, label: "System" },
+  ] as const;
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Sheet */}
+      <div
+        className="relative bg-background rounded-t-3xl max-h-[85vh] overflow-y-auto"
+        style={{ boxShadow: "0 -8px 40px rgba(0,0,0,0.35)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+        </div>
+
+        {section === "main" && (
+          <div className="px-5 pb-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5 mt-1">
+              <h2 className="text-lg font-bold text-foreground">Settings</h2>
+              <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Account card */}
+            <button
+              onClick={() => setSection("account")}
+              className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-accent border border-border mb-4 text-left active:scale-[0.98] transition-all"
+            >
+              <div className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+                style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                {profilePicture
+                  ? <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                  : <span className="text-white font-bold text-lg">{initials}</span>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{user?.displayName || user?.username}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
+
+            {/* Appearance */}
+            <div className="mb-4">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">Appearance</p>
+              <div className="grid grid-cols-3 gap-2">
+                {THEME_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setTheme(opt.value)}
+                    className={`flex flex-col items-center gap-2 py-3.5 rounded-2xl border transition-all active:scale-95 ${
+                      theme === opt.value
+                        ? "border-foreground/40 bg-foreground/10"
+                        : "border-border bg-accent hover:bg-accent/80"
+                    }`}
+                  >
+                    {opt.icon}
+                    <span className={`text-xs font-semibold ${theme === opt.value ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
+                    {theme === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-foreground" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* General options */}
+            <div>
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">General</p>
+              <div className="rounded-2xl border border-border overflow-hidden">
+                {[
+                  { icon: <Settings className="w-4 h-4" />, label: "Customize AI Response", sub: "Presets, tone & behavior" },
+                  { icon: <Globe className="w-4 h-4" />, label: "Integration Answers", sub: "Web search & links" },
+                  { icon: <AudioLines className="w-4 h-4" />, label: "Voice Mode Settings", sub: "Speech & synthesis" },
+                ].map((item, i, arr) => (
+                  <button key={i}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-accent transition-colors ${i < arr.length - 1 ? "border-b border-border" : ""}`}>
+                    <div className="w-8 h-8 rounded-xl bg-accent border border-border flex items-center justify-center text-muted-foreground flex-shrink-0">
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.sub}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {section === "account" && (
+          <div className="px-5 pb-8">
+            <div className="flex items-center gap-3 mb-5 mt-1">
+              <button onClick={() => setSection("main")} className="text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-lg font-bold text-foreground">Account</h2>
+            </div>
+
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <button onClick={() => picInputRef.current?.click()} className="relative group">
+                <div className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                  {profilePicture
+                    ? <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    : <span className="text-white font-bold text-2xl">{initials}</span>
+                  }
+                </div>
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-active:opacity-100 flex items-center justify-center">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+              </button>
+              <p className="text-xs text-muted-foreground">Tap to change photo</p>
+              <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
+            </div>
+
+            {/* Display name */}
+            <div className="mb-4">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Display Name</p>
+              <div className="flex gap-2">
+                <Input
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleSaveName(); }}
+                  placeholder="Your name"
+                  className="flex-1 h-11 rounded-2xl bg-accent border-border text-foreground text-sm"
+                />
+                <button onClick={handleSaveName}
+                  className="h-11 px-4 rounded-2xl bg-foreground text-background text-sm font-semibold hover:opacity-90 active:scale-95 transition-all flex-shrink-0">
+                  Save
+                </button>
+              </div>
+            </div>
+
+            {/* Email (read only) */}
+            <div>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Email</p>
+              <div className="h-11 px-4 flex items-center rounded-2xl bg-accent border border-border">
+                <span className="text-sm text-muted-foreground truncate">{user?.email}</span>
+              </div>
             </div>
           </div>
         )}
@@ -1054,15 +1250,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       {/* Voice Mode Modal */}
       <VoiceModeModal isOpen={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
 
-      {/* Settings / Customize Modal */}
-      <CustomizeModal
+      {/* Mobile-optimised Settings Sheet */}
+      <MobileSettingsSheet
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
-        currentPreset={"custom" as any}
-        customInstructions=""
-        onSave={() => setSettingsModalOpen(false)}
-        toggles={{}}
-        aiOrder={[]}
         user={user ? { email: user.email, username: user.username, displayName: user.displayName } : undefined}
         profilePicture={profilePicture}
         onUserRename={handleUserRename}
