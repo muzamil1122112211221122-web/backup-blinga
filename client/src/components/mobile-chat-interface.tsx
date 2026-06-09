@@ -2,17 +2,29 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FiusGames } from "./fius-games";
 import { Logo } from "./logo";
+import { Sidebar } from "./sidebar";
+import { VoiceModeModal } from "./voice-mode-modal";
+import { CustomizeModal } from "./customize-modal";
+import { useTheme } from "./theme-provider";
 import {
   MessageCircle, Sparkles, Brain, Globe, Gamepad2,
   Plus, X, ArrowUp, Menu, Check, ChevronRight,
   LogOut, Trash2, Clock, Wand2, Download,
   ChevronLeft, Paperclip, Mic, AudioLines,
   Camera, FileText, Image, Search, PenTool, Settings, Link,
+  Bell, Sun, Moon, Monitor,
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, isToday, isYesterday } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
+import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
+import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
+import attachmentLight from "@assets/attachment_button_1766904971888.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
-import enhanceDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
+import micLight from "@assets/mic_button_1766904971887.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MobileTab = "ask" | "imagine" | "philosopher" | "nomad" | "games";
@@ -21,7 +33,10 @@ interface Msg {
   id: string; role: "user" | "ai"; content: string;
   imageUrl?: string; isGenerating?: boolean; timestamp: Date;
 }
-interface Conv { id: string; title: string; createdAt: string | Date; updatedAt?: string | Date; }
+interface Conv {
+  id: string; title: string; createdAt: string | Date; updatedAt?: string | Date;
+  aiRole?: string; isProject?: boolean;
+}
 interface Personality {
   id: string; name: string; era: string; role: string;
   category: string; style: string;
@@ -61,12 +76,18 @@ const PHILOSOPHERS: Personality[] = [
   { id:"voltaire",  name:"Voltaire",        era:"1694–1778",   role:"Philosopher",     category:"Philosophy", style:"Satirical, rationalist, anti-dogma" },
 ];
 
-const TABS: { id: MobileTab; label: string; Icon: React.FC<any> }[] = [
-  { id: "ask",         label: "Ask",    Icon: MessageCircle },
-  { id: "imagine",     label: "Studio", Icon: Sparkles      },
-  { id: "philosopher", label: "Minds",  Icon: Brain         },
-  { id: "nomad",       label: "Nomad",  Icon: Globe         },
-  { id: "games",       label: "Games",  Icon: Gamepad2      },
+const TABS: { id: MobileTab; short: string; full: string }[] = [
+  { id: "ask",         short: "Ask",         full: "Ask"                },
+  { id: "nomad",       short: "Nomad",       full: "Nomad"              },
+  { id: "imagine",     short: "Studio",      full: "Imagine Studio"     },
+  { id: "philosopher", short: "Minds",       full: "Philosophers"       },
+  { id: "games",       short: "Games",       full: "Fius Games"         },
+];
+
+const SUGGESTION_CARDS = [
+  { icon: <Search className="w-5 h-5 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into topics",     prompt: "Analyze the benefits of renewable energy" },
+  { icon: <PenTool className="w-5 h-5 text-blue-400" />,  title: "Creative writing",    desc: "Stories and content",      prompt: "Write a short story about time travel" },
+  { icon: <Brain className="w-5 h-5 text-purple-400" />,  title: "Brainstorm ideas",    desc: "Generate fresh concepts",  prompt: "Give me 10 creative business ideas for 2025" },
 ];
 
 function uid() { return Math.random().toString(36).slice(2); }
@@ -132,11 +153,11 @@ function MobileImageCard({ src, onExpand }: { src: string; onExpand: (s: string)
   };
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/10 bg-[#1a1a2e] relative" style={{ minHeight: loaded ? 0 : 160 }}>
+    <div className="rounded-2xl overflow-hidden border border-border bg-card relative" style={{ minHeight: loaded ? 0 : 160 }}>
       {!loaded && (
         <div className="flex flex-col items-center justify-center gap-2.5 py-10">
-          <div className="w-6 h-6 rounded-full border-[3px] border-zinc-600 border-t-purple-400 animate-spin" />
-          <p className="text-xs text-zinc-400 text-center px-4">
+          <div className="w-6 h-6 rounded-full border-[3px] border-zinc-300 dark:border-zinc-600 border-t-purple-400 animate-spin" />
+          <p className="text-xs text-muted-foreground text-center px-4">
             {elapsed < 12 ? "Generating…" : elapsed < 28 ? `Still working… (${elapsed}s)` : "Almost ready…"}
           </p>
           {elapsed >= 20 && (
@@ -174,29 +195,37 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg: (s: string) =>
         ) : (
           <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
             isUser
-              ? "rounded-tr-sm bg-primary text-primary-foreground"
+              ? "rounded-tr-sm bg-zinc-800 dark:bg-zinc-700 text-white"
               : "rounded-tl-sm bg-card border border-border text-foreground"
           }`}>
             {msg.content}
           </div>
         )}
-        <span className="text-[10px] text-zinc-500 mt-0.5 px-1">{format(msg.timestamp, "h:mm a")}</span>
+        <span className="text-[10px] text-muted-foreground mt-0.5 px-1">{format(msg.timestamp, "h:mm a")}</span>
       </div>
     </div>
   );
 }
 
-// ─── Full input bar — desktop-matching ────────────────────────────────────────
-function InputBar({
+// ─── PC-matching Input Bar ────────────────────────────────────────────────────
+function PCInputBar({
   value, onChange, onSend, placeholder, isTyping, onStop,
-  showMic = true, showEnhance = true, showAttach = true,
-  model, onModelClick, onVoice,
+  model, onModelClick,
+  onVoiceMode, onSettings, onIntegration,
+  fiusIntegrationMode,
+  showExtraButtons = true,
+  showEnhance = true,
 }: {
   value: string; onChange: (v: string) => void; onSend: () => void;
   placeholder: string; isTyping: boolean; onStop: () => void;
-  showMic?: boolean; showEnhance?: boolean; showAttach?: boolean;
-  model?: string; onModelClick?: () => void; onVoice?: () => void;
+  model?: string; onModelClick?: () => void;
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
+  fiusIntegrationMode?: boolean;
+  showExtraButtons?: boolean;
+  showEnhance?: boolean;
 }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const ref = useRef<HTMLTextAreaElement>(null);
   const [isListening, setIsListening] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -246,11 +275,8 @@ function InputBar({
   const m = MODELS.find(x => x.id === model) || MODELS[0];
 
   return (
-    <div className="flex-shrink-0 px-3 pb-3 pt-1.5">
-      {/* Desktop-style dark glossy container */}
-      <div className="bg-[#303030] rounded-[1.5rem]"
-        style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.10), 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
-
+    <div className="flex-shrink-0 px-3 pb-safe-bottom pb-3 pt-1.5">
+      <div className="relative bg-white dark:bg-[#303030] rounded-[1.5rem] glossy-outline">
         {/* Textarea row */}
         <div className="px-4 pt-3 pb-1">
           <textarea
@@ -260,24 +286,48 @@ function InputBar({
             onKeyDown={onKey}
             placeholder={placeholder}
             rows={1}
-            className="w-full bg-transparent text-[16px] text-white placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
+            className="w-full bg-transparent text-[15px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
             style={{ maxHeight: 130, scrollbarWidth: "none", minHeight: 28 }}
           />
         </div>
 
         {/* Function row */}
         <div className="flex items-center px-2 pb-2 gap-1">
-          {/* LEFT buttons */}
-          {showAttach && (
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-white/7 hover:bg-white/12 text-zinc-400 hover:text-white transition-all active:scale-90 flex-shrink-0">
-              <Paperclip className="w-4 h-4" />
-            </button>
-          )}
-          {onVoice && (
-            <button onClick={onVoice}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/7 hover:bg-white/12 text-zinc-400 hover:text-white transition-all active:scale-90 flex-shrink-0">
-              <AudioLines className="w-4 h-4" />
-            </button>
+          {/* LEFT: Attachment dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-90 flex-shrink-0">
+                <img src={isDark ? attachmentDark : attachmentLight} alt="Attachment" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-foreground rounded-xl shadow-2xl p-1 min-w-[160px]">
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10">
+                <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10">
+                <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Integration / Voice / Settings */}
+          {showExtraButtons && (
+            <>
+              <button onClick={onIntegration}
+                className={`w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 flex-shrink-0 ${fiusIntegrationMode ? "text-blue-400 bg-blue-500/10" : "bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10"}`}>
+                <img src="/integration-icon.png" alt="Integration" style={{width:17,height:17}}
+                  className={fiusIntegrationMode ? "" : "brightness-0 dark:brightness-200 dark:contrast-150"} />
+              </button>
+              <button onClick={onVoiceMode}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-white/[0.07] text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-90 flex-shrink-0">
+                <AudioLines className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={onSettings}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-90 flex-shrink-0">
+                <img src="/settings-icon.png" alt="Settings" style={{width:16,height:16}}
+                  className="brightness-0 dark:brightness-200 dark:contrast-150" />
+              </button>
+            </>
           )}
 
           {/* Spacer */}
@@ -286,185 +336,158 @@ function InputBar({
           {/* Model selector chip */}
           {model && onModelClick && (
             <button onClick={onModelClick}
-              className="flex items-center gap-1 px-2.5 h-7 rounded-full bg-white/7 border border-white/10 text-xs font-semibold text-zinc-300 hover:bg-white/12 active:bg-white/15 transition-all flex-shrink-0">
+              className="flex items-center gap-1.5 px-2.5 h-7 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/10 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/12 transition-all flex-shrink-0">
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.dot }} />
               {m.name}
             </button>
           )}
 
-          {/* RIGHT: mic + enhance + send/stop */}
-          {showMic && (
-            <button onClick={toggleMic}
-              className={`w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 flex-shrink-0 ${
-                isListening ? "bg-emerald-500/20 text-emerald-400" : "bg-white/7 hover:bg-white/12 text-zinc-400 hover:text-white"
-              }`}>
-              {isListening
-                ? <Mic className="w-4 h-4" />
-                : <img src={micDark} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
-              }
-            </button>
-          )}
+          {/* Mic */}
+          <button onClick={toggleMic}
+            className={`w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 flex-shrink-0 ${
+              isListening ? "bg-emerald-500/20 text-emerald-400" : "bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10"
+            }`}>
+            {isListening
+              ? <Mic className="w-4 h-4" />
+              : <img src={isDark ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
+            }
+          </button>
+
+          {/* Enhance */}
           {showEnhance && (
             <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/7 hover:bg-white/12 text-zinc-400 hover:text-white transition-all active:scale-90 disabled:opacity-30 flex-shrink-0">
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-90 disabled:opacity-30 flex-shrink-0">
               {isEnhancing
                 ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={enhanceDark} alt="Enhance" className="w-4 h-4 brightness-200 contrast-150" />
+                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
               }
             </button>
           )}
+
+          {/* Send / Stop */}
           {isTyping ? (
             <button onClick={onStop}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white transition-all active:scale-90 flex-shrink-0">
-              <div className="w-3 h-3 rounded-sm bg-black" />
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 dark:bg-white transition-all active:scale-90 flex-shrink-0">
+              <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
             </button>
           ) : (
             <button onClick={onSend} disabled={!value.trim()}
-              className="w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 disabled:opacity-30 flex-shrink-0"
-              style={{ background: value.trim() ? "white" : "#505050" }}>
-              <ArrowUp className="w-4 h-4" style={{ color: value.trim() ? "black" : "#888" }} />
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-all active:scale-90 disabled:opacity-30 flex-shrink-0">
+              <ArrowUp className="w-4 h-4 text-white dark:text-black" />
             </button>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
 
-// ─── TOP Tab Bar ──────────────────────────────────────────────────────────────
-function TopTabBar({ active, onChange }: { active: MobileTab; onChange: (t: MobileTab) => void }) {
-  return (
-    <div className="flex-shrink-0 flex items-center border-b border-white/8 bg-[#1c1c1e] px-1"
-      style={{ overflowX: "auto", scrollbarWidth: "none" }}>
-      {TABS.map(({ id, label, Icon }) => {
-        const isActive = active === id;
-        return (
-          <button key={id} onClick={() => onChange(id)}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold flex-shrink-0 border-b-2 transition-all ${
-              isActive
-                ? "border-white text-white"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
-            }`}>
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Sidebar / Drawer ─────────────────────────────────────────────────────────
-function ConvDrawer({
-  open, onClose, conversations, currentId, onSelect, onNew, onDelete, onLogout, user,
-}: {
-  open: boolean; onClose: () => void;
-  conversations: Conv[]; currentId?: string;
-  onSelect: (id: string) => void; onNew: () => void;
-  onDelete: (id: string) => void; onLogout: () => void;
-  user?: { username: string; email: string };
-}) {
-  const grouped = React.useMemo(() => {
-    const today: Conv[] = [], yesterday: Conv[] = [], older: Conv[] = [];
-    conversations.forEach(c => {
-      const d = new Date(c.updatedAt || c.createdAt);
-      if (isToday(d)) today.push(c);
-      else if (isYesterday(d)) yesterday.push(c);
-      else older.push(c);
-    });
-    return [
-      { label: "Today", items: today },
-      { label: "Yesterday", items: yesterday },
-      { label: "Earlier", items: older },
-    ].filter(g => g.items.length > 0);
-  }, [conversations]);
-
-  return (
-    <>
-      <div className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        onClick={onClose} />
-      <div className={`fixed top-0 left-0 bottom-0 z-50 w-[78vw] max-w-[290px] bg-[#1c1c1e] flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${open ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ paddingTop: "env(safe-area-inset-top)", borderRight: "1px solid rgba(255,255,255,0.08)" }}>
-
-        {/* Logo + close */}
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2.5">
-            <FiusAvatar size={28} />
-            <span className="text-white font-bold text-base tracking-tight">Fius</span>
+        {/* Listening indicator */}
+        {isListening && (
+          <div className="absolute -top-8 inset-x-0 flex justify-center">
+            <div className="bg-emerald-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">Listening...</span>
+            </div>
           </div>
-          <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 text-white/60 hover:bg-white/15 transition-colors">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-        {/* New Chat */}
-        <div className="px-3 mb-3">
-          <button onClick={() => { onNew(); onClose(); }}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 bg-white/8 hover:bg-white/12 border border-white/10 transition-all active:scale-[0.98]">
-            <Plus className="w-4 h-4" /> New Chat
-          </button>
-        </div>
+// ─── PC-matching Floating Header ─────────────────────────────────────────────
+function PCHeader({
+  activeTab, onTabChange, onMenuClick, user,
+}: {
+  activeTab: MobileTab; onTabChange: (t: MobileTab) => void;
+  onMenuClick: () => void;
+  user?: { username: string; displayName?: string };
+}) {
+  const { theme, setTheme } = useTheme();
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const navRef = useRef<HTMLDivElement>(null);
+  const [pill, setPill] = useState<{ left: number; width: number; ready: boolean }>({ left: 0, width: 0, ready: false });
 
-        {/* Conversations */}
-        <div className="flex-1 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: "none" }}>
-          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-1.5">History</p>
-          {grouped.map(group => (
-            <div key={group.label} className="mb-3">
-              <p className="text-[10px] font-medium text-zinc-600 px-2 mb-1">{group.label}</p>
-              {group.items.map(c => (
-                <div key={c.id}
-                  className={`group flex items-center gap-2 px-3 py-2 rounded-xl mb-0.5 cursor-pointer transition-colors ${c.id === currentId ? "bg-white/12 text-white" : "text-zinc-400 hover:bg-white/8 hover:text-white"}`}
-                  onClick={() => { onSelect(c.id); onClose(); }}>
-                  <p className="flex-1 text-xs truncate">{c.title || "New Chat"}</p>
-                  <button onClick={e => { e.stopPropagation(); onDelete(c.id); }}
-                    className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500/20 text-zinc-500 hover:text-red-400 transition-all">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ))}
-          {conversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
-              <Clock className="w-7 h-7 text-zinc-600" />
-              <p className="text-xs text-zinc-500">No conversations yet</p>
-            </div>
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.id === activeTab);
+    const btn = tabRefs.current[idx];
+    const nav = navRef.current;
+    if (!btn || !nav) return;
+    const navRect = nav.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    setPill({ left: btnRect.left - navRect.left, width: btnRect.width, ready: true });
+  }, [activeTab]);
+
+  return (
+    <header className="flex-shrink-0 bg-card border border-border backdrop-blur-lg rounded-full px-3 py-2 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline">
+      {/* Left: menu + logo */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button onClick={onMenuClick}
+          className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+          <Menu className="w-4 h-4" />
+        </button>
+        <Logo size="sm" />
+        <span className="font-semibold text-foreground text-sm">Fius</span>
+      </div>
+
+      {/* Center: scrollable tabs with sliding pill */}
+      <div className="flex-1 overflow-x-auto mx-1" style={{ scrollbarWidth: "none" }}>
+        <div ref={navRef} className="relative flex items-center gap-0.5 min-w-max mx-auto">
+          {/* Sliding active pill */}
+          {pill.ready && (
+            <div aria-hidden style={{
+              position: "absolute",
+              left: pill.left,
+              width: pill.width,
+              top: 2, bottom: 2,
+              background: theme === "dark" ? "rgba(255,255,255,0.92)" : "white",
+              borderRadius: 14,
+              boxShadow: theme === "dark" ? "0 1px 10px rgba(255,255,255,0.18)" : "0 1px 8px rgba(0,0,0,0.13)",
+              transition: "left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }} />
           )}
-        </div>
-
-        {/* User footer */}
-        <div className="px-3 py-3 border-t border-white/8" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
-          {user && (
-            <div className="flex items-center gap-2.5 mb-2.5 px-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                {user.username.slice(0,1).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{user.username}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{user.email}</p>
-              </div>
-            </div>
-          )}
-          <button onClick={onLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors">
-            <LogOut className="w-3.5 h-3.5" /> Sign out
-          </button>
+          {TABS.map(({ id, short, full }, i) => {
+            const isActive = activeTab === id;
+            const label = id === "philosopher" && user ? `Minds` : short;
+            return (
+              <button
+                key={id}
+                ref={el => { tabRefs.current[i] = el; }}
+                onClick={() => onTabChange(id)}
+                className={`relative z-10 flex-shrink-0 text-xs px-2.5 py-1.5 rounded-2xl transition-colors duration-200 hover:bg-transparent font-medium ${
+                  isActive ? "text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
-    </>
+
+      {/* Right: theme toggle + bell */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <button
+          onClick={() => setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light")}
+          className={`w-8 h-8 flex items-center justify-center rounded-2xl border border-border transition-all hover:shadow-md ${
+            theme === "dark" ? "bg-zinc-800" : theme === "light" ? "bg-yellow-50" : "bg-zinc-100 dark:bg-zinc-800"
+          }`}>
+          {theme === "dark" ? <Moon className="w-3.5 h-3.5 text-blue-400" />
+            : theme === "light" ? <Sun className="w-3.5 h-3.5 text-yellow-500" />
+            : <Monitor className="w-3.5 h-3.5 text-foreground" />}
+        </button>
+        <button className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+          <Bell className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </header>
   );
 }
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-const SUGGESTION_CARDS = [
-  { icon: <Search className="w-5 h-5 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into topics", prompt: "Analyze the benefits of renewable energy" },
-  { icon: <PenTool className="w-5 h-5 text-blue-400" />,  title: "Creative writing",    desc: "Stories and content",  prompt: "Write a short story about time travel" },
-  { icon: <Brain className="w-5 h-5 text-purple-400" />,  title: "Brainstorm ideas",    desc: "Generate fresh concepts", prompt: "Give me 10 creative business ideas for 2025" },
-];
-
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, setModel, user, onVoiceMode, onSettings, onIntegration }: {
+function AskTab({
+  messages, isTyping, input, setInput, onSend, onStop,
+  model, setModel, user, onVoiceMode, onSettings, onIntegration,
+}: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
@@ -488,15 +511,15 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
       {/* Model bottom sheet */}
       {showModels && (
         <div className="fixed inset-0 z-50" onClick={() => setShowModels(false)}>
-          <div className="absolute bottom-0 left-0 right-0 bg-[#1c1c1e] rounded-t-3xl p-4 border-t border-white/10" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-zinc-700 rounded-full mx-auto mb-4" />
-            <p className="text-sm font-bold text-white mb-3 px-1">Select Model</p>
+          <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-4 border-t border-border" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+            <p className="text-sm font-bold text-foreground mb-3 px-1">Select Model</p>
             {MODELS.map(opt => (
               <button key={opt.id} onClick={() => { setModel(opt.id); setShowModels(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl mb-0.5 transition-colors ${opt.id === model ? "bg-white/10" : "hover:bg-white/8"}`}>
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl mb-0.5 transition-colors ${opt.id === model ? "bg-black/10 dark:bg-white/10" : "hover:bg-black/5 dark:hover:bg-white/8"}`}>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.dot }} />
-                <span className="text-sm text-white flex-1 text-left">{opt.name}</span>
-                {opt.id === model && <Check className="w-4 h-4 text-white/60" />}
+                <span className="text-sm text-foreground flex-1 text-left">{opt.name}</span>
+                {opt.id === model && <Check className="w-4 h-4 text-muted-foreground" />}
               </button>
             ))}
           </div>
@@ -505,58 +528,48 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
 
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping && (
-          <div className="flex flex-col items-center justify-center min-h-full pb-6 gap-0 text-center">
-            {/* Logo */}
-            <Logo size="xl" className="mb-5 text-white" />
-
-            {/* Welcome text */}
-            <h2 className="text-2xl font-bold text-white mb-1">
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : user?.username ? `Welcome back, ${user.username}!` : "Welcome to Fius"}
+          <div className="flex flex-col items-center justify-center min-h-full pb-6 text-center">
+            <Logo size="xl" className="mb-5 text-foreground" />
+            <h2 className="text-2xl font-bold text-foreground mb-1">
+              {user?.displayName ? `Welcome back, ${user.displayName}!`
+                : user?.username ? `Welcome back, ${user.username}!`
+                : "Welcome to Fius"}
             </h2>
-            <p className="text-sm text-zinc-400 mb-6">Fly With Us!</p>
-
-            {/* Suggestion heading */}
-            <p className="text-xs font-semibold text-zinc-400 mb-3 tracking-wide">What's on your mind? For example:</p>
-
-            {/* Suggestion cards */}
-            <div className="w-full flex flex-col gap-2.5 mb-6">
+            <p className="text-sm text-muted-foreground mb-7">Fly With Us!</p>
+            <p className="text-xs font-semibold text-muted-foreground mb-3 tracking-wide">What's on your mind? For example:</p>
+            <div className="w-full flex flex-col gap-2.5 mb-7">
               {SUGGESTION_CARDS.map((card, i) => (
-                <button key={i} onClick={() => { setInput(card.prompt); }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/10 bg-white/5 text-left active:scale-[0.98] transition-all hover:bg-white/8">
-                  <div className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center flex-shrink-0 border border-white/10">
+                <button key={i} onClick={() => setInput(card.prompt)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card text-left active:scale-[0.98] transition-all hover:bg-accent">
+                  <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 border border-border">
                     {card.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">{card.title}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{card.desc}</p>
+                    <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </button>
               ))}
             </div>
-
-            {/* Quick action buttons */}
-            <div className="flex items-center gap-6">
-              <button onClick={onIntegration}
-                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
-                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
-                  <Link className="w-5 h-5 text-zinc-300" />
+            <div className="flex items-center gap-7">
+              <button onClick={onIntegration} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors">
+                  <img src="/integration-icon.png" alt="Integration" style={{width:22,height:22}} className="brightness-0 dark:brightness-200 dark:contrast-150" />
                 </div>
-                <span className="text-[10px] text-zinc-500 font-medium text-center leading-tight">Integration<br/>Answer</span>
+                <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight">Integration<br/>Answer</span>
               </button>
-              <button onClick={onVoiceMode}
-                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
-                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
-                  <AudioLines className="w-5 h-5 text-zinc-300" />
+              <button onClick={onVoiceMode} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors">
+                  <AudioLines className="w-5 h-5 text-foreground" />
                 </div>
-                <span className="text-[10px] text-zinc-500 font-medium">Voice Mode</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Voice Mode</span>
               </button>
-              <button onClick={onSettings}
-                className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
-                <div className="w-12 h-12 rounded-full bg-white/8 border border-white/10 flex items-center justify-center hover:bg-white/12 transition-colors">
-                  <Settings className="w-5 h-5 text-zinc-300" />
+              <button onClick={onSettings} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
+                <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors">
+                  <img src="/settings-icon.png" alt="Settings" style={{width:20,height:20}} className="brightness-0 dark:brightness-200 dark:contrast-150" />
                 </div>
-                <span className="text-[10px] text-zinc-500 font-medium">Settings</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Settings</span>
               </button>
             </div>
           </div>
@@ -571,18 +584,24 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
         <div ref={endRef} />
       </div>
 
-      <InputBar value={input} onChange={setInput} onSend={onSend} onStop={onStop}
-        placeholder="What do you want to know?" isTyping={isTyping}
+      <PCInputBar
+        value={input} onChange={setInput} onSend={onSend} onStop={onStop}
+        placeholder="What do you want to know ?" isTyping={isTyping}
         model={model} onModelClick={() => setShowModels(true)}
-        onVoice={onVoiceMode} />
+        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
+      />
     </>
   );
 }
 
 // ─── Imagine Tab ──────────────────────────────────────────────────────────────
-function ImagineTab({ messages, isTyping, input, setInput, onSend }: {
+function ImagineTab({
+  messages, isTyping, input, setInput, onSend,
+  onVoiceMode, onSettings, onIntegration,
+}: {
   messages: Msg[]; isTyping: boolean; input: string;
   setInput: (v: string) => void; onSend: () => void;
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
 }) {
   const [style, setStyle] = useState(IMAGINE_STYLES[0]);
   const [expandImg, setExpandImg] = useState<string|null>(null);
@@ -599,14 +618,14 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend }: {
       )}
 
       {/* Style pills */}
-      <div className="flex-shrink-0 px-3 py-2.5 border-b border-white/8">
+      <div className="flex-shrink-0 px-3 py-2.5 border-b border-border">
         <div className="flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {IMAGINE_STYLES.map(s => (
             <button key={s.id} onClick={() => setStyle(s)}
               className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
                 style.id === s.id
-                  ? "bg-white text-black border-transparent"
-                  : "bg-white/8 text-zinc-400 border-white/10 hover:text-white hover:bg-white/12"
+                  ? "bg-foreground text-background border-transparent"
+                  : "bg-accent text-muted-foreground border-border hover:text-foreground hover:bg-accent/80"
               }`}>
               <span>{s.emoji}</span> {s.label}
             </button>
@@ -617,10 +636,10 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend }: {
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full py-16 gap-4 text-center">
-            <Sparkles className="w-12 h-12 text-white/20" />
+            <Sparkles className="w-12 h-12 text-muted-foreground/40" />
             <div>
-              <p className="text-base font-semibold text-white">Fius Studio</p>
-              <p className="text-sm text-zinc-500 mt-1">Describe what you want to see</p>
+              <p className="text-base font-semibold text-foreground">Fius Studio</p>
+              <p className="text-sm text-muted-foreground mt-1">Describe what you want to see</p>
             </div>
           </div>
         )}
@@ -630,30 +649,32 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend }: {
             <div className="self-end mb-5 w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
-            <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-3 py-2.5 text-xs text-zinc-400">Generating image…</div>
+            <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-3 py-2.5 text-xs text-muted-foreground">Generating image…</div>
           </div>
         )}
         <div ref={endRef} />
       </div>
 
-      <InputBar value={input} onChange={setInput} onSend={onSend} onStop={() => {}}
+      <PCInputBar
+        value={input} onChange={setInput} onSend={onSend} onStop={() => {}}
         placeholder="Just Prompt and image is in your hands!" isTyping={isTyping}
-        showEnhance={true} showMic={false}
-        extra={
-          <div className="flex items-center gap-1.5 pb-1 px-1">
-            <Wand2 className="w-3.5 h-3.5 text-purple-400" />
-            <span className="text-xs text-zinc-500">{style.label} style active</span>
-          </div>
-        } />
+        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
+        showEnhance
+      />
     </>
   );
 }
 
 // ─── Philosopher Tab ──────────────────────────────────────────────────────────
-function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, personality, setPersonality }: {
+function PhilosopherTab({
+  messages, isTyping, input, setInput, onSend, onStop,
+  personality, setPersonality,
+  onVoiceMode, onSettings, onIntegration,
+}: {
   messages: Msg[]; isTyping: boolean; input: string;
   setInput: (v: string) => void; onSend: () => void; onStop: () => void;
   personality: Personality|null; setPersonality: (p: Personality|null) => void;
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -661,14 +682,14 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
   if (!personality) {
     return (
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
-        <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest text-center mb-4">Choose a mind to explore</p>
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest text-center mb-4">Choose a mind to explore</p>
         <div className="grid grid-cols-2 gap-2.5">
           {PHILOSOPHERS.map(p => (
             <button key={p.id} onClick={() => setPersonality(p)}
-              className="flex flex-col items-start gap-1 p-4 rounded-2xl border border-white/10 bg-[#1c1c1e] text-left active:scale-[0.97] transition-all">
-              <p className="text-sm font-bold text-white">{p.name}</p>
-              <p className="text-[11px] text-zinc-500">{p.era}</p>
-              <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-2">{p.role}</p>
+              className="flex flex-col items-start gap-1 p-4 rounded-2xl border border-border bg-card text-left active:scale-[0.97] transition-all hover:bg-accent">
+              <p className="text-sm font-bold text-foreground">{p.name}</p>
+              <p className="text-[11px] text-muted-foreground">{p.era}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{p.role}</p>
             </button>
           ))}
         </div>
@@ -678,30 +699,30 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
 
   return (
     <>
-      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-white/8 bg-[#1c1c1e]">
-        <button onClick={() => setPersonality(null)} className="text-zinc-400 hover:text-white transition-colors">
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card">
+        <button onClick={() => setPersonality(null)} className="text-muted-foreground hover:text-foreground transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white">{personality.name}</p>
-          <p className="text-[11px] text-zinc-500">{personality.era} · {personality.role}</p>
+          <p className="text-sm font-bold text-foreground">{personality.name}</p>
+          <p className="text-[11px] text-muted-foreground">{personality.era} · {personality.role}</p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full py-12 gap-3 text-center">
-            <div className="w-16 h-16 rounded-2xl border border-white/10 bg-[#1c1c1e] flex items-center justify-center">
-              <p className="text-3xl font-bold text-white">{personality.name[0]}</p>
+            <div className="w-16 h-16 rounded-2xl border border-border bg-card flex items-center justify-center">
+              <p className="text-3xl font-bold text-foreground">{personality.name[0]}</p>
             </div>
-            <p className="text-base font-bold text-white">{personality.name} awaits</p>
-            <p className="text-sm text-zinc-500 px-8">{personality.role} · {personality.era}</p>
+            <p className="text-base font-bold text-foreground">{personality.name} awaits</p>
+            <p className="text-sm text-muted-foreground px-8">{personality.role} · {personality.era}</p>
           </div>
         )}
         {messages.map(m => <MsgBubble key={m.id} msg={m} onExpandImg={() => {}} />)}
         {isTyping && (
           <div className="flex gap-2 mb-3">
-            <div className="self-end mb-5 w-6 h-6 rounded-full border border-white/10 bg-[#1c1c1e] flex items-center justify-center flex-shrink-0 text-xs font-bold text-white">
+            <div className="self-end mb-5 w-6 h-6 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 text-xs font-bold text-foreground">
               {personality.name[0]}
             </div>
             <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-3 py-2.5"><TypingDots /></div>
@@ -710,18 +731,25 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         <div ref={endRef} />
       </div>
 
-      <InputBar value={input} onChange={setInput} onSend={onSend} onStop={onStop}
+      <PCInputBar
+        value={input} onChange={setInput} onSend={onSend} onStop={onStop}
         placeholder={`Talk with ${personality.name}...`} isTyping={isTyping}
-        showEnhance={false} />
+        showExtraButtons={false} showEnhance={false}
+        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
+      />
     </>
   );
 }
 
 // ─── Nomad Tab ────────────────────────────────────────────────────────────────
-function NomadTab({ input, setInput, onSend, isTyping, responses }: {
+function NomadTab({
+  input, setInput, onSend, isTyping, responses,
+  onVoiceMode, onSettings, onIntegration,
+}: {
   input: string; setInput: (v: string) => void; onSend: () => void;
   isTyping: boolean;
   responses: { model: string; content: string; color: string; done: boolean }[];
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [responses]);
@@ -735,10 +763,10 @@ function NomadTab({ input, setInput, onSend, isTyping, responses }: {
 
   return (
     <>
-      <div className="flex-shrink-0 px-4 py-2 border-b border-white/8">
+      <div className="flex-shrink-0 px-4 py-2 border-b border-border bg-card">
         <div className="flex gap-1.5 flex-wrap">
           {NM.map(m => (
-            <span key={m.key} className="px-2 py-0.5 rounded-full text-[11px] font-semibold border border-white/10"
+            <span key={m.key} className="px-2 py-0.5 rounded-full text-[11px] font-semibold border border-border"
               style={{ background: `${m.color}18`, color: m.color }}>{m.label}</span>
           ))}
         </div>
@@ -747,24 +775,24 @@ function NomadTab({ input, setInput, onSend, isTyping, responses }: {
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
         {responses.length === 0 && !isTyping && (
           <div className="flex flex-col items-center justify-center h-full py-16 gap-4 text-center">
-            <Globe className="w-12 h-12 text-white/20" />
+            <Globe className="w-12 h-12 text-muted-foreground/40" />
             <div>
-              <p className="text-base font-semibold text-white">Nomad Multi-AI</p>
-              <p className="text-sm text-zinc-500 mt-1">Ask once, get all perspectives</p>
+              <p className="text-base font-semibold text-foreground">Nomad Multi-AI</p>
+              <p className="text-sm text-muted-foreground mt-1">Ask once, get all perspectives</p>
             </div>
           </div>
         )}
         {responses.map((r, i) => {
           const nm = NM[i % NM.length];
           return (
-            <div key={i} className="mb-3 rounded-2xl border border-white/10 bg-[#1c1c1e] overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8">
+            <div key={i} className="mb-3 rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
                 <span className="w-2 h-2 rounded-full" style={{ background: r.color || nm.color }} />
-                <span className="text-xs font-bold text-white">{nm.label}</span>
-                {!r.done && <div className="ml-auto w-3 h-3 rounded-full border-2 border-zinc-700 border-t-zinc-300 animate-spin" />}
+                <span className="text-xs font-bold text-foreground">{nm.label}</span>
+                {!r.done && <div className="ml-auto w-3 h-3 rounded-full border-2 border-border border-t-foreground/60 animate-spin" />}
               </div>
               <div className="px-3 py-3 text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                {r.content || <span className="text-zinc-600">Generating…</span>}
+                {r.content || <span className="text-muted-foreground">Generating…</span>}
               </div>
             </div>
           );
@@ -772,42 +800,13 @@ function NomadTab({ input, setInput, onSend, isTyping, responses }: {
         <div ref={endRef} />
       </div>
 
-      <InputBar value={input} onChange={setInput} onSend={onSend} onStop={() => {}}
+      <PCInputBar
+        value={input} onChange={setInput} onSend={onSend} onStop={() => {}}
         placeholder="Ask all AIs at once…" isTyping={isTyping}
-        showMic={true} showEnhance={false} showAttach={false} />
+        showEnhance={false}
+        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
+      />
     </>
-  );
-}
-
-// ─── Extended InputBar with extra slot ───────────────────────────────────────
-// Wrapper that adds the extra prop passthrough
-function InputBar2({ extra, ...props }: React.ComponentProps<typeof InputBar> & { extra?: React.ReactNode }) {
-  return (
-    <div className="flex-shrink-0 px-3 pb-3 pt-1.5">
-      {extra}
-      <div className="bg-[#303030] rounded-[1.5rem]"
-        style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.10), 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
-        <div className="px-4 pt-3 pb-1">
-          <textarea
-            value={props.value}
-            onChange={e => props.onChange(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); props.onSend(); } }}
-            placeholder={props.placeholder}
-            rows={1}
-            className="w-full bg-transparent text-[16px] text-white placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
-            style={{ maxHeight: 130, scrollbarWidth: "none", minHeight: 28 }}
-          />
-        </div>
-        <div className="flex items-center px-2 pb-2 gap-1">
-          <div className="flex-1" />
-          <button onClick={props.onSend} disabled={!props.value.trim()}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 disabled:opacity-30 flex-shrink-0"
-            style={{ background: props.value.trim() ? "white" : "#505050" }}>
-            <ArrowUp className="w-4 h-4" style={{ color: props.value.trim() ? "black" : "#888" }} />
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -823,7 +822,14 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   });
 
   const [tab, setTab] = useState<MobileTab>("ask");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
+
+  const [profilePicture, setProfilePicture] = useState<string | undefined>(() => {
+    return localStorage.getItem("profilePicture") || undefined;
+  });
 
   // Ask
   const [askMsgs, setAskMsgs] = useState<Msg[]>([]);
@@ -850,6 +856,15 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadTyping, setNomadTyping] = useState(false);
   const [nomadRes, setNomadRes] = useState<{ model: string; content: string; color: string; done: boolean }[]>([]);
 
+  // Build projects list for sidebar
+  const projects = convList.map(c => ({
+    id: c.id,
+    title: c.title || "New Chat",
+    createdAt: new Date(c.createdAt),
+    aiRole: c.aiRole,
+    isProject: c.isProject,
+  }));
+
   const loadConv = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/conversations/${id}/messages`);
@@ -874,6 +889,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const handleDeleteConv = useCallback(async (id: string) => {
     try {
       await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       if (id === currentConvId) handleNewChat();
     } catch { /* silent */ }
   }, [currentConvId, handleNewChat]);
@@ -891,7 +907,11 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     });
     const data = await res.json();
     const newId = data.id || data.conversation?.id;
-    if (newId) { setCurrentConvId(newId); return newId; }
+    if (newId) {
+      setCurrentConvId(newId);
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      return newId;
+    }
     throw new Error("Could not create conversation");
   }, [currentConvId, askModel]);
 
@@ -975,11 +995,6 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     setNomadTyping(false);
   }, [nomadInput, nomadTyping]);
 
-  const tabLabel: Record<MobileTab, string> = {
-    ask: "Ask Fius", imagine: "Fius Studio", philosopher: "Minds",
-    nomad: "Nomad", games: "Games",
-  };
-
   const handleNewTab = () => {
     if (tab === "ask") handleNewChat();
     else if (tab === "imagine") { setImagMsgs([]); setImagInput(""); }
@@ -987,70 +1002,134 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     else if (tab === "nomad") { setNomadRes([]); setNomadInput(""); }
   };
 
+  const handleUserRename = useCallback((newName: string) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+  }, []);
+
+  const voiceHandlers = {
+    onVoiceMode: () => setVoiceModalOpen(true),
+    onSettings: () => setSettingsModalOpen(true),
+    onIntegration: () => setFiusIntegrationMode(v => !v),
+  };
+
   return (
+    <TooltipProvider delayDuration={400}>
     <div className="fixed inset-0 bg-background flex flex-col overflow-hidden"
       style={{ paddingTop: "env(safe-area-inset-top)" }}>
 
-      <ConvDrawer
-        open={drawerOpen} onClose={() => setDrawerOpen(false)}
-        conversations={convList} currentId={currentConvId}
-        onSelect={handleSelectConv} onNew={handleNewChat}
-        onDelete={handleDeleteConv} onLogout={handleLogout}
+      {/* Actual PC Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onLogout={handleLogout}
+        projects={projects}
+        currentProjectId={currentConvId}
+        onProjectSelect={(id) => { handleSelectConv(id); setSidebarOpen(false); }}
+        onNewProject={() => { handleNewChat(); setSidebarOpen(false); }}
+        onDeleteProject={handleDeleteConv}
+        onEditProject={async (id, title) => {
+          try {
+            await apiRequest("PATCH", `/api/conversations/${id}`, { title });
+            queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+          } catch { /* silent */ }
+        }}
+        onUpdateAiRole={async (id, aiRole) => {
+          try {
+            await apiRequest("PATCH", `/api/conversations/${id}`, { aiRole });
+            queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+          } catch { /* silent */ }
+        }}
+        onOpenSettings={() => setSettingsModalOpen(true)}
+        onVoiceClick={() => { setSidebarOpen(false); setVoiceModalOpen(true); }}
+        onImagineClick={() => { setSidebarOpen(false); setTab("imagine"); }}
+        user={user ? { email: user.email, username: user.username } : undefined}
+        onUserRename={handleUserRename}
+        profilePicture={profilePicture}
+        onProfilePictureChange={(dataUrl) => {
+          setProfilePicture(dataUrl);
+          localStorage.setItem("profilePicture", dataUrl);
+        }}
+      />
+
+      {/* Voice Mode Modal */}
+      <VoiceModeModal isOpen={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
+
+      {/* Settings / Customize Modal */}
+      <CustomizeModal
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        currentPreset={"custom" as any}
+        customInstructions=""
+        onSave={() => setSettingsModalOpen(false)}
+        toggles={{}}
+        aiOrder={[]}
+        user={user ? { email: user.email, username: user.username, displayName: user.displayName } : undefined}
+        profilePicture={profilePicture}
+        onUserRename={handleUserRename}
+        onProfilePictureChange={(dataUrl) => {
+          setProfilePicture(dataUrl);
+          localStorage.setItem("profilePicture", dataUrl);
+        }}
+      />
+
+      {/* PC-matching Floating Header */}
+      <PCHeader
+        activeTab={tab}
+        onTabChange={setTab}
+        onMenuClick={() => setSidebarOpen(true)}
         user={user}
       />
 
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 bg-[#1c1c1e] border-b border-white/8" style={{ height: 50 }}>
-        <button onClick={() => setDrawerOpen(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/8 text-white/60 hover:bg-white/12 active:bg-white/15 transition-colors">
-          <Menu className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-2">
-          <Logo size="sm" className="text-white" />
-          <span className="font-bold text-white text-sm tracking-tight">Fius</span>
-        </div>
-
-        {tab !== "games" ? (
-          <button onClick={handleNewTab}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/8 text-white/60 hover:bg-white/12 active:bg-white/15 transition-colors">
-            <Plus className="w-5 h-5" />
-          </button>
-        ) : <div className="w-9 h-9" />}
-      </div>
-
-      {/* TOP Tab Bar */}
-      <TopTabBar active={tab} onChange={setTab} />
-
-      {/* Content */}
+      {/* Content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {tab === "ask" && (
-          <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
-            onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
+          <AskTab
+            messages={askMsgs} isTyping={askTyping}
+            input={askInput} setInput={setAskInput}
+            onSend={handleAskSend}
+            onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
             model={askModel} setModel={setAskModel}
             user={user}
-            onVoiceMode={() => {}}
-            onSettings={() => {}}
-            onIntegration={() => {}} />
+            {...voiceHandlers}
+          />
         )}
         {tab === "imagine" && (
-          <ImagineTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput} onSend={handleImagSend} />
+          <ImagineTab
+            messages={imagMsgs} isTyping={imagTyping}
+            input={imagInput} setInput={setImagInput}
+            onSend={handleImagSend}
+            {...voiceHandlers}
+          />
         )}
         {tab === "philosopher" && (
-          <PhilosopherTab messages={philMsgs} isTyping={philTyping} input={philInput} setInput={setPhilInput}
-            onSend={handlePhilSend} onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
-            personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} />
+          <PhilosopherTab
+            messages={philMsgs} isTyping={philTyping}
+            input={philInput} setInput={setPhilInput}
+            onSend={handlePhilSend}
+            onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
+            personality={philPerson}
+            setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }}
+            {...voiceHandlers}
+          />
         )}
         {tab === "nomad" && (
-          <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
-            isTyping={nomadTyping} responses={nomadRes} />
+          <NomadTab
+            input={nomadInput} setInput={setNomadInput}
+            onSend={handleNomadSend} isTyping={nomadTyping}
+            responses={nomadRes}
+            {...voiceHandlers}
+          />
         )}
         {tab === "games" && (
           <div className="flex-1 overflow-hidden">
-            <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
+            <FiusGames
+              playerName={user?.displayName || user?.username || "Player"}
+              userId={user?.id}
+            />
           </div>
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
