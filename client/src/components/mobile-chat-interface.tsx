@@ -315,12 +315,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   if (hidden) return null;
 
-  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/10";
+  const iconBtnCls = "w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/80 dark:hover:bg-white/10";
+  const showSecondaryBar = tab !== "philosopher" && tab !== "games";
 
   return (
     <div className="flex-shrink-0 px-3 pb-3 pt-0">
       {isListening && (
-        <div className="flex justify-center mb-1">
+        <div className="flex justify-center mb-1.5">
           <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Listening…</span>
@@ -332,13 +333,45 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         <ModelSheet models={models} current={model} onSelect={onModelChange} onClose={() => setShowModelSheet(false)} />
       )}
 
-      <div className="bg-white dark:bg-[#303030] rounded-full glossy-outline overflow-hidden">
-        <div className="flex items-center px-2 py-2 gap-1">
-          {/* LEFT: Attachment */}
+      {/* Secondary toolbar — integration / voice / settings */}
+      {showSecondaryBar && (
+        <div className="flex items-center gap-1 px-1 mb-1.5">
+          <button onClick={onIntegration}
+            className={`${iconBtnCls} ${fiusIntegrationMode ? "bg-blue-500/15 !text-blue-400" : ""}`}>
+            <img src="/integration-icon.png" alt="Integration" style={{ width: 17, height: 17 }} className="brightness-0 dark:brightness-200" />
+          </button>
+          <button onClick={onVoiceMode} className={iconBtnCls}>
+            <AudioLines className="w-4 h-4" />
+          </button>
+          <button onClick={onSettings} className={iconBtnCls}>
+            <img src="/settings-icon.png" alt="Settings" style={{ width: 16, height: 16 }} className="brightness-0 dark:brightness-200" />
+          </button>
+          {model === "fius-education" && onEducation && (
+            <button onClick={onEducation} className={`${iconBtnCls} !text-amber-400 bg-amber-500/10`}>
+              <GraduationCap className="w-4 h-4" />
+            </button>
+          )}
+          <div className="flex-1" />
+          {/* Model selector in toolbar */}
+          {showModel && tab !== "nomad" && model && onModelChange && (
+            <button onClick={() => setShowModelSheet(true)}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100/80 dark:bg-white/[0.07] hover:bg-zinc-200/80 dark:hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap overflow-hidden max-w-[110px]">
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+              <span className="truncate">{currentModel.name.replace("Fius ", "")}</span>
+              <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Main pill bar */}
+      <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
+        <div className="flex items-end px-2 py-2 gap-1.5">
+          {/* Attachment */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={iconBtnCls}>
-                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
+              <button className={`${iconBtnCls} mb-0.5`}>
+                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -353,67 +386,36 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           <input ref={fileInputRef} type="file" className="hidden" />
           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" />
 
-          {/* Integration + Voice + Settings (inside bar) */}
-          {tab !== "philosopher" && tab !== "games" && (
-            <>
-              <button onClick={onIntegration}
-                className={`${iconBtnCls} ${fiusIntegrationMode ? "bg-blue-500/15 text-blue-400" : ""}`}>
-                <img src="/integration-icon.png" alt="Integration" style={{ width: 16, height: 16 }} className="brightness-0 dark:brightness-200" />
-              </button>
-              <button onClick={onVoiceMode} className={iconBtnCls}>
-                <AudioLines className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={onSettings} className={iconBtnCls}>
-                <img src="/settings-icon.png" alt="Settings" style={{ width: 15, height: 15 }} className="brightness-0 dark:brightness-200" />
-              </button>
-              {model === "fius-education" && onEducation && (
-                <button onClick={onEducation} className={`${iconBtnCls} text-amber-400 bg-amber-500/10`}>
-                  <GraduationCap className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </>
-          )}
-
           {/* Textarea */}
           <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
             placeholder={placeholder} rows={1}
-            className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1 px-1 mx-1"
-            style={{ maxHeight: 100, scrollbarWidth: "none", minHeight: 24 }} />
-
-          {/* Model selector */}
-          {showModel && tab !== "nomad" && model && onModelChange && (
-            <button onClick={() => setShowModelSheet(true)}
-              className="flex-shrink-0 flex items-center gap-1 px-2 h-7 rounded-full text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10 transition-all active:scale-95 gap-1.5 max-w-[90px] whitespace-nowrap overflow-hidden">
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-              <span className="truncate">{currentModel.name.replace("Fius ", "")}</span>
-              <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 opacity-60" />
-            </button>
-          )}
+            className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
+            style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
 
           {/* Mic */}
           <button onClick={toggleMic}
-            className={`${iconBtnCls} ${isListening ? "bg-emerald-500/15 text-emerald-400" : ""}`}>
-            <img src={isDark ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
+            className={`${iconBtnCls} mb-0.5 ${isListening ? "!bg-emerald-500/15 !text-emerald-400" : ""}`}>
+            <img src={isDark ? micDark : micLight} alt="Mic" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />
           </button>
 
           {/* Enhance */}
           {showEnhance && (
-            <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
+            <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} mb-0.5 disabled:opacity-30`}>
               {isEnhancing
-                ? <div className="w-3.5 h-3.5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />}
+                ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />}
             </button>
           )}
 
           {/* Send / Stop */}
           {isTyping ? (
             <button onClick={onStop}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90">
-              <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-900" />
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90 mb-0.5">
+              <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-900" />
             </button>
           ) : (
             <button onClick={onSend} disabled={!value.trim()}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all mb-0.5">
               <ArrowUp className="w-4 h-4 text-white dark:text-black" />
             </button>
           )}
@@ -491,18 +493,20 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           </div>
         </div>
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-[130px] flex-shrink-0 bg-zinc-50 dark:bg-[#161616] border-r border-border/50 overflow-y-auto py-2.5 flex flex-col gap-0.5 px-2">
+          {/* Icon-only sidebar */}
+          <div className="w-[58px] flex-shrink-0 bg-zinc-50 dark:bg-[#161616] border-r border-border/50 overflow-y-auto py-2 flex flex-col items-center gap-1 px-1.5">
             {menuItems.map(item => (
               <button key={item.id} onClick={() => setActiveSection(item.id)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11.5px] font-medium transition-all text-left ${activeSection === item.id ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60"}`}>
-                <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="leading-tight">{item.label}</span>
+                className={`w-full flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${activeSection === item.id ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60"}`}>
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-[9px] font-semibold leading-tight text-center">{item.label}</span>
               </button>
             ))}
-            <div className="mt-auto pt-2 border-t border-border/50">
+            <div className="mt-auto pt-2 border-t border-border/50 w-full flex justify-center">
               <button onClick={() => { localStorage.removeItem("customInstructions"); setCustomInstructions(""); }}
-                className="w-full flex items-center gap-2 px-2 py-2 rounded-xl text-red-400 hover:bg-red-500/10 text-[11px] font-medium transition-colors">
-                <Trash2 className="w-3 h-3" /> Clear Data
+                className="w-full flex flex-col items-center gap-1 py-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="text-[9px] font-semibold leading-tight">Clear</span>
               </button>
             </div>
           </div>
