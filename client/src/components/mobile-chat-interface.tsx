@@ -384,16 +384,17 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           {/* Model selector pushed to the right */}
           <div className="flex-1" />
           {showModel && tab !== "nomad" && model && onModelChange && (
-            <FnBtn
-              onClick={() => setShowModelSheet(true)}
-              icon={
-                <div className="flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                  <ChevronDown className="w-3 h-3 opacity-60" />
-                </div>
-              }
-              label={currentModel.name.replace("Fius ", "")}
-            />
+            <button onClick={() => setShowModelSheet(true)}
+              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400">
+              <div className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-200/80 dark:bg-zinc-700/60">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+                <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+                  {currentModel.name.replace("Fius ", "")}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
+              </div>
+              <span className="text-[9.5px] font-semibold leading-none tracking-tight">Model</span>
+            </button>
           )}
         </div>
       )}
@@ -514,7 +515,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={handleClose}>
       <div className={`absolute inset-0 bg-black/65 backdrop-blur-sm ${closing ? "animate-out fade-out duration-280" : "animate-in fade-in duration-220"}`} />
       <div className={`relative bg-background rounded-t-[24px] flex flex-col overflow-hidden ${closing ? "animate-out slide-out-to-bottom duration-300" : "animate-in slide-in-from-bottom duration-360"}`}
-        style={{ height: "92vh", boxShadow: "0 -10px 60px rgba(0,0,0,0.35)", animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+        style={{ height: "78vh", boxShadow: "0 -10px 60px rgba(0,0,0,0.35)", animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
         onClick={e => e.stopPropagation()}>
         <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0"><div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" /></div>
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/50 flex-shrink-0">
