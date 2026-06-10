@@ -12,7 +12,7 @@ import {
   RefreshCcw, Palette, ChevronDown, Trash2, Camera, Sparkles,
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
-  Heart, Wand2, Edit, Maximize2,
+  Heart, Wand2, Edit, Maximize2, Copy, ThumbsUp, ThumbsDown, Volume2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -190,6 +190,27 @@ function TypingDots() {
 
 function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) => void }) {
   const isUser = msg.role === "user";
+  const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState<"up" | "down" | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(msg.content || msg.imageUrl || "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleSpeak = () => {
+    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
+    const u = new SpeechSynthesisUtterance(msg.content);
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  };
+
+  const actionBtnCls = "w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-90 text-muted-foreground hover:text-foreground hover:bg-accent/70";
+
   if (msg.imageUrl) {
     return (
       <div className="mb-3.5 rounded-2xl overflow-hidden border border-border bg-card animate-in fade-in duration-200">
@@ -219,14 +240,45 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) =
       </div>
     );
   }
+
   return (
-    <div className={`flex gap-2 mb-3.5 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
-      {!isUser && <div className="self-end mb-5 flex-shrink-0"><FiusAvatar size={26} /></div>}
+    <div className={`flex gap-2 mb-1 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
+      {!isUser && <div className="self-end mb-7 flex-shrink-0"><FiusAvatar size={26} /></div>}
       <div className={`flex flex-col max-w-[82%] ${isUser ? "items-end" : "items-start"}`}>
         <div className={`px-3.5 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap break-words ${isUser ? "rounded-tr-sm bg-zinc-900 dark:bg-zinc-700 text-white" : "rounded-tl-sm bg-card border border-border text-foreground"}`}>
           {msg.content}
         </div>
-        <span className="text-[10px] text-muted-foreground mt-1 px-1">{format(msg.timestamp, "h:mm a")}</span>
+
+        {/* Action bar */}
+        {isUser ? (
+          <div className="flex items-center gap-0.5 mt-1 px-1">
+            <button onClick={handleCopy} className={actionBtnCls} title="Copy">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+            <button className={actionBtnCls} title="Redo"><RefreshCcw className="w-3.5 h-3.5" /></button>
+            <span className="text-[10px] text-muted-foreground ml-1">{format(msg.timestamp, "h:mm a")}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-0.5 mt-1 px-0.5">
+            <button onClick={handleCopy} className={actionBtnCls} title="Copy">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={() => setLiked(l => l === "up" ? null : "up")} className={`${actionBtnCls} ${liked === "up" ? "text-emerald-400" : ""}`} title="Like">
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setLiked(l => l === "down" ? null : "down")} className={`${actionBtnCls} ${liked === "down" ? "text-rose-400" : ""}`} title="Dislike">
+              <ThumbsDown className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={handleSpeak} className={`${actionBtnCls} ${speaking ? "text-blue-400" : ""}`} title="Read aloud">
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+            <button className={actionBtnCls} title="Regenerate"><RefreshCcw className="w-3.5 h-3.5" /></button>
+            <button onClick={() => navigator.share?.({ text: msg.content }).catch(() => {})} className={actionBtnCls} title="Share">
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[10px] text-muted-foreground ml-1">{format(msg.timestamp, "h:mm a")}</span>
+          </div>
+        )}
       </div>
     </div>
   );
