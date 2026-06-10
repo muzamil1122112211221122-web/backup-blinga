@@ -353,19 +353,19 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Function bar: icon + label buttons ── */}
       {showFnBar && (
-        <div className="flex items-start mb-2 px-0.5">
+        <div className="flex items-start justify-between mb-2 px-0.5">
           <FnBtn
             onClick={onIntegration}
             active={fiusIntegrationMode}
             iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
             textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
             icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
-            label="Answer"
+            label="Integrated"
           />
           <FnBtn
             onClick={onVoiceMode}
             icon={<AudioLines className="w-[18px] h-[18px]" />}
-            label="Voice"
+            label="Voice Mode"
           />
           <FnBtn
             onClick={onSettings}
@@ -378,18 +378,16 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               iconBg="bg-amber-500/15"
               textColor="text-amber-400"
               icon={<GraduationCap className="w-[18px] h-[18px]" />}
-              label="Edu"
+              label="Education"
             />
           )}
-          {/* Model selector pushed to the right */}
-          <div className="flex-1" />
           {showModel && tab !== "nomad" && model && onModelChange && (
             <button onClick={() => setShowModelSheet(true)}
-              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400">
+              className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400">
               <div className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-200/80 dark:bg-zinc-700/60">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
                 <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                  {currentModel.name.replace("Fius ", "")}
+                  {currentModel.name}
                 </span>
                 <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
               </div>
@@ -503,10 +501,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   const menuItems: { id: SettingsSection; label: string; icon: React.ComponentType<any> }[] = [
     { id: "account", label: "Account", icon: User },
-    { id: "general", label: "General", icon: Sliders },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "behavior", label: "Behavior", icon: Sparkles },
-    { id: "nomad", label: "Nomad", icon: Database },
+    { id: "general", label: "Main Area", icon: Sliders },
+    { id: "appearance", label: "Preferences", icon: Palette },
   ];
 
   if (!isOpen && !closing) return null;
@@ -538,12 +534,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <span>{item.label}</span>
                 </button>
               ))}
-              <div className="flex-1" />
-              <button onClick={() => { localStorage.removeItem("customInstructions"); setCustomInstructions(""); }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear</span>
-              </button>
             </div>
           </div>
 
@@ -551,19 +541,17 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
             {activeSection === "account" && (
               <div className="space-y-4">
                 <div className="p-4 bg-zinc-50 dark:bg-[#1a1a1a] rounded-2xl border border-border/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                        {(previewPic || profilePicture) ? <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{initials}</div>}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{user?.displayName || user?.username || "User"}</p>
-                        <p className="text-xs text-muted-foreground">{user?.email}</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                      {(previewPic || profilePicture) ? <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{initials}</div>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{user?.displayName || user?.username || "User"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     <button onClick={() => setShowCustomizePanel(v => !v)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
                       <Pencil className="w-3 h-3" /> Edit
                     </button>
                   </div>
@@ -585,8 +573,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 </div>
               </div>
             )}
+
+            {/* ── Main Area = General + Behavior combined ── */}
             {activeSection === "general" && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Preset</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -607,10 +597,28 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <textarea value={customInstructions} onChange={e => setCustomInstructions(e.target.value)} placeholder="Tell Fius how to respond…"
                     className="w-full h-24 bg-zinc-50 dark:bg-[#1a1a1a] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
                 </div>
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Behavior</p>
+                  <div className="space-y-4">
+                    {[
+                      { key: "autoScroll", label: "Enable Auto Scroll", desc: "" },
+                      { key: "richText", label: "Rich Text Editor", desc: "Code blocks and lists" },
+                      { key: "improveModel", label: "Improve the Model", desc: "Allow data to improve AI quality" },
+                      { key: "personalize", label: "Personalize Fius", desc: "Remember details from past chats" },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between gap-3">
+                        <div className="flex-1"><p className="text-[12.5px] font-medium text-foreground">{item.label}</p>{item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}</div>
+                        <Switch checked={localToggles[item.key as keyof typeof localToggles]} onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* ── Preferences = Appearance + Nomad combined ── */}
             {activeSection === "appearance" && (
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Theme</p>
                   <div className="grid grid-cols-3 gap-2">
@@ -635,36 +643,19 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
-            {activeSection === "behavior" && (
-              <div className="space-y-4">
-                {[
-                  { key: "autoScroll", label: "Enable Auto Scroll", desc: "" },
-                  { key: "richText", label: "Rich Text Editor", desc: "Code blocks and lists" },
-                  { key: "improveModel", label: "Improve the Model", desc: "Allow data to improve AI quality" },
-                  { key: "personalize", label: "Personalize Fius", desc: "Remember details from past chats" },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between gap-3">
-                    <div className="flex-1"><p className="text-[12.5px] font-medium text-foreground">{item.label}</p>{item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}</div>
-                    <Switch checked={localToggles[item.key as keyof typeof localToggles]} onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
-                  </div>
-                ))}
-              </div>
-            )}
-            {activeSection === "nomad" && (
-              <div className="space-y-4">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Order Switcher</p>
-                <div className="space-y-2">
-                  {localAiOrder.map((name, i) => (
-                    <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border border-border/50">
-                      <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => moveOrder(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
-                        <button onClick={() => moveOrder(i, "down")} disabled={i === localAiOrder.length - 1} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Nomad Order</p>
+                  <div className="space-y-2">
+                    {localAiOrder.map((name, i) => (
+                      <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border border-border/50">
+                        <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => moveOrder(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
+                          <button onClick={() => moveOrder(i, "down")} disabled={i === localAiOrder.length - 1} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
