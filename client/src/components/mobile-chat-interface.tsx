@@ -7,11 +7,11 @@ import { VoiceModeModal } from "./voice-mode-modal";
 import { useTheme } from "./theme-provider";
 import {
   Sparkles, Brain, Globe, AudioLines,
-  Plus, X, ArrowUp, Menu, Check, ChevronRight,
+  X, ArrowUp, Menu, Check, ChevronRight,
   Download, ChevronLeft, Mic, FileText, Image,
-  Search, PenTool, Settings, Bell, Sun, Moon, Monitor,
-  RefreshCcw, Zap, User, Palette, Sliders, ChevronDown,
-  Trash2, MessageCircle, Camera,
+  Search, PenTool, Sun, Moon, Monitor,
+  RefreshCcw, Zap, Palette, ChevronDown,
+  Trash2, Camera,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -243,18 +243,73 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg: (s: string) =>
   );
 }
 
+// ─── Function Bar (Integration / Voice / Settings) ────────────────────────────
+function FunctionBar({ onIntegration, onVoiceMode, onSettings, fiusIntegrationMode }: {
+  onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void;
+  fiusIntegrationMode?: boolean;
+}) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const btns = [
+    {
+      icon: (
+        <img src="/integration-icon.png" alt="Integration"
+          style={{ width: 22, height: 22 }}
+          className={fiusIntegrationMode ? "" : "brightness-0 invert opacity-90"} />
+      ),
+      label: "Integration\nAnswer",
+      onClick: onIntegration,
+      active: fiusIntegrationMode,
+    },
+    {
+      icon: <AudioLines className="w-5 h-5 text-white" />,
+      label: "Voice Mode",
+      onClick: onVoiceMode,
+      active: false,
+    },
+    {
+      icon: (
+        <img src="/settings-icon.png" alt="Settings"
+          style={{ width: 20, height: 20 }}
+          className="brightness-0 invert opacity-90" />
+      ),
+      label: "Settings",
+      onClick: onSettings,
+      active: false,
+    },
+  ];
+
+  return (
+    <div className="flex-shrink-0 flex justify-center items-end gap-10 px-4 py-2.5 border-t border-border/40">
+      {btns.map((btn, i) => (
+        <button key={i} onClick={btn.onClick}
+          className="flex flex-col items-center gap-1.5 active:scale-90 transition-all duration-200">
+          <div
+            className="w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all duration-200"
+            style={{
+              background: btn.active ? "#2563eb" : (isDark ? "rgba(60,60,60,0.95)" : "rgba(40,40,40,0.92)"),
+              boxShadow: "0 4px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}>
+            {btn.icon}
+          </div>
+          <span className="text-[10.5px] font-medium text-muted-foreground text-center leading-tight whitespace-pre-line">
+            {btn.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Compact Input Bar ────────────────────────────────────────────────────────
 function PCInputBar({
   value, onChange, onSend, placeholder, isTyping, onStop,
-  model, onModelClick,
-  onVoiceMode, onSettings, onIntegration, fiusIntegrationMode,
   showEnhance = true,
 }: {
   value: string; onChange: (v: string) => void; onSend: () => void;
   placeholder: string; isTyping: boolean; onStop: () => void;
-  model?: string; onModelClick?: () => void;
-  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
-  fiusIntegrationMode?: boolean; showEnhance?: boolean;
+  showEnhance?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -295,7 +350,6 @@ function PCInputBar({
     } catch { /* silent */ } finally { setIsEnhancing(false); }
   };
 
-  const m = MODELS.find(x => x.id === model) || MODELS[0];
   const btnCls = "w-8 h-8 flex items-center justify-center rounded-full transition-all active:scale-90 flex-shrink-0";
   const defaultBtnCls = `${btnCls} bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10`;
 
@@ -310,20 +364,8 @@ function PCInputBar({
         </div>
       )}
       <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
-        {/* Model chip — top left */}
-        {model && onModelClick && (
-          <div className="px-3 pt-2.5 pb-0">
-            <button onClick={onModelClick}
-              className="inline-flex items-center gap-1.5 px-2.5 h-6 rounded-full bg-zinc-100 dark:bg-white/10 border border-zinc-200/80 dark:border-white/10 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/15 transition-all active:scale-95">
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.dot }} />
-              {m.name}
-              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-            </button>
-          </div>
-        )}
-
         {/* Textarea */}
-        <div className="px-4 py-2.5">
+        <div className="px-4 pt-3 pb-2">
           <textarea ref={ref} value={value} onChange={e => onChange(e.target.value)} onKeyDown={onKey}
             placeholder={placeholder} rows={1}
             className="w-full bg-transparent text-[14.5px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
@@ -340,7 +382,8 @@ function PCInputBar({
                 <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-2xl shadow-2xl p-1 min-w-[160px] z-[200]">
+            <DropdownMenuContent
+              className="bg-white dark:bg-[#303030] border-none rounded-2xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
               <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-xl hover:bg-black/8 dark:hover:bg-white/8 text-foreground">
                 <FileText className="w-4 h-4 text-zinc-400" /> Upload File
               </DropdownMenuItem>
@@ -349,23 +392,6 @@ function PCInputBar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Integration */}
-          <button onClick={onIntegration}
-            className={`${btnCls} ${fiusIntegrationMode ? "bg-blue-500/15 text-blue-400" : "bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10"}`}>
-            <img src="/integration-icon.png" alt="Integration" style={{ width: 16, height: 16 }}
-              className={fiusIntegrationMode ? "" : "brightness-0 dark:brightness-200 dark:contrast-150"} />
-          </button>
-
-          {/* Voice Mode */}
-          <button onClick={onVoiceMode} className={defaultBtnCls}>
-            <AudioLines className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Settings */}
-          <button onClick={onSettings} className={defaultBtnCls}>
-            <img src="/settings-icon.png" alt="Settings" style={{ width: 15, height: 15 }} className="brightness-0 dark:brightness-200 dark:contrast-150" />
-          </button>
 
           <div className="flex-1" />
 
@@ -408,7 +434,7 @@ function PCInputBar({
 // ─── Comprehensive Mobile Settings Sheet ──────────────────────────────────────
 function MobileSettingsSheet({
   isOpen, onClose, user, profilePicture, onProfilePictureChange, onUserRename,
-  model, onModelChange,
+  model, onModelChange, onChatBgChange,
 }: {
   isOpen: boolean; onClose: () => void;
   user?: { username: string; email: string; displayName?: string };
@@ -416,6 +442,7 @@ function MobileSettingsSheet({
   onProfilePictureChange?: (dataUrl: string) => void;
   onUserRename?: (name: string) => void;
   model?: string; onModelChange?: (m: string) => void;
+  onChatBgChange?: (bg: string) => void;
 }) {
   const { theme, setTheme } = useTheme();
   const [section, setSection] = useState<"main" | "account" | "appearance" | "behavior" | "nomad">("main");
@@ -453,9 +480,7 @@ function MobileSettingsSheet({
     setSelectedPreset(preset); localStorage.setItem("aiPreset", preset);
   };
   const saveInstructions = () => { localStorage.setItem("customInstructions", customInstructions); };
-  const saveChatBg = (bg: string) => { setChatBg(bg); localStorage.setItem("chatBg", bg); };
-
-  if (!isOpen) return null;
+  const saveChatBg = (bg: string) => { setChatBg(bg); localStorage.setItem("chatBg", bg); onChatBgChange?.(bg); };
 
   const initials = (user?.displayName || user?.username || "?").charAt(0).toUpperCase();
 
@@ -476,12 +501,14 @@ function MobileSettingsSheet({
     : section === "behavior" ? "AI Behavior"
     : "Nomad Settings";
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ WebkitTapHighlightColor: "transparent" }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-250" />
       <div
-        className="relative bg-background rounded-t-[28px] max-h-[90vh] flex flex-col"
-        style={{ boxShadow: "0 -10px 60px rgba(0,0,0,0.4)" }}
+        className="relative bg-background rounded-t-[28px] max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-400"
+        style={{ boxShadow: "0 -10px 60px rgba(0,0,0,0.4)", animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
@@ -555,11 +582,11 @@ function MobileSettingsSheet({
             <div className="px-5">
               <div className="flex flex-col items-center gap-3 mb-6">
                 <button onClick={() => picInputRef.current?.click()} className="relative group">
-                  <div className="w-24 h-24 rounded-3xl flex items-center justify-center overflow-hidden"
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden"
                     style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
                     {profilePicture ? <img src={profilePicture} alt="" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-3xl">{initials}</span>}
                   </div>
-                  <div className="absolute inset-0 rounded-3xl bg-black/40 opacity-0 group-active:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-active:opacity-100 flex items-center justify-center transition-opacity">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
                 </button>
@@ -678,13 +705,12 @@ function MobileSettingsSheet({
 
 // ─── PC-style Floating Pill Header ────────────────────────────────────────────
 function PCHeader({
-  activeTab, onTabChange, onMenuClick, user,
+  activeTab, onTabChange, onMenuClick,
 }: {
   activeTab: MobileTab; onTabChange: (t: MobileTab) => void;
   onMenuClick: () => void;
-  user?: { username: string; displayName?: string };
 }) {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const navRef = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
@@ -700,18 +726,15 @@ function PCHeader({
   }, [activeTab]);
 
   return (
-    <header className="flex-shrink-0 bg-card border border-border backdrop-blur-lg rounded-full px-2.5 py-2 flex items-center justify-between mx-3 mt-2 mb-1 relative z-10 glossy-outline gap-1">
-      {/* Left: menu + logo */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        <button onClick={onMenuClick}
-          className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-          <Menu className="w-4 h-4" />
-        </button>
-        <Logo size="sm" />
-      </div>
+    <header className="flex-shrink-0 bg-card border border-border backdrop-blur-lg rounded-full px-2 py-1.5 flex items-center mx-3 mt-2 mb-1 relative z-10 glossy-outline gap-1">
+      {/* Menu button */}
+      <button onClick={onMenuClick}
+        className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
+        <Menu className="w-4 h-4" />
+      </button>
 
-      {/* Center: scrollable tabs with sliding pill */}
-      <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      {/* Scrollable tabs with sliding pill */}
+      <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <div ref={navRef} className="relative flex items-center min-w-max">
           {pill.ready && (
             <div aria-hidden style={{
@@ -719,30 +742,17 @@ function PCHeader({
               background: theme === "dark" ? "rgba(255,255,255,0.92)" : "white",
               borderRadius: 14,
               boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 8px rgba(0,0,0,0.14)",
-              transition: "left 0.3s cubic-bezier(0.23,1,0.32,1), width 0.3s cubic-bezier(0.23,1,0.32,1)",
+              transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)",
               pointerEvents: "none", zIndex: 0,
             }} />
           )}
           {TABS.map(({ id, label }, i) => (
             <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`relative z-10 flex-shrink-0 text-[12.5px] px-3.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Right: theme toggle + bell */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <button onClick={() => setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light")}
-          className={`w-8 h-8 flex items-center justify-center rounded-2xl border border-border transition-all ${theme === "dark" ? "bg-zinc-800" : theme === "light" ? "bg-yellow-50" : "bg-zinc-100 dark:bg-zinc-800"}`}>
-          {theme === "dark" ? <Moon className="w-3.5 h-3.5 text-blue-400" />
-            : theme === "light" ? <Sun className="w-3.5 h-3.5 text-yellow-500" />
-            : <Monitor className="w-3.5 h-3.5 text-foreground" />}
-        </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-          <Bell className="w-3.5 h-3.5" />
-        </button>
       </div>
     </header>
   );
@@ -763,6 +773,7 @@ function AskTab({
   const [expandImg, setExpandImg] = useState<string | null>(null);
   const [showModels, setShowModels] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const m = MODELS.find(x => x.id === model) || MODELS[0];
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
 
@@ -779,9 +790,11 @@ function AskTab({
 
       {/* Model picker bottom sheet */}
       {showModels && (
-        <div className="fixed inset-0 z-[60] flex flex-col justify-end animate-in fade-in duration-150" onClick={() => setShowModels(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative bg-background rounded-t-[28px] pb-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={() => setShowModels(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+          <div className="relative bg-background rounded-t-[28px] pb-8 shadow-2xl animate-in slide-in-from-bottom duration-350"
+            style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+            onClick={e => e.stopPropagation()}>
             <div className="flex justify-center pt-3 pb-3"><div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" /></div>
             <p className="text-[16px] font-bold text-foreground px-5 mb-3">Select Model</p>
             {MODELS.map((opt, i) => (
@@ -796,6 +809,16 @@ function AskTab({
         </div>
       )}
 
+      {/* Model switcher — top left under header */}
+      <div className="flex-shrink-0 flex items-center px-3 pt-1.5 pb-0.5">
+        <button onClick={() => setShowModels(true)}
+          className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-zinc-100 dark:bg-white/10 border border-zinc-200/80 dark:border-white/10 text-[11.5px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/15 transition-all active:scale-95">
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.dot }} />
+          {m.name}
+          <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+        </button>
+      </div>
+
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
@@ -807,7 +830,7 @@ function AskTab({
             </h2>
             <p className="text-sm text-muted-foreground mb-7">Fly With Us!</p>
             <p className="text-[11px] font-semibold text-muted-foreground mb-3.5 uppercase tracking-wide">What's on your mind?</p>
-            <div className="w-full flex flex-col gap-2.5 mb-7">
+            <div className="w-full flex flex-col gap-2.5">
               {SUGGESTION_CARDS.map((card, i) => (
                 <button key={i} onClick={() => setInput(card.prompt)}
                   className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-card text-left active:scale-[0.97] transition-all hover:bg-accent/60">
@@ -817,18 +840,6 @@ function AskTab({
                     <p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-8">
-              {[
-                { icon: <img src="/integration-icon.png" alt="" style={{ width: 20, height: 20 }} className="brightness-0 dark:brightness-200" />, label: "Integration\nAnswer", onClick: onIntegration },
-                { icon: <AudioLines className="w-5 h-5 text-foreground" />, label: "Voice Mode", onClick: onVoiceMode },
-                { icon: <img src="/settings-icon.png" alt="" style={{ width: 18, height: 18 }} className="brightness-0 dark:brightness-200" />, label: "Settings", onClick: onSettings },
-              ].map((btn, i) => (
-                <button key={i} onClick={btn.onClick} className="flex flex-col items-center gap-2 active:scale-90 transition-all">
-                  <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center hover:bg-accent transition-colors">{btn.icon}</div>
-                  <span className="text-[10px] text-muted-foreground font-medium text-center leading-tight whitespace-pre-line">{btn.label}</span>
                 </button>
               ))}
             </div>
@@ -847,11 +858,9 @@ function AskTab({
         )}
       </div>
 
+      <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} fiusIntegrationMode={fiusIntegrationMode} />
       <PCInputBar value={input} onChange={setInput} onSend={onSend} onStop={onStop}
         placeholder="What do you want to know?" isTyping={isTyping}
-        model={model} onModelClick={() => setShowModels(true)}
-        onVoiceMode={onVoiceMode} onSettings={onSettings}
-        onIntegration={onIntegration} fiusIntegrationMode={fiusIntegrationMode}
       />
     </>
   );
@@ -923,9 +932,9 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, 
         <div ref={endRef} />
       </div>
 
+      <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
       <PCInputBar value={input} onChange={v => setInput(v + style.suffix)} onSend={onSend} onStop={() => {}}
-        placeholder="Describe the image you want to create…" isTyping={isTyping}
-        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration} showEnhance
+        placeholder="Describe the image you want to create…" isTyping={isTyping} showEnhance
       />
     </>
   );
@@ -1013,9 +1022,9 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         <div ref={endRef} />
       </div>
 
+      <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
       <PCInputBar value={input} onChange={setInput} onSend={onSend} onStop={onStop}
-        placeholder={`Ask ${personality.name} anything…`} isTyping={isTyping}
-        showEnhance={false} onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
+        placeholder={`Ask ${personality.name} anything…`} isTyping={isTyping} showEnhance={false}
       />
     </>
   );
@@ -1087,9 +1096,9 @@ function NomadTab({ input, setInput, onSend, isTyping, responses, onVoiceMode, o
         )}
       </div>
 
+      <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
       <PCInputBar value={input} onChange={setInput} onSend={onSend} onStop={() => {}}
         placeholder="Ask all AIs at once…" isTyping={isTyping} showEnhance={false}
-        onVoiceMode={onVoiceMode} onSettings={onSettings} onIntegration={onIntegration}
       />
     </>
   );
@@ -1111,6 +1120,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
+  const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "default");
 
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() =>
     localStorage.getItem("profilePicture") || undefined
@@ -1329,13 +1339,23 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             onUserRename={handleUserRename}
             onProfilePictureChange={dataUrl => { setProfilePicture(dataUrl); localStorage.setItem("profilePicture", dataUrl); }}
             model={askModel} onModelChange={setAskModel}
+            onChatBgChange={bg => setChatBg(bg)}
           />
 
           {/* Header */}
-          <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} user={user} />
+          <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
 
           {/* Tab content with transition */}
-          <div className="flex-1 flex flex-col overflow-hidden relative">
+          <div className="flex-1 flex flex-col overflow-hidden relative"
+            style={{
+              background: chatBg === "gradient"
+                ? "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)"
+                : chatBg === "stars"
+                ? "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)"
+                : chatBg === "rainbow"
+                ? "linear-gradient(135deg,#ff6b6b22,#feca5722,#48dbfb22,#ff9ff322,#54a0ff22)"
+                : undefined,
+            }}>
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "ask" ? "flex" : "none" }}>
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}

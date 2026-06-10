@@ -121,21 +121,21 @@ export default function Landing() {
               Powerful features designed to enhance your AI conversation experience
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-8">
             {features.map((feature, index) => (
               <Card
                 key={index}
                 className="group hover:shadow-xl transition-all duration-200 hover:scale-102 border-white/20 bg-black/80"
                 data-testid={`card-feature-${index}`}
               >
-                <CardHeader className="text-center pb-4">
-                  <div className="mx-auto mb-4 p-3 bg-white/10 rounded-xl group-hover:bg-white/15 transition-colors duration-200">
-                    {feature.icon}
+                <CardHeader className="text-center pb-2 pt-4 sm:pb-4 sm:pt-6 px-3 sm:px-6">
+                  <div className="mx-auto mb-2 sm:mb-4 p-2 sm:p-3 bg-white/10 rounded-xl group-hover:bg-white/15 transition-colors duration-200 w-fit">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 [&>svg]:w-full [&>svg]:h-full">{feature.icon}</div>
                   </div>
-                  <h4 className="text-xl font-semibold text-white">{feature.title}</h4>
+                  <h4 className="text-sm sm:text-xl font-semibold text-white">{feature.title}</h4>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-gray-300 leading-relaxed">{feature.description}</p>
+                <CardContent className="text-center pb-4 px-3 sm:px-6">
+                  <p className="text-gray-300 text-xs sm:text-base leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -150,31 +150,29 @@ export default function Landing() {
               Access the most advanced AI models in the industry, plus our exclusive Fius models
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               { name: "Claude Sonnet 4", sub: "Anthropic", desc: "Superior reasoning, coding, and creative writing capabilities", gradient: "from-orange-900/40 to-gray-800/60", accent: "#f97316" },
               { name: "ChatGPT 5", sub: "OpenAI", desc: "Multimodal AI with vision, reasoning, and code generation", gradient: "from-emerald-900/30 to-gray-800/60", accent: "#10a37f" },
               { name: "Gemini 2.5 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
               { name: "Grok 4", sub: "xAI", desc: "Witty, curious, and unfiltered reasoning with real-time data", gradient: "from-gray-700/50 to-gray-800/60", accent: "#9ca3af" },
               { name: "DeepSeek v3", sub: "DeepSeek", desc: "Open-source reasoning powerhouse for coding and logic", gradient: "from-blue-900/40 to-gray-800/50", accent: "#3b82f6" },
-              { name: "Llama 4", sub: "Meta", desc: "Meta's open-source frontier AI for any task", gradient: "from-indigo-900/30 to-gray-800/50", accent: "#6366f1" },
               { name: "Perplexity Sonar Pro", sub: "Perplexity", desc: "Real-time web search with cited and accurate answers", gradient: "from-sky-900/30 to-gray-800/50", accent: "#38bdf8" },
               { name: "Kimi K2.5", sub: "Moonshot", desc: "Ultra-long-context language model for deep analysis", gradient: "from-cyan-900/30 to-gray-800/50", accent: "#06b6d4" },
               { name: "Qwen3.6 Plus", sub: "Alibaba", desc: "Multilingual language expert for global conversations", gradient: "from-violet-900/30 to-gray-800/50", accent: "#8b5cf6" },
               { name: "Mistral Small 4", sub: "Mistral AI", desc: "Fast, efficient, and powerful European open AI", gradient: "from-purple-900/30 to-gray-800/50", accent: "#a855f7" },
               { name: "Fius Pro", sub: "Fius · Exclusive", desc: "Custom-optimized for productivity, coding, and specialized tasks", gradient: "from-fuchsia-900/40 to-gray-800/50", accent: "#e879f9" },
-              { name: "Fius Education", sub: "Fius · Exclusive", desc: "Designed for learning, examinations, and voice-based study", gradient: "from-rose-900/30 to-gray-800/50", accent: "#fb7185" },
             ].map(({ name, sub, desc, gradient, accent }) => (
               <Card key={name} className={`border-white/10 bg-gradient-to-br ${gradient} backdrop-blur-sm hover:border-white/20 transition-all duration-300 hover:scale-[1.02]`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 mb-1">
+                <CardHeader className="pb-1 pt-3 sm:pt-6 px-4 sm:px-6">
+                  <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
                     <div className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}80` }} />
                     <span className="text-xs text-gray-400 font-medium">{sub}</span>
                   </div>
-                  <h4 className="text-lg font-semibold text-white">{name}</h4>
+                  <h4 className="text-base sm:text-lg font-semibold text-white">{name}</h4>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300 text-sm leading-relaxed">{desc}</p>
+                <CardContent className="pb-3 sm:pb-6 px-4 sm:px-6">
+                  <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{desc}</p>
                 </CardContent>
               </Card>
             ))}
