@@ -315,8 +315,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   if (hidden) return null;
 
-  const iconBtnCls = "w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/80 dark:hover:bg-white/10";
-  const showSecondaryBar = tab !== "philosopher" && tab !== "games";
+  // Exact same button style as PC
+  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10";
+  const showFnBar = tab !== "philosopher" && tab !== "games";
 
   return (
     <div className="flex-shrink-0 px-3 pb-3 pt-0">
@@ -333,29 +334,34 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         <ModelSheet models={models} current={model} onSelect={onModelChange} onClose={() => setShowModelSheet(false)} />
       )}
 
-      {/* Secondary toolbar — integration / voice / settings */}
-      {showSecondaryBar && (
-        <div className="flex items-center gap-1 px-1 mb-1.5">
+      {/* ── Function bar (settings / voice / integration / model) ── */}
+      {showFnBar && (
+        <div className="flex items-center gap-1.5 mb-2 px-0.5">
+          {/* Integration */}
           <button onClick={onIntegration}
-            className={`${iconBtnCls} ${fiusIntegrationMode ? "bg-blue-500/15 !text-blue-400" : ""}`}>
-            <img src="/integration-icon.png" alt="Integration" style={{ width: 17, height: 17 }} className="brightness-0 dark:brightness-200" />
+            className={`${iconBtnCls} ${fiusIntegrationMode ? "!bg-blue-500/15 !text-blue-400" : ""}`}>
+            <img src="/integration-icon.png" alt="Integration" style={{ width: 18, height: 18 }} className="brightness-0 dark:brightness-200 dark:contrast-150" />
           </button>
+          {/* Voice mode */}
           <button onClick={onVoiceMode} className={iconBtnCls}>
             <AudioLines className="w-4 h-4" />
           </button>
+          {/* Settings */}
           <button onClick={onSettings} className={iconBtnCls}>
-            <img src="/settings-icon.png" alt="Settings" style={{ width: 16, height: 16 }} className="brightness-0 dark:brightness-200" />
+            <img src="/settings-icon.png" alt="Settings" style={{ width: 17, height: 17 }} className="brightness-0 dark:brightness-200 dark:contrast-150" />
           </button>
+          {/* Education (conditional) */}
           {model === "fius-education" && onEducation && (
-            <button onClick={onEducation} className={`${iconBtnCls} !text-amber-400 bg-amber-500/10`}>
+            <button onClick={onEducation} className={`${iconBtnCls} !bg-amber-500/10 !text-amber-400`}>
               <GraduationCap className="w-4 h-4" />
             </button>
           )}
+          {/* Spacer pushes model selector right */}
           <div className="flex-1" />
-          {/* Model selector in toolbar */}
+          {/* Model selector pill */}
           {showModel && tab !== "nomad" && model && onModelChange && (
             <button onClick={() => setShowModelSheet(true)}
-              className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100/80 dark:bg-white/[0.07] hover:bg-zinc-200/80 dark:hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap overflow-hidden max-w-[110px]">
+              className="flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap overflow-hidden max-w-[120px]">
               <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
               <span className="truncate">{currentModel.name.replace("Fius ", "")}</span>
               <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
@@ -364,21 +370,21 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         </div>
       )}
 
-      {/* Main pill bar */}
+      {/* ── Main input pill (PC-identical buttons) ── */}
       <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
         <div className="flex items-end px-2 py-2 gap-1.5">
-          {/* Attachment */}
+          {/* Attachment — PC style */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={`${iconBtnCls} mb-0.5`}>
-                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />
+              <button className={iconBtnCls}>
+                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-4 h-4 brightness-200 contrast-150" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/8 dark:hover:bg-white/8 text-foreground" onClick={() => fileInputRef.current?.click()}>
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-foreground" onClick={() => fileInputRef.current?.click()}>
                 <FileText className="w-4 h-4 text-zinc-400" /> Upload File
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/8 dark:hover:bg-white/8 text-foreground" onClick={() => imageInputRef.current?.click()}>
+              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-foreground" onClick={() => imageInputRef.current?.click()}>
                 <Image className="w-4 h-4 text-zinc-400" /> Upload Image
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -392,31 +398,31 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
             style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
 
-          {/* Mic */}
+          {/* Mic — PC style */}
           <button onClick={toggleMic}
-            className={`${iconBtnCls} mb-0.5 ${isListening ? "!bg-emerald-500/15 !text-emerald-400" : ""}`}>
-            <img src={isDark ? micDark : micLight} alt="Mic" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />
+            className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
+            <img src={isDark ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
           </button>
 
-          {/* Enhance */}
+          {/* Enhance — PC style */}
           {showEnhance && (
-            <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} mb-0.5 disabled:opacity-30`}>
+            <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
               {isEnhancing
                 ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-[18px] h-[18px] brightness-0 dark:brightness-200 dark:contrast-150" />}
+                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-200 contrast-150" />}
             </button>
           )}
 
-          {/* Send / Stop */}
+          {/* Send / Stop — PC style */}
           {isTyping ? (
             <button onClick={onStop}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90 mb-0.5">
-              <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-900" />
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
+              <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
             </button>
           ) : (
             <button onClick={onSend} disabled={!value.trim()}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all mb-0.5">
-              <ArrowUp className="w-4 h-4 text-white dark:text-black" />
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black">
+              <ArrowUp className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -492,21 +498,22 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
             </button>
           </div>
         </div>
-        <div className="flex flex-1 overflow-hidden">
-          {/* Icon-only sidebar */}
-          <div className="w-[58px] flex-shrink-0 bg-zinc-50 dark:bg-[#161616] border-r border-border/50 overflow-y-auto py-2 flex flex-col items-center gap-1 px-1.5">
-            {menuItems.map(item => (
-              <button key={item.id} onClick={() => setActiveSection(item.id)}
-                className={`w-full flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${activeSection === item.id ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60"}`}>
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="text-[9px] font-semibold leading-tight text-center">{item.label}</span>
-              </button>
-            ))}
-            <div className="mt-auto pt-2 border-t border-border/50 w-full flex justify-center">
+        {/* Horizontal tab bar — full width, no cramped sidebar */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-shrink-0 border-b border-border/50 bg-zinc-50 dark:bg-[#161616]">
+            <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1" style={{ scrollbarWidth: "none" }}>
+              {menuItems.map(item => (
+                <button key={item.id} onClick={() => setActiveSection(item.id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold transition-all flex-shrink-0 ${activeSection === item.id ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"}`}>
+                  <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+              <div className="flex-1" />
               <button onClick={() => { localStorage.removeItem("customInstructions"); setCustomInstructions(""); }}
-                className="w-full flex flex-col items-center gap-1 py-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0">
                 <Trash2 className="w-3.5 h-3.5" />
-                <span className="text-[9px] font-semibold leading-tight">Clear</span>
+                <span>Clear</span>
               </button>
             </div>
           </div>
