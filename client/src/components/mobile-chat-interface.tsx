@@ -316,18 +316,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   if (hidden) return null;
 
   // Shared button class for the input pill buttons
-  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/10";
-  // Theme-aware image class: black on light, white on dark
-  const imgCls = "w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150";
+  // Input pill icon button — circle with background
+  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 bg-zinc-200/80 dark:bg-zinc-700/60 hover:bg-zinc-300/80 dark:hover:bg-zinc-600/60";
+  // Theme-aware icon: use dark:invert to flip black icon → white in dark mode
+  const imgCls = "w-4 h-4 dark:invert";
   const showFnBar = tab !== "philosopher" && tab !== "games";
 
-  // Function bar button: icon on top, label below
-  const FnBtn = ({ onClick, icon, label, active, activeClass }: {
-    onClick?: () => void; icon: React.ReactNode; label: string; active?: boolean; activeClass?: string;
+  // Function bar button: circle icon + label below
+  const FnBtn = ({ onClick, icon, label, active, iconBg, textColor }: {
+    onClick?: () => void; icon: React.ReactNode; label: string;
+    active?: boolean; iconBg?: string; textColor?: string;
   }) => (
     <button onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 ${active ? activeClass || "bg-blue-500/10 text-blue-400" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-white/[0.07]"}`}>
-      <div className="w-7 h-7 flex items-center justify-center">{icon}</div>
+      className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 ${textColor || (active ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400")}`}>
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${iconBg || (active ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60")}`}>
+        {icon}
+      </div>
       <span className="text-[9.5px] font-semibold leading-none tracking-tight">{label}</span>
     </button>
   );
@@ -353,13 +357,14 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           <FnBtn
             onClick={onIntegration}
             active={fiusIntegrationMode}
-            activeClass="bg-blue-500/10 text-blue-400"
+            iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
+            textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
             icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
             label="Answer"
           />
           <FnBtn
             onClick={onVoiceMode}
-            icon={<AudioLines className="w-4 h-4" />}
+            icon={<AudioLines className="w-[18px] h-[18px]" />}
             label="Voice"
           />
           <FnBtn
@@ -370,25 +375,25 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           {model === "fius-education" && onEducation && (
             <FnBtn
               onClick={onEducation}
-              active
-              activeClass="bg-amber-500/10 text-amber-400"
-              icon={<GraduationCap className="w-4 h-4" />}
+              iconBg="bg-amber-500/15"
+              textColor="text-amber-400"
+              icon={<GraduationCap className="w-[18px] h-[18px]" />}
               label="Edu"
             />
           )}
           {/* Model selector pushed to the right */}
           <div className="flex-1" />
           {showModel && tab !== "nomad" && model && onModelChange && (
-            <button onClick={() => setShowModelSheet(true)}
-              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-white/[0.07] max-w-[90px]">
-              <div className="flex items-center gap-1 w-7 h-7 justify-center">
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-                <ChevronDown className="w-3 h-3 opacity-60" />
-              </div>
-              <span className="text-[9.5px] font-semibold leading-none tracking-tight truncate max-w-full">
-                {currentModel.name.replace("Fius ", "")}
-              </span>
-            </button>
+            <FnBtn
+              onClick={() => setShowModelSheet(true)}
+              icon={
+                <div className="flex items-center gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                  <ChevronDown className="w-3 h-3 opacity-60" />
+                </div>
+              }
+              label={currentModel.name.replace("Fius ", "")}
+            />
           )}
         </div>
       )}
@@ -400,7 +405,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={iconBtnCls}>
-                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className={imgCls} />
+                <img src={attachmentLight} alt="Attach" className={imgCls} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -424,7 +429,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           {/* Mic — theme-aware */}
           <button onClick={toggleMic}
             className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
-            <img src={isDark ? micDark : micLight} alt="Mic" className={imgCls} />
+            <img src={micLight} alt="Mic" className={imgCls} />
           </button>
 
           {/* Enhance — theme-aware */}
@@ -432,7 +437,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
               {isEnhancing
                 ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={imgCls} />}
+                : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
             </button>
           )}
 
