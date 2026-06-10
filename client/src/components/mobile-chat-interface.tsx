@@ -315,9 +315,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   if (hidden) return null;
 
-  // Exact same button style as PC
-  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10";
+  // Shared button class for the input pill buttons
+  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/10";
+  // Theme-aware image class: black on light, white on dark
+  const imgCls = "w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150";
   const showFnBar = tab !== "philosopher" && tab !== "games";
+
+  // Function bar button: icon on top, label below
+  const FnBtn = ({ onClick, icon, label, active, activeClass }: {
+    onClick?: () => void; icon: React.ReactNode; label: string; active?: boolean; activeClass?: string;
+  }) => (
+    <button onClick={onClick}
+      className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 ${active ? activeClass || "bg-blue-500/10 text-blue-400" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-white/[0.07]"}`}>
+      <div className="w-7 h-7 flex items-center justify-center">{icon}</div>
+      <span className="text-[9.5px] font-semibold leading-none tracking-tight">{label}</span>
+    </button>
+  );
 
   return (
     <div className="flex-shrink-0 px-3 pb-3 pt-0">
@@ -334,50 +347,60 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         <ModelSheet models={models} current={model} onSelect={onModelChange} onClose={() => setShowModelSheet(false)} />
       )}
 
-      {/* ── Function bar (settings / voice / integration / model) ── */}
+      {/* ── Function bar: icon + label buttons ── */}
       {showFnBar && (
-        <div className="flex items-center gap-1.5 mb-2 px-0.5">
-          {/* Integration */}
-          <button onClick={onIntegration}
-            className={`${iconBtnCls} ${fiusIntegrationMode ? "!bg-blue-500/15 !text-blue-400" : ""}`}>
-            <img src="/integration-icon.png" alt="Integration" style={{ width: 18, height: 18 }} className="brightness-0 dark:brightness-200 dark:contrast-150" />
-          </button>
-          {/* Voice mode */}
-          <button onClick={onVoiceMode} className={iconBtnCls}>
-            <AudioLines className="w-4 h-4" />
-          </button>
-          {/* Settings */}
-          <button onClick={onSettings} className={iconBtnCls}>
-            <img src="/settings-icon.png" alt="Settings" style={{ width: 17, height: 17 }} className="brightness-0 dark:brightness-200 dark:contrast-150" />
-          </button>
-          {/* Education (conditional) */}
+        <div className="flex items-start mb-2 px-0.5">
+          <FnBtn
+            onClick={onIntegration}
+            active={fiusIntegrationMode}
+            activeClass="bg-blue-500/10 text-blue-400"
+            icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
+            label="Answer"
+          />
+          <FnBtn
+            onClick={onVoiceMode}
+            icon={<AudioLines className="w-4 h-4" />}
+            label="Voice"
+          />
+          <FnBtn
+            onClick={onSettings}
+            icon={<img src="/settings-icon.png" alt="" style={{ width: 17, height: 17 }} className={imgCls} />}
+            label="Settings"
+          />
           {model === "fius-education" && onEducation && (
-            <button onClick={onEducation} className={`${iconBtnCls} !bg-amber-500/10 !text-amber-400`}>
-              <GraduationCap className="w-4 h-4" />
-            </button>
+            <FnBtn
+              onClick={onEducation}
+              active
+              activeClass="bg-amber-500/10 text-amber-400"
+              icon={<GraduationCap className="w-4 h-4" />}
+              label="Edu"
+            />
           )}
-          {/* Spacer pushes model selector right */}
+          {/* Model selector pushed to the right */}
           <div className="flex-1" />
-          {/* Model selector pill */}
           {showModel && tab !== "nomad" && model && onModelChange && (
             <button onClick={() => setShowModelSheet(true)}
-              className="flex items-center gap-1.5 px-2.5 h-8 rounded-full text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10 transition-all active:scale-95 whitespace-nowrap overflow-hidden max-w-[120px]">
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-              <span className="truncate">{currentModel.name.replace("Fius ", "")}</span>
-              <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-60" />
+              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-white/[0.07] max-w-[90px]">
+              <div className="flex items-center gap-1 w-7 h-7 justify-center">
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </div>
+              <span className="text-[9.5px] font-semibold leading-none tracking-tight truncate max-w-full">
+                {currentModel.name.replace("Fius ", "")}
+              </span>
             </button>
           )}
         </div>
       )}
 
-      {/* ── Main input pill (PC-identical buttons) ── */}
+      {/* ── Main input pill ── */}
       <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
         <div className="flex items-end px-2 py-2 gap-1.5">
-          {/* Attachment — PC style */}
+          {/* Attachment */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={iconBtnCls}>
-                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className="w-4 h-4 brightness-200 contrast-150" />
+                <img src={isDark ? attachmentDark : attachmentLight} alt="Attach" className={imgCls} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -398,22 +421,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
             style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
 
-          {/* Mic — PC style */}
+          {/* Mic — theme-aware */}
           <button onClick={toggleMic}
             className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
-            <img src={isDark ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
+            <img src={isDark ? micDark : micLight} alt="Mic" className={imgCls} />
           </button>
 
-          {/* Enhance — PC style */}
+          {/* Enhance — theme-aware */}
           {showEnhance && (
             <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
               {isEnhancing
                 ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-200 contrast-150" />}
+                : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={imgCls} />}
             </button>
           )}
 
-          {/* Send / Stop — PC style */}
+          {/* Send / Stop */}
           {isTyping ? (
             <button onClick={onStop}
               className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
@@ -421,8 +444,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             </button>
           ) : (
             <button onClick={onSend} disabled={!value.trim()}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black">
-              <ArrowUp className="w-4 h-4" />
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100">
+              <ArrowUp className="w-4 h-4 text-white dark:text-black" />
             </button>
           )}
         </div>
