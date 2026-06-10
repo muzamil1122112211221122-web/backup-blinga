@@ -6,13 +6,15 @@ import { Sidebar } from "./sidebar";
 import { VoiceModeModal } from "./voice-mode-modal";
 import { useTheme } from "./theme-provider";
 import {
-  Sparkles, Brain, Globe, AudioLines,
   X, ArrowUp, Menu, Check, ChevronRight,
   Download, ChevronLeft, Mic, FileText, Image,
-  Search, PenTool, Sun, Moon, Monitor,
+  Sun, Moon, Monitor, Globe, AudioLines,
   RefreshCcw, Zap, Palette, ChevronDown,
-  Trash2, Camera,
+  Trash2, Camera, SlidersHorizontal, Sparkles,
+  Brain, Search, PenTool, Filter, ChevronUp,
+  Database, Sliders, User, Pencil, Laptop,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -70,20 +72,23 @@ interface Personality {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const MODELS = [
-  { id: "fius-lite",   name: "Fius Lite",   short: "Lite",    dot: "#a855f7" },
-  { id: "fius-pro",    name: "Fius Pro",    short: "Pro",     dot: "#7c3aed" },
-  { id: "openai/gpt-4o", name: "GPT-4o",   short: "GPT",     dot: "#10b981" },
-  { id: "anthropic/claude-3-5-sonnet-20241022", name: "Claude 3.5", short: "Claude", dot: "#f97316" },
-  { id: "google/gemini-pro-1.5", name: "Gemini 1.5", short: "Gemini", dot: "#3b82f6" },
-  { id: "meta-llama/llama-3.3-70b-instruct", name: "Llama 3.3", short: "Llama", dot: "#f59e0b" },
+const GRAY_DOT = "#9ca3af";
+
+const ASK_MODELS = [
+  { id: "fius-lite",  name: "Fius Lite",  short: "Lite",  dot: GRAY_DOT },
+  { id: "fius-pro",   name: "Fius Pro",   short: "Pro",   dot: GRAY_DOT },
+];
+
+const STUDIO_MODELS = [
+  { id: "fius-studio-lite", name: "Fius Studio Lite", short: "Lite", dot: GRAY_DOT },
+  { id: "fius-studio-pro",  name: "Fius Studio Pro",  short: "Pro",  dot: GRAY_DOT },
 ];
 
 const PRESETS = [
-  { id: "custom",  label: "Custom",   desc: "Default style" },
-  { id: "concise", label: "Concise",  desc: "Brief & direct" },
-  { id: "formal",  label: "Formal",   desc: "Professional tone" },
-  { id: "socratic",label: "Socratic", desc: "Asks questions back" },
+  { id: "custom",   label: "Custom",   desc: "Default style" },
+  { id: "concise",  label: "Concise",  desc: "Brief & direct" },
+  { id: "formal",   label: "Formal",   desc: "Professional tone" },
+  { id: "socratic", label: "Socratic", desc: "Asks questions back" },
 ];
 
 const IMAGINE_STYLES = [
@@ -97,25 +102,29 @@ const IMAGINE_STYLES = [
 
 const PHILOSOPHERS: Personality[] = [
   { id: "socrates",  emoji: "🏛️", name: "Socrates",        era: "470–399 BC",  role: "Philosopher",   category: "Philosophy", style: "Socratic questioning, irony, dialogue" },
-  { id: "nietzsche", emoji: "⚡", name: "Nietzsche",        era: "1844–1900",  role: "Philosopher",   category: "Philosophy", style: "Will to power, poetic, provocative" },
-  { id: "einstein",  emoji: "🔭", name: "Einstein",         era: "1879–1955",  role: "Physicist",     category: "Science",   style: "Thought experiments, humble, curious" },
-  { id: "lao-tzu",   emoji: "☯️", name: "Lao Tzu",         era: "6th c. BC",  role: "Philosopher",   category: "Philosophy", style: "Tao, wu wei, poetic simplicity" },
-  { id: "aristotle", emoji: "📚", name: "Aristotle",        era: "384–322 BC", role: "Philosopher",   category: "Philosophy", style: "Logic, ethics, virtue" },
-  { id: "marcus",    emoji: "🛡️", name: "Marcus Aurelius", era: "121–180 AD", role: "Stoic Emperor", category: "Philosophy", style: "Stoic, introspective, duty" },
-  { id: "gandhi",    emoji: "✌️", name: "Gandhi",           era: "1869–1948",  role: "Leader",        category: "Leaders",   style: "Nonviolence, truth, spiritual" },
-  { id: "tesla",     emoji: "⚡", name: "Nikola Tesla",     era: "1856–1943",  role: "Inventor",      category: "Science",   style: "Visionary, eccentric, technical" },
-  { id: "plato",     emoji: "🌌", name: "Plato",            era: "428–348 BC", role: "Philosopher",   category: "Philosophy", style: "Allegory, idealism, dialogues" },
-  { id: "confucius", emoji: "🌸", name: "Confucius",        era: "551–479 BC", role: "Philosopher",   category: "Philosophy", style: "Virtue, ritual, filial piety" },
-  { id: "darwin",    emoji: "🦋", name: "Charles Darwin",   era: "1809–1882",  role: "Naturalist",    category: "Science",   style: "Observational, methodical" },
-  { id: "voltaire",  emoji: "🖊️", name: "Voltaire",         era: "1694–1778",  role: "Philosopher",   category: "Philosophy", style: "Satirical, rationalist, wit" },
+  { id: "nietzsche", emoji: "⚡", name: "Nietzsche",        era: "1844–1900",   role: "Philosopher",   category: "Philosophy", style: "Will to power, poetic, provocative" },
+  { id: "einstein",  emoji: "🔭", name: "Einstein",         era: "1879–1955",   role: "Physicist",     category: "Science",    style: "Thought experiments, humble, curious" },
+  { id: "lao-tzu",   emoji: "☯️", name: "Lao Tzu",         era: "6th c. BC",   role: "Philosopher",   category: "Philosophy", style: "Tao, wu wei, poetic simplicity" },
+  { id: "aristotle", emoji: "📚", name: "Aristotle",        era: "384–322 BC",  role: "Philosopher",   category: "Philosophy", style: "Logic, ethics, virtue" },
+  { id: "marcus",    emoji: "🛡️", name: "Marcus Aurelius", era: "121–180 AD",  role: "Stoic Emperor", category: "Philosophy", style: "Stoic, introspective, duty" },
+  { id: "gandhi",    emoji: "✌️", name: "Gandhi",           era: "1869–1948",   role: "Leader",        category: "Leaders",    style: "Nonviolence, truth, spiritual" },
+  { id: "tesla",     emoji: "⚡", name: "Nikola Tesla",     era: "1856–1943",   role: "Inventor",      category: "Science",    style: "Visionary, eccentric, technical" },
+  { id: "plato",     emoji: "🌌", name: "Plato",            era: "428–348 BC",  role: "Philosopher",   category: "Philosophy", style: "Allegory, idealism, dialogues" },
+  { id: "confucius", emoji: "🌸", name: "Confucius",        era: "551–479 BC",  role: "Philosopher",   category: "Philosophy", style: "Virtue, ritual, filial piety" },
+  { id: "darwin",    emoji: "🦋", name: "Charles Darwin",   era: "1809–1882",   role: "Naturalist",    category: "Science",    style: "Observational, methodical" },
+  { id: "voltaire",  emoji: "🖊️", name: "Voltaire",         era: "1694–1778",   role: "Philosopher",   category: "Philosophy", style: "Satirical, rationalist, wit" },
+  { id: "descartes", emoji: "🤔", name: "Descartes",        era: "1596–1650",   role: "Philosopher",   category: "Philosophy", style: "Systematic doubt, cogito ergo sum" },
+  { id: "darwin2",   emoji: "🌿", name: "Charles Lyell",   era: "1797–1875",   role: "Geologist",     category: "Science",    style: "Uniformitarianism, careful observation" },
+  { id: "curie",     emoji: "⚗️", name: "Marie Curie",     era: "1867–1934",   role: "Physicist",     category: "Science",    style: "Determined, precise, pioneering" },
+  { id: "napoleon",  emoji: "⚔️", name: "Napoleon",        era: "1769–1821",   role: "Emperor",       category: "Leaders",    style: "Strategic, ambitious, commanding" },
 ];
 
 const TABS: { id: MobileTab; label: string }[] = [
-  { id: "ask",         label: "Ask"     },
-  { id: "nomad",       label: "Nomad"   },
-  { id: "imagine",     label: "Studio"  },
-  { id: "philosopher", label: "Minds"   },
-  { id: "games",       label: "Games"   },
+  { id: "ask",         label: "Ask"    },
+  { id: "nomad",       label: "Nomad"  },
+  { id: "imagine",     label: "Studio" },
+  { id: "philosopher", label: "Minds"  },
+  { id: "games",       label: "Games"  },
 ];
 
 const NOMAD_MODELS = [
@@ -126,10 +135,12 @@ const NOMAD_MODELS = [
 ];
 
 const SUGGESTION_CARDS = [
-  { icon: <Search className="w-4 h-4 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into any topic", prompt: "Analyze the benefits of renewable energy sources" },
+  { icon: <Search className="w-4 h-4 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into any topic",   prompt: "Analyze the benefits of renewable energy sources" },
   { icon: <PenTool className="w-4 h-4 text-blue-400" />,  title: "Creative writing",    desc: "Stories, essays, content",  prompt: "Write a short story about time travel" },
   { icon: <Brain className="w-4 h-4 text-purple-400" />,  title: "Brainstorm ideas",    desc: "Generate fresh concepts",   prompt: "Give me 10 creative business ideas for 2025" },
 ];
+
+const PHIL_CATEGORIES = ["All", "Philosophy", "Science", "Leaders"];
 
 function uid() { return Math.random().toString(36).slice(2); }
 
@@ -243,13 +254,41 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg: (s: string) =>
   );
 }
 
-// ─── Function Bar (Integration / Voice / Settings) ────────────────────────────
-function FunctionBar({ onIntegration, onVoiceMode, onSettings, fiusIntegrationMode }: {
+// ─── Model Picker Sheet ───────────────────────────────────────────────────────
+function ModelSheet({ models, current, onSelect, onClose }: {
+  models: { id: string; name: string; dot: string }[];
+  current: string; onSelect: (id: string) => void; onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+      <div className="relative bg-background rounded-t-[28px] pb-8 shadow-2xl animate-in slide-in-from-bottom duration-350"
+        style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+        onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center pt-3 pb-3"><div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" /></div>
+        <p className="text-[16px] font-bold text-foreground px-5 mb-3">Select Model</p>
+        {models.map((opt, i) => (
+          <button key={opt.id} onClick={() => { onSelect(opt.id); onClose(); }}
+            className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
+            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-zinc-400" />
+            <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
+            {opt.id === current && <Check className="w-4 h-4 text-muted-foreground" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Function Bar (above message bar) ────────────────────────────────────────
+function FunctionBar({ onIntegration, onVoiceMode, onSettings, fiusIntegrationMode, hidden }: {
   onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void;
-  fiusIntegrationMode?: boolean;
+  fiusIntegrationMode?: boolean; hidden?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+
+  if (hidden) return null;
 
   const btns = [
     {
@@ -281,14 +320,14 @@ function FunctionBar({ onIntegration, onVoiceMode, onSettings, fiusIntegrationMo
   ];
 
   return (
-    <div className="flex-shrink-0 flex justify-center items-end gap-10 px-4 py-2.5 border-t border-border/40">
+    <div className="flex-shrink-0 flex justify-around items-end px-8 py-2.5">
       {btns.map((btn, i) => (
         <button key={i} onClick={btn.onClick}
           className="flex flex-col items-center gap-1.5 active:scale-90 transition-all duration-200">
           <div
             className="w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all duration-200"
             style={{
-              background: btn.active ? "#2563eb" : (isDark ? "rgba(60,60,60,0.95)" : "rgba(40,40,40,0.92)"),
+              background: btn.active ? "#2563eb" : (isDark ? "rgba(55,55,55,0.95)" : "rgba(36,36,36,0.92)"),
               boxShadow: "0 4px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}>
             {btn.icon}
@@ -354,7 +393,7 @@ function PCInputBar({
   const defaultBtnCls = `${btnCls} bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10`;
 
   return (
-    <div className="flex-shrink-0 px-3 pb-3 pt-1 relative">
+    <div className="flex-shrink-0 px-3 pb-3 pt-0 relative">
       {isListening && (
         <div className="absolute -top-7 inset-x-0 flex justify-center z-10">
           <div className="bg-emerald-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
@@ -364,7 +403,6 @@ function PCInputBar({
         </div>
       )}
       <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
-        {/* Textarea */}
         <div className="px-4 pt-3 pb-2">
           <textarea ref={ref} value={value} onChange={e => onChange(e.target.value)} onKeyDown={onKey}
             placeholder={placeholder} rows={1}
@@ -372,10 +410,7 @@ function PCInputBar({
             style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 26 }}
           />
         </div>
-
-        {/* Single action row */}
         <div className="flex items-center px-2 pb-2.5 gap-1">
-          {/* Attachment */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={defaultBtnCls}>
@@ -392,18 +427,13 @@ function PCInputBar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
           <div className="flex-1" />
-
-          {/* Mic */}
           <button onClick={toggleMic}
             className={`${btnCls} ${isListening ? "bg-emerald-500/20 text-emerald-400" : "bg-zinc-100 dark:bg-white/[0.07] text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10"}`}>
             {isListening
               ? <Mic className="w-4 h-4" />
               : <img src={isDark ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />}
           </button>
-
-          {/* Enhance */}
           {showEnhance && (
             <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing}
               className={`${defaultBtnCls} disabled:opacity-30`}>
@@ -412,8 +442,6 @@ function PCInputBar({
                 : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-0 dark:brightness-200 dark:contrast-150" />}
             </button>
           )}
-
-          {/* Send / Stop */}
           {isTyping ? (
             <button onClick={onStop}
               className={`${btnCls} bg-zinc-900 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-200`}>
@@ -431,8 +459,10 @@ function PCInputBar({
   );
 }
 
-// ─── Comprehensive Mobile Settings Sheet ──────────────────────────────────────
-function MobileSettingsSheet({
+// ─── Mobile Settings Sheet (PC-style ported to mobile) ───────────────────────
+type SettingsSection = "account" | "appearance" | "behavior" | "general" | "nomad";
+
+function MobileSettings({
   isOpen, onClose, user, profilePicture, onProfilePictureChange, onUserRename,
   model, onModelChange, onChatBgChange,
 }: {
@@ -445,258 +475,373 @@ function MobileSettingsSheet({
   onChatBgChange?: (bg: string) => void;
 }) {
   const { theme, setTheme } = useTheme();
-  const [section, setSection] = useState<"main" | "account" | "appearance" | "behavior" | "nomad">("main");
-  const [displayName, setDisplayName] = useState(user?.displayName || user?.username || "");
-  const [customInstructions, setCustomInstructions] = useState(() => localStorage.getItem("customInstructions") || "");
-  const [selectedPreset, setSelectedPreset] = useState(() => localStorage.getItem("aiPreset") || "custom");
-  const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "default");
+  const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  const [closing, setClosing] = useState(false);
+
+  // Account
+  const [editName, setEditName] = useState(user?.displayName || user?.username || "");
+  const [previewPic, setPreviewPic] = useState("");
+  const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  const CHAT_BGS = [
-    { id: "default",  label: "Default" }, { id: "gradient", label: "Gradient" },
-    { id: "stars",    label: "Stars" },   { id: "rainbow",  label: "Rainbow" },
-  ];
+  // General
+  const [selectedPreset, setSelectedPreset] = useState(() => localStorage.getItem("aiPreset") || "custom");
+  const [customInstructions, setCustomInstructions] = useState(() => localStorage.getItem("customInstructions") || "");
 
-  useEffect(() => { if (!isOpen) { setTimeout(() => setSection("main"), 350); } }, [isOpen]);
-  useEffect(() => { setDisplayName(user?.displayName || user?.username || ""); }, [user]);
+  // Appearance
+  const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
+  const [localToggles, setLocalToggles] = useState({
+    wrapLines: true, showPreviews: true, showFiusLogo: true,
+    nomadGrid: true, nomadNotification: true, autoScroll: true, richText: true,
+    improveModel: true, personalize: true,
+  });
+  const [localAiOrder, setLocalAiOrder] = useState([
+    "gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai",
+  ]);
 
-  const handlePicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => { if (ev.target?.result) onProfilePictureChange?.(ev.target.result as string); };
-    reader.readAsDataURL(file);
+  useEffect(() => {
+    if (isOpen) {
+      setEditName(user?.displayName || user?.username || "");
+      setPreviewPic("");
+      setShowCustomizePanel(false);
+      setClosing(false);
+    }
+  }, [isOpen, user]);
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(() => { setClosing(false); onClose(); }, 320);
+  };
+
+  const handleSave = () => {
+    localStorage.setItem("aiPreset", selectedPreset);
+    localStorage.setItem("customInstructions", customInstructions);
+    localStorage.setItem("chatBg", chatBg);
+    onChatBgChange?.(chatBg);
+    window.dispatchEvent(new Event("chatBgChanged"));
+    handleClose();
   };
 
   const handleSaveName = async () => {
-    if (!displayName.trim()) return;
+    if (!editName.trim()) return;
     try {
-      await apiRequest("PATCH", "/api/auth/user", { username: displayName.trim() });
-      onUserRename?.(displayName.trim());
+      await apiRequest("PATCH", "/api/auth/user", { username: editName.trim() });
+      onUserRename?.(editName.trim());
+      if (previewPic) onProfilePictureChange?.(previewPic);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setShowCustomizePanel(false);
     } catch { /* silent */ }
   };
 
-  const savePreset = (preset: string) => {
-    setSelectedPreset(preset); localStorage.setItem("aiPreset", preset);
+  const moveOrder = (index: number, dir: "up" | "down") => {
+    const n = [...localAiOrder];
+    if (dir === "up" && index > 0) { [n[index], n[index - 1]] = [n[index - 1], n[index]]; }
+    else if (dir === "down" && index < n.length - 1) { [n[index], n[index + 1]] = [n[index + 1], n[index]]; }
+    setLocalAiOrder(n);
   };
-  const saveInstructions = () => { localStorage.setItem("customInstructions", customInstructions); };
-  const saveChatBg = (bg: string) => { setChatBg(bg); localStorage.setItem("chatBg", bg); onChatBgChange?.(bg); };
+
+  const MODEL_NAMES: Record<string, string> = {
+    "gpt-4o": "ChatGPT 5", "claude-3.5-sonnet": "Claude Sonnet 4", "gemini-pro": "Gemini 2.5 Pro",
+    "perplexity": "Perplexity Sonar Pro", "grok-4": "Grok 4", "deepseek-r1": "Deepseek v3", "fius-ai": "Fius Pro",
+  };
 
   const initials = (user?.displayName || user?.username || "?").charAt(0).toUpperCase();
 
-  const SectionRow = ({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) => (
-    <button onClick={onClick} className="w-full flex items-center gap-3.5 px-4 py-3.5 text-left hover:bg-accent/60 transition-colors">
-      <div className="w-9 h-9 rounded-2xl bg-accent border border-border/60 flex items-center justify-center text-muted-foreground flex-shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] font-semibold text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground truncate">{sub}</p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-    </button>
-  );
+  const menuItems: { id: SettingsSection; label: string; icon: React.ComponentType<any> }[] = [
+    { id: "account",    label: "Account",        icon: User },
+    { id: "general",    label: "General",         icon: Sliders },
+    { id: "appearance", label: "Appearance",      icon: Palette },
+    { id: "behavior",   label: "Behavior",        icon: Zap },
+    { id: "nomad",      label: "Nomad Settings",  icon: Database },
+  ];
 
-  const sectionTitle = section === "main" ? "Settings"
-    : section === "account" ? "Account"
-    : section === "appearance" ? "Appearance"
-    : section === "behavior" ? "AI Behavior"
-    : "Nomad Settings";
-
-  if (!isOpen) return null;
+  if (!isOpen && !closing) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ WebkitTapHighlightColor: "transparent" }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-250" />
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ WebkitTapHighlightColor: "transparent" }} onClick={handleClose}>
+      <div className={`absolute inset-0 bg-black/65 backdrop-blur-sm ${closing ? "animate-out fade-out duration-300" : "animate-in fade-in duration-250"}`} />
       <div
-        className="relative bg-background rounded-t-[28px] max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-400"
-        style={{ boxShadow: "0 -10px 60px rgba(0,0,0,0.4)", animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+        className={`relative bg-background rounded-t-[24px] flex flex-col overflow-hidden ${closing ? "animate-out slide-out-to-bottom duration-320" : "animate-in slide-in-from-bottom duration-380"}`}
+        style={{ height: "92vh", boxShadow: "0 -10px 60px rgba(0,0,0,0.4)", animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-0 flex-shrink-0">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
         </div>
 
-        {/* Sheet header */}
-        <div className="flex items-center px-5 py-3 flex-shrink-0">
-          {section !== "main" && (
-            <button onClick={() => setSection("main")} className="mr-3 text-muted-foreground hover:text-foreground transition-colors">
-              <ChevronLeft className="w-5 h-5" />
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0">
+          <h2 className="text-[17px] font-bold text-foreground">Settings</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={handleSave}
+              className="px-4 py-1.5 rounded-full bg-foreground text-background text-xs font-bold transition-all active:scale-95">
+              Save
             </button>
-          )}
-          <h2 className="text-[17px] font-bold text-foreground flex-1">{sectionTitle}</h2>
-          {section === "main" && (
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent/80 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={handleClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-accent/80 text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1 pb-8">
-
-          {/* MAIN SECTION */}
-          {section === "main" && (
-            <>
-              {/* Account card */}
-              <div className="px-5 mb-3">
-                <button onClick={() => setSection("account")}
-                  className="w-full flex items-center gap-3.5 p-4 rounded-3xl bg-accent/70 border border-border/50 text-left active:scale-[0.98] transition-all">
-                  <div className="w-13 h-13 w-[52px] h-[52px] rounded-2xl flex-shrink-0 flex items-center justify-center overflow-hidden"
-                    style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    {profilePicture ? <img src={profilePicture} alt="" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-xl">{initials}</span>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-bold text-foreground truncate">{user?.displayName || user?.username}</p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </button>
-              </div>
-
-              {/* Settings sections */}
-              <div className="mx-5 rounded-3xl border border-border/50 overflow-hidden mb-3 bg-card">
-                <SectionRow icon={<Palette className="w-4 h-4" />} label="Appearance" sub="Theme, background, style" onClick={() => setSection("appearance")} />
-                <div className="h-px bg-border/50 mx-4" />
-                <SectionRow icon={<Zap className="w-4 h-4" />} label="AI Behavior" sub="Preset, model, instructions" onClick={() => setSection("behavior")} />
-                <div className="h-px bg-border/50 mx-4" />
-                <SectionRow icon={<Globe className="w-4 h-4" />} label="Nomad Settings" sub="Multi-AI configuration" onClick={() => setSection("nomad")} />
-              </div>
-
-              <div className="mx-5 rounded-3xl border border-border/50 overflow-hidden bg-card">
-                <button className="w-full flex items-center gap-3.5 px-4 py-3.5 text-left hover:bg-accent/60 transition-colors"
-                  onClick={() => { localStorage.removeItem("customInstructions"); setCustomInstructions(""); }}>
-                  <div className="w-9 h-9 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13.5px] font-semibold text-foreground">Clear Data</p>
-                    <p className="text-xs text-muted-foreground">Reset preferences & instructions</p>
-                  </div>
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ACCOUNT SECTION */}
-          {section === "account" && (
-            <div className="px-5">
-              <div className="flex flex-col items-center gap-3 mb-6">
-                <button onClick={() => picInputRef.current?.click()} className="relative group">
-                  <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden"
-                    style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    {profilePicture ? <img src={profilePicture} alt="" className="w-full h-full object-cover" /> : <span className="text-white font-bold text-3xl">{initials}</span>}
-                  </div>
-                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-active:opacity-100 flex items-center justify-center transition-opacity">
-                    <Camera className="w-6 h-6 text-white" />
-                  </div>
-                </button>
-                <p className="text-xs text-muted-foreground">Tap to change photo</p>
-                <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePicUpload} />
-              </div>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Display Name</p>
-              <div className="flex gap-2 mb-4">
-                <Input value={displayName} onChange={e => setDisplayName(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSaveName(); }}
-                  placeholder="Your name" className="flex-1 h-11 rounded-2xl bg-accent border-border/60 text-foreground text-sm" />
-                <button onClick={handleSaveName} className="h-11 px-5 rounded-2xl bg-foreground text-background text-sm font-semibold active:scale-95 transition-all flex-shrink-0">Save</button>
-              </div>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Email</p>
-              <div className="h-11 px-4 flex items-center rounded-2xl bg-accent/60 border border-border/60">
-                <span className="text-sm text-muted-foreground truncate">{user?.email}</span>
-              </div>
-            </div>
-          )}
-
-          {/* APPEARANCE SECTION */}
-          {section === "appearance" && (
-            <div className="px-5">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Theme</p>
-              <div className="grid grid-cols-3 gap-2.5 mb-5">
-                {[
-                  { v: "light" as const, icon: <Sun className="w-4 h-4 text-yellow-500" />, label: "Light" },
-                  { v: "dark"  as const, icon: <Moon className="w-4 h-4 text-blue-400" />, label: "Dark" },
-                  { v: "system" as const, icon: <Monitor className="w-4 h-4 text-foreground" />, label: "System" },
-                ].map(opt => (
-                  <button key={opt.v} onClick={() => setTheme(opt.v)}
-                    className={`flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all active:scale-95 ${theme === opt.v ? "border-foreground/40 bg-foreground/10" : "border-border/50 bg-accent/50 hover:bg-accent/80"}`}>
-                    {opt.icon}
-                    <span className={`text-xs font-semibold ${theme === opt.v ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
-                    {theme === opt.v && <div className="w-1.5 h-1.5 rounded-full bg-foreground" />}
-                  </button>
-                ))}
-              </div>
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Chat Background</p>
-              <div className="grid grid-cols-2 gap-2.5 mb-5">
-                {CHAT_BGS.map(bg => (
-                  <button key={bg.id} onClick={() => saveChatBg(bg.id)}
-                    className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-left transition-all active:scale-95 ${chatBg === bg.id ? "border-foreground/40 bg-foreground/10" : "border-border/50 bg-accent/50 hover:bg-accent/80"}`}>
-                    <div className={`w-3 h-3 rounded-full flex-shrink-0 border-2 ${chatBg === bg.id ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
-                    <span className={`text-sm font-semibold ${chatBg === bg.id ? "text-foreground" : "text-muted-foreground"}`}>{bg.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* BEHAVIOR SECTION */}
-          {section === "behavior" && (
-            <div className="px-5">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">AI Preset</p>
-              <div className="grid grid-cols-2 gap-2 mb-5">
-                {PRESETS.map(p => (
-                  <button key={p.id} onClick={() => savePreset(p.id)}
-                    className={`flex flex-col items-start gap-1 p-4 rounded-2xl border text-left transition-all active:scale-[0.97] ${selectedPreset === p.id ? "border-foreground/40 bg-foreground/10" : "border-border/50 bg-accent/50 hover:bg-accent/80"}`}>
-                    <div className="flex items-center gap-1.5 w-full">
-                      <p className={`text-[13px] font-bold ${selectedPreset === p.id ? "text-foreground" : "text-foreground/80"}`}>{p.label}</p>
-                      {selectedPreset === p.id && <Check className="w-3 h-3 ml-auto text-foreground" />}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">{p.desc}</p>
-                  </button>
-                ))}
-              </div>
-
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Default Model</p>
-              <div className="rounded-3xl border border-border/50 overflow-hidden mb-5 bg-card">
-                {MODELS.map((m, i) => (
-                  <button key={m.id} onClick={() => onModelChange?.(m.id)}
-                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 text-left transition-colors ${model === m.id ? "bg-accent/80" : "hover:bg-accent/50"} ${i > 0 ? "border-t border-border/40" : ""}`}>
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: m.dot }} />
-                    <span className="text-[13.5px] font-semibold text-foreground flex-1">{m.name}</span>
-                    {model === m.id && <Check className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-                  </button>
-                ))}
-              </div>
-
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Custom Instructions</p>
-              <p className="text-xs text-muted-foreground mb-3 px-1">Tell Fius how you want it to respond</p>
-              <textarea
-                value={customInstructions} onChange={e => setCustomInstructions(e.target.value)}
-                placeholder="e.g. Always respond in a friendly, concise manner..."
-                className="w-full h-28 bg-accent/60 border border-border/60 rounded-2xl px-4 py-3 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-foreground/30 transition-colors"
-              />
-              <button onClick={saveInstructions} className="mt-3 w-full py-3 rounded-2xl bg-foreground text-background text-sm font-bold active:scale-[0.98] transition-all">
-                Save Instructions
+        {/* Body: sidebar + content */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left nav */}
+          <div className="w-[140px] flex-shrink-0 bg-zinc-50 dark:bg-[#161616] border-r border-border/50 overflow-y-auto py-3 flex flex-col gap-1 px-2">
+            {menuItems.map(item => (
+              <button key={item.id} onClick={() => setActiveSection(item.id)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all text-[12px] font-medium ${
+                  activeSection === item.id
+                    ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                    : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60"
+                }`}>
+                <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="leading-tight">{item.label}</span>
+              </button>
+            ))}
+            <div className="mt-auto pt-3 border-t border-border/50 px-1">
+              <button className="w-full flex items-center gap-2 px-2 py-2 rounded-xl text-red-400 hover:bg-red-500/10 text-[11px] font-medium transition-colors"
+                onClick={() => { localStorage.removeItem("customInstructions"); setCustomInstructions(""); }}>
+                <Trash2 className="w-3 h-3" /> Clear Data
               </button>
             </div>
-          )}
+          </div>
 
-          {/* NOMAD SECTION */}
-          {section === "nomad" && (
-            <div className="px-5">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Active AI Models</p>
-              <p className="text-xs text-muted-foreground mb-4 px-1">Nomad queries all enabled models simultaneously</p>
-              <div className="rounded-3xl border border-border/50 overflow-hidden bg-card">
-                {NOMAD_MODELS.map((nm, i) => (
-                  <div key={nm.key} className={`flex items-center gap-3.5 px-4 py-4 ${i > 0 ? "border-t border-border/40" : ""}`}>
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: nm.color }} />
-                    <span className="text-[13.5px] font-semibold text-foreground flex-1">{nm.label}</span>
-                    <div className="w-12 h-6 rounded-full bg-foreground/20 flex items-center justify-end px-0.5 transition-colors">
-                      <div className="w-5 h-5 rounded-full bg-foreground" />
+          {/* Right content */}
+          <div className="flex-1 overflow-y-auto p-5">
+
+            {/* ACCOUNT */}
+            {activeSection === "account" && (
+              <div className="space-y-4">
+                <div className="p-4 bg-zinc-50 dark:bg-[#1a1a1a] rounded-2xl border border-border/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                        {(previewPic || profilePicture) ? (
+                          <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white"
+                            style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                            {initials}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{user?.displayName || user?.username || "User"}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      </div>
                     </div>
+                    <button onClick={() => setShowCustomizePanel(v => !v)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
+                      <Pencil className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
+
+                  {showCustomizePanel && (
+                    <div className="mt-4 pt-4 border-t border-border/50 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div>
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Display Name</label>
+                        <Input value={editName} onChange={e => setEditName(e.target.value)}
+                          placeholder="Your name"
+                          className="mt-1.5 h-9 rounded-xl bg-background border-border/60 text-sm text-foreground" />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Profile Photo</label>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <div className="w-9 h-9 rounded-full overflow-hidden border border-border/60 flex-shrink-0">
+                            {(previewPic || profilePicture) ? (
+                              <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold"
+                                style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{initials}</div>
+                            )}
+                          </div>
+                          <button onClick={() => picInputRef.current?.click()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
+                            <Camera className="w-3 h-3" /> Upload
+                          </button>
+                          <input ref={picInputRef} type="file" accept="image/*" className="hidden"
+                            onChange={e => {
+                              const f = e.target.files?.[0]; if (!f) return;
+                              const r = new FileReader();
+                              r.onload = ev => setPreviewPic(ev.target?.result as string);
+                              r.readAsDataURL(f);
+                            }} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => { setShowCustomizePanel(false); setPreviewPic(""); }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
+                        <button onClick={handleSaveName}
+                          className="flex items-center gap-1 px-4 py-1.5 rounded-xl bg-foreground text-background text-xs font-bold active:scale-95 transition-all">
+                          <Check className="w-3 h-3" /> Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* GENERAL */}
+            {activeSection === "general" && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Preset</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PRESETS.map(p => (
+                      <button key={p.id} onClick={() => setSelectedPreset(p.id)}
+                        className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all active:scale-[0.97] ${
+                          selectedPreset === p.id
+                            ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800 text-foreground"
+                            : "border-border/50 bg-card hover:bg-accent/50 text-muted-foreground"
+                        }`}>
+                        <div className="flex items-center gap-1 w-full">
+                          <p className="text-[12px] font-bold text-foreground">{p.label}</p>
+                          {selectedPreset === p.id && <Check className="w-3 h-3 ml-auto text-foreground" />}
+                        </div>
+                        <p className="text-[10.5px] text-muted-foreground">{p.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Custom Instructions</p>
+                  <p className="text-xs text-muted-foreground mb-2">Tell Fius how you want it to respond</p>
+                  <textarea value={customInstructions} onChange={e => setCustomInstructions(e.target.value)}
+                    placeholder="e.g. Always respond in a friendly, concise manner..."
+                    className="w-full h-24 bg-zinc-50 dark:bg-[#1a1a1a] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
+                </div>
+              </div>
+            )}
+
+            {/* APPEARANCE */}
+            {activeSection === "appearance" && (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Theme</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { v: "light" as const, icon: Sun, label: "Light" },
+                      { v: "dark"  as const, icon: Moon, label: "Dark" },
+                      { v: "system" as const, icon: Laptop, label: "System" },
+                    ].map(opt => (
+                      <button key={opt.v} onClick={() => setTheme(opt.v)}
+                        className={`flex flex-col items-center gap-2 py-4 rounded-xl border transition-all active:scale-95 ${
+                          theme === opt.v
+                            ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800"
+                            : "border-border/50 bg-card hover:bg-accent/50"
+                        }`}>
+                        <opt.icon className={`w-4 h-4 ${theme === opt.v ? "text-foreground" : "text-muted-foreground"}`} />
+                        <span className={`text-[11px] font-semibold ${theme === opt.v ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Chat Background</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { v: "plain",          label: "Plain" },
+                      { v: "gradient",       label: "Blue Sides" },
+                      { v: "rainbow",        label: "Rainbow Sides" },
+                      { v: "stars",          label: "Stars" },
+                      { v: "stars-gradient", label: "Stars + Blue" },
+                      { v: "stars-rainbow",  label: "Stars + Rainbow" },
+                    ].map(opt => (
+                      <button key={opt.v} onClick={() => { setChatBg(opt.v); localStorage.setItem("chatBg", opt.v); onChatBgChange?.(opt.v); }}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all active:scale-95 ${
+                          chatBg === opt.v
+                            ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800"
+                            : "border-border/50 bg-card hover:bg-accent/50"
+                        }`}>
+                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-2 ${chatBg === opt.v ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
+                        <span className={`text-[12px] font-semibold ${chatBg === opt.v ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4 border-t border-border/50 pt-4">
+                  {[
+                    { key: "wrapLines",      label: "Wrap Long Lines in Code Blocks" },
+                    { key: "showPreviews",   label: "Show Conversation Previews" },
+                    { key: "showFiusLogo",   label: "Show Fius Logo in Responses" },
+                    { key: "nomadGrid",      label: "Nomad Grid Background" },
+                    { key: "nomadNotification", label: "Nomad Notifications" },
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center justify-between">
+                      <span className="text-[12.5px] text-foreground">{item.label}</span>
+                      <Switch
+                        checked={localToggles[item.key as keyof typeof localToggles] as boolean}
+                        onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* BEHAVIOR */}
+            {activeSection === "behavior" && (
+              <div className="space-y-4">
+                {[
+                  { key: "autoScroll",   label: "Enable Auto Scroll",    desc: "" },
+                  { key: "richText",     label: "Rich Text Editor",      desc: "Code blocks and lists in query bar" },
+                  { key: "improveModel", label: "Improve the Model",     desc: "Allow your data to improve AI quality" },
+                  { key: "personalize",  label: "Personalize Fius",      desc: "Remember details from past chats" },
+                ].map(item => (
+                  <div key={item.key} className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-[12.5px] font-medium text-foreground">{item.label}</p>
+                      {item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}
+                    </div>
+                    <Switch
+                      checked={localToggles[item.key as keyof typeof localToggles] as boolean}
+                      onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* NOMAD */}
+            {activeSection === "nomad" && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Order Switcher</p>
+                  <div className="space-y-2">
+                    {localAiOrder.map((name, i) => (
+                      <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border border-border/50">
+                        <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => moveOrder(i, "up")} disabled={i === 0}
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => moveOrder(i, "down")} disabled={i === localAiOrder.length - 1}
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors">
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-border/50 pt-4 p-4 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border border-border/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Database className="w-4 h-4 text-foreground" />
+                    <span className="text-sm font-medium text-foreground">Storage Usage</span>
+                  </div>
+                  <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                    <div className="bg-zinc-500 dark:bg-zinc-400 h-full w-[2%]" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">13.59 MB used of 1.07 GB</p>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </div>
@@ -710,7 +855,7 @@ function PCHeader({
   activeTab: MobileTab; onTabChange: (t: MobileTab) => void;
   onMenuClick: () => void;
 }) {
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const navRef = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
@@ -724,6 +869,12 @@ function PCHeader({
     const bRect = btn.getBoundingClientRect();
     setPill({ left: bRect.left - nRect.left, width: bRect.width, ready: true });
   }, [activeTab]);
+
+  const cycleTheme = () => {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  };
 
   return (
     <header className="flex-shrink-0 bg-card border border-border backdrop-blur-lg rounded-full px-2 py-1.5 flex items-center mx-3 mt-2 mb-1 relative z-10 glossy-outline gap-1">
@@ -748,12 +899,18 @@ function PCHeader({
           )}
           {TABS.map(({ id, label }, i) => (
             <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12.5px] px-3.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
         </div>
       </div>
+
+      {/* Theme toggle */}
+      <button onClick={cycleTheme}
+        className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
+        {theme === "dark" ? <Moon className="w-3.5 h-3.5" /> : theme === "system" ? <Monitor className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+      </button>
     </header>
   );
 }
@@ -773,7 +930,7 @@ function AskTab({
   const [expandImg, setExpandImg] = useState<string | null>(null);
   const [showModels, setShowModels] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const m = MODELS.find(x => x.id === model) || MODELS[0];
+  const m = ASK_MODELS.find(x => x.id === model) || ASK_MODELS[0];
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
 
@@ -788,32 +945,15 @@ function AskTab({
         </div>
       )}
 
-      {/* Model picker bottom sheet */}
       {showModels && (
-        <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={() => setShowModels(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
-          <div className="relative bg-background rounded-t-[28px] pb-8 shadow-2xl animate-in slide-in-from-bottom duration-350"
-            style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex justify-center pt-3 pb-3"><div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" /></div>
-            <p className="text-[16px] font-bold text-foreground px-5 mb-3">Select Model</p>
-            {MODELS.map((opt, i) => (
-              <button key={opt.id} onClick={() => { setModel(opt.id); setShowModels(false); }}
-                className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors ${opt.id === model ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: opt.dot }} />
-                <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
-                {opt.id === model && <Check className="w-4 h-4 text-muted-foreground" />}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ModelSheet models={ASK_MODELS} current={model} onSelect={setModel} onClose={() => setShowModels(false)} />
       )}
 
-      {/* Model switcher — top left under header */}
+      {/* Model switcher */}
       <div className="flex-shrink-0 flex items-center px-3 pt-1.5 pb-0.5">
         <button onClick={() => setShowModels(true)}
           className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-zinc-100 dark:bg-white/10 border border-zinc-200/80 dark:border-white/10 text-[11.5px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/15 transition-all active:scale-95">
-          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.dot }} />
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
           {m.name}
           <ChevronDown className="w-2.5 h-2.5 opacity-60" />
         </button>
@@ -866,7 +1006,7 @@ function AskTab({
   );
 }
 
-// ─── Imagine Tab ──────────────────────────────────────────────────────────────
+// ─── Studio (Imagine) Tab ─────────────────────────────────────────────────────
 function ImagineTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, onSettings, onIntegration }: {
   messages: Msg[]; isTyping: boolean; input: string;
   setInput: (v: string) => void; onSend: () => void;
@@ -874,23 +1014,98 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, 
 }) {
   const [style, setStyle] = useState(IMAGINE_STYLES[0]);
   const [expandImg, setExpandImg] = useState<string | null>(null);
+  const [showModels, setShowModels] = useState(false);
+  const [studioModel, setStudioModel] = useState(STUDIO_MODELS[0].id);
+  const [detailImg, setDetailImg] = useState<Msg | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
+
+  // When new image arrives, show detail view
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "ai" && last?.imageUrl) {
+      setDetailImg(last);
+    }
+  }, [messages]);
+
+  const sm = STUDIO_MODELS.find(x => x.id === studioModel) || STUDIO_MODELS[0];
+
+  // Detail / result view
+  if (detailImg && !isTyping) {
+    return (
+      <>
+        {expandImg && (
+          <div className="fixed inset-0 z-[100] bg-black/96 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setExpandImg(null)}>
+            <img src={expandImg} alt="" className="max-w-full max-h-full rounded-2xl" />
+            <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
+          </div>
+        )}
+        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-card">
+          <button onClick={() => setDetailImg(null)}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-95">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-purple-400" />
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-foreground">Generated Image</p>
+            <p className="text-[11px] text-muted-foreground">Fius Studio</p>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          <MobileImageCard src={detailImg.imageUrl!} onExpand={s => setExpandImg(s)} />
+          <div className="text-xs text-muted-foreground px-1">
+            Prompt: <span className="text-foreground">{messages.find(m => m.role === "user")?.content || ""}</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => { setDetailImg(null); setInput(""); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold active:scale-95 transition-all">
+              <Sparkles className="w-3 h-3" /> New Image
+            </button>
+            <button onClick={() => { setDetailImg(null); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border bg-card text-foreground text-xs font-semibold active:scale-95 transition-all">
+              View All
+            </button>
+          </div>
+        </div>
+        <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
+        <PCInputBar value={input} onChange={v => setInput(v)} onSend={onSend} onStop={() => {}}
+          placeholder="Just Prompt and image is in your hands!" isTyping={isTyping} showEnhance
+        />
+      </>
+    );
+  }
 
   return (
     <>
+      {showModels && (
+        <ModelSheet models={STUDIO_MODELS} current={studioModel} onSelect={setStudioModel} onClose={() => setShowModels(false)} />
+      )}
       {expandImg && (
         <div className="fixed inset-0 z-[100] bg-black/96 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setExpandImg(null)}>
           <img src={expandImg} alt="" className="max-w-full max-h-full rounded-2xl" />
           <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
         </div>
       )}
-      {/* Style scroll strip */}
-      <div className="flex-shrink-0 px-3 py-2.5 border-b border-border/60">
-        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+
+      {/* Top bar: model + style scroller */}
+      <div className="flex-shrink-0 px-3 pt-2 pb-1">
+        {/* Model picker */}
+        <div className="flex items-center mb-2">
+          <button onClick={() => setShowModels(true)}
+            className="inline-flex items-center gap-1.5 px-3 h-7 rounded-full bg-zinc-100 dark:bg-white/10 border border-zinc-200/80 dark:border-white/10 text-[11.5px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/15 transition-all active:scale-95">
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+            {sm.name}
+            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+          </button>
+        </div>
+        {/* Style strip */}
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
           {IMAGINE_STYLES.map(s => (
             <button key={s.id} onClick={() => setStyle(s)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all active:scale-95 ${style.id === s.id ? "bg-foreground text-background border-transparent" : "bg-accent/60 text-muted-foreground border-border/50 hover:text-foreground"}`}>
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-semibold border transition-all active:scale-95 ${style.id === s.id ? "bg-foreground text-background border-transparent" : "bg-accent/60 text-muted-foreground border-border/50 hover:text-foreground"}`}>
               {s.emoji} {s.label}
             </button>
           ))}
@@ -905,7 +1120,7 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, 
             </div>
             <div>
               <p className="text-lg font-bold text-foreground">Fius Studio</p>
-              <p className="text-sm text-muted-foreground mt-1.5">Describe what you want to see<br />and bring it to life</p>
+              <p className="text-sm text-muted-foreground mt-1.5">Just Prompt and image is in your hands!</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center max-w-[260px]">
               {["A futuristic city at night", "Portrait of a wise sage", "Abstract cosmic art"].map(p => (
@@ -934,13 +1149,13 @@ function ImagineTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, 
 
       <FunctionBar onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
       <PCInputBar value={input} onChange={v => setInput(v + style.suffix)} onSend={onSend} onStop={() => {}}
-        placeholder="Describe the image you want to create…" isTyping={isTyping} showEnhance
+        placeholder="Just Prompt and image is in your hands!" isTyping={isTyping} showEnhance
       />
     </>
   );
 }
 
-// ─── Philosopher Tab ──────────────────────────────────────────────────────────
+// ─── Philosopher (Minds) Tab ───────────────────────────────────────────────────
 const PHIL_COLORS: Record<string, string> = {
   Philosophy: "#8b5cf6", Science: "#3b82f6", Leaders: "#10b981",
 };
@@ -952,35 +1167,72 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [showFilter, setShowFilter] = useState(false);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
 
+  const filtered = activeCategory === "All" ? PHILOSOPHERS : PHILOSOPHERS.filter(p => p.category === activeCategory);
+
   if (!personality) {
-    const categories = [...new Set(PHILOSOPHERS.map(p => p.category))];
     return (
-      <div className="flex-1 overflow-y-auto px-4 py-4" style={{ overscrollBehavior: "contain" }}>
-        <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest text-center mb-5">Choose a mind to explore</p>
-        {categories.map(cat => (
-          <div key={cat} className="mb-5">
-            <p className="text-[11px] font-bold uppercase tracking-widest px-1 mb-2.5"
-              style={{ color: PHIL_COLORS[cat] || "#888" }}>{cat}</p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {PHILOSOPHERS.filter(p => p.category === cat).map(p => (
-                <button key={p.id} onClick={() => setPersonality(p)}
-                  className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card text-left active:scale-[0.97] transition-all hover:bg-accent/60">
-                  <div className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center text-lg"
-                    style={{ background: `${PHIL_COLORS[p.category] || "#888"}18`, border: `1px solid ${PHIL_COLORS[p.category] || "#888"}30` }}>
-                    {p.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12.5px] font-bold text-foreground truncate">{p.name}</p>
-                    <p className="text-[10.5px] text-muted-foreground mt-0.5 truncate">{p.era}</p>
-                  </div>
+      <>
+        {/* Filter bottom sheet */}
+        {showFilter && (
+          <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={() => setShowFilter(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
+            <div className="relative bg-background rounded-t-[28px] pb-8 shadow-2xl animate-in slide-in-from-bottom duration-350"
+              style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)" }}
+              onClick={e => e.stopPropagation()}>
+              <div className="flex justify-center pt-3 pb-3"><div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" /></div>
+              <p className="text-[16px] font-bold text-foreground px-5 mb-3">Filter by Category</p>
+              {PHIL_CATEGORIES.map((cat, i) => (
+                <button key={cat} onClick={() => { setActiveCategory(cat); setShowFilter(false); }}
+                  className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors ${cat === activeCategory ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
+                  {cat !== "All" && (
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: PHIL_COLORS[cat] || "#888" }} />
+                  )}
+                  {cat === "All" && <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-zinc-400" />}
+                  <span className="text-[14px] font-semibold text-foreground flex-1">{cat}</span>
+                  {cat === activeCategory && <Check className="w-4 h-4 text-muted-foreground" />}
                 </button>
               ))}
             </div>
           </div>
-        ))}
-      </div>
+        )}
+
+        {/* Header row */}
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+          <p className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">Choose a mind</p>
+          <button onClick={() => setShowFilter(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/70 border border-border/50 text-xs font-semibold text-foreground transition-all active:scale-95 hover:bg-accent">
+            <Filter className="w-3 h-3" />
+            {activeCategory !== "All" ? activeCategory : "Filter"}
+          </button>
+        </div>
+
+        {/* Row list */}
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>
+          {filtered.map((p, i) => {
+            const color = PHIL_COLORS[p.category] || "#888";
+            return (
+              <button key={p.id} onClick={() => setPersonality(p)}
+                className={`w-full flex items-center gap-3.5 px-4 py-3 text-left transition-all active:scale-[0.98] hover:bg-accent/50 ${i > 0 ? "border-t border-border/40" : ""}`}>
+                {/* Emoji as avatar */}
+                <div className="w-11 h-11 rounded-2xl flex-shrink-0 flex items-center justify-center text-xl"
+                  style={{ background: `${color}18`, border: `1.5px solid ${color}30` }}>
+                  {p.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13.5px] font-bold text-foreground">{p.name}</p>
+                  <p className="text-[11.5px] text-muted-foreground truncate">{p.role} · {p.era}</p>
+                  <p className="text-[10.5px] text-muted-foreground/70 truncate mt-0.5">{p.style}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+              </button>
+            );
+          })}
+        </div>
+      </>
     );
   }
 
@@ -1042,16 +1294,14 @@ function NomadTab({ input, setInput, onSend, isTyping, responses, onVoiceMode, o
 
   return (
     <>
-      {/* AI model badges strip */}
-      <div className="flex-shrink-0 px-4 py-2.5 border-b border-border/60 bg-card">
-        <div className="flex gap-2 items-center">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex-shrink-0">Active:</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {NOMAD_MODELS.map(m => (
-              <span key={m.key} className="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
-                style={{ background: m.bg, color: m.color, border: `1px solid ${m.color}30` }}>{m.label}</span>
-            ))}
-          </div>
+      {/* Active model badges strip */}
+      <div className="flex-shrink-0 px-4 py-2 border-b border-border/60 bg-card">
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex-shrink-0 mr-1">Active:</span>
+          {NOMAD_MODELS.map(m => (
+            <span key={m.key} className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold flex-shrink-0"
+              style={{ background: m.bg, color: m.color, border: `1px solid ${m.color}30` }}>{m.label}</span>
+          ))}
         </div>
       </div>
 
@@ -1120,7 +1370,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
-  const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "default");
+  const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
 
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() =>
     localStorage.getItem("profilePicture") || undefined
@@ -1134,7 +1384,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [currentConvId, setCurrentConvId] = useState<string | undefined>();
   const askAbortRef = useRef<AbortController | null>(null);
 
-  // Imagine
+  // Imagine / Studio
   const [imagMsgs, setImagMsgs] = useState<Msg[]>([]);
   const [imagInput, setImagInput] = useState("");
   const [imagTyping, setImagTyping] = useState(false);
@@ -1150,6 +1400,13 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadInput, setNomadInput] = useState("");
   const [nomadTyping, setNomadTyping] = useState(false);
   const [nomadRes, setNomadRes] = useState<{ model: string; content: string; color: string; bg: string; done: boolean }[]>([]);
+
+  // Listen for chatBg changes from settings
+  useEffect(() => {
+    const handler = () => setChatBg(localStorage.getItem("chatBg") || "plain");
+    window.addEventListener("chatBgChanged", handler);
+    return () => window.removeEventListener("chatBgChanged", handler);
+  }, []);
 
   const projects = convList.map(c => ({
     id: c.id, title: c.title || "New Chat",
@@ -1296,6 +1553,17 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
   }, []);
 
+  const getChatBgStyle = () => {
+    switch (chatBg) {
+      case "gradient": return { background: "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)" };
+      case "stars": return { background: "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)" };
+      case "rainbow": return { background: "linear-gradient(135deg,#ff6b6b22,#feca5722,#48dbfb22,#ff9ff322,#54a0ff22)" };
+      case "stars-gradient": return { background: "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)" };
+      case "stars-rainbow": return { background: "linear-gradient(135deg,#ff6b6b22,#feca5722,#48dbfb22,#ff9ff322,#54a0ff22)" };
+      default: return {};
+    }
+  };
+
   const voiceHandlers = {
     onVoiceMode: () => setVoiceModalOpen(true),
     onSettings: () => setSettingsModalOpen(true),
@@ -1332,7 +1600,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           <VoiceModeModal isOpen={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
 
-          <MobileSettingsSheet
+          <MobileSettings
             isOpen={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}
             user={user ? { email: user.email, username: user.username, displayName: user.displayName } : undefined}
             profilePicture={profilePicture}
@@ -1345,17 +1613,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           {/* Header */}
           <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
 
-          {/* Tab content with transition */}
-          <div className="flex-1 flex flex-col overflow-hidden relative"
-            style={{
-              background: chatBg === "gradient"
-                ? "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)"
-                : chatBg === "stars"
-                ? "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)"
-                : chatBg === "rainbow"
-                ? "linear-gradient(135deg,#ff6b6b22,#feca5722,#48dbfb22,#ff9ff322,#54a0ff22)"
-                : undefined,
-            }}>
+          {/* Tab content */}
+          <div className="flex-1 flex flex-col overflow-hidden relative" style={getChatBgStyle()}>
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "ask" ? "flex" : "none" }}>
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
