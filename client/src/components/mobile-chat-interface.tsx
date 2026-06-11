@@ -299,8 +299,17 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
         <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
           {isUser ? (
-            <div className="bg-card rounded-3xl rounded-tr-sm px-4 py-2.5 border border-border shadow-sm text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+            <div className="bg-zinc-900 dark:bg-zinc-700 rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-white text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
+              <div className="flex items-center justify-end gap-0.5 mt-1.5">
+                <button onClick={handleCopy}
+                  className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-white/50 hover:text-white hover:bg-white/10 active:scale-90">
+                  {copied ? <Check className="w-3 h-3 text-blue-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+                <button className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-white/50 hover:text-white hover:bg-white/10 active:scale-90">
+                  <RefreshCcw className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
@@ -309,14 +318,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
             </div>
           )}
 
-          {isUser ? (
-            <div className="flex items-center gap-0.5 mt-0.5">
-              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              </button>
-              <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
-            </div>
-          ) : (
+          {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
                 {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -908,7 +910,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
         ) : (
           <>
             {messages.map((m, i) => {
-              const isLatestAI = m.role === "assistant" && i === messages.length - 1;
+              const isLatestAI = m.role === "ai" && i === messages.length - 1;
               return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI} />;
             })}
             {isTyping && <ThinkingCloud />}
