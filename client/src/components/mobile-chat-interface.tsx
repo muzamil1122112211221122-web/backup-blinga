@@ -542,7 +542,20 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   );
 
   return (
-    <div className="flex-shrink-0 px-3 pb-3 pt-0"
+    <div className="relative flex-shrink-0" style={{ zIndex: 1 }}>
+      {/* Blur feather — fades blur in from transparent above the bar, no hard cutoff */}
+      <div
+        className="absolute left-0 right-0 pointer-events-none"
+        style={{
+          top: -44,
+          height: 44,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+        }}
+      />
+    <div className="px-3 pb-3 pt-0"
       style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
       {isListening && (
         <div className="flex justify-center mb-1.5">
@@ -671,6 +684,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
