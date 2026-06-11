@@ -482,6 +482,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [isListening, setIsListening] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showModelSheet, setShowModelSheet] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
 
   const models = ASK_MODELS;
   const currentModel = models.find(m => m.id === model) || models[0];
@@ -608,26 +609,32 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden">
+      <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden relative">
+        {/* Attachment mini-menu — pops above the pill */}
+        {attachOpen && (
+          <div className="absolute bottom-full left-2 mb-2 bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl border border-black/8 dark:border-white/10 overflow-hidden z-[200]"
+            style={{ minWidth: 160 }}>
+            <button
+              className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
+              onPointerDown={e => { e.preventDefault(); fileInputRef.current?.click(); setAttachOpen(false); }}>
+              <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload File
+            </button>
+            <div className="h-px bg-border/50 mx-3" />
+            <button
+              className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
+              onPointerDown={e => { e.preventDefault(); imageInputRef.current?.click(); setAttachOpen(false); }}>
+              <Image className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload Image
+            </button>
+          </div>
+        )}
         <div className="flex items-end px-2 py-2 gap-1.5">
-          {/* Attachment */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className={iconBtnCls}>
-                <img src={attachmentLight} alt="Attach" className={imgCls} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none rounded-xl shadow-2xl p-1 min-w-[160px] z-[200] animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-foreground" onClick={() => fileInputRef.current?.click()}>
-                <FileText className="w-4 h-4 text-zinc-400" /> Upload File
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-foreground" onClick={() => imageInputRef.current?.click()}>
-                <Image className="w-4 h-4 text-zinc-400" /> Upload Image
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <input ref={fileInputRef} type="file" className="hidden" />
-          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" />
+          {/* Attachment toggle */}
+          <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
+            onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
+            <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
+          </button>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={() => setAttachOpen(false)} />
+          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={() => setAttachOpen(false)} />
 
           {/* Textarea */}
           <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
@@ -748,9 +755,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           transform: closing ? "translateY(100%)" : "translateY(0)",
           transition: closing ? "transform 0.32s cubic-bezier(0.23,1,0.32,1)" : "transform 0.38s cubic-bezier(0.23,1,0.32,1)",
         }}
-        onClick={e => e.stopPropagation()}
-        onTouchStart={settingsDrag.onTouchStart} onTouchMove={settingsDrag.onTouchMove} onTouchEnd={settingsDrag.onTouchEnd}>
-        <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0 cursor-grab">
+        onClick={e => e.stopPropagation()}>
+        {/* Drag handle — ONLY this strip triggers drag-to-dismiss */}
+        <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0 cursor-grab touch-none"
+          onTouchStart={settingsDrag.onTouchStart} onTouchMove={settingsDrag.onTouchMove} onTouchEnd={settingsDrag.onTouchEnd}>
           <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
         </div>
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/50 flex-shrink-0">
