@@ -13,6 +13,7 @@ import {
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Copy, ThumbsUp, ThumbsDown, Volume2,
+  MessageSquarePlus, FileDown, Square,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -168,27 +169,25 @@ function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: st
 }
 
 // ─── Micro components ─────────────────────────────────────────────────────────
-function FiusAvatar({ size = 28 }: { size?: number }) {
+function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
+  const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
+  const W = 196, H = 66;
   return (
-    <div className="rounded-full flex items-center justify-center flex-shrink-0 font-bold text-white"
-      style={{ width: size, height: size, fontSize: size * 0.42, background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)" }}>
-      F
+    <div className="flex justify-start mb-2">
+      <div className="thinking-cloud-wrapper" style={{ position: "relative", width: W, height: H }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: "absolute", top: 0, left: 0 }}>
+          <path d={cloudPath} fill="rgba(22,22,28,0.78)" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
+          <Logo size="sm" />
+          <span className="thinking-label">{label}</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-function TypingDots() {
-  return (
-    <div className="flex items-center gap-1 py-0.5">
-      {[0, 1, 2].map(i => (
-        <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce"
-          style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.9s" }} />
-      ))}
-    </div>
-  );
-}
-
-function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) => void }) {
+function MsgBubble({ msg, onExpandImg, onNewChat }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -209,7 +208,12 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) =
     window.speechSynthesis.speak(u);
   };
 
-  const actionBtnCls = "w-7 h-7 flex items-center justify-center rounded-xl transition-all active:scale-90 text-muted-foreground hover:text-foreground hover:bg-accent/70";
+  const handleExportText = () => {
+    const blob = new Blob([msg.content], { type: "text/plain" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.txt"; a.click();
+  };
+
+  const ab = "h-6 w-6 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
 
   if (msg.imageUrl) {
     return (
@@ -230,10 +234,6 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) =
               }} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
                 <Download className="w-3.5 h-3.5" /> Save
               </button>
-              <button onClick={() => navigator.clipboard.writeText(msg.imageUrl!)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                <Share2 className="w-3.5 h-3.5" /> Share
-              </button>
             </div>
           </>
         )}
@@ -242,41 +242,55 @@ function MsgBubble({ msg, onExpandImg }: { msg: Msg; onExpandImg?: (s: string) =
   }
 
   return (
-    <div className={`flex gap-2 mb-1 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
-      {!isUser && <div className="self-end mb-7 flex-shrink-0"><FiusAvatar size={26} /></div>}
-      <div className={`flex flex-col max-w-[82%] ${isUser ? "items-end" : "items-start"}`}>
-        <div className={`px-3.5 py-2.5 rounded-2xl text-[13.5px] leading-relaxed whitespace-pre-wrap break-words ${isUser ? "rounded-tr-sm bg-zinc-900 dark:bg-zinc-700 text-white" : "rounded-tl-sm bg-card border border-border text-foreground"}`}>
-          {msg.content}
-        </div>
-
-        {/* Action bar */}
+    <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
+      {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+      <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
         {isUser ? (
-          <div className="flex items-center gap-0.5 mt-1 px-1">
-            <button onClick={handleCopy} className={actionBtnCls} title="Copy">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-            <button className={actionBtnCls} title="Redo"><RefreshCcw className="w-3.5 h-3.5" /></button>
-            <span className="text-[10px] text-muted-foreground ml-1">{format(msg.timestamp, "h:mm a")}</span>
+          <div className="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-zinc-900 dark:bg-zinc-700 text-white text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+            {msg.content}
           </div>
         ) : (
-          <div className="flex items-center gap-0.5 mt-1 px-0.5">
-            <button onClick={handleCopy} className={actionBtnCls} title="Copy">
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1">
+            {msg.content}
+          </div>
+        )}
+
+        {isUser ? (
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <button onClick={handleCopy} className={ab}>
+              {copied ? <Check className="w-3 h-3 text-blue-500" /> : <Copy className="w-3 h-3" />}
             </button>
-            <button onClick={() => setLiked(l => l === "up" ? null : "up")} className={`${actionBtnCls} ${liked === "up" ? "text-emerald-400" : ""}`} title="Like">
-              <ThumbsUp className="w-3.5 h-3.5" />
+            <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-0.5 mt-1">
+            <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
             </button>
-            <button onClick={() => setLiked(l => l === "down" ? null : "down")} className={`${actionBtnCls} ${liked === "down" ? "text-rose-400" : ""}`} title="Dislike">
-              <ThumbsDown className="w-3.5 h-3.5" />
+            <button onClick={() => setLiked(l => l === "up" ? null : "up")}
+              className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
+              <ThumbsUp className="w-3 h-3" />
             </button>
-            <button onClick={handleSpeak} className={`${actionBtnCls} ${speaking ? "text-blue-400" : ""}`} title="Read aloud">
-              <Volume2 className="w-3.5 h-3.5" />
+            <button onClick={() => setLiked(l => l === "down" ? null : "down")}
+              className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
+              <ThumbsDown className="w-3 h-3" />
             </button>
-            <button className={actionBtnCls} title="Regenerate"><RefreshCcw className="w-3.5 h-3.5" /></button>
-            <button onClick={() => navigator.share?.({ text: msg.content }).catch(() => {})} className={actionBtnCls} title="Share">
-              <Share2 className="w-3.5 h-3.5" />
+            <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+              {speaking ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
             </button>
-            <span className="text-[10px] text-muted-foreground ml-1">{format(msg.timestamp, "h:mm a")}</span>
+            <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={ab}><FileDown className="w-3 h-3" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
+                <DropdownMenuItem onClick={handleExportText}
+                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                  <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-3 h-3" /></button>
           </div>
         )}
       </div>
@@ -412,7 +426,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
             textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
             icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
-            label="Integrated"
+            label="Integrated Answers"
           />
           <FnBtn
             onClick={onVoiceMode}
@@ -802,12 +816,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
         ) : (
           <>
             {messages.map(m => <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} />)}
-            {isTyping && (
-              <div className="flex gap-2 mb-3.5 animate-in fade-in">
-                <div className="self-end mb-5 flex-shrink-0"><FiusAvatar size={26} /></div>
-                <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-3 py-2.5"><TypingDots /></div>
-              </div>
-            )}
+            {isTyping && <ThinkingCloud />}
             <div ref={endRef} />
           </>
         )}
@@ -905,7 +914,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                             <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           </div>
-                          <div className="bg-card rounded-xl px-3 py-2 border border-border"><TypingDots /></div>
+                          <div className="flex items-center gap-1 py-1">
+                            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -946,7 +957,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                       <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
                         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                     </div>
-                    <div className="bg-card rounded-3xl px-4 py-3 border border-border"><TypingDots /></div>
+                    <div className="flex items-center gap-1 py-1">
+                      {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
+                    </div>
                   </div></div>
                 )}
               </div>
@@ -1233,7 +1246,9 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         {isTyping && (
           <div className="flex gap-2 mb-3.5 animate-in fade-in">
             <div className="self-end mb-5 flex-shrink-0"><WikiFace name={personality.name} wikiTitle={personality.wikiTitle} size={26} /></div>
-            <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-3 py-2.5"><TypingDots /></div>
+            <div className="flex items-center gap-1 py-2">
+              {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
+            </div>
           </div>
         )}
         <div ref={endRef} />
