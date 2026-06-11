@@ -483,6 +483,16 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showModelSheet, setShowModelSheet] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
+  const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
+
+  useEffect(() => {
+    const h1 = () => setFnBarStyle(localStorage.getItem("functionBarStyle") || "circle");
+    const h2 = () => setMsgBarStyle(localStorage.getItem("messageBarStyle") || "compact");
+    window.addEventListener("functionBarStyleChanged", h1);
+    window.addEventListener("messageBarStyleChanged", h2);
+    return () => { window.removeEventListener("functionBarStyleChanged", h1); window.removeEventListener("messageBarStyleChanged", h2); };
+  }, []);
 
   const models = ASK_MODELS;
   const currentModel = models.find(m => m.id === model) || models[0];
@@ -527,14 +537,15 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const imgCls = "w-4 h-4 dark:invert";
   const showFnBar = tab !== "philosopher" && tab !== "games";
 
-  // Function bar button: circle icon + label below
+  // Function bar button: circle/square icon + label below (shape follows fnBarStyle)
+  const iconShape = fnBarStyle === "square" ? "rounded-xl" : "rounded-full";
   const FnBtn = ({ onClick, icon, label, active, iconBg, textColor }: {
     onClick?: () => void; icon: React.ReactNode; label: string;
     active?: boolean; iconBg?: string; textColor?: string;
   }) => (
     <button onClick={onClick}
       className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 ${textColor || (active ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400")}`}>
-      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${iconBg || (active ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60")}`}>
+      <div className={`w-9 h-9 ${iconShape} flex items-center justify-center ${iconBg || (active ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60")}`}>
         {icon}
       </div>
       <span className="text-[9.5px] font-semibold leading-none tracking-tight">{label}</span>
@@ -723,6 +734,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     localStorage.setItem("chatBg", chatBg);
     localStorage.setItem("functionBarStyle", functionBarStyle);
     localStorage.setItem("messageBarStyle", messageBarStyle);
+    Object.entries(localToggles).forEach(([k, v]) => localStorage.setItem(k, String(v)));
     window.dispatchEvent(new Event("functionBarStyleChanged"));
     window.dispatchEvent(new Event("messageBarStyleChanged"));
     onChatBgChange?.(chatBg);
@@ -794,15 +806,26 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           <div className="flex-1 overflow-y-auto p-4">
             {activeSection === "account" && (
               <div className="space-y-4">
+                {/* Hidden real file picker */}
+                <input ref={picInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0]; if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => setPreviewPic(ev.target?.result as string);
+                    reader.readAsDataURL(f);
+                  }} />
                 <div className="p-4 bg-zinc-50 dark:bg-[#1a1a1a] rounded-2xl border border-border/50">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                    {/* Tappable avatar — opens photo picker */}
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-zinc-400 transition-all active:scale-95"
+                      onClick={() => picInputRef.current?.click()}>
                       {(previewPic || profilePicture) ? <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
                         : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{initials}</div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">{user?.displayName || user?.username || "User"}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      {previewPic && <p className="text-[10px] text-emerald-500 font-medium mt-0.5">Photo selected — tap Save</p>}
                     </div>
                     <button onClick={() => setShowCustomizePanel(v => !v)}
                       className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
@@ -817,7 +840,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                         <button onClick={() => { setShowCustomizePanel(false); setPreviewPic(""); }} className="px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground">Cancel</button>
                         <button onClick={async () => {
                           if (!editName.trim()) return;
-                          try { await apiRequest("PATCH", "/api/auth/user", { username: editName.trim() }); onUserRename?.(editName.trim()); queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] }); setShowCustomizePanel(false); } catch {}
+                          try { await apiRequest("PATCH", "/api/auth/user", { username: editName.trim() }); onUserRename?.(editName.trim()); queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] }); } catch {}
+                          if (previewPic) onProfilePictureChange?.(previewPic);
+                          setShowCustomizePanel(false);
                         }} className="flex items-center gap-1 px-4 py-1.5 rounded-xl bg-foreground text-background text-xs font-bold active:scale-95">
                           <Check className="w-3 h-3" /> Save
                         </button>
@@ -1732,9 +1757,11 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const getChatBgStyle = (): React.CSSProperties => {
     switch (chatBg) {
-      case "gradient": return { background: "linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)" };
+      case "gradient": return { background: "linear-gradient(180deg,transparent 0%,#1a1a2e22 40%,#0f346033 100%)" };
       case "stars": return { background: "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)" };
-      case "rainbow": return { background: "linear-gradient(135deg,#ff6b6b22,#feca5722,#48dbfb22,#ff9ff322,#54a0ff22)" };
+      case "rainbow": return { background: "linear-gradient(135deg,#ff6b6b18,#feca5718,#48dbfb18,#ff9ff318,#54a0ff18)" };
+      case "stars-gradient": return { background: "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)", backgroundBlendMode: "screen" };
+      case "stars-rainbow": return { background: "radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0d0d1a 70%, #000 100%)" };
       default: return {};
     }
   };
