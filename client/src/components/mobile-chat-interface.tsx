@@ -299,14 +299,14 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
         <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
           {isUser ? (
-            <div className="bg-zinc-900 dark:bg-zinc-700 rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-white text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+            <div className="bg-card rounded-3xl rounded-tr-sm px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
               <div className="flex items-center justify-end gap-0.5 mt-1.5">
                 <button onClick={handleCopy}
-                  className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-white/50 hover:text-white hover:bg-white/10 active:scale-90">
-                  {copied ? <Check className="w-3 h-3 text-blue-400" /> : <Copy className="w-3 h-3" />}
+                  className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                  {copied ? <Check className="w-3 h-3 text-blue-500" /> : <Copy className="w-3 h-3" />}
                 </button>
-                <button className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-white/50 hover:text-white hover:bg-white/10 active:scale-90">
+                <button className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
                   <RefreshCcw className="w-3 h-3" />
                 </button>
               </div>
@@ -350,22 +350,22 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
         </div>
       </div>
 
-      {/* Feedback dialog — same as PC */}
+      {/* Feedback dialog — compact */}
       <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full shadow-2xl">
-          <DialogHeader className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-xs w-full shadow-xl">
+          <DialogHeader className="px-4 pt-4 pb-2 border-b border-zinc-100 dark:border-zinc-800">
+            <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {feedbackType === "up" ? "What did you like?" : "What went wrong?"}
             </DialogTitle>
           </DialogHeader>
-          <div className="px-5 py-4 space-y-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="px-4 py-3 space-y-3">
+            <div className="flex flex-wrap gap-1.5">
               {(feedbackType === "up"
-                ? ["Accurate", "Helpful", "Well written", "Clear & concise", "Creative", "Other"]
-                : ["Inaccurate", "Not helpful", "Harmful content", "Off-topic", "Too long", "Too short", "Other"]
+                ? ["Accurate", "Helpful", "Well written", "Clear", "Creative", "Other"]
+                : ["Inaccurate", "Not helpful", "Harmful", "Off-topic", "Too long", "Too short", "Other"]
               ).map(opt => (
                 <button key={opt} onClick={() => toggleFbOpt(opt)}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${feedbackSelected.has(opt)
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-all ${feedbackSelected.has(opt)
                     ? feedbackType === "up"
                       ? "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300"
                       : "bg-red-50 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300"
@@ -375,13 +375,13 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
               ))}
             </div>
             <textarea value={feedbackText} onChange={e => setFeedbackText(e.target.value)}
-              placeholder="Add more details (optional)" rows={3}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors" />
-            <div className="flex gap-2 justify-end">
+              placeholder="Add details (optional)" rows={2}
+              className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors" />
+            <div className="flex gap-1.5 justify-end">
               <button onClick={() => setFeedbackOpen(false)}
-                className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">Cancel</button>
+                className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">Cancel</button>
               <button onClick={() => setFeedbackOpen(false)}
-                className={`px-4 py-2 text-sm font-medium rounded-xl text-white transition-all ${feedbackType === "up" ? "bg-green-500 hover:bg-green-600" : "bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600"}`}>
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-all ${feedbackType === "up" ? "bg-green-500 hover:bg-green-600" : "bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600"}`}>
                 Submit
               </button>
             </div>
