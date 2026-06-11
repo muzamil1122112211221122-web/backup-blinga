@@ -546,7 +546,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       {/* Fade feather — invisible for first 70%, solidifies only at the very bottom */}
       <div
         className="absolute left-0 right-0 pointer-events-none bg-gradient-to-b from-transparent from-0% via-transparent via-[70%] to-background"
-        style={{ top: -80, height: 80 }}
+        style={{ top: -85, height: 85 }}
       />
     <div className="px-3 pb-3 pt-0"
       style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
