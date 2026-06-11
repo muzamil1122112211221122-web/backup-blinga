@@ -543,14 +543,10 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   return (
     <div className="relative flex-shrink-0" style={{ zIndex: 1 }}>
-      {/* Fade feather — stays transparent most of the way, only solidifies right at the bar edge */}
+      {/* Fade feather — invisible for first 70%, solidifies only at the very bottom */}
       <div
-        className="absolute left-0 right-0 pointer-events-none"
-        style={{
-          top: -72,
-          height: 72,
-          background: "linear-gradient(to bottom, transparent 0%, transparent 55%, hsl(var(--background)) 100%)",
-        }}
+        className="absolute left-0 right-0 pointer-events-none bg-gradient-to-b from-transparent from-0% via-transparent via-[70%] to-background"
+        style={{ top: -80, height: 80 }}
       />
     <div className="px-3 pb-3 pt-0"
       style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
