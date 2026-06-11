@@ -543,17 +543,10 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   return (
     <div className="relative flex-shrink-0" style={{ zIndex: 1 }}>
-      {/* Blur feather — fades blur in from transparent above the bar, no hard cutoff */}
+      {/* Fade feather — smoothly dissolves messages into the bar, no hard cutoff */}
       <div
-        className="absolute left-0 right-0 pointer-events-none"
-        style={{
-          top: -44,
-          height: 44,
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
-        }}
+        className="absolute left-0 right-0 pointer-events-none bg-gradient-to-b from-transparent to-background"
+        style={{ top: -44, height: 44 }}
       />
     <div className="px-3 pb-3 pt-0"
       style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
