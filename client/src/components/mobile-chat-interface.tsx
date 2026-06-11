@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -168,6 +169,41 @@ function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: st
   );
 }
 
+// ─── Typing animation cache (module-level so it survives re-renders) ──────────
+const _completedMsgs = new Map<string, boolean>();
+const _progressMsgs = new Map<string, string>();
+
+function useTypingAnimation(text: string, msgId: string, speed = 30) {
+  const [displayed, setDisplayed] = useState(() =>
+    _completedMsgs.has(msgId) ? text : (_progressMsgs.get(msgId) ?? "")
+  );
+  const [done, setDone] = useState(() => _completedMsgs.has(msgId));
+  const init = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (_completedMsgs.has(msgId)) { setDisplayed(text); setDone(true); return; }
+    if (init.current) return;
+    init.current = true;
+    if (!text) { setDone(true); return; }
+    setDone(false);
+    const words = text.split(" ").filter(w => w.trim());
+    const existing = _progressMsgs.get(msgId) ?? "";
+    let idx = existing ? existing.split(" ").filter(w => w.trim()).length : 0;
+    const step = () => {
+      if (idx < words.length) {
+        const next = words.slice(0, idx + 1).join(" ");
+        setDisplayed(next); _progressMsgs.set(msgId, next); idx++;
+        timer.current = setTimeout(step, speed);
+      } else {
+        setDone(true); _completedMsgs.set(msgId, true); _progressMsgs.delete(msgId);
+      }
+    };
+    timer.current = setTimeout(step, idx === 0 ? 50 : 0);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, []); // eslint-disable-line
+  return { displayed, done };
+}
+
 // ─── Micro components ─────────────────────────────────────────────────────────
 function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
@@ -187,31 +223,47 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void }) {
+function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void; isLatest?: boolean }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
+  const [feedbackSelected, setFeedbackSelected] = useState<Set<string>>(new Set());
+  const [feedbackText, setFeedbackText] = useState("");
+
+  const { displayed, done } = useTypingAnimation(
+    !isUser && isLatest ? msg.content : "",
+    msg.id
+  );
+  const shownText = (!isUser && isLatest) ? displayed : msg.content;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(msg.content || msg.imageUrl || "");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
-
   const handleSpeak = () => {
     if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
     const u = new SpeechSynthesisUtterance(msg.content);
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    setSpeaking(true);
-    window.speechSynthesis.speak(u);
+    u.onend = () => setSpeaking(false); u.onerror = () => setSpeaking(false);
+    setSpeaking(true); window.speechSynthesis.speak(u);
   };
-
-  const handleExportText = () => {
+  const handleExport = () => {
     const blob = new Blob([msg.content], { type: "text/plain" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.txt"; a.click();
   };
+  const handleLike = () => {
+    const next = liked === "up" ? null : "up";
+    setLiked(next);
+    if (next === "up") { setFeedbackType("up"); setFeedbackSelected(new Set()); setFeedbackText(""); setFeedbackOpen(true); }
+  };
+  const handleDislike = () => {
+    const next = liked === "down" ? null : "down";
+    setLiked(next);
+    if (next === "down") { setFeedbackType("down"); setFeedbackSelected(new Set()); setFeedbackText(""); setFeedbackOpen(true); }
+  };
+  const toggleFbOpt = (opt: string) => setFeedbackSelected(prev => { const s = new Set(prev); s.has(opt) ? s.delete(opt) : s.add(opt); return new Set(s); });
 
   const ab = "h-6 w-6 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
 
@@ -242,59 +294,99 @@ function MsgBubble({ msg, onExpandImg, onNewChat }: { msg: Msg; onExpandImg?: (s
   }
 
   return (
-    <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
-      {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
-      <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
-        {isUser ? (
-          <div className="px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-zinc-900 dark:bg-zinc-700 text-white text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
-            {msg.content}
-          </div>
-        ) : (
-          <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1">
-            {msg.content}
-          </div>
-        )}
+    <>
+      <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
+        {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+        <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
+          {isUser ? (
+            <div className="bg-card rounded-3xl rounded-tr-sm px-4 py-2.5 border border-border shadow-sm text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+              {msg.content}
+            </div>
+          ) : (
+            <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
+              {shownText}
+              {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
+            </div>
+          )}
 
-        {isUser ? (
-          <div className="flex items-center gap-0.5 mt-0.5">
-            <button onClick={handleCopy} className={ab}>
-              {copied ? <Check className="w-3 h-3 text-blue-500" /> : <Copy className="w-3 h-3" />}
-            </button>
-            <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-0.5 mt-1">
-            <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            </button>
-            <button onClick={() => setLiked(l => l === "up" ? null : "up")}
-              className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
-              <ThumbsUp className="w-3 h-3" />
-            </button>
-            <button onClick={() => setLiked(l => l === "down" ? null : "down")}
-              className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
-              <ThumbsDown className="w-3 h-3" />
-            </button>
-            <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-              {speaking ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-            </button>
-            <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className={ab}><FileDown className="w-3 h-3" /></button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
-                <DropdownMenuItem onClick={handleExportText}
-                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
-                  <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-3 h-3" /></button>
-          </div>
-        )}
+          {isUser ? (
+            <div className="flex items-center gap-0.5 mt-0.5">
+              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              </button>
+              <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-0.5 mt-1">
+              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              </button>
+              <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
+                <ThumbsUp className="w-3 h-3" />
+              </button>
+              <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
+                <ThumbsDown className="w-3 h-3" />
+              </button>
+              <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+                {speaking ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+              </button>
+              <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={ab}><FileDown className="w-3 h-3" /></button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px] z-[200]">
+                  <DropdownMenuItem onClick={handleExport}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-3 h-3" /></button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Feedback dialog — same as PC */}
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full shadow-2xl">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              {feedbackType === "up" ? "What did you like?" : "What went wrong?"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-5 py-4 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {(feedbackType === "up"
+                ? ["Accurate", "Helpful", "Well written", "Clear & concise", "Creative", "Other"]
+                : ["Inaccurate", "Not helpful", "Harmful content", "Off-topic", "Too long", "Too short", "Other"]
+              ).map(opt => (
+                <button key={opt} onClick={() => toggleFbOpt(opt)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${feedbackSelected.has(opt)
+                    ? feedbackType === "up"
+                      ? "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-600 dark:text-green-300"
+                      : "bg-red-50 border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-600 dark:text-red-300"
+                    : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"}`}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+            <textarea value={feedbackText} onChange={e => setFeedbackText(e.target.value)}
+              placeholder="Add more details (optional)" rows={3}
+              className="w-full px-3 py-2 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 resize-none outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors" />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setFeedbackOpen(false)}
+                className="px-4 py-2 text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">Cancel</button>
+              <button onClick={() => setFeedbackOpen(false)}
+                className={`px-4 py-2 text-sm font-medium rounded-xl text-white transition-all ${feedbackType === "up" ? "bg-green-500 hover:bg-green-600" : "bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-700 dark:hover:bg-zinc-600"}`}>
+                Submit
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -426,7 +518,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
             textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
             icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
-            label="Integrated Answers"
+            label="Integration Answer"
           />
           <FnBtn
             onClick={onVoiceMode}
@@ -815,7 +907,10 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
           </div>
         ) : (
           <>
-            {messages.map(m => <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} />)}
+            {messages.map((m, i) => {
+              const isLatestAI = m.role === "assistant" && i === messages.length - 1;
+              return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI} />;
+            })}
             {isTyping && <ThinkingCloud />}
             <div ref={endRef} />
           </>
