@@ -4209,7 +4209,7 @@ Let's start the self-listen session!`;
             <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
               {renderFunctionBtn(
                 <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
-                'Integration Answer',
+                'Long Answer',
                 adjustFius,
                 fiusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
                 'button-fius-integration'
@@ -4440,7 +4440,7 @@ Let's start the self-listen session!`;
                         <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'18px',height:'18px'}} />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Integration Answer</TooltipContent>
+                    <TooltipContent>Long Answer</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4624,7 +4624,7 @@ Let's start the self-listen session!`;
                             <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Integration Answer</TooltipContent>
+                        <TooltipContent>Long Answer</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>

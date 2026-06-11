@@ -299,7 +299,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
         <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
           {isUser ? (
-            <div className="bg-card rounded-3xl rounded-tr-sm px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+            <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
               <div className="flex items-center justify-end gap-0.5 mt-1.5">
                 <button onClick={handleCopy}
@@ -520,7 +520,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
             textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
             icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
-            label="Integration Answer"
+            label="Long Answer"
           />
           <FnBtn
             onClick={onVoiceMode}
