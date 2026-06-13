@@ -797,12 +797,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  // Snapshot of saved state when modal opens — used to detect unsaved changes
-  const savedSnapshotRef = useRef({
-    preset: "custom",
-    instructions: "",
-    toggles: "",
-  });
+  // Simple dirty flag — set true when user changes any setting
+  const isDirtyRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -811,43 +807,40 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setShowCustomizePanel(false);
       setClosing(false);
       setShowUnsavedDialog(false);
-      // Capture snapshot of what's currently saved
-      savedSnapshotRef.current = {
-        preset: localStorage.getItem("aiPreset") || "custom",
-        instructions: localStorage.getItem("customInstructions") || "",
-        toggles: JSON.stringify({
-          autoScroll: localStorage.getItem("autoScroll") !== "false",
-          richText: localStorage.getItem("richText") !== "false",
-          improveModel: localStorage.getItem("improveModel") !== "false",
-          personalize: localStorage.getItem("personalize") !== "false",
-          nomadGrid: localStorage.getItem("nomadGrid") !== "false",
-          nomadNotification: localStorage.getItem("nomadNotification") !== "false",
-          philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
-          fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
-          wrapLines: localStorage.getItem("wrapLines") === "true",
-          showPreviews: localStorage.getItem("showPreviews") !== "false",
-          showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
-        }),
-      };
+      isDirtyRef.current = false;
+      // Load current saved values into local state so UI shows what's saved
+      setSelectedPreset(localStorage.getItem("aiPreset") || "custom");
+      setCustomInstructions(localStorage.getItem("customInstructions") || "");
+      setChatBg(localStorage.getItem("chatBg") || "plain");
+      setFunctionBarStyle(localStorage.getItem("functionBarStyle") || "circle");
+      setMessageBarStyle(localStorage.getItem("messageBarStyle") || "compact");
+      setLocalToggles({
+        autoScroll: localStorage.getItem("autoScroll") !== "false",
+        richText: localStorage.getItem("richText") !== "false",
+        improveModel: localStorage.getItem("improveModel") !== "false",
+        personalize: localStorage.getItem("personalize") !== "false",
+        nomadGrid: localStorage.getItem("nomadGrid") !== "false",
+        nomadNotification: localStorage.getItem("nomadNotification") !== "false",
+        philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
+        fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
+        wrapLines: localStorage.getItem("wrapLines") === "true",
+        showPreviews: localStorage.getItem("showPreviews") !== "false",
+        showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
+      });
     }
   }, [isOpen, user]);
 
-  const hasUnsavedChanges = () => {
-    const snap = savedSnapshotRef.current;
-    return (
-      selectedPreset !== snap.preset ||
-      customInstructions !== snap.instructions ||
-      JSON.stringify(localToggles) !== snap.toggles
-    );
-  };
+  // Mark dirty on any tracked change
+  const markDirty = () => { isDirtyRef.current = true; };
 
   const doClose = () => {
+    isDirtyRef.current = false;
     setClosing(true);
     setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
   };
 
   const handleClose = () => {
-    if (hasUnsavedChanges()) {
+    if (isDirtyRef.current) {
       setShowUnsavedDialog(true);
     } else {
       doClose();
@@ -986,7 +979,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Preset</p>
                   <div className="grid grid-cols-2 gap-2">
                     {PRESETS.map(p => (
-                      <button key={p.id} onClick={() => setSelectedPreset(p.id)}
+                      <button key={p.id} onClick={() => { setSelectedPreset(p.id); markDirty(); }}
                         className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all active:scale-[0.97] ${selectedPreset === p.id ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         <div className="flex items-center gap-1 w-full">
                           <p className="text-[12px] font-bold text-foreground">{p.label}</p>
@@ -999,7 +992,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Custom Instructions</p>
-                  <textarea value={customInstructions} onChange={e => setCustomInstructions(e.target.value)} placeholder="Tell Fius how to respond…"
+                  <textarea value={customInstructions} onChange={e => { setCustomInstructions(e.target.value); markDirty(); }} placeholder="Tell Fius how to respond…"
                     className="w-full h-24 bg-zinc-50 dark:bg-[#1a1a1a] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
                 </div>
                 <div>
@@ -1013,7 +1006,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     ].map(item => (
                       <div key={item.key} className="flex items-center justify-between gap-3">
                         <div className="flex-1"><p className="text-[12.5px] font-medium text-foreground">{item.label}</p>{item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}</div>
-                        <Switch checked={localToggles[item.key as keyof typeof localToggles]} onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
+                        <Switch checked={localToggles[item.key as keyof typeof localToggles]} onCheckedChange={() => { setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] })); markDirty(); }} />
                       </div>
                     ))}
                   </div>
@@ -1029,7 +1022,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Theme</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[{ v: "light" as const, icon: Sun, label: "Light" }, { v: "dark" as const, icon: Moon, label: "Dark" }, { v: "system" as const, icon: Laptop, label: "System" }].map(opt => (
-                      <button key={opt.v} onClick={() => setTheme(opt.v)}
+                      <button key={opt.v} onClick={() => { setTheme(opt.v); markDirty(); }}
                         className={`flex flex-col items-center gap-2 py-3.5 rounded-xl border transition-all active:scale-95 ${theme === opt.v ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         <opt.icon className={`w-4 h-4 ${theme === opt.v ? "text-foreground" : "text-muted-foreground"}`} />
                         <span className={`text-[11px] font-semibold ${theme === opt.v ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
@@ -1054,7 +1047,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                           {item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}
                         </div>
                         <Switch checked={localToggles[item.key as keyof typeof localToggles] as boolean}
-                          onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
+                          onCheckedChange={() => { setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] })); markDirty(); }} />
                       </div>
                     ))}
                   </div>
@@ -1075,7 +1068,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                           {item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}
                         </div>
                         <Switch checked={localToggles[item.key as keyof typeof localToggles] as boolean}
-                          onCheckedChange={() => setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] }))} />
+                          onCheckedChange={() => { setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] })); markDirty(); }} />
                       </div>
                     ))}
                   </div>
@@ -1092,7 +1085,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { value: "message-bar", label: "In Bar", preview: <div className="flex gap-0.5"><div className="w-3 h-3 bg-zinc-400 dark:bg-zinc-500 rounded-full" /><div className="w-3 h-3 bg-zinc-400 dark:bg-zinc-500 rounded-full" /></div> },
                     ].map(opt => (
                       <button key={opt.value}
-                        onClick={() => { setFunctionBarStyle(opt.value); localStorage.setItem("functionBarStyle", opt.value); window.dispatchEvent(new Event("functionBarStyleChanged")); }}
+                        onClick={() => { setFunctionBarStyle(opt.value); localStorage.setItem("functionBarStyle", opt.value); window.dispatchEvent(new Event("functionBarStyleChanged")); markDirty(); }}
                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all active:scale-95 ${functionBarStyle === opt.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         {opt.preview}
                         <span className={`text-[11px] font-semibold ${functionBarStyle === opt.value ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
@@ -1111,7 +1104,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { value: "compact", label: "Compact", preview: <div className="w-20 h-4 bg-zinc-300 dark:bg-zinc-600 rounded-lg" /> },
                     ].map(opt => (
                       <button key={opt.value}
-                        onClick={() => { setMessageBarStyle(opt.value); localStorage.setItem("messageBarStyle", opt.value); window.dispatchEvent(new Event("messageBarStyleChanged")); }}
+                        onClick={() => { setMessageBarStyle(opt.value); localStorage.setItem("messageBarStyle", opt.value); window.dispatchEvent(new Event("messageBarStyleChanged")); markDirty(); }}
                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all active:scale-95 ${messageBarStyle === opt.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         {opt.preview}
                         <span className={`text-[11px] font-semibold ${messageBarStyle === opt.value ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
@@ -1133,7 +1126,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { value: "stars-gradient", label: "Stars + Blue" },
                       { value: "stars-rainbow", label: "Stars + Rainbow" },
                     ].map(v => (
-                      <button key={v.value} onClick={() => { setChatBg(v.value); localStorage.setItem("chatBg", v.value); onChatBgChange?.(v.value); window.dispatchEvent(new Event("chatBgChanged")); }}
+                      <button key={v.value} onClick={() => { setChatBg(v.value); localStorage.setItem("chatBg", v.value); onChatBgChange?.(v.value); window.dispatchEvent(new Event("chatBgChanged")); markDirty(); }}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all active:scale-95 ${chatBg === v.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-2 ${chatBg === v.value ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
                         <span className={`text-[12px] font-semibold ${chatBg === v.value ? "text-foreground" : "text-muted-foreground"}`}>{v.label}</span>
@@ -2034,28 +2027,42 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             <NomadNotification onClose={handleNotifClose} />
           )}
 
-          <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
+          {/* Header + model strip wrapped so we can add the bottom fade */}
+          <div className="relative flex-shrink-0">
+            <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
 
-          {/* Model strip — top-left under nav bar, only on Ask tab */}
-          {tab === "ask" && (
-            <>
-              {topModelSheetOpen && (
-                <ModelSheet models={ASK_MODELS} current={askModel}
-                  onSelect={m => { setAskModel(m); setTopModelSheetOpen(false); }}
-                  onClose={() => setTopModelSheetOpen(false)} />
-              )}
-              <div className="flex items-center px-3 pt-1.5 pb-0.5 flex-shrink-0">
-                <button onClick={() => setTopModelSheetOpen(true)}
-                  className="h-7 px-3 rounded-full flex items-center gap-1.5 bg-white/80 dark:bg-white/[0.08] border border-black/8 dark:border-white/10 shadow-sm transition-all active:scale-95">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-                  <span className="text-[11.5px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                    {ASK_MODELS.find(m => m.id === askModel)?.name || askModel}
-                  </span>
-                  <ChevronDown className="w-3 h-3 opacity-50 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
-                </button>
-              </div>
-            </>
-          )}
+            {/* Model strip — top-left under nav bar, only on Ask tab */}
+            {tab === "ask" && (
+              <>
+                {topModelSheetOpen && (
+                  <ModelSheet models={ASK_MODELS} current={askModel}
+                    onSelect={m => { setAskModel(m); setTopModelSheetOpen(false); }}
+                    onClose={() => setTopModelSheetOpen(false)} />
+                )}
+                <div className="flex items-center px-3 pt-1.5 pb-0.5 flex-shrink-0">
+                  <button onClick={() => setTopModelSheetOpen(true)}
+                    className="h-7 px-3 rounded-full flex items-center gap-1.5 bg-white/80 dark:bg-white/[0.08] border border-black/8 dark:border-white/10 shadow-sm transition-all active:scale-95">
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+                    <span className="text-[11.5px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+                      {ASK_MODELS.find(m => m.id === askModel)?.name || askModel}
+                    </span>
+                    <ChevronDown className="w-3 h-3 opacity-50 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Seamless bottom fade — matches message bar's top fade, same blur feather effect */}
+            <div
+              className="absolute left-0 right-0 bottom-0 pointer-events-none"
+              style={{
+                height: 28,
+                bottom: -28,
+                background: "linear-gradient(to bottom, var(--background) 0%, transparent 100%)",
+                zIndex: 5,
+              }}
+            />
+          </div>
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <ChatBg bg={chatBg} />
