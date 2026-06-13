@@ -225,7 +225,7 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void; isLatest?: boolean }) {
+function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -267,7 +267,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
   };
   const toggleFbOpt = (opt: string) => setFeedbackSelected(prev => { const s = new Set(prev); s.has(opt) ? s.delete(opt) : s.add(opt); return new Set(s); });
 
-  const ab = "h-6 w-6 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
+  const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
 
   if (msg.imageUrl) {
     return (
@@ -305,11 +305,12 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
               {msg.content}
               <div className="flex items-center justify-end gap-0.5 mt-1.5">
                 <button onClick={handleCopy}
-                  className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                  {copied ? <Check className="w-3 h-3 text-blue-500" /> : <Copy className="w-3 h-3" />}
+                  className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                  {copied ? <Check className="w-4 h-4 text-blue-500" /> : <Copy className="w-4 h-4" />}
                 </button>
-                <button className="h-5 w-5 flex items-center justify-center rounded-lg transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                  <RefreshCcw className="w-3 h-3" />
+                <button onClick={() => onRetryUser?.(msg.content)}
+                  className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                  <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -323,21 +324,23 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
           {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </button>
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
-                <ThumbsUp className="w-3 h-3" />
+                <ThumbsUp className="w-4 h-4" />
               </button>
               <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
-                <ThumbsDown className="w-3 h-3" />
+                <ThumbsDown className="w-4 h-4" />
               </button>
               <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {speaking ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                {speaking ? <Square className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>
-              <button className={ab}><RefreshCcw className="w-3 h-3" /></button>
+              <button onClick={onRetry} className={`${ab} ${!onRetry ? "opacity-30 cursor-default" : ""}`}>
+                <RefreshCw className="w-4 h-4" />
+              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className={ab}><FileDown className="w-3 h-3" /></button>
+                  <button className={ab}><FileDown className="w-4 h-4" /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px] z-[200]">
                   <DropdownMenuItem onClick={handleExport}
@@ -346,7 +349,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-3 h-3" /></button>
+              <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-4 h-4" /></button>
             </div>
           )}
         </div>
@@ -734,9 +737,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 placeholder={placeholder} rows={1}
                 className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
                 style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
-              <button className={`w-4 h-4 flex items-center justify-center flex-shrink-0 self-center transition-all ${value.trim() ? "opacity-70" : "opacity-25"}`}
-                onClick={() => {/* expand — placeholder for fullscreen prompt */ }}>
-                <Maximize2 className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
+              <button className={`w-3 h-3 flex items-center justify-center flex-shrink-0 self-start mt-[13px] transition-all ${value.trim() ? "opacity-70" : "opacity-25"}`}
+                onClick={() => {}}>
+                <Maximize2 className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />
               </button>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
@@ -1331,9 +1334,10 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 }
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
-  onSend: () => void; onStop: () => void; model: string; setModel: (m: string) => void;
+  onSend: () => void; onStop: () => void; onNewChat?: () => void; onRetry?: () => void;
+  model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
 }) {
@@ -1373,7 +1377,9 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
           <>
             {messages.map((m, i) => {
               const isLatestAI = m.role === "ai" && i === messages.length - 1;
-              return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI} />;
+              return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI}
+                onNewChat={onNewChat} onRetry={m.role === "ai" ? onRetry : undefined}
+                onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined} />;
             })}
             {isTyping && <ThinkingCloud />}
             <div ref={endRef} />
@@ -2102,6 +2108,11 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
               <ChatBg bg={chatBg} />
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
+                onNewChat={handleNewChat}
+                onRetry={() => {
+                  const lastUser = [...askMsgs].reverse().find(m => m.role === "user");
+                  if (lastUser) { setAskMsgs(p => p.slice(0, -1)); setAskInput(lastUser.content); setTimeout(() => handleAskSend(), 50); }
+                }}
                 model={askModel} setModel={setAskModel} user={user}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers} />
             </div>
