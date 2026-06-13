@@ -2108,7 +2108,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "nomad" ? "flex" : "none" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
                 isTyping={nomadTyping} nomadMessages={nomadMessages} nomadTyping={nomadIsTyping}
-                activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localToggles.nomadGrid} {...voiceHandlers} />
+                activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localStorage.getItem("nomadGrid") !== "false"} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "imagine" ? "flex" : "none" }}>
               <StudioTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput}
