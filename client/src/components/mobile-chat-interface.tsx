@@ -532,27 +532,40 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   if (hidden) return null;
 
-  // Shared button class for the input pill buttons
-  // Input pill icon button — circle with background
-  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 bg-zinc-200/80 dark:bg-zinc-700/60 hover:bg-zinc-300/80 dark:hover:bg-zinc-600/60";
-  // Theme-aware icon: use dark:invert to flip black icon → white in dark mode
-  const imgCls = "w-4 h-4 dark:invert";
+  // Shared button class for the input pill buttons — match PC style
+  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/[0.12]";
+  // Theme-aware icon: btn-icon applies brightness(0)+drop-shadow in light, brightness(0)+invert in dark — same as PC
+  const imgCls = "w-4 h-4 btn-icon";
   const showFnBar = tab !== "philosopher" && tab !== "games";
 
-  // Function bar button: circle/square icon + label below (shape follows fnBarStyle)
-  const iconShape = fnBarStyle === "square" ? "rounded-xl" : "rounded-full";
-  const FnBtn = ({ onClick, icon, label, active, iconBg, textColor }: {
+  // Function bar button: matches PC renderFunctionBtn style, scaled for mobile
+  const isCircleFn = fnBarStyle !== "square";
+  const FnBtn = ({ onClick, icon, label, active, activeStyle }: {
     onClick?: () => void; icon: React.ReactNode; label: string;
-    active?: boolean; iconBg?: string; textColor?: string;
-  }) => (
-    <button onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 ${textColor || (active ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400")}`}>
-      <div className={`w-9 h-9 ${iconShape} flex items-center justify-center ${iconBg || (active ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60")}`}>
+    active?: boolean; activeStyle?: string;
+  }) => {
+    const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030]";
+    const resolvedActive = active ? "text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none" : undefined;
+    const btnStyle = activeStyle || resolvedActive || defaultStyle;
+    if (isCircleFn) {
+      return (
+        <button onClick={onClick}
+          className="flex flex-col items-center gap-1 group flex-shrink-0 px-1 py-0.5">
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button glossy-outline ${btnStyle}`}>
+            {icon}
+          </div>
+          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
+        </button>
+      );
+    }
+    return (
+      <button onClick={onClick}
+        className={`macos-button flex flex-col items-center gap-1 px-3 py-3 rounded-2xl glossy-outline transition-all flex-shrink-0 ${btnStyle}`}>
         {icon}
-      </div>
-      <span className="text-[9.5px] font-semibold leading-none tracking-tight">{label}</span>
-    </button>
-  );
+        <span className="text-[10px] font-medium">{label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="relative flex-shrink-0 bg-background" style={{ zIndex: 1 }}>
@@ -577,33 +590,33 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Function bar: icon + label buttons — hidden when "In Bar" style ── */}
       {showFnBar && fnBarStyle !== "message-bar" && (
-        <div className="flex items-center mb-2 px-0.5">
-          <div className="flex items-start gap-1">
+        <div className="macos-function-bar flex items-center mb-2 px-0.5">
+          <div className="flex items-start gap-0.5">
             <FnBtn
               onClick={onIntegration}
               active={fiusIntegrationMode}
-              iconBg={fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-200/80 dark:bg-zinc-700/60"}
-              textColor={fiusIntegrationMode ? "text-blue-400" : "text-zinc-500 dark:text-zinc-400"}
-              icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
+              icon={<img src="/integration-icon.png" alt="" className="w-5 h-5 btn-icon" />}
               label="Long Answer"
             />
-            <FnBtn onClick={onVoiceMode} icon={<AudioLines className="w-[18px] h-[18px]" />} label="Voice Mode" />
-            <FnBtn onClick={onSettings} icon={<img src="/settings-icon.png" alt="" style={{ width: 17, height: 17 }} className={imgCls} />} label="Settings" />
+            <FnBtn onClick={onVoiceMode} icon={<AudioLines className="w-5 h-5" />} label="Voice Mode" />
+            <FnBtn onClick={onSettings} icon={<img src="/settings-icon.png" alt="" className="w-5 h-5 btn-icon" />} label="Settings" />
             {model === "fius-education" && onEducation && (
-              <FnBtn onClick={onEducation} iconBg="bg-amber-500/15" textColor="text-amber-400"
-                icon={<GraduationCap className="w-[18px] h-[18px]" />} label="Education" />
+              <FnBtn onClick={onEducation}
+                activeStyle="text-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-none"
+                active
+                icon={<GraduationCap className="w-5 h-5" />} label="Education" />
             )}
           </div>
           <div className="flex-1" />
           {showModel && tab !== "nomad" && model && onModelChange && (
             <button onClick={() => setShowModelSheet(true)}
-              className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400">
-              <div className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-200/80 dark:bg-zinc-700/60">
+              className="flex flex-col items-center gap-1 px-1 py-0.5 flex-shrink-0 group">
+              <div className="h-11 px-3 rounded-full flex items-center gap-1.5 glossy-outline bg-white dark:bg-[#303030] macos-button transition-all">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
                 <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
                 <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
               </div>
-              <span className="text-[9.5px] font-semibold leading-none tracking-tight">Model</span>
+              <span className="text-[10px] font-medium text-muted-foreground">Model</span>
             </button>
           )}
         </div>
