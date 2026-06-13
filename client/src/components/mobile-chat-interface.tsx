@@ -1053,72 +1053,64 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   );
 }
 
-// ─── Chat Background Overlay ─────────────────────────────────────────────────
-// Deterministic star positions (no random so no re-render flicker)
-const STARS = Array.from({ length: 90 }, (_, i) => ({
-  cx: ((i * 137.508) % 100).toFixed(2),
-  cy: ((i * 97.318 + i * 3.7) % 100).toFixed(2),
-  r: (0.45 + (i % 5) * 0.28).toFixed(2),
-  dur: (1.8 + (i % 8) * 0.55).toFixed(1),
-  begin: ((i % 12) * 0.38).toFixed(1),
-  opacity: (0.35 + (i % 4) * 0.16).toFixed(2),
-}));
+// ─── Chat Background Overlay — identical to PC ───────────────────────────────
+const STAR_DATA = [
+  {l:'5%',t:'8%',d:'0s',dur:'2.1s',dd:'0s',ddur:'9s'},{l:'15%',t:'22%',d:'0.4s',dur:'1.8s',dd:'1.2s',ddur:'11s'},
+  {l:'28%',t:'6%',d:'0.8s',dur:'2.4s',dd:'0.5s',ddur:'8s'},{l:'42%',t:'35%',d:'0.2s',dur:'1.6s',dd:'2.1s',ddur:'13s'},
+  {l:'55%',t:'12%',d:'1.1s',dur:'2.0s',dd:'0.8s',ddur:'10s'},{l:'68%',t:'28%',d:'0.6s',dur:'1.9s',dd:'1.7s',ddur:'7s'},
+  {l:'78%',t:'5%',d:'0.3s',dur:'2.3s',dd:'0.3s',ddur:'12s'},{l:'88%',t:'18%',d:'0.9s',dur:'1.7s',dd:'2.4s',ddur:'9s'},
+  {l:'10%',t:'45%',d:'1.3s',dur:'2.1s',dd:'1.0s',ddur:'11s'},{l:'23%',t:'55%',d:'0.5s',dur:'1.8s',dd:'0.2s',ddur:'8s'},
+  {l:'37%',t:'65%',d:'0.7s',dur:'2.2s',dd:'1.8s',ddur:'14s'},{l:'50%',t:'48%',d:'1.0s',dur:'1.5s',dd:'0.6s',ddur:'10s'},
+  {l:'63%',t:'70%',d:'0.2s',dur:'2.0s',dd:'2.2s',ddur:'9s'},{l:'75%',t:'52%',d:'1.4s',dur:'1.9s',dd:'0.9s',ddur:'12s'},
+  {l:'85%',t:'40%',d:'0.6s',dur:'2.4s',dd:'1.4s',ddur:'7s'},{l:'92%',t:'60%',d:'0.3s',dur:'1.7s',dd:'0.1s',ddur:'11s'},
+  {l:'7%',t:'75%',d:'1.2s',dur:'2.1s',dd:'2.0s',ddur:'8s'},{l:'18%',t:'82%',d:'0.8s',dur:'1.6s',dd:'0.7s',ddur:'13s'},
+  {l:'32%',t:'88%',d:'0.4s',dur:'2.3s',dd:'1.5s',ddur:'10s'},{l:'47%',t:'78%',d:'1.1s',dur:'1.8s',dd:'0.4s',ddur:'9s'},
+  {l:'60%',t:'85%',d:'0.7s',dur:'2.0s',dd:'1.9s',ddur:'11s'},{l:'72%',t:'90%',d:'0.1s',dur:'1.5s',dd:'0.6s',ddur:'8s'},
+  {l:'82%',t:'75%',d:'0.9s',dur:'2.2s',dd:'2.3s',ddur:'12s'},{l:'94%',t:'82%',d:'0.5s',dur:'1.9s',dd:'1.1s',ddur:'9s'},
+  {l:'3%',t:'55%',d:'1.5s',dur:'2.1s',dd:'0.3s',ddur:'10s'},{l:'48%',t:'20%',d:'0.3s',dur:'1.7s',dd:'1.6s',ddur:'14s'},
+  {l:'90%',t:'35%',d:'1.0s',dur:'2.3s',dd:'0.8s',ddur:'8s'},{l:'35%',t:'42%',d:'0.6s',dur:'1.6s',dd:'2.0s',ddur:'11s'},
+  {l:'20%',t:'68%',d:'1.3s',dur:'2.0s',dd:'0.5s',ddur:'9s'},{l:'70%',t:'15%',d:'0.4s',dur:'1.8s',dd:'1.3s',ddur:'13s'},
+];
 
 function ChatBg({ bg }: { bg: string }) {
   if (bg === "plain" || !bg) return null;
 
+  const showGradientSides = bg === "gradient" || bg === "stars-gradient" || bg === "rainbow" || bg === "stars-rainbow";
   const showStars = bg === "stars" || bg === "stars-gradient" || bg === "stars-rainbow";
-  const tintBlue = bg === "gradient" || bg === "stars-gradient";
-  const tintRainbow = bg === "rainbow" || bg === "stars-rainbow";
+  const isRainbow = bg === "rainbow" || bg === "stars-rainbow";
+  const baseColor = "rgba(59,130,246,0.55)";
+  const animation = isRainbow
+    ? "gradient-breathe 3.5s ease-in-out infinite, rainbow-shift 5s linear infinite"
+    : "gradient-breathe 3.5s ease-in-out infinite";
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-      {/* Dark base for star backgrounds */}
+    <>
+      {/* Animated gradient side strips — same as PC */}
+      {showGradientSides && (
+        <>
+          <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
+            style={{ width: "24%", background: `linear-gradient(to right, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? "0s, 0s" : "0s" }} />
+          <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
+            style={{ width: "24%", background: `linear-gradient(to left, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? "0s, 0.5s" : "0s" }} />
+        </>
+      )}
+
+      {/* Twinkling star dots — same as PC */}
       {showStars && (
-        <div className="absolute inset-0" style={{ background: "linear-gradient(160deg,#07071a 0%,#0a0a20 50%,#05050f 100%)" }} />
-      )}
-
-      {/* Animated SVG stars */}
-      {showStars && (
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.95 }}>
-          {STARS.map((s, i) => (
-            <circle key={i} cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" fillOpacity={s.opacity}>
-              <animate attributeName="opacity" values={`${s.opacity};1;${s.opacity}`}
-                dur={`${s.dur}s`} begin={`${s.begin}s`} repeatCount="indefinite" />
-            </circle>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {STAR_DATA.map((s, i) => (
+            <div key={i} className="absolute rounded-full bg-foreground"
+              style={{
+                left: s.l, top: s.t,
+                width: i % 3 === 0 ? "2px" : "1.5px",
+                height: i % 3 === 0 ? "2px" : "1.5px",
+                animation: `twinkle ${s.dur} ease-in-out infinite, star-drift-${(i % 4) + 1} ${s.ddur} ease-in-out infinite`,
+                animationDelay: `${s.d}, ${s.dd}`,
+              }} />
           ))}
-          {/* A few bigger star sparkles */}
-          {[10, 25, 47, 63, 78].map(i => (
-            <circle key={`big-${i}`} cx={`${STARS[i].cx}%`} cy={`${STARS[i].cy}%`} r="1.6" fill="white" fillOpacity="0.7">
-              <animate attributeName="opacity" values="0.2;1;0.2" dur={`${2.5 + i * 0.3}s`} repeatCount="indefinite" />
-            </circle>
-          ))}
-        </svg>
+        </div>
       )}
-
-      {/* Soft bottom glow for pure stars */}
-      {bg === "stars" && (
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: "35%", background: "radial-gradient(ellipse at 50% 110%, #1a1a5033 0%, transparent 70%)" }} />
-      )}
-
-      {/* Blue gradient tint */}
-      {tintBlue && (
-        <div className="absolute inset-0" style={{
-          background: showStars
-            ? "radial-gradient(ellipse at 50% 80%, #0f346055 0%, #1a1a5033 40%, transparent 70%)"
-            : "linear-gradient(135deg, #1a1a4855 0%, #0f172a44 35%, transparent 50%, transparent 65%, #0f346044 100%)"
-        }} />
-      )}
-
-      {/* Rainbow tint */}
-      {tintRainbow && (
-        <div className="absolute inset-0" style={{
-          background: showStars
-            ? "linear-gradient(135deg, #ff6b6b26 0%, #feca5720 25%, #48dbfb20 50%, #ff9ff320 75%, #54a0ff26 100%)"
-            : "linear-gradient(135deg, #ff6b6b22 0%, #feca5720 25%, #48dbfb1e 50%, #ff9ff320 75%, #54a0ff22 100%)"
-        }} />
-      )}
-    </div>
+    </>
   );
 }
 
