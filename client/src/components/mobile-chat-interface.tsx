@@ -419,9 +419,10 @@ function useDragDismiss(onDismiss: () => void, threshold = 80) {
     if (!isDragging.current || !sheetRef.current) return;
     isDragging.current = false;
     if (currentY.current > threshold) {
-      sheetRef.current.style.transition = "transform 0.3s cubic-bezier(0.23,1,0.32,1)";
-      sheetRef.current.style.transform = "translateY(100%)";
-      setTimeout(onDismiss, 280);
+      // Snap back first so dialogs (e.g. unsaved changes) remain visible
+      sheetRef.current.style.transition = "transform 0.25s cubic-bezier(0.23,1,0.32,1)";
+      sheetRef.current.style.transform = "translateY(0)";
+      onDismiss();
     } else {
       sheetRef.current.style.transition = "transform 0.3s cubic-bezier(0.23,1,0.32,1)";
       sheetRef.current.style.transform = "translateY(0)";
@@ -547,22 +548,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030]";
     const resolvedActive = active ? "text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none" : undefined;
     const btnStyle = activeStyle || resolvedActive || defaultStyle;
-    if (isCircleFn) {
-      return (
-        <button onClick={onClick}
-          className="flex flex-col items-center gap-1 group flex-shrink-0 px-1 py-0.5">
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button glossy-outline ${btnStyle}`}>
-            {icon}
-          </div>
-          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
-        </button>
-      );
-    }
     return (
       <button onClick={onClick}
-        className={`macos-button flex flex-col items-center gap-1 px-3 py-3 rounded-2xl glossy-outline transition-all flex-shrink-0 ${btnStyle}`}>
-        {icon}
-        <span className="text-[10px] font-medium">{label}</span>
+        className="flex flex-col items-center gap-1 group flex-shrink-0 px-1 py-0.5">
+        <div className={`w-11 h-11 ${isCircleFn ? "rounded-full" : "rounded-[10px]"} flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button glossy-outline ${btnStyle}`}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
       </button>
     );
   };
@@ -1113,11 +1105,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Function Bar Style</p>
                   <p className="text-[10.5px] text-muted-foreground mb-3">Choose how quick-action buttons appear</p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: "square", label: "Square", preview: <div className="w-7 h-7 bg-zinc-400 dark:bg-zinc-500 rounded" /> },
+                      { value: "square", label: "Square", preview: <div className="w-7 h-7 bg-zinc-400 dark:bg-zinc-500 rounded-[6px]" /> },
                       { value: "circle", label: "Circle", preview: <div className="w-7 h-7 bg-zinc-400 dark:bg-zinc-500 rounded-full" /> },
-                      { value: "message-bar", label: "In Bar", preview: <div className="flex gap-0.5"><div className="w-3 h-3 bg-zinc-400 dark:bg-zinc-500 rounded-full" /><div className="w-3 h-3 bg-zinc-400 dark:bg-zinc-500 rounded-full" /></div> },
                     ].map(opt => (
                       <button key={opt.value}
                         onClick={() => { setFunctionBarStyle(opt.value); localStorage.setItem("functionBarStyle", opt.value); window.dispatchEvent(new Event("functionBarStyleChanged")); markDirty(); }}
@@ -2095,8 +2086,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <ChatBg bg={chatBg} />
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "ask" ? "flex" : "none" }}>
+              <ChatBg bg={chatBg} />
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
                 model={askModel} setModel={setAskModel} user={user}
