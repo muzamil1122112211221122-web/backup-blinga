@@ -622,26 +622,32 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         </div>
       )}
 
+      {/* Hidden file inputs — outside overflow-hidden so they always work */}
+      <input id="m-file-input" ref={fileInputRef} type="file" className="sr-only" onChange={() => setAttachOpen(false)} />
+      <input id="m-img-input" ref={imageInputRef} type="file" accept="image/*" className="sr-only" onChange={() => setAttachOpen(false)} />
+
+      {/* Attachment mini-menu — outside pill so it's never clipped */}
+      {attachOpen && (
+        <>
+          {/* Backdrop — tap outside to close */}
+          <div className="fixed inset-0 z-[199]" onClick={() => setAttachOpen(false)} />
+          <div className="absolute bottom-full left-3 mb-2 bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl border border-black/8 dark:border-white/10 overflow-hidden z-[200]"
+            style={{ minWidth: 164 }}>
+            <label htmlFor="m-file-input" onClick={() => setAttachOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors cursor-pointer">
+              <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload File
+            </label>
+            <div className="h-px bg-border/50 mx-3" />
+            <label htmlFor="m-img-input" onClick={() => setAttachOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors cursor-pointer">
+              <Image className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload Image
+            </label>
+          </div>
+        </>
+      )}
+
       {/* ── Main input pill ── */}
       <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-3xl"}`}>
-
-        {/* Attachment mini-menu — pops above the pill */}
-        {attachOpen && (
-          <div className="absolute bottom-full left-2 mb-2 bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl border border-black/8 dark:border-white/10 overflow-hidden z-[200]"
-            style={{ minWidth: 160 }}>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
-              onPointerDown={e => { e.preventDefault(); fileInputRef.current?.click(); setAttachOpen(false); }}>
-              <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload File
-            </button>
-            <div className="h-px bg-border/50 mx-3" />
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
-              onPointerDown={e => { e.preventDefault(); imageInputRef.current?.click(); setAttachOpen(false); }}>
-              <Image className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload Image
-            </button>
-          </div>
-        )}
-        <input ref={fileInputRef} type="file" className="hidden" onChange={() => setAttachOpen(false)} />
-        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={() => setAttachOpen(false)} />
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
