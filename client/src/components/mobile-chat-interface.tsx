@@ -588,10 +588,10 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         <ModelSheet models={models} current={model} onSelect={onModelChange} onClose={() => setShowModelSheet(false)} />
       )}
 
-      {/* ── Function bar: icon + label buttons — hidden when "In Bar" style ── */}
+      {/* ── Function bar: centered icon + label buttons — hidden when "In Bar" style ── */}
       {showFnBar && fnBarStyle !== "message-bar" && (
-        <div className="macos-function-bar flex items-center mb-2 px-0.5">
-          <div className="flex items-start gap-0.5">
+        <div className="macos-function-bar flex items-center justify-center mb-2 px-0.5">
+          <div className="flex items-center gap-1.5">
             <FnBtn
               onClick={onIntegration}
               active={fiusIntegrationMode}
@@ -607,18 +607,6 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 icon={<GraduationCap className="w-5 h-5" />} label="Education" />
             )}
           </div>
-          <div className="flex-1" />
-          {showModel && tab !== "nomad" && model && onModelChange && (
-            <button onClick={() => setShowModelSheet(true)}
-              className="flex flex-col items-center gap-1 px-1 py-0.5 flex-shrink-0 group">
-              <div className="h-11 px-3 rounded-full flex items-center gap-1.5 glossy-outline bg-white dark:bg-[#303030] macos-button transition-all">
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-                <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
-                <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground">Model</span>
-            </button>
-          )}
         </div>
       )}
 
@@ -1737,6 +1725,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [askInput, setAskInput] = useState("");
   const [askTyping, setAskTyping] = useState(false);
   const [askModel, setAskModel] = useState("fius-lite");
+  const [topModelSheetOpen, setTopModelSheetOpen] = useState(false);
   const [currentConvId, setCurrentConvId] = useState<string | undefined>();
   const askAbortRef = useRef<AbortController | null>(null);
 
@@ -1955,6 +1944,27 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           )}
 
           <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
+
+          {/* Model strip — top-left under nav bar, only on Ask tab */}
+          {tab === "ask" && (
+            <>
+              {topModelSheetOpen && (
+                <ModelSheet models={ASK_MODELS} current={askModel}
+                  onSelect={m => { setAskModel(m); setTopModelSheetOpen(false); }}
+                  onClose={() => setTopModelSheetOpen(false)} />
+              )}
+              <div className="flex items-center px-3 pt-1.5 pb-0.5 flex-shrink-0">
+                <button onClick={() => setTopModelSheetOpen(true)}
+                  className="h-7 px-3 rounded-full flex items-center gap-1.5 bg-white/80 dark:bg-white/[0.08] border border-black/8 dark:border-white/10 shadow-sm transition-all active:scale-95">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
+                  <span className="text-[11.5px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+                    {ASK_MODELS.find(m => m.id === askModel)?.name || askModel}
+                  </span>
+                  <ChevronDown className="w-3 h-3 opacity-50 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <ChatBg bg={chatBg} />
