@@ -686,6 +686,17 @@
   }
 }
 
+@keyframes slideUpSheet {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes dots {
   0%, 20% { content: ''; }
   40% { content: '.'; }

@@ -780,6 +780,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const [closing, setClosing] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [editName, setEditName] = useState(user?.displayName || user?.username || "");
   const [previewPic, setPreviewPic] = useState("");
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
@@ -796,11 +797,61 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (isOpen) { setEditName(user?.displayName || user?.username || ""); setPreviewPic(""); setShowCustomizePanel(false); setClosing(false); } }, [isOpen, user]);
+  // Snapshot of saved state when modal opens — used to detect unsaved changes
+  const savedSnapshotRef = useRef({
+    preset: "custom",
+    instructions: "",
+    toggles: "",
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      setEditName(user?.displayName || user?.username || "");
+      setPreviewPic("");
+      setShowCustomizePanel(false);
+      setClosing(false);
+      setShowUnsavedDialog(false);
+      // Capture snapshot of what's currently saved
+      savedSnapshotRef.current = {
+        preset: localStorage.getItem("aiPreset") || "custom",
+        instructions: localStorage.getItem("customInstructions") || "",
+        toggles: JSON.stringify({
+          autoScroll: localStorage.getItem("autoScroll") !== "false",
+          richText: localStorage.getItem("richText") !== "false",
+          improveModel: localStorage.getItem("improveModel") !== "false",
+          personalize: localStorage.getItem("personalize") !== "false",
+          nomadGrid: localStorage.getItem("nomadGrid") !== "false",
+          nomadNotification: localStorage.getItem("nomadNotification") !== "false",
+          philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
+          fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
+          wrapLines: localStorage.getItem("wrapLines") === "true",
+          showPreviews: localStorage.getItem("showPreviews") !== "false",
+          showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
+        }),
+      };
+    }
+  }, [isOpen, user]);
+
+  const hasUnsavedChanges = () => {
+    const snap = savedSnapshotRef.current;
+    return (
+      selectedPreset !== snap.preset ||
+      customInstructions !== snap.instructions ||
+      JSON.stringify(localToggles) !== snap.toggles
+    );
+  };
+
+  const doClose = () => {
+    setClosing(true);
+    setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
+  };
 
   const handleClose = () => {
-    setClosing(true);
-    setTimeout(() => { onClose(); setClosing(false); }, 320);
+    if (hasUnsavedChanges()) {
+      setShowUnsavedDialog(true);
+    } else {
+      doClose();
+    }
   };
 
   const handleSave = () => {
@@ -814,7 +865,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.dispatchEvent(new Event("messageBarStyleChanged"));
     onChatBgChange?.(chatBg);
     window.dispatchEvent(new Event("chatBgChanged"));
-    handleClose();
+    doClose();
   };
 
   const moveOrder = (i: number, dir: "up" | "down") => {
@@ -835,7 +886,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   const settingsDrag = useDragDismiss(handleClose);
 
-  if (!isOpen && !closing) return null;
+  if (!isOpen && !closing && !showUnsavedDialog) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={handleClose}>
@@ -1111,6 +1162,46 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           </div>
         </div>
       </div>
+
+      {/* ── Unsaved Changes Dialog ── */}
+      {showUnsavedDialog && (
+        <div
+          className="absolute inset-0 z-[60] flex items-end justify-center"
+          style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", background: "rgba(0,0,0,0.45)" }}
+          onClick={e => e.stopPropagation()}>
+          <div
+            className="w-full mx-0 mb-0 bg-background rounded-t-[24px] shadow-2xl overflow-hidden"
+            style={{
+              animation: "slideUpSheet 0.32s cubic-bezier(0.23,1,0.32,1) both",
+            }}>
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-0">
+              <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+            </div>
+            <div className="px-5 pt-4 pb-2">
+              <h3 className="text-[16px] font-bold text-foreground">Unsaved Changes</h3>
+              <p className="text-[13px] text-muted-foreground mt-1">You have unsaved changes. Would you like to save them before closing?</p>
+            </div>
+            <div className="flex flex-col gap-2 px-4 pb-8 pt-3">
+              <button
+                onClick={e => { e.stopPropagation(); handleSave(); }}
+                className="w-full py-3.5 rounded-2xl bg-foreground text-background text-[14px] font-bold active:scale-[0.97] transition-all">
+                Save Changes
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setShowUnsavedDialog(false); doClose(); }}
+                className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 text-[14px] font-semibold active:scale-[0.97] transition-all border border-red-100 dark:border-red-900/50">
+                Don't Save
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setShowUnsavedDialog(false); }}
+                className="w-full py-3 rounded-2xl text-muted-foreground text-[13px] font-medium active:scale-[0.97] transition-all">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

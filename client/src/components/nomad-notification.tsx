@@ -10,15 +10,26 @@ interface AppNotificationProps {
 }
 
 function AppNotification({ image, title, description, dotColor = "bg-green-400", onClose }: AppNotificationProps) {
-  const [phase, setPhase] = useState<"in" | "idle" | "out">("in");
+  const [phase, setPhase] = useState<"entering" | "visible" | "out">("entering");
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
   const pillRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // auto-dismiss after 4s
+    // Double rAF ensures the "entering" state is painted before transitioning to "visible"
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => {
+        setPhase("visible");
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+
+    // auto-dismiss after 4.2s
     const t = setTimeout(() => dismiss(), 4200);
-    return () => clearTimeout(t);
+    return () => {
+      cancelAnimationFrame(raf1);
+      clearTimeout(t);
+    };
   }, []);
 
   const dismiss = () => {
@@ -45,11 +56,11 @@ function AppNotification({ image, title, description, dotColor = "bg-green-400",
     }
   };
 
-  const transformIn = phase === "out"
-    ? "translateX(-50%) translateY(-72px) scale(0.92)"
-    : phase === "in"
-    ? "translateX(-50%) translateY(0) scale(1)"
-    : "translateX(-50%) translateY(0) scale(1)";
+  const isHidden = phase === "entering" || phase === "out";
+
+  const transform = isHidden
+    ? "translateX(-50%) translateY(-80px) scale(0.88)"
+    : "translateX(-50%) translateY(0px) scale(1)";
 
   return (
     <div
@@ -62,15 +73,14 @@ function AppNotification({ image, title, description, dotColor = "bg-green-400",
         top: 14,
         left: "50%",
         zIndex: 9999,
-        transform: transformIn,
-        opacity: phase === "out" ? 0 : 1,
-        transition: phase === "in"
-          ? "transform 0.5s cubic-bezier(0.23,1,0.32,1), opacity 0.35s ease"
-          : "transform 0.4s cubic-bezier(0.23,1,0.32,1), opacity 0.35s ease",
+        transform,
+        opacity: isHidden ? 0 : 1,
+        transition: "transform 0.52s cubic-bezier(0.23,1,0.32,1), opacity 0.38s cubic-bezier(0.23,1,0.32,1)",
         willChange: "transform, opacity",
         maxWidth: "calc(100vw - 32px)",
         width: 340,
         touchAction: "none",
+        pointerEvents: isHidden ? "none" : "auto",
       }}
     >
       <div
