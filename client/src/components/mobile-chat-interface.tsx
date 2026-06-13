@@ -789,13 +789,28 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  // Simple dirty flag — set true when user changes any setting
-  const isDirtyRef = useRef(false);
-  // Snapshot of all saved values when modal opens — used to revert on "Don't Save"
+  // Snapshot of all saved values when modal opens — used for dirty check + revert
   const originalValuesRef = useRef({
     aiPreset: "custom", customInstructions: "", chatBg: "plain",
     functionBarStyle: "circle", messageBarStyle: "compact",
-    toggles: {} as Record<string, string>,
+    togglesBool: {} as Record<string, boolean>,
+    togglesRaw: {} as Record<string, string>,
+  });
+
+  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
+
+  const readTogglesBool = () => ({
+    autoScroll: localStorage.getItem("autoScroll") !== "false",
+    richText: localStorage.getItem("richText") !== "false",
+    improveModel: localStorage.getItem("improveModel") !== "false",
+    personalize: localStorage.getItem("personalize") !== "false",
+    nomadGrid: localStorage.getItem("nomadGrid") !== "false",
+    nomadNotification: localStorage.getItem("nomadNotification") !== "false",
+    philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
+    fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
+    wrapLines: localStorage.getItem("wrapLines") === "true",
+    showPreviews: localStorage.getItem("showPreviews") !== "false",
+    showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
   });
 
   useEffect(() => {
@@ -805,47 +820,44 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setShowCustomizePanel(false);
       setClosing(false);
       setShowUnsavedDialog(false);
-      isDirtyRef.current = false;
 
-      // Load current saved values into local state so UI shows what's saved
       const preset = localStorage.getItem("aiPreset") || "custom";
       const instructions = localStorage.getItem("customInstructions") || "";
       const bg = localStorage.getItem("chatBg") || "plain";
       const fnStyle = localStorage.getItem("functionBarStyle") || "circle";
       const msgStyle = localStorage.getItem("messageBarStyle") || "compact";
-      const toggleKeys = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
-      const toggleSnapshot: Record<string,string> = {};
-      toggleKeys.forEach(k => { toggleSnapshot[k] = localStorage.getItem(k) ?? ""; });
+      const togglesBool = readTogglesBool();
+      const togglesRaw: Record<string,string> = {};
+      TOGGLE_KEYS.forEach(k => { togglesRaw[k] = localStorage.getItem(k) ?? ""; });
 
-      // Save original snapshot for revert
-      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, toggles: toggleSnapshot };
+      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, togglesBool, togglesRaw };
 
       setSelectedPreset(preset);
       setCustomInstructions(instructions);
       setChatBg(bg);
       setFunctionBarStyle(fnStyle);
       setMessageBarStyle(msgStyle);
-      setLocalToggles({
-        autoScroll: localStorage.getItem("autoScroll") !== "false",
-        richText: localStorage.getItem("richText") !== "false",
-        improveModel: localStorage.getItem("improveModel") !== "false",
-        personalize: localStorage.getItem("personalize") !== "false",
-        nomadGrid: localStorage.getItem("nomadGrid") !== "false",
-        nomadNotification: localStorage.getItem("nomadNotification") !== "false",
-        philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
-        fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
-        wrapLines: localStorage.getItem("wrapLines") === "true",
-        showPreviews: localStorage.getItem("showPreviews") !== "false",
-        showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
-      });
+      setLocalToggles(togglesBool);
     }
   }, [isOpen, user]);
 
-  // Mark dirty on any tracked change
-  const markDirty = () => { isDirtyRef.current = true; };
+  // No-op kept for backwards compat — dirty detection now uses state comparison
+  const markDirty = () => {};
+
+  // Compare current state against snapshot — works for EVERY change, no missed calls
+  const computeIsDirty = () => {
+    const o = originalValuesRef.current;
+    if (selectedPreset !== o.aiPreset) return true;
+    if (customInstructions !== o.customInstructions) return true;
+    if (chatBg !== o.chatBg) return true;
+    if (functionBarStyle !== o.functionBarStyle) return true;
+    if (messageBarStyle !== o.messageBarStyle) return true;
+    return (Object.keys(localToggles) as Array<keyof typeof localToggles>).some(
+      k => localToggles[k] !== o.togglesBool[k]
+    );
+  };
 
   const doClose = () => {
-    isDirtyRef.current = false;
     setClosing(true);
     setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
   };
@@ -856,7 +868,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     localStorage.setItem("chatBg", orig.chatBg);
     localStorage.setItem("functionBarStyle", orig.functionBarStyle);
     localStorage.setItem("messageBarStyle", orig.messageBarStyle);
-    Object.entries(orig.toggles).forEach(([k, v]) => {
+    Object.entries(orig.togglesRaw).forEach(([k, v]) => {
       if (v === "") localStorage.removeItem(k); else localStorage.setItem(k, v);
     });
     onChatBgChange?.(orig.chatBg);
@@ -867,7 +879,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   };
 
   const handleClose = () => {
-    if (isDirtyRef.current) {
+    if (computeIsDirty()) {
       setShowUnsavedDialog(true);
     } else {
       doClose();
