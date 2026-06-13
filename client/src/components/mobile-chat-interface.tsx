@@ -610,39 +610,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden relative">
-        {/* "In Bar" style: compact icon strip inside pill top */}
-        {showFnBar && fnBarStyle === "message-bar" && (
-          <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
-            <button onClick={onIntegration}
-              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
-              <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
-            </button>
-            <button onClick={onVoiceMode}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
-              <AudioLines className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-            </button>
-            <button onClick={onSettings}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
-              <img src="/settings-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
-            </button>
-            {model === "fius-education" && onEducation && (
-              <button onClick={onEducation}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-500/15 transition-all active:scale-90">
-                <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-              </button>
-            )}
-            <div className="flex-1" />
-            {showModel && tab !== "nomad" && model && onModelChange && (
-              <button onClick={() => setShowModelSheet(true)}
-                className="h-7 px-2.5 rounded-full flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
-                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 flex-shrink-0" />
-                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
-                <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
-              </button>
-            )}
-          </div>
-        )}
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-3xl"}`}>
 
         {/* Attachment mini-menu — pops above the pill */}
         {attachOpen && (
@@ -659,48 +627,134 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             </button>
           </div>
         )}
-        <div className="flex items-end px-2 py-2 gap-1.5">
-          <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
-            onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
-            <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
-          </button>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={() => setAttachOpen(false)} />
-          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={() => setAttachOpen(false)} />
+        <input ref={fileInputRef} type="file" className="hidden" onChange={() => setAttachOpen(false)} />
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={() => setAttachOpen(false)} />
 
-          {/* Textarea — taller in "default" style */}
-          <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
-            placeholder={placeholder} rows={msgBarStyle === "default" ? 3 : 1}
-            className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
-            style={{ maxHeight: 160, scrollbarWidth: "none", minHeight: msgBarStyle === "default" ? 62 : 28 }} />
-
-          {/* Mic — theme-aware */}
-          <button onClick={toggleMic}
-            className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
-            <img src={micLight} alt="Mic" className={imgCls} />
-          </button>
-
-          {/* Enhance — theme-aware */}
-          {showEnhance && (
-            <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
-              {isEnhancing
-                ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
-            </button>
-          )}
-
-          {/* Send / Stop */}
-          {isTyping ? (
-            <button onClick={onStop}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
-              <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
-            </button>
-          ) : (
-            <button onClick={onSend} disabled={!value.trim()}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100">
-              <ArrowUp className="w-4 h-4 text-white dark:text-black" />
-            </button>
-          )}
-        </div>
+        {msgBarStyle === "default" ? (
+          /* ── Default: two-row layout matching PC (scaled for mobile) ── */
+          <>
+            {/* "In Bar" icon strip inside pill top when function bar is hidden */}
+            {showFnBar && fnBarStyle === "message-bar" && (
+              <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-0">
+                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
+                  <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+                </button>
+                <button onClick={onVoiceMode} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                  <AudioLines className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                </button>
+                <button onClick={onSettings} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                  <img src="/settings-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+                </button>
+              </div>
+            )}
+            {/* Row 1: full-width textarea */}
+            <div className="px-3 pt-2.5 pb-1">
+              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                placeholder={placeholder}
+                className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
+                style={{ minHeight: 52, maxHeight: 120, scrollbarWidth: "none" }} />
+            </div>
+            {/* Row 2: attach + model left | mic + enhance + send right */}
+            <div className="flex items-center justify-between px-2 pb-2">
+              <div className="flex items-center gap-1">
+                <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
+                  onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
+                  <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
+                </button>
+                {showModel && tab !== "nomad" && model && onModelChange && (
+                  <button onClick={() => setShowModelSheet(true)}
+                    className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 flex-shrink-0" />
+                    <span className="text-[11.5px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
+                    <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={toggleMic} className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
+                  <img src={micLight} alt="Mic" className={imgCls} />
+                </button>
+                {showEnhance && (
+                  <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
+                    {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                      : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
+                  </button>
+                )}
+                {isTyping ? (
+                  <button onClick={onStop} className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
+                    <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
+                  </button>
+                ) : (
+                  <button onClick={onSend} disabled={!value.trim()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all">
+                    <ArrowUp className="w-4 h-4 text-white dark:text-black" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ── Compact: single-row pill (original mobile layout) ── */
+          <>
+            {/* "In Bar" icon strip inside pill top */}
+            {showFnBar && fnBarStyle === "message-bar" && (
+              <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
+                  <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+                </button>
+                <button onClick={onVoiceMode} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                  <AudioLines className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                </button>
+                <button onClick={onSettings} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                  <img src="/settings-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+                </button>
+                {model === "fius-education" && onEducation && (
+                  <button onClick={onEducation} className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-500/15 transition-all active:scale-90">
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  </button>
+                )}
+                <div className="flex-1" />
+                {showModel && tab !== "nomad" && model && onModelChange && (
+                  <button onClick={() => setShowModelSheet(true)}
+                    className="h-7 px-2.5 rounded-full flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 flex-shrink-0" />
+                    <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
+                    <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex items-end px-2 py-2 gap-1.5">
+              <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
+                onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
+                <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
+              </button>
+              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                placeholder={placeholder} rows={1}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
+                style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
+              <button onClick={toggleMic} className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
+                <img src={micLight} alt="Mic" className={imgCls} />
+              </button>
+              {showEnhance && (
+                <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
+                  {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
+                </button>
+              )}
+              {isTyping ? (
+                <button onClick={onStop} className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
+                  <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
+                </button>
+              ) : (
+                <button onClick={onSend} disabled={!value.trim()}
+                  className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100">
+                  <ArrowUp className="w-4 h-4 text-white dark:text-black" />
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
     </div>
