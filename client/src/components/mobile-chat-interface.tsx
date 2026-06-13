@@ -789,8 +789,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  // Dual dirty tracking: flag (instant) + snapshot comparison (foolproof backup)
-  const [isDirty, setIsDirty] = useState(false);
+  // Refs for handleClose — avoids stale closure entirely
+  const isDirtyRef = useRef(false);
+  const showUnsavedRef = useRef(false);
+  const [isDirty, setIsDirty] = useState(false); // kept only for potential UI indicators
   const originalValuesRef = useRef({
     aiPreset: "custom", customInstructions: "", chatBg: "plain",
     functionBarStyle: "circle", messageBarStyle: "compact",
@@ -821,6 +823,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setShowCustomizePanel(false);
       setClosing(false);
       setShowUnsavedDialog(false);
+      isDirtyRef.current = false;
+      showUnsavedRef.current = false;
       setIsDirty(false);
 
       const preset = localStorage.getItem("aiPreset") || "custom";
@@ -843,10 +847,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     }
   }, [isOpen, user]);
 
-  // Primary dirty marker — call on every change
-  const markDirty = () => setIsDirty(true);
+  // Ref-based dirty marker — instant, no stale closure risk
+  const markDirty = () => { isDirtyRef.current = true; };
 
   const doClose = () => {
+    isDirtyRef.current = false;
+    showUnsavedRef.current = false;
     setIsDirty(false);
     setClosing(true);
     setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
@@ -869,9 +875,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   };
 
   const handleClose = () => {
-    // isDirty state is the primary check; stop here if dialog already visible
-    if (showUnsavedDialog) return;
-    if (isDirty) {
+    // Use refs — never stale, even inside drag callbacks
+    if (showUnsavedRef.current) return;
+    if (isDirtyRef.current) {
+      showUnsavedRef.current = true;
       setShowUnsavedDialog(true);
     } else {
       doClose();
@@ -1358,7 +1365,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
             <div className="w-full flex flex-col gap-2.5">
               {SUGGESTION_CARDS.map((card, i) => (
                 <button key={i} onClick={() => setInput(card.prompt)}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-card text-left active:scale-[0.97] transition-all hover:bg-accent/60">
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800">
                   <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 border border-border/60">{card.icon}</div>
                   <div className="flex-1 min-w-0"><p className="text-[13.5px] font-semibold text-foreground">{card.title}</p><p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p></div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
