@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
+function useIsDark() {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+  useEffect(() => {
+    const obs = new MutationObserver(() => setDark(document.documentElement.classList.contains("dark")));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
 interface AppNotificationProps {
   image: string;
   title: string;
@@ -11,6 +21,7 @@ interface AppNotificationProps {
 
 function AppNotification({ image, title, description, dotColor = "bg-green-400", onClose }: AppNotificationProps) {
   const [phase, setPhase] = useState<"entering" | "visible" | "out">("entering");
+  const isDark = useIsDark();
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
   const pillRef = useRef<HTMLDivElement>(null);
@@ -85,12 +96,10 @@ function AppNotification({ image, title, description, dotColor = "bg-green-400",
     >
       <div
         style={{
-          background: "rgba(28,28,30,0.52)",
-          backdropFilter: "blur(32px) saturate(1.8)",
-          WebkitBackdropFilter: "blur(32px) saturate(1.8)",
+          background: isDark ? "#000000" : "#ffffff",
           borderRadius: 18,
-          border: "1px solid rgba(255,255,255,0.16)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.28)",
+          border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.08)",
+          boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.6)" : "0 4px 24px rgba(0,0,0,0.14)",
           padding: "10px 12px 10px 10px",
           display: "flex",
           alignItems: "center",
@@ -98,25 +107,25 @@ function AppNotification({ image, title, description, dotColor = "bg-green-400",
         }}
       >
         {/* Avatar */}
-        <div style={{ width: 40, height: 40, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(255,255,255,0.12)" }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.08)" }}>
           <img src={image} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
         </div>
 
         {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{title}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? "#ffffff" : "#000000", lineHeight: 1.2 }}>{title}</span>
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse flex-shrink-0`} />
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 1, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{description}</p>
+          <p style={{ fontSize: 12, color: isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.55)", marginTop: 1, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{description}</p>
         </div>
 
         {/* Dismiss */}
         <button
           onClick={dismiss}
-          style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.12)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}
+          style={{ width: 22, height: 22, borderRadius: "50%", background: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.07)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}
         >
-          <X style={{ width: 11, height: 11, color: "rgba(255,255,255,0.8)", strokeWidth: 2.5 }} />
+          <X style={{ width: 11, height: 11, color: isDark ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.5)", strokeWidth: 2.5 }} />
         </button>
       </div>
     </div>

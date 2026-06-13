@@ -789,7 +789,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  // Snapshot of all saved values when modal opens — used for dirty check + revert
+  // Dual dirty tracking: flag (instant) + snapshot comparison (foolproof backup)
+  const [isDirty, setIsDirty] = useState(false);
   const originalValuesRef = useRef({
     aiPreset: "custom", customInstructions: "", chatBg: "plain",
     functionBarStyle: "circle", messageBarStyle: "compact",
@@ -799,7 +800,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
 
-  const readTogglesBool = () => ({
+  const makeTogglesBool = () => ({
     autoScroll: localStorage.getItem("autoScroll") !== "false",
     richText: localStorage.getItem("richText") !== "false",
     improveModel: localStorage.getItem("improveModel") !== "false",
@@ -820,13 +821,14 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setShowCustomizePanel(false);
       setClosing(false);
       setShowUnsavedDialog(false);
+      setIsDirty(false);
 
       const preset = localStorage.getItem("aiPreset") || "custom";
       const instructions = localStorage.getItem("customInstructions") || "";
       const bg = localStorage.getItem("chatBg") || "plain";
       const fnStyle = localStorage.getItem("functionBarStyle") || "circle";
       const msgStyle = localStorage.getItem("messageBarStyle") || "compact";
-      const togglesBool = readTogglesBool();
+      const togglesBool = makeTogglesBool();
       const togglesRaw: Record<string,string> = {};
       TOGGLE_KEYS.forEach(k => { togglesRaw[k] = localStorage.getItem(k) ?? ""; });
 
@@ -841,23 +843,11 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     }
   }, [isOpen, user]);
 
-  // No-op kept for backwards compat — dirty detection now uses state comparison
-  const markDirty = () => {};
-
-  // Compare current state against snapshot — works for EVERY change, no missed calls
-  const computeIsDirty = () => {
-    const o = originalValuesRef.current;
-    if (selectedPreset !== o.aiPreset) return true;
-    if (customInstructions !== o.customInstructions) return true;
-    if (chatBg !== o.chatBg) return true;
-    if (functionBarStyle !== o.functionBarStyle) return true;
-    if (messageBarStyle !== o.messageBarStyle) return true;
-    return (Object.keys(localToggles) as Array<keyof typeof localToggles>).some(
-      k => localToggles[k] !== o.togglesBool[k]
-    );
-  };
+  // Primary dirty marker — call on every change
+  const markDirty = () => setIsDirty(true);
 
   const doClose = () => {
+    setIsDirty(false);
     setClosing(true);
     setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
   };
@@ -879,7 +869,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   };
 
   const handleClose = () => {
-    if (computeIsDirty()) {
+    // isDirty state is the primary check; stop here if dialog already visible
+    if (showUnsavedDialog) return;
+    if (isDirty) {
       setShowUnsavedDialog(true);
     } else {
       doClose();
@@ -921,7 +913,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   if (!isOpen && !closing && !showUnsavedDialog) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={handleClose}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showUnsavedDialog ? undefined : handleClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         style={{ opacity: closing ? 0 : 1, transition: "opacity 0.32s cubic-bezier(0.23,1,0.32,1)" }} />
       <div ref={settingsDrag.sheetRef}
