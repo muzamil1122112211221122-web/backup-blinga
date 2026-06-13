@@ -574,10 +574,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         <ModelSheet models={models} current={model} onSelect={onModelChange} onClose={() => setShowModelSheet(false)} />
       )}
 
-      {/* ── Function bar: icon + label buttons ── */}
-      {showFnBar && (
+      {/* ── Function bar: icon + label buttons — hidden when "In Bar" style ── */}
+      {showFnBar && fnBarStyle !== "message-bar" && (
         <div className="flex items-center mb-2 px-0.5">
-          {/* Left group — equal spacing between each button */}
           <div className="flex items-start gap-1">
             <FnBtn
               onClick={onIntegration}
@@ -587,36 +586,20 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               icon={<img src="/integration-icon.png" alt="" style={{ width: 18, height: 18 }} className={imgCls} />}
               label="Long Answer"
             />
-            <FnBtn
-              onClick={onVoiceMode}
-              icon={<AudioLines className="w-[18px] h-[18px]" />}
-              label="Voice Mode"
-            />
-            <FnBtn
-              onClick={onSettings}
-              icon={<img src="/settings-icon.png" alt="" style={{ width: 17, height: 17 }} className={imgCls} />}
-              label="Settings"
-            />
+            <FnBtn onClick={onVoiceMode} icon={<AudioLines className="w-[18px] h-[18px]" />} label="Voice Mode" />
+            <FnBtn onClick={onSettings} icon={<img src="/settings-icon.png" alt="" style={{ width: 17, height: 17 }} className={imgCls} />} label="Settings" />
             {model === "fius-education" && onEducation && (
-              <FnBtn
-                onClick={onEducation}
-                iconBg="bg-amber-500/15"
-                textColor="text-amber-400"
-                icon={<GraduationCap className="w-[18px] h-[18px]" />}
-                label="Education"
-              />
+              <FnBtn onClick={onEducation} iconBg="bg-amber-500/15" textColor="text-amber-400"
+                icon={<GraduationCap className="w-[18px] h-[18px]" />} label="Education" />
             )}
           </div>
           <div className="flex-1" />
-          {/* Model selector — right-aligned */}
           {showModel && tab !== "nomad" && model && onModelChange && (
             <button onClick={() => setShowModelSheet(true)}
               className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-2xl transition-all active:scale-90 flex-shrink-0 text-zinc-500 dark:text-zinc-400">
               <div className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-200/80 dark:bg-zinc-700/60">
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-                <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                  {currentModel.name}
-                </span>
+                <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
                 <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
               </div>
               <span className="text-[9.5px] font-semibold leading-none tracking-tight">Model</span>
@@ -627,25 +610,55 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Main input pill ── */}
       <div className="bg-white dark:bg-[#303030] rounded-3xl glossy-outline overflow-hidden relative">
+        {/* "In Bar" style: compact icon strip inside pill top */}
+        {showFnBar && fnBarStyle === "message-bar" && (
+          <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
+            <button onClick={onIntegration}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
+              <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+            </button>
+            <button onClick={onVoiceMode}
+              className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+              <AudioLines className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+            </button>
+            <button onClick={onSettings}
+              className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+              <img src="/settings-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
+            </button>
+            {model === "fius-education" && onEducation && (
+              <button onClick={onEducation}
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-500/15 transition-all active:scale-90">
+                <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+              </button>
+            )}
+            <div className="flex-1" />
+            {showModel && tab !== "nomad" && model && onModelChange && (
+              <button onClick={() => setShowModelSheet(true)}
+                className="h-7 px-2.5 rounded-full flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 flex-shrink-0" />
+                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">{currentModel.name}</span>
+                <ChevronDown className="w-3 h-3 opacity-60 flex-shrink-0" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Attachment mini-menu — pops above the pill */}
         {attachOpen && (
           <div className="absolute bottom-full left-2 mb-2 bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl border border-black/8 dark:border-white/10 overflow-hidden z-[200]"
             style={{ minWidth: 160 }}>
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
               onPointerDown={e => { e.preventDefault(); fileInputRef.current?.click(); setAttachOpen(false); }}>
               <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload File
             </button>
             <div className="h-px bg-border/50 mx-3" />
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors"
               onPointerDown={e => { e.preventDefault(); imageInputRef.current?.click(); setAttachOpen(false); }}>
               <Image className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload Image
             </button>
           </div>
         )}
         <div className="flex items-end px-2 py-2 gap-1.5">
-          {/* Attachment toggle */}
           <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
             onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
             <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
@@ -653,11 +666,11 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
           <input ref={fileInputRef} type="file" className="hidden" onChange={() => setAttachOpen(false)} />
           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={() => setAttachOpen(false)} />
 
-          {/* Textarea */}
+          {/* Textarea — taller in "default" style */}
           <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
-            placeholder={placeholder} rows={1}
+            placeholder={placeholder} rows={msgBarStyle === "default" ? 3 : 1}
             className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
-            style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
+            style={{ maxHeight: 160, scrollbarWidth: "none", minHeight: msgBarStyle === "default" ? 62 : 28 }} />
 
           {/* Mic — theme-aware */}
           <button onClick={toggleMic}
@@ -1036,6 +1049,75 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Chat Background Overlay ─────────────────────────────────────────────────
+// Deterministic star positions (no random so no re-render flicker)
+const STARS = Array.from({ length: 90 }, (_, i) => ({
+  cx: ((i * 137.508) % 100).toFixed(2),
+  cy: ((i * 97.318 + i * 3.7) % 100).toFixed(2),
+  r: (0.45 + (i % 5) * 0.28).toFixed(2),
+  dur: (1.8 + (i % 8) * 0.55).toFixed(1),
+  begin: ((i % 12) * 0.38).toFixed(1),
+  opacity: (0.35 + (i % 4) * 0.16).toFixed(2),
+}));
+
+function ChatBg({ bg }: { bg: string }) {
+  if (bg === "plain" || !bg) return null;
+
+  const showStars = bg === "stars" || bg === "stars-gradient" || bg === "stars-rainbow";
+  const tintBlue = bg === "gradient" || bg === "stars-gradient";
+  const tintRainbow = bg === "rainbow" || bg === "stars-rainbow";
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+      {/* Dark base for star backgrounds */}
+      {showStars && (
+        <div className="absolute inset-0" style={{ background: "linear-gradient(160deg,#07071a 0%,#0a0a20 50%,#05050f 100%)" }} />
+      )}
+
+      {/* Animated SVG stars */}
+      {showStars && (
+        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.95 }}>
+          {STARS.map((s, i) => (
+            <circle key={i} cx={`${s.cx}%`} cy={`${s.cy}%`} r={s.r} fill="white" fillOpacity={s.opacity}>
+              <animate attributeName="opacity" values={`${s.opacity};1;${s.opacity}`}
+                dur={`${s.dur}s`} begin={`${s.begin}s`} repeatCount="indefinite" />
+            </circle>
+          ))}
+          {/* A few bigger star sparkles */}
+          {[10, 25, 47, 63, 78].map(i => (
+            <circle key={`big-${i}`} cx={`${STARS[i].cx}%`} cy={`${STARS[i].cy}%`} r="1.6" fill="white" fillOpacity="0.7">
+              <animate attributeName="opacity" values="0.2;1;0.2" dur={`${2.5 + i * 0.3}s`} repeatCount="indefinite" />
+            </circle>
+          ))}
+        </svg>
+      )}
+
+      {/* Soft bottom glow for pure stars */}
+      {bg === "stars" && (
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: "35%", background: "radial-gradient(ellipse at 50% 110%, #1a1a5033 0%, transparent 70%)" }} />
+      )}
+
+      {/* Blue gradient tint */}
+      {tintBlue && (
+        <div className="absolute inset-0" style={{
+          background: showStars
+            ? "radial-gradient(ellipse at 50% 80%, #0f346055 0%, #1a1a5033 40%, transparent 70%)"
+            : "linear-gradient(135deg, #1a1a4855 0%, #0f172a44 35%, transparent 50%, transparent 65%, #0f346044 100%)"
+        }} />
+      )}
+
+      {/* Rainbow tint */}
+      {tintRainbow && (
+        <div className="absolute inset-0" style={{
+          background: showStars
+            ? "linear-gradient(135deg, #ff6b6b26 0%, #feca5720 25%, #48dbfb20 50%, #ff9ff320 75%, #54a0ff26 100%)"
+            : "linear-gradient(135deg, #ff6b6b22 0%, #feca5720 25%, #48dbfb1e 50%, #ff9ff320 75%, #54a0ff22 100%)"
+        }} />
+      )}
     </div>
   );
 }
@@ -1755,16 +1837,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     });
   }, []);
 
-  const getChatBgStyle = (): React.CSSProperties => {
-    switch (chatBg) {
-      case "gradient": return { background: "linear-gradient(180deg,transparent 0%,#1a1a2e22 40%,#0f346033 100%)" };
-      case "stars": return { background: "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)" };
-      case "rainbow": return { background: "linear-gradient(135deg,#ff6b6b18,#feca5718,#48dbfb18,#ff9ff318,#54a0ff18)" };
-      case "stars-gradient": return { background: "radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 60%, #000 100%)", backgroundBlendMode: "screen" };
-      case "stars-rainbow": return { background: "radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0d0d1a 70%, #000 100%)" };
-      default: return {};
-    }
-  };
+  // background handled by overlay components, not inline style
+  const getChatBgStyle = (): React.CSSProperties => ({});
 
   const voiceHandlers = { onVoiceMode: () => setVoiceModalOpen(true), onSettings: () => setSettingsOpen(true), onIntegration: () => setFiusIntegrationMode(v => !v), fiusIntegrationMode };
 
@@ -1816,7 +1890,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
 
-          <div className="flex-1 flex flex-col overflow-hidden relative" style={getChatBgStyle()}>
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <ChatBg bg={chatBg} />
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "ask" ? "flex" : "none" }}>
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
