@@ -501,8 +501,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   useEffect(() => {
     if (!taRef.current) return;
-    const minH = msgBarStyle === "default" ? 62 : 28;
-    const maxH = msgBarStyle === "default" ? 160 : 120;
+    if (msgBarStyle === "compact") return; // compact: fixed height, internal scroll
+    const minH = 62;
+    const maxH = 160;
     taRef.current.style.height = "auto";
     taRef.current.style.height = Math.min(Math.max(taRef.current.scrollHeight, minH), maxH) + "px";
   }, [value, msgBarStyle]);
@@ -724,22 +725,26 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 )}
               </div>
             )}
-            <div className="flex items-end px-2 py-2 gap-1.5">
-              <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
+            <div className="flex items-center px-2 py-2 gap-1.5">
+              <button className={`${iconBtnCls} flex-shrink-0 ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
               </button>
               <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                 placeholder={placeholder} rows={1}
-                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed py-1.5 px-1"
-                style={{ maxHeight: 120, scrollbarWidth: "none", minHeight: 28 }} />
-              <button onClick={toggleMic} className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
+                style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
+              <button className={`w-4 h-4 flex items-center justify-center flex-shrink-0 self-center transition-all ${value.trim() ? "opacity-70" : "opacity-25"}`}
+                onClick={() => {/* expand — placeholder for fullscreen prompt */ }}>
+                <Maximize2 className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
+              </button>
+              <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
               </button>
               {showEnhance && (
-                <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
+                <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} flex-shrink-0 disabled:opacity-30`}>
                   {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                    : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
+                    : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={imgCls} />}
                 </button>
               )}
               {isTyping ? (
@@ -1344,7 +1349,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
           <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto px-4 py-3 bg-white dark:bg-zinc-950" style={{ overscrollBehavior: "contain" }}>
+      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
             <Logo size="xl" className="mb-5 text-foreground" />
@@ -1384,10 +1389,11 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
 }
 
 // ─── Nomad Tab (PC-style multi-column) ────────────────────────────────────────
-function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode }: {
+function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
   nomadMessages: Record<string, { id: string; role: "user" | "ai"; content: string }[]>;
   nomadTyping: Record<string, boolean>;
+  nomadGrid?: boolean;
   activeModels: Set<string>; onToggleModel: (id: string) => void;
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
 }) {
@@ -1419,7 +1425,11 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col relative"
+        style={nomadGrid ? {
+          backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
+        } : undefined}>
         {/* Multi-column (normal mode) */}
         {!soloModel && (
           <div ref={scrollRef} className="flex-1 flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: "thin", alignItems: "stretch", overscrollBehavior: "contain" }}>
@@ -2098,7 +2108,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "nomad" ? "flex" : "none" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
                 isTyping={nomadTyping} nomadMessages={nomadMessages} nomadTyping={nomadIsTyping}
-                activeModels={activeModels} onToggleModel={handleToggleModel} {...voiceHandlers} />
+                activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localToggles.nomadGrid} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ display: tab === "imagine" ? "flex" : "none" }}>
               <StudioTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput}
