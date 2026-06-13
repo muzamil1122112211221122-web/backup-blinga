@@ -17,9 +17,10 @@ import {
   MessageSquarePlus, FileDown, Square,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -300,7 +301,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, isLatest }: { msg: Msg; onExpa
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
         <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
           {isUser ? (
-            <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+            <div className="bg-white dark:bg-zinc-800 rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
               <div className="flex items-center justify-end gap-0.5 mt-1.5">
                 <button onClick={handleCopy}
@@ -1161,7 +1162,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { value: "stars-gradient", label: "Stars + Blue" },
                       { value: "stars-rainbow", label: "Stars + Rainbow" },
                     ].map(v => (
-                      <button key={v.value} onClick={() => { setChatBg(v.value); localStorage.setItem("chatBg", v.value); onChatBgChange?.(v.value); window.dispatchEvent(new Event("chatBgChanged")); markDirty(); }}
+                      <button key={v.value} onClick={() => { setChatBg(v.value); onChatBgChange?.(v.value); markDirty(); }}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all active:scale-95 ${chatBg === v.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
                         <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-2 ${chatBg === v.value ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
                         <span className={`text-[12px] font-semibold ${chatBg === v.value ? "text-foreground" : "text-muted-foreground"}`}>{v.label}</span>
@@ -1191,37 +1192,32 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
         </div>
       </div>
 
-      {/* ── Unsaved Changes Dialog ── */}
-      {showExitDialog && (
-        <div
-          className="absolute inset-0 z-[60] flex items-end justify-center"
-          style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", background: "rgba(0,0,0,0.45)" }}
-          onClick={e => e.stopPropagation()}>
-          <div
-            className="w-full mx-0 mb-0 bg-background rounded-t-[24px] shadow-2xl overflow-hidden"
-            style={{ animation: "slideUpSheet 0.32s cubic-bezier(0.23,1,0.32,1) both" }}>
-            <div className="flex justify-center pt-3 pb-0">
-              <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
-            </div>
-            <div className="px-5 pt-4 pb-2">
-              <h3 className="text-[16px] font-bold text-foreground">Unsaved Changes</h3>
-              <p className="text-[13px] text-muted-foreground mt-1">You have unsaved changes. Would you like to save them before closing?</p>
-            </div>
-            <div className="flex flex-col gap-2 px-4 pb-8 pt-3">
-              <button
-                onClick={e => { e.stopPropagation(); handleSave(); }}
-                className="w-full py-3.5 rounded-2xl bg-foreground text-background text-[14px] font-bold active:scale-[0.97] transition-all">
-                Save Changes
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); handleDontSave(); }}
-                className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 text-[14px] font-semibold active:scale-[0.97] transition-all border border-red-100 dark:border-red-900/50">
-                Don't Save
-              </button>
-            </div>
+      {/* ── Unsaved Changes Dialog (exact PC copy, centered) ── */}
+      <Dialog open={showExitDialog} onOpenChange={open => { if (!open) setShowExitDialog(false); }}>
+        <DialogContent className="bg-white dark:bg-[#161616] border border-zinc-200 dark:border-zinc-800 max-w-sm shadow-2xl rounded-2xl p-6 z-[200]">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-900 dark:text-white text-lg font-bold">Unsaved Changes</DialogTitle>
+            <DialogDescription className="text-zinc-500 dark:text-zinc-400 text-sm mt-2">
+              You have unsaved changes. Do you want to save them before leaving?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6 flex justify-end space-x-3">
+            <Button
+              variant="ghost"
+              onClick={handleDontSave}
+              className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              Don't Save
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-bold"
+            >
+              Save
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1258,19 +1254,19 @@ function ChatBg({ bg }: { bg: string }) {
 
   return (
     <>
-      {/* Animated gradient side strips — same as PC */}
+      {/* Animated gradient side strips — z:-1 so they stay behind all content */}
       {showGradientSides && (
         <>
-          <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
+          <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-[-1]"
             style={{ width: "24%", background: `linear-gradient(to right, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? "0s, 0s" : "0s" }} />
-          <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
+          <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-[-1]"
             style={{ width: "24%", background: `linear-gradient(to left, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? "0s, 0.5s" : "0s" }} />
         </>
       )}
 
-      {/* Twinkling star dots — same as PC */}
+      {/* Twinkling star dots — z:-1 so they stay behind all content */}
       {showStars && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-[-1]">
           {STAR_DATA.map((s, i) => (
             <div key={i} className="absolute rounded-full bg-foreground"
               style={{
@@ -1348,9 +1344,9 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
           <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
+      <div className="flex-1 overflow-y-auto px-4 py-3 bg-white dark:bg-zinc-950" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
-          <div className="flex flex-col items-center justify-center min-h-full py-8 text-center bg-white dark:bg-zinc-950">
+          <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
             <Logo size="xl" className="mb-5 text-foreground" />
             <h2 className="text-[22px] font-bold text-foreground mb-1">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : user?.username ? `Welcome back, ${user.username}!` : "Welcome to Fius"}
