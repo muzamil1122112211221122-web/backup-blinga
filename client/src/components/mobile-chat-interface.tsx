@@ -799,6 +799,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   // Simple dirty flag — set true when user changes any setting
   const isDirtyRef = useRef(false);
+  // Snapshot of all saved values when modal opens — used to revert on "Don't Save"
+  const originalValuesRef = useRef({
+    aiPreset: "custom", customInstructions: "", chatBg: "plain",
+    functionBarStyle: "circle", messageBarStyle: "compact",
+    toggles: {} as Record<string, string>,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -808,12 +814,25 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setClosing(false);
       setShowUnsavedDialog(false);
       isDirtyRef.current = false;
+
       // Load current saved values into local state so UI shows what's saved
-      setSelectedPreset(localStorage.getItem("aiPreset") || "custom");
-      setCustomInstructions(localStorage.getItem("customInstructions") || "");
-      setChatBg(localStorage.getItem("chatBg") || "plain");
-      setFunctionBarStyle(localStorage.getItem("functionBarStyle") || "circle");
-      setMessageBarStyle(localStorage.getItem("messageBarStyle") || "compact");
+      const preset = localStorage.getItem("aiPreset") || "custom";
+      const instructions = localStorage.getItem("customInstructions") || "";
+      const bg = localStorage.getItem("chatBg") || "plain";
+      const fnStyle = localStorage.getItem("functionBarStyle") || "circle";
+      const msgStyle = localStorage.getItem("messageBarStyle") || "compact";
+      const toggleKeys = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
+      const toggleSnapshot: Record<string,string> = {};
+      toggleKeys.forEach(k => { toggleSnapshot[k] = localStorage.getItem(k) ?? ""; });
+
+      // Save original snapshot for revert
+      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, toggles: toggleSnapshot };
+
+      setSelectedPreset(preset);
+      setCustomInstructions(instructions);
+      setChatBg(bg);
+      setFunctionBarStyle(fnStyle);
+      setMessageBarStyle(msgStyle);
       setLocalToggles({
         autoScroll: localStorage.getItem("autoScroll") !== "false",
         richText: localStorage.getItem("richText") !== "false",
@@ -837,6 +856,22 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     isDirtyRef.current = false;
     setClosing(true);
     setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
+  };
+
+  // Revert all immediately-saved settings back to what they were when modal opened
+  const revertAndClose = () => {
+    const orig = originalValuesRef.current;
+    localStorage.setItem("chatBg", orig.chatBg);
+    localStorage.setItem("functionBarStyle", orig.functionBarStyle);
+    localStorage.setItem("messageBarStyle", orig.messageBarStyle);
+    Object.entries(orig.toggles).forEach(([k, v]) => {
+      if (v === "") localStorage.removeItem(k); else localStorage.setItem(k, v);
+    });
+    onChatBgChange?.(orig.chatBg);
+    window.dispatchEvent(new Event("chatBgChanged"));
+    window.dispatchEvent(new Event("functionBarStyleChanged"));
+    window.dispatchEvent(new Event("messageBarStyleChanged"));
+    doClose();
   };
 
   const handleClose = () => {
@@ -1182,14 +1217,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 Save Changes
               </button>
               <button
-                onClick={e => { e.stopPropagation(); setShowUnsavedDialog(false); doClose(); }}
+                onClick={e => { e.stopPropagation(); revertAndClose(); }}
                 className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 text-[14px] font-semibold active:scale-[0.97] transition-all border border-red-100 dark:border-red-900/50">
                 Don't Save
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); setShowUnsavedDialog(false); }}
-                className="w-full py-3 rounded-2xl text-muted-foreground text-[13px] font-medium active:scale-[0.97] transition-all">
-                Cancel
               </button>
             </div>
           </div>

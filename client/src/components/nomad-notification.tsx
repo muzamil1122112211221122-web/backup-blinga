@@ -85,12 +85,12 @@ function AppNotification({ image, title, description, dotColor = "bg-green-400",
     >
       <div
         style={{
-          background: "rgba(28,28,30,0.92)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
+          background: "rgba(28,28,30,0.52)",
+          backdropFilter: "blur(32px) saturate(1.8)",
+          WebkitBackdropFilter: "blur(32px) saturate(1.8)",
           borderRadius: 18,
-          border: "1px solid rgba(255,255,255,0.10)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+          border: "1px solid rgba(255,255,255,0.16)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.28)",
           padding: "10px 12px 10px 10px",
           display: "flex",
           alignItems: "center",
