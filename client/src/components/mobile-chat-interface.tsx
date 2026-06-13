@@ -499,9 +499,11 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   useEffect(() => {
     if (!taRef.current) return;
+    const minH = msgBarStyle === "default" ? 62 : 28;
+    const maxH = msgBarStyle === "default" ? 160 : 120;
     taRef.current.style.height = "auto";
-    taRef.current.style.height = Math.min(taRef.current.scrollHeight, 100) + "px";
-  }, [value]);
+    taRef.current.style.height = Math.min(Math.max(taRef.current.scrollHeight, minH), maxH) + "px";
+  }, [value, msgBarStyle]);
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); }
@@ -553,14 +555,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   );
 
   return (
-    <div className="relative flex-shrink-0" style={{ zIndex: 1 }}>
+    <div className="relative flex-shrink-0 bg-background" style={{ zIndex: 1 }}>
       {/* Fade feather — invisible for first 70%, solidifies only at the very bottom */}
       <div
         className="absolute left-0 right-0 pointer-events-none bg-gradient-to-b from-transparent from-0% via-transparent via-[70%] to-background"
         style={{ top: -85, height: 85 }}
       />
-    <div className="px-3 pb-3 pt-0"
-      style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+    <div className="px-3 pb-3 pt-0">
       {isListening && (
         <div className="flex justify-center mb-1.5">
           <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
