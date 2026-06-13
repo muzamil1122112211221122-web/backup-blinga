@@ -789,14 +789,18 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
 
-  // Refs for handleClose — avoids stale closure entirely
-  const isDirtyRef = useRef(false);
-  const showUnsavedRef = useRef(false);
-  const [isDirty, setIsDirty] = useState(false); // kept only for potential UI indicators
+  // ── Dirty / exit-dialog state (mirrors PC CustomizeModal exactly) ──
+  const [isDirty, setIsDirty] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
+  // Callback-ref: stableHandleClose never changes identity (safe for drag hook),
+  // but always delegates to the latest handleCloseAttempt which reads current state.
+  const handleCloseRef = useRef<() => void>(() => {});
+  const stableHandleClose = useCallback(() => handleCloseRef.current(), []);
+
   const originalValuesRef = useRef({
     aiPreset: "custom", customInstructions: "", chatBg: "plain",
     functionBarStyle: "circle", messageBarStyle: "compact",
-    togglesBool: {} as Record<string, boolean>,
     togglesRaw: {} as Record<string, string>,
   });
 
@@ -822,9 +826,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       setPreviewPic("");
       setShowCustomizePanel(false);
       setClosing(false);
-      setShowUnsavedDialog(false);
-      isDirtyRef.current = false;
-      showUnsavedRef.current = false;
+      setShowExitDialog(false);
       setIsDirty(false);
 
       const preset = localStorage.getItem("aiPreset") || "custom";
@@ -832,34 +834,29 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       const bg = localStorage.getItem("chatBg") || "plain";
       const fnStyle = localStorage.getItem("functionBarStyle") || "circle";
       const msgStyle = localStorage.getItem("messageBarStyle") || "compact";
-      const togglesBool = makeTogglesBool();
       const togglesRaw: Record<string,string> = {};
       TOGGLE_KEYS.forEach(k => { togglesRaw[k] = localStorage.getItem(k) ?? ""; });
 
-      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, togglesBool, togglesRaw };
+      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, togglesRaw };
 
       setSelectedPreset(preset);
       setCustomInstructions(instructions);
       setChatBg(bg);
       setFunctionBarStyle(fnStyle);
       setMessageBarStyle(msgStyle);
-      setLocalToggles(togglesBool);
+      setLocalToggles(makeTogglesBool());
     }
   }, [isOpen, user]);
 
-  // Ref-based dirty marker — instant, no stale closure risk
-  const markDirty = () => { isDirtyRef.current = true; };
+  const markDirty = () => setIsDirty(true);
 
   const doClose = () => {
-    isDirtyRef.current = false;
-    showUnsavedRef.current = false;
-    setIsDirty(false);
     setClosing(true);
-    setTimeout(() => { onClose(); setClosing(false); setShowUnsavedDialog(false); }, 320);
+    setTimeout(() => { onClose(); setClosing(false); }, 320);
   };
 
-  // Revert all immediately-saved settings back to what they were when modal opened
-  const revertAndClose = () => {
+  // Discard — revert any immediately-applied settings, then close
+  const handleDontSave = () => {
     const orig = originalValuesRef.current;
     localStorage.setItem("chatBg", orig.chatBg);
     localStorage.setItem("functionBarStyle", orig.functionBarStyle);
@@ -871,19 +868,18 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.dispatchEvent(new Event("chatBgChanged"));
     window.dispatchEvent(new Event("functionBarStyleChanged"));
     window.dispatchEvent(new Event("messageBarStyleChanged"));
+    setIsDirty(false);
+    setShowExitDialog(false);
     doClose();
   };
 
-  const handleClose = () => {
-    // Use refs — never stale, even inside drag callbacks
-    if (showUnsavedRef.current) return;
-    if (isDirtyRef.current) {
-      showUnsavedRef.current = true;
-      setShowUnsavedDialog(true);
-    } else {
-      doClose();
-    }
+  // Close attempt — show dialog if dirty, otherwise close immediately
+  const handleCloseAttempt = () => {
+    if (showExitDialog) return;
+    if (isDirty) { setShowExitDialog(true); } else { doClose(); }
   };
+  // Update ref every render so stableHandleClose always calls fresh logic
+  handleCloseRef.current = handleCloseAttempt;
 
   const handleSave = () => {
     localStorage.setItem("aiPreset", selectedPreset);
@@ -896,6 +892,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.dispatchEvent(new Event("messageBarStyleChanged"));
     onChatBgChange?.(chatBg);
     window.dispatchEvent(new Event("chatBgChanged"));
+    setIsDirty(false);
+    setShowExitDialog(false);
     doClose();
   };
 
@@ -915,12 +913,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     { id: "appearance", label: "Preferences", icon: Palette },
   ];
 
-  const settingsDrag = useDragDismiss(handleClose);
+  const settingsDrag = useDragDismiss(stableHandleClose);
 
-  if (!isOpen && !closing && !showUnsavedDialog) return null;
+  if (!isOpen && !closing && !showExitDialog) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showUnsavedDialog ? undefined : handleClose}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showExitDialog ? undefined : stableHandleClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         style={{ opacity: closing ? 0 : 1, transition: "opacity 0.32s cubic-bezier(0.23,1,0.32,1)" }} />
       <div ref={settingsDrag.sheetRef}
@@ -941,7 +939,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           <h2 className="text-[17px] font-bold text-foreground">Settings</h2>
           <div className="flex items-center gap-2">
             <button onClick={handleSave} className="px-4 py-1.5 rounded-full bg-foreground text-background text-xs font-bold active:scale-95 transition-all">Save</button>
-            <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent/80 text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={stableHandleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent/80 text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -1194,17 +1192,14 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       </div>
 
       {/* ── Unsaved Changes Dialog ── */}
-      {showUnsavedDialog && (
+      {showExitDialog && (
         <div
           className="absolute inset-0 z-[60] flex items-end justify-center"
           style={{ backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", background: "rgba(0,0,0,0.45)" }}
           onClick={e => e.stopPropagation()}>
           <div
             className="w-full mx-0 mb-0 bg-background rounded-t-[24px] shadow-2xl overflow-hidden"
-            style={{
-              animation: "slideUpSheet 0.32s cubic-bezier(0.23,1,0.32,1) both",
-            }}>
-            {/* Drag handle */}
+            style={{ animation: "slideUpSheet 0.32s cubic-bezier(0.23,1,0.32,1) both" }}>
             <div className="flex justify-center pt-3 pb-0">
               <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
             </div>
@@ -1219,7 +1214,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 Save Changes
               </button>
               <button
-                onClick={e => { e.stopPropagation(); revertAndClose(); }}
+                onClick={e => { e.stopPropagation(); handleDontSave(); }}
                 className="w-full py-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 text-[14px] font-semibold active:scale-[0.97] transition-all border border-red-100 dark:border-red-900/50">
                 Don't Save
               </button>
@@ -1355,7 +1350,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, model, se
       )}
       <div className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
-          <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
+          <div className="flex flex-col items-center justify-center min-h-full py-8 text-center bg-white dark:bg-zinc-950">
             <Logo size="xl" className="mb-5 text-foreground" />
             <h2 className="text-[22px] font-bold text-foreground mb-1">
               {user?.displayName ? `Welcome back, ${user.displayName}!` : user?.username ? `Welcome back, ${user.username}!` : "Welcome to Fius"}
