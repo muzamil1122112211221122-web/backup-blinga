@@ -635,7 +635,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-3xl"}`}>
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -736,15 +736,17 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
               </button>
-              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
-                placeholder={placeholder} rows={1}
-                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
-                style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
-              <button
-                className="w-2 h-2 flex items-center justify-center flex-shrink-0 self-start mt-[7px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
-                onClick={() => setExpandOpen(true)}>
-                <Maximize2 className="w-2 h-2" />
-              </button>
+              <div className="relative flex-1 border-b border-zinc-200/70 dark:border-zinc-600/40">
+                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                  placeholder={placeholder} rows={1}
+                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
+                  style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
+                <button
+                  className="absolute bottom-1 right-0 w-3 h-3 flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+                  onClick={() => setExpandOpen(true)}>
+                  <Maximize2 className="w-2 h-2" />
+                </button>
+              </div>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
               </button>
