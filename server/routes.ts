@@ -1554,18 +1554,18 @@ Respond with ONLY valid JSON in this exact format (no markdown, no extra text):
       }
       
       // Use AI to enhance the prompt efficiently and quickly
-      const enhancementPrompt = `You are a prompt enhancement assistant. Your job is ONLY to improve the way the user's prompt is written - fix grammar, make it clearer, and enhance the structure. 
+      const enhancementPrompt = `Rewrite the following prompt: fix grammar errors, improve clarity, and make it more detailed while keeping the exact same meaning and intent.
 
-IMPORTANT RULES:
-- DO NOT answer the question or provide solutions
-- DO NOT give explanations or add content beyond the original intent
-- ONLY improve the way the prompt is written
-- Return ONLY the enhanced version of the prompt, nothing else
-- Keep the same intent but make it more clear and well-written
+STRICT OUTPUT RULES — violating any of these will cause a failure:
+• Output ONLY the rewritten prompt text. Nothing else.
+• Do NOT start with "Here", "Here's", "This", "Sure", "I've", "Improved", "Enhanced", "Rewritten", or any similar word.
+• Do NOT add quotes around the output.
+• Do NOT include any label like "Improved prompt:", "Enhanced version:", etc.
+• Do NOT explain what you changed.
+• Do NOT ask any questions.
+• Start your output directly with the first word of the improved prompt.
 
-Original prompt to enhance: "${originalPrompt}"
-
-Enhanced version:`;
+Prompt to rewrite: ${originalPrompt}`;
 
       // Smart retry with automatic key switching for prompt enhancement  
       const maxRetries = 3;

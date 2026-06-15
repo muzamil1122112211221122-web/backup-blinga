@@ -224,7 +224,9 @@ import {
   Loader2,
   Sparkles,
   Wand2,
-  Maximize2
+  Maximize2,
+  Minimize2,
+  AlignLeft
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -878,6 +880,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [exportingMsgId, setExportingMsgId] = useState<string | null>(null);
   const [promptFullscreen, setPromptFullscreen] = useState(false);
+  const [longPromptMode, setLongPromptMode] = useState(false);
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
@@ -4981,56 +4984,98 @@ Let's start the self-listen session!`;
 
       {/* ── Fullscreen prompt editor (Gemini-style) ── */}
       {promptFullscreen && (
-        <div
-          className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setPromptFullscreen(false)}
-        >
-          <div
-            className="w-full max-w-3xl bg-white dark:bg-[#303030] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-            onClick={e => e.stopPropagation()}
-            style={{ maxHeight: '80vh' }}
-          >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-700">
-              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Edit prompt</span>
-              <button
-                onClick={() => setPromptFullscreen(false)}
-                className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-              >
-                <X className="w-4 h-4 text-zinc-500" />
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[9998] bg-background flex flex-col" style={{ animation: "sheetEnter 0.32s cubic-bezier(0.23,1,0.32,1) both" }}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Type your message</span>
+            <button
+              onClick={() => { setPromptFullscreen(false); setLongPromptMode(false); setTimeout(() => textareaRef.current?.focus(), 100); }}
+              className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+            >
+              <Minimize2 className="w-4 h-4 text-zinc-500" />
+            </button>
+          </div>
+          {/* Textarea */}
+          <div className="flex-1 overflow-hidden p-5">
             <textarea
               autoFocus
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Escape') setPromptFullscreen(false);
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  setPromptFullscreen(false);
-                  setTimeout(() => textareaRef.current?.focus(), 100);
-                }
+                if (e.key === 'Escape') { setPromptFullscreen(false); setLongPromptMode(false); }
               }}
-              placeholder="Type a detailed prompt here… (Esc to close, ⌘Enter to confirm)"
-              className="flex-1 p-5 text-base bg-transparent text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none placeholder:text-zinc-400 leading-relaxed"
-              style={{ minHeight: 300 }}
+              placeholder="Type a detailed prompt here…"
+              className="w-full h-full text-[15px] bg-transparent text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none placeholder:text-zinc-400 leading-relaxed"
             />
-            <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-200 dark:border-zinc-700">
-              <span className="text-xs text-zinc-400">Press ⌘↵ to confirm · Esc to cancel</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPromptFullscreen(false)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => { setPromptFullscreen(false); setTimeout(() => textareaRef.current?.focus(), 100); }}
-                  className="px-5 py-2 rounded-xl text-sm font-semibold bg-zinc-900 dark:bg-white text-white dark:text-black hover:opacity-90 transition-all"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
+          </div>
+          {/* Bottom bar */}
+          <div className="flex items-center gap-2 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+            {/* Mic */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={toggleListening}
+                    disabled={!speechSupported}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListening ? "bg-emerald-500/15 text-emerald-400" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"} disabled:opacity-30`}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{isListening ? "Stop listening" : "Voice input"}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/* Enhance */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleEnhancePrompt}
+                    disabled={!inputValue.trim() || isEnhancing}
+                    className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex-shrink-0 disabled:opacity-30"
+                  >
+                    {isEnhancing
+                      ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                      : <Sparkles className="w-4 h-4" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Enhance prompt</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/* Long Answer toggle */}
+            <button
+              onClick={() => setLongPromptMode(v => !v)}
+              className={`h-9 px-3 rounded-full flex items-center gap-1.5 transition-all flex-shrink-0 text-[11px] font-semibold ${longPromptMode ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"}`}
+            >
+              <AlignLeft className="w-3.5 h-3.5 flex-shrink-0" />
+              Long
+            </button>
+            {/* Char count */}
+            <span className="text-xs text-zinc-400 flex-1 text-right tabular-nums">
+              {inputValue.length > 0 ? inputValue.length : ""}
+            </span>
+            {/* Cancel */}
+            <button
+              onClick={() => { setPromptFullscreen(false); setLongPromptMode(false); }}
+              className="h-9 px-4 rounded-full text-sm font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
+            >
+              Cancel
+            </button>
+            {/* Done / Send */}
+            <button
+              onClick={() => {
+                if (longPromptMode && inputValue.trim()) {
+                  setInputValue(inputValue.trim() + "\n\nPlease provide a very detailed and thorough answer.");
+                  setLongPromptMode(false);
+                }
+                setPromptFullscreen(false);
+                setTimeout(() => textareaRef.current?.focus(), 50);
+              }}
+              disabled={!inputValue.trim()}
+              className="h-9 px-5 rounded-full flex items-center gap-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold disabled:opacity-30 transition-all hover:opacity-90 flex-shrink-0"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

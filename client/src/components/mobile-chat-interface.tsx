@@ -517,6 +517,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [expandOpen, setExpandOpen] = useState(false);
+  const [longAnswer, setLongAnswer] = useState(false);
   const expandTaRef = useRef<HTMLTextAreaElement>(null);
   const overlayDrag = useDragDismiss(() => setExpandOpen(false), 60);
 
@@ -550,16 +551,19 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     if (isListening && (window as any)._sr) { (window as any)._sr.stop(); return; }
     const rec = new SR(); (window as any)._sr = rec;
     rec.continuous = false; rec.interimResults = false; rec.lang = "en-US";
-    rec.onresult = (e: any) => { const t = e.results[0][0].transcript; onChange(value ? `${value} ${t}` : t); };
+    rec.onresult = (e: any) => { const t = e.results[0][0].transcript; onChange(valueRef.current ? `${valueRef.current} ${t}` : t); };
     rec.onend = () => setIsListening(false);
     rec.start(); setIsListening(true);
   };
+
+  const valueRef = useRef(value);
+  useEffect(() => { valueRef.current = value; }, [value]);
 
   const handleEnhance = async () => {
     if (!value.trim() || isEnhancing) return;
     setIsEnhancing(true);
     try {
-      const res = await fetch("/api/enhance-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: value }) });
+      const res = await fetch("/api/enhance-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ originalPrompt: value }) });
       const data = await res.json();
       if (data.enhancedPrompt) onChange(data.enhancedPrompt);
     } catch { } finally { setIsEnhancing(false); }
@@ -847,9 +851,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 btn-icon" />}
               </button>
             )}
-            {/* Long Answer */}
-            <button onClick={() => onChange((value.trim() ? value.trim() + "\n\n" : "") + "Please give a very detailed, thorough answer.")}
-              className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition-all active:scale-90 flex-shrink-0 text-[11px] font-semibold">
+            {/* Long Answer toggle */}
+            <button onClick={() => setLongAnswer(v => !v)}
+              className={`h-9 px-3 rounded-full flex items-center gap-1.5 transition-all active:scale-90 flex-shrink-0 text-[11px] font-semibold ${longAnswer ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"}`}>
               <AlignLeft className="w-3.5 h-3.5 flex-shrink-0" />
               Long
             </button>
@@ -861,7 +865,11 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
               </button>
             ) : (
-              <button onClick={() => { onSend(); setExpandOpen(false); }} disabled={!value.trim()}
+              <button onClick={() => {
+                if (longAnswer && value.trim()) onChange(value.trim() + "\n\nPlease provide a very detailed and thorough answer.");
+                setLongAnswer(false);
+                setTimeout(() => { onSend(); setExpandOpen(false); }, 0);
+              }} disabled={!value.trim()}
                 className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all flex-shrink-0">
                 <ArrowUp className="w-5 h-5 text-white dark:text-black" />
               </button>
