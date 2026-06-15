@@ -651,12 +651,20 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 </button>
               </div>
             )}
-            {/* Row 1: full-width textarea */}
-            <div className="px-3 pt-2.5 pb-1">
+            {/* Row 1: full-width textarea with collapse button */}
+            <div className="relative px-3 pt-2.5 pb-1">
               <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                 placeholder={placeholder}
-                className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
+                className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed pr-6"
                 style={{ minHeight: 52, maxHeight: 120, scrollbarWidth: "none" }} />
+              <button
+                className="absolute top-2 right-2 w-4 h-4 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
+                onClick={() => {
+                  localStorage.setItem("messageBarStyle", "compact");
+                  window.dispatchEvent(new Event("messageBarStyleChanged"));
+                }}>
+                <Maximize2 className="w-2.5 h-2.5 rotate-180" />
+              </button>
             </div>
             {/* Row 2: attach + model left | mic + enhance + send right */}
             <div className="flex items-center justify-between px-2 pb-2">
@@ -733,14 +741,20 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
               </button>
-              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
-                placeholder={placeholder} rows={1}
-                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
-                style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
-              <button className={`w-3 h-3 flex items-center justify-center flex-shrink-0 self-start mt-[13px] transition-all ${value.trim() ? "opacity-70" : "opacity-25"}`}
-                onClick={() => {}}>
-                <Maximize2 className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />
-              </button>
+              <div className="relative flex-1">
+                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                  placeholder="Ask anything…" rows={1}
+                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1 pr-5"
+                  style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
+                <button
+                  className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
+                  onClick={() => {
+                    localStorage.setItem("messageBarStyle", "default");
+                    window.dispatchEvent(new Event("messageBarStyleChanged"));
+                  }}>
+                  <Maximize2 className="w-2.5 h-2.5" />
+                </button>
+              </div>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
               </button>
