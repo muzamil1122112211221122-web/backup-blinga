@@ -843,6 +843,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const [closing, setClosing] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [editName, setEditName] = useState(user?.displayName || user?.username || "");
   const [previewPic, setPreviewPic] = useState("");
@@ -893,10 +894,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   useEffect(() => {
     if (isOpen) {
+      setClosing(false);
+      setMounted(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setMounted(true)));
       setEditName(user?.displayName || user?.username || "");
       setPreviewPic("");
       setShowCustomizePanel(false);
-      setClosing(false);
       setShowExitDialog(false);
       setIsDirty(false);
 
