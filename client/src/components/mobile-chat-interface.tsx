@@ -225,7 +225,7 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: () => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean }) {
+function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -349,7 +349,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <button onClick={onNewChat} className={ab}><MessageSquarePlus className="w-4 h-4" /></button>
+              <button onClick={() => onNewChat?.(msg.content)} className={ab}><MessageSquarePlus className="w-4 h-4" /></button>
             </div>
           )}
         </div>
@@ -1336,7 +1336,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
 function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
-  onSend: () => void; onStop: () => void; onNewChat?: () => void; onRetry?: () => void;
+  onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
@@ -1912,6 +1912,26 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const handleSelectConv = useCallback((id: string) => { setCurrentConvId(id); setAskMsgs([]); setTab("ask"); loadConv(id); }, [loadConv]);
   const handleNewChat = useCallback(() => { setCurrentConvId(undefined); setAskMsgs([]); setAskInput(""); setTab("ask"); }, []);
+
+  const handleChatInNewChat = useCallback(async (content: string) => {
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Continued Chat", model: askModel }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const newId = data.id || data.conversation?.id;
+      if (!newId) return;
+      setCurrentConvId(newId);
+      setAskMsgs([{ id: uid(), role: "ai", content, timestamp: new Date() }]);
+      setAskInput("");
+      setTab("ask");
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+    } catch { }
+  }, [askModel]);
+
   const handleDeleteConv = useCallback(async (id: string) => {
     try { await fetch(`/api/conversations/${id}`, { method: "DELETE" }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); if (id === currentConvId) handleNewChat(); } catch { }
   }, [currentConvId, handleNewChat]);
@@ -2108,7 +2128,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
               <ChatBg bg={chatBg} />
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
-                onNewChat={handleNewChat}
+                onNewChat={handleChatInNewChat}
                 onRetry={() => {
                   const lastUser = [...askMsgs].reverse().find(m => m.role === "user");
                   if (lastUser) { setAskMsgs(p => p.slice(0, -1)); setAskInput(lastUser.content); setTimeout(() => handleAskSend(), 50); }
