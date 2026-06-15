@@ -175,7 +175,7 @@ function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: st
 const _completedMsgs = new Map<string, boolean>();
 const _progressMsgs = new Map<string, string>();
 
-function useTypingAnimation(text: string, msgId: string, speed = 30) {
+function useTypingAnimation(text: string, msgId: string, speed = 35) {
   const [displayed, setDisplayed] = useState(() =>
     _completedMsgs.has(msgId) ? text : (_progressMsgs.get(msgId) ?? "")
   );
@@ -208,17 +208,38 @@ function useTypingAnimation(text: string, msgId: string, speed = 30) {
 
 // ─── Micro components ─────────────────────────────────────────────────────────
 function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme !== 'dark';
   const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
   const W = 196, H = 66;
   return (
     <div className="flex justify-start mb-2">
       <div className="thinking-cloud-wrapper" style={{ position: "relative", width: W, height: H }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: "absolute", top: 0, left: 0 }}>
-          <path d={cloudPath} fill="rgba(22,22,28,0.78)" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" strokeLinejoin="round" />
+        <svg
+          viewBox={`0 0 ${W} ${H}`} width={W} height={H}
+          style={{
+            position: "absolute", top: 0, left: 0,
+            filter: isLight ? 'drop-shadow(0 2px 10px rgba(0,0,0,0.13))' : 'none'
+          }}
+        >
+          <path
+            d={cloudPath}
+            fill={isLight ? "rgba(255,255,255,0.98)" : "rgba(22,22,28,0.78)"}
+            stroke={isLight ? "rgba(160,165,180,0.8)" : "rgba(255,255,255,0.12)"}
+            strokeWidth="1.5" strokeLinejoin="round"
+          />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
           <Logo size="sm" />
-          <span className="thinking-label">{label}</span>
+          <span className="thinking-label" style={isLight ? {
+            background: 'linear-gradient(90deg, rgba(55,55,75,0.85) 0%, rgba(55,55,75,0.85) 38%, rgba(10,10,30,1) 50%, rgba(55,55,75,0.85) 62%, rgba(55,55,75,0.85) 100%)',
+            backgroundSize: '250% auto',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'text-shimmer 1.8s linear infinite',
+            animationDelay: '0.7s',
+          } : undefined}>{label}</span>
         </div>
       </div>
     </div>
@@ -546,10 +567,15 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); }
   };
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
     if (isListening && (window as any)._sr) { try { (window as any)._sr.stop(); } catch {} (window as any)._sr = null; return; }
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      return;
+    }
     const rec = new SR(); (window as any)._sr = rec;
     rec.continuous = false; rec.interimResults = false; rec.lang = "en-US";
     rec.onresult = (e: any) => { const t = e.results[0][0].transcript; onChange(valueRef.current ? `${valueRef.current} ${t}` : t); };
