@@ -741,9 +741,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
                 style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
               <button
-                className="w-3 h-3 flex items-center justify-center flex-shrink-0 self-start mt-[13px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
+                className="w-2 h-2 flex items-center justify-center flex-shrink-0 self-start mt-[7px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
                 onClick={() => setExpandOpen(true)}>
-                <Maximize2 className="w-2.5 h-2.5" />
+                <Maximize2 className="w-2 h-2" />
               </button>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
