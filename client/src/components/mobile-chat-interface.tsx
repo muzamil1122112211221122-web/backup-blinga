@@ -13,7 +13,7 @@ import {
   RefreshCcw, Palette, ChevronDown, Trash2, Camera, Sparkles,
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
-  Heart, Wand2, Edit, Maximize2, Copy, ThumbsUp, ThumbsDown, Volume2,
+  Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
   MessageSquarePlus, FileDown, Square,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -490,6 +490,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [attachOpen, setAttachOpen] = useState(false);
   const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
+  const [expandOpen, setExpandOpen] = useState(false);
+  const expandTaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const h1 = () => setFnBarStyle(localStorage.getItem("functionBarStyle") || "circle");
@@ -565,6 +567,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   };
 
   return (
+    <>
     <div className="relative flex-shrink-0 bg-background" style={{ zIndex: 1 }}>
       {/* Fade feather — invisible for first 70%, solidifies only at the very bottom */}
       <div
@@ -651,20 +654,12 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 </button>
               </div>
             )}
-            {/* Row 1: full-width textarea with collapse button */}
-            <div className="relative px-3 pt-2.5 pb-1">
+            {/* Row 1: full-width textarea */}
+            <div className="px-3 pt-2.5 pb-1">
               <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                 placeholder={placeholder}
-                className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed pr-6"
+                className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
                 style={{ minHeight: 52, maxHeight: 120, scrollbarWidth: "none" }} />
-              <button
-                className="absolute top-2 right-2 w-4 h-4 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
-                onClick={() => {
-                  localStorage.setItem("messageBarStyle", "compact");
-                  window.dispatchEvent(new Event("messageBarStyleChanged"));
-                }}>
-                <Maximize2 className="w-2.5 h-2.5 rotate-180" />
-              </button>
             </div>
             {/* Row 2: attach + model left | mic + enhance + send right */}
             <div className="flex items-center justify-between px-2 pb-2">
@@ -741,20 +736,15 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
               </button>
-              <div className="relative flex-1">
-                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
-                  placeholder="Ask anything…" rows={1}
-                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1 pr-5"
-                  style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
-                <button
-                  className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
-                  onClick={() => {
-                    localStorage.setItem("messageBarStyle", "default");
-                    window.dispatchEvent(new Event("messageBarStyleChanged"));
-                  }}>
-                  <Maximize2 className="w-2.5 h-2.5" />
-                </button>
-              </div>
+              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                placeholder={placeholder} rows={1}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
+                style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
+              <button
+                className="w-3 h-3 flex items-center justify-center flex-shrink-0 self-start mt-[13px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors active:scale-90"
+                onClick={() => setExpandOpen(true)}>
+                <Maximize2 className="w-2.5 h-2.5" />
+              </button>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
               </button>
@@ -780,6 +770,50 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       </div>
     </div>
     </div>
+
+    {/* ── Full-screen expand overlay ── */}
+    {expandOpen && (
+      <div className="fixed inset-0 z-[300] bg-background flex flex-col animate-in fade-in duration-150"
+        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <span className="text-sm font-semibold text-foreground">Type your message</span>
+          <button
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-500 hover:text-foreground hover:bg-accent transition-all active:scale-90"
+            onClick={() => setExpandOpen(false)}>
+            <Minimize2 className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Textarea fills available space */}
+        <div className="flex-1 px-4 py-2 overflow-hidden">
+          <textarea
+            ref={expandTaRef}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            autoFocus
+            className="w-full h-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
+            style={{ scrollbarWidth: "none" }}
+          />
+        </div>
+        {/* Bottom bar */}
+        <div className="px-4 pb-4 flex items-center justify-end gap-3">
+          <span className="text-xs text-muted-foreground flex-1">{value.length > 0 ? `${value.length} chars` : ""}</span>
+          {isTyping ? (
+            <button onClick={() => { onStop?.(); setExpandOpen(false); }}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 transition-all">
+              <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
+            </button>
+          ) : (
+            <button onClick={() => { onSend(); setExpandOpen(false); }} disabled={!value.trim()}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all">
+              <ArrowUp className="w-5 h-5 text-white dark:text-black" />
+            </button>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
