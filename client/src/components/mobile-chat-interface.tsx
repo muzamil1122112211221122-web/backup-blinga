@@ -739,10 +739,10 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <div className="relative flex-1">
                 <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                   placeholder={placeholder} rows={1}
-                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 px-1"
+                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1 pr-4"
                   style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
                 <button
-                  className="absolute top-1 right-0 w-3 h-3 flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+                  className="absolute top-0 right-0 w-3 h-3 flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
                   onClick={() => setExpandOpen(true)}>
                   <Maximize2 className="w-2 h-2" />
                 </button>
