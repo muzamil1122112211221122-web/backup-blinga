@@ -1437,7 +1437,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
         )}
       </div>
       <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
-        placeholder="What do you want to know?" tab="ask" model={model} onModelChange={setModel}
+        placeholder="Ask anything…" tab="ask" model={model} onModelChange={setModel}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
         onSettings={onSettings} onEducation={onEducation} showEnhance showModel />
     </>
