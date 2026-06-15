@@ -3378,8 +3378,8 @@ Let's start the self-listen session!`;
                     >
                       <path
                         d={cloudPath}
-                        fill="rgba(22,22,28,0.78)"
-                        stroke="rgba(255,255,255,0.12)"
+                        fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.97)"}
+                        stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(170,170,185,0.7)"}
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                       />
@@ -4218,7 +4218,7 @@ Let's start the self-listen session!`;
                 'button-fius-integration'
               )}
               {renderFunctionBtn(
-                <AudioLines className="h-6 w-6" />,
+                <AudioLines className="h-6 w-6" strokeWidth={1.5} />,
                 'Voice Mode',
                 () => setIsVoiceModeModalOpen(true),
                 undefined,

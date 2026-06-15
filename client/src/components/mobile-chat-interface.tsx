@@ -518,6 +518,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [expandOpen, setExpandOpen] = useState(false);
   const [longAnswer, setLongAnswer] = useState(false);
+  const [promptInlineExpanded, setPromptInlineExpanded] = useState(false);
   const expandTaRef = useRef<HTMLTextAreaElement>(null);
   const overlayDrag = useDragDismiss(() => setExpandOpen(false), 60);
 
@@ -548,11 +549,12 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const toggleMic = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
-    if (isListening && (window as any)._sr) { (window as any)._sr.stop(); return; }
+    if (isListening && (window as any)._sr) { try { (window as any)._sr.stop(); } catch {} (window as any)._sr = null; return; }
     const rec = new SR(); (window as any)._sr = rec;
     rec.continuous = false; rec.interimResults = false; rec.lang = "en-US";
     rec.onresult = (e: any) => { const t = e.results[0][0].transcript; onChange(valueRef.current ? `${valueRef.current} ${t}` : t); };
-    rec.onend = () => setIsListening(false);
+    rec.onend = () => { setIsListening(false); (window as any)._sr = null; };
+    rec.onerror = () => { setIsListening(false); (window as any)._sr = null; };
     rec.start(); setIsListening(true);
   };
 
@@ -768,15 +770,36 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
               </button>
               <div className="relative flex-1">
-                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                <textarea ref={taRef} value={value} onChange={e => { onChange(e.target.value); if (e.target.value.length <= 60) setPromptInlineExpanded(false); }} onKeyDown={handleKey}
                   placeholder={placeholder} rows={1}
-                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1 pr-4"
-                  style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
+                  className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1"
+                  style={{
+                    height: promptInlineExpanded ? undefined : 38,
+                    maxHeight: promptInlineExpanded ? 130 : 38,
+                    minHeight: promptInlineExpanded ? 70 : 38,
+                    overflowY: promptInlineExpanded ? "auto" : "hidden",
+                    scrollbarWidth: "none",
+                    paddingRight: value.length > 60 ? 20 : 16,
+                    transition: "max-height 0.28s cubic-bezier(0.23,1,0.32,1), min-height 0.28s cubic-bezier(0.23,1,0.32,1)"
+                  }} />
+                {/* Fullscreen open */}
                 <button
-                  className="absolute top-0 right-0 w-3 h-3 flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                  className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
                   onClick={() => setExpandOpen(true)}>
                   <Maximize2 className="w-2 h-2" />
                 </button>
+                {/* Inline expand/collapse — only when text is long */}
+                {value.length > 60 && (
+                  <button
+                    className="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center rounded-full bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm transition-all active:scale-90"
+                    style={{ bottom: -2, right: -2 }}
+                    onClick={() => setPromptInlineExpanded(v => !v)}
+                  >
+                    {promptInlineExpanded
+                      ? <ChevronUp className="w-3 h-3" />
+                      : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                )}
               </div>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
