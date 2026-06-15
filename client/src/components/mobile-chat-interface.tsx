@@ -775,8 +775,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1"
                   style={{
                     height: promptInlineExpanded ? undefined : 38,
-                    maxHeight: promptInlineExpanded ? 130 : 38,
-                    minHeight: promptInlineExpanded ? 70 : 38,
+                    maxHeight: promptInlineExpanded ? 78 : 38,
+                    minHeight: promptInlineExpanded ? 62 : 38,
                     overflowY: promptInlineExpanded ? "auto" : "hidden",
                     scrollbarWidth: "none",
                     paddingRight: value.length > 60 ? 20 : 16,

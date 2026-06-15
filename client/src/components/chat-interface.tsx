@@ -3374,12 +3374,15 @@ Let's start the self-listen session!`;
                     <svg
                       viewBox={`0 0 ${W} ${H}`}
                       width={W} height={H}
-                      style={{ position: 'absolute', top: 0, left: 0 }}
+                      style={{
+                        position: 'absolute', top: 0, left: 0,
+                        filter: resolvedTheme !== 'dark' ? 'drop-shadow(0 2px 10px rgba(0,0,0,0.13))' : 'none'
+                      }}
                     >
                       <path
                         d={cloudPath}
-                        fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.97)"}
-                        stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(170,170,185,0.7)"}
+                        fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"}
+                        stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"}
                         strokeWidth="1.5"
                         strokeLinejoin="round"
                       />
@@ -3402,7 +3405,15 @@ Let's start the self-listen session!`;
                       {(settingsToggles.showFiusLogo ?? true) && (
                         <Logo size="sm" />
                       )}
-                      <span className="thinking-label">{label}</span>
+                      <span className="thinking-label" style={resolvedTheme !== 'dark' ? {
+                        background: 'linear-gradient(90deg, rgba(55,55,75,0.85) 0%, rgba(55,55,75,0.85) 38%, rgba(10,10,30,1) 50%, rgba(55,55,75,0.85) 62%, rgba(55,55,75,0.85) 100%)',
+                        backgroundSize: '250% auto',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        animation: 'text-shimmer 1.8s linear infinite',
+                        animationDelay: '0.7s',
+                      } : undefined}>{label}</span>
                     </div>
                   </div>
                 </div>
@@ -4986,7 +4997,7 @@ Let's start the self-listen session!`;
       {promptFullscreen && (
         <div className="fixed inset-0 z-[9998] bg-background flex flex-col" style={{ animation: "sheetEnter 0.32s cubic-bezier(0.23,1,0.32,1) both" }}>
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+          <div className="flex items-center justify-between px-5 py-3.5 flex-shrink-0">
             <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Type your message</span>
             <button
               onClick={() => { setPromptFullscreen(false); setLongPromptMode(false); setTimeout(() => textareaRef.current?.focus(), 100); }}
@@ -5009,7 +5020,7 @@ Let's start the self-listen session!`;
             />
           </div>
           {/* Bottom bar */}
-          <div className="flex items-center gap-2 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+          <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0">
             {/* Mic */}
             <TooltipProvider>
               <Tooltip>
