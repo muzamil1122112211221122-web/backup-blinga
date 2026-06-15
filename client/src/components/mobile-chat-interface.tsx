@@ -14,7 +14,7 @@ import {
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
-  MessageSquarePlus, FileDown, Square,
+  MessageSquarePlus, FileDown, Square, AlignLeft,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -441,23 +441,44 @@ function ModelSheet({ models, current, onSelect, onClose }: {
   models: { id: string; name: string }[]; current: string; onSelect: (id: string) => void; onClose: () => void;
 }) {
   const drag = useDragDismiss(onClose);
+  const [mounted, setMounted] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setMounted(true)));
+  }, []);
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(() => onClose(), 300);
+  };
+
+  const sheetTransform = (closing || !mounted) ? "translateY(100%)" : "translateY(0)";
+  const overlayOpacity = (closing || !mounted) ? 0 : 1;
+
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200" />
+    <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={handleClose}>
+      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+        style={{ opacity: overlayOpacity, transition: "opacity 0.3s cubic-bezier(0.23,1,0.32,1)" }} />
       <div ref={drag.sheetRef}
-        className="relative bg-background rounded-t-[24px] shadow-2xl animate-in slide-in-from-bottom duration-300"
-        style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)", paddingBottom: "max(env(safe-area-inset-bottom), 20px)" }}
+        className="relative bg-background rounded-t-[24px] shadow-2xl"
+        style={{
+          paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
+          transform: sheetTransform,
+          transition: "transform 0.35s cubic-bezier(0.23,1,0.32,1)",
+        }}
         onClick={e => e.stopPropagation()}>
         {/* Drag handle — only this area triggers swipe-to-dismiss */}
-        <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+        <div className="flex justify-center pt-4 pb-3 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: "none" }}
           onTouchStart={drag.onTouchStart} onTouchMove={drag.onTouchMove} onTouchEnd={drag.onTouchEnd}>
-          <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
+          <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
         </div>
         <p className="text-[16px] font-bold text-foreground px-5 mb-2">Select Model</p>
-        {/* Scrollable content — NOT intercepted by drag handler */}
+        {/* Scrollable content — touch events here scroll normally */}
         <div className="overflow-y-auto" style={{ maxHeight: "60vh", WebkitOverflowScrolling: "touch" } as any}>
           {models.map((opt, i) => (
-            <button key={opt.id} onClick={() => { onSelect(opt.id); onClose(); }}
+            <button key={opt.id} onClick={() => { onSelect(opt.id); handleClose(); }}
               className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors active:bg-accent/60 ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
               <span className="w-2 h-2 rounded-full flex-shrink-0 bg-zinc-400" />
               <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
@@ -809,17 +830,38 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               style={{ scrollbarWidth: "none" }}
             />
           </div>
-          {/* Bottom bar */}
-          <div className="px-4 pb-4 flex items-center justify-end gap-3">
-            <span className="text-xs text-muted-foreground flex-1">{value.length > 0 ? `${value.length} chars` : ""}</span>
+          {/* Bottom bar — action buttons + send */}
+          <div className="px-4 pb-4 flex items-center gap-2">
+            {/* Mic */}
+            <button onClick={toggleMic}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 ${isListening ? "bg-emerald-500/15 text-emerald-400" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"}`}>
+              <Mic className="w-4 h-4" />
+            </button>
+            {/* Enhance */}
+            {showEnhance && (
+              <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition-all active:scale-90 disabled:opacity-30 flex-shrink-0">
+                {isEnhancing
+                  ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                  : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 btn-icon" />}
+              </button>
+            )}
+            {/* Long Answer */}
+            <button onClick={() => onChange((value.trim() ? value.trim() + "\n\n" : "") + "Please give a very detailed, thorough answer.")}
+              className="h-9 px-3 rounded-full flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition-all active:scale-90 flex-shrink-0 text-[11px] font-semibold">
+              <AlignLeft className="w-3.5 h-3.5 flex-shrink-0" />
+              Long
+            </button>
+            <span className="text-xs text-muted-foreground flex-1 text-right">{value.length > 0 ? `${value.length}` : ""}</span>
+            {/* Send / Stop */}
             {isTyping ? (
               <button onClick={() => { onStop?.(); setExpandOpen(false); }}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 transition-all">
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 transition-all flex-shrink-0">
                 <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
               </button>
             ) : (
               <button onClick={() => { onSend(); setExpandOpen(false); }} disabled={!value.trim()}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all">
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all flex-shrink-0">
                 <ArrowUp className="w-5 h-5 text-white dark:text-black" />
               </button>
             )}
@@ -994,20 +1036,21 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showExitDialog ? undefined : stableHandleClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-        style={{ opacity: closing ? 0 : 1, transition: "opacity 0.32s cubic-bezier(0.23,1,0.32,1)" }} />
+        style={{ opacity: (closing || !mounted) ? 0 : 1, transition: "opacity 0.32s cubic-bezier(0.23,1,0.32,1)" }} />
       <div ref={settingsDrag.sheetRef}
         className="relative bg-background rounded-t-[24px] flex flex-col overflow-hidden"
         style={{
           height: "78vh",
           boxShadow: "0 -10px 60px rgba(0,0,0,0.35)",
-          transform: closing ? "translateY(100%)" : "translateY(0)",
-          transition: closing ? "transform 0.32s cubic-bezier(0.23,1,0.32,1)" : "transform 0.38s cubic-bezier(0.23,1,0.32,1)",
+          transform: (closing || !mounted) ? "translateY(100%)" : "translateY(0)",
+          transition: "transform 0.38s cubic-bezier(0.23,1,0.32,1)",
         }}
         onClick={e => e.stopPropagation()}>
         {/* Drag handle — ONLY this strip triggers drag-to-dismiss */}
-        <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0 cursor-grab touch-none"
+        <div className="flex justify-center pt-4 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: "none" }}
           onTouchStart={settingsDrag.onTouchStart} onTouchMove={settingsDrag.onTouchMove} onTouchEnd={settingsDrag.onTouchEnd}>
-          <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+          <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
         </div>
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/50 flex-shrink-0">
           <h2 className="text-[17px] font-bold text-foreground">Settings</h2>
@@ -1032,7 +1075,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div key={activeSection} className="flex-1 overflow-y-auto p-4" style={{ animation: "fadeSlideIn 0.18s cubic-bezier(0.23,1,0.32,1) both" }}>
             {activeSection === "account" && (
               <div className="space-y-4">
                 {/* Hidden real file picker */}
