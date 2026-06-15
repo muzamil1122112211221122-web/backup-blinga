@@ -408,7 +408,15 @@ function useDragDismiss(onDismiss: () => void, threshold = 80) {
     startY.current = e.touches[0].clientY;
     currentY.current = 0;
     isDragging.current = true;
-    if (sheetRef.current) sheetRef.current.style.transition = "none";
+    if (sheetRef.current) {
+      // Freeze the element at its current rendered position before dragging
+      const rect = sheetRef.current.getBoundingClientRect();
+      const parentRect = sheetRef.current.parentElement?.getBoundingClientRect();
+      const offsetY = parentRect ? rect.top - parentRect.top : 0;
+      sheetRef.current.style.animation = "none";
+      sheetRef.current.style.transform = `translateY(${Math.max(0, offsetY)}px)`;
+      sheetRef.current.style.transition = "none";
+    }
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
@@ -441,31 +449,24 @@ function ModelSheet({ models, current, onSelect, onClose }: {
   models: { id: string; name: string }[]; current: string; onSelect: (id: string) => void; onClose: () => void;
 }) {
   const drag = useDragDismiss(onClose);
-  const [mounted, setMounted] = useState(false);
   const [closing, setClosing] = useState(false);
-
-  useEffect(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => setMounted(true)));
-  }, []);
 
   const handleClose = () => {
     setClosing(true);
-    setTimeout(() => onClose(), 300);
+    setTimeout(() => onClose(), 320);
   };
 
-  const sheetTransform = (closing || !mounted) ? "translateY(100%)" : "translateY(0)";
-  const overlayOpacity = (closing || !mounted) ? 0 : 1;
+  const easing = "cubic-bezier(0.23,1,0.32,1)";
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={handleClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-        style={{ opacity: overlayOpacity, transition: "opacity 0.3s cubic-bezier(0.23,1,0.32,1)" }} />
+        style={{ animation: `${closing ? "overlayExit 0.3s" : "overlayEnter 0.35s"} ${easing} both` }} />
       <div ref={drag.sheetRef}
         className="relative bg-background rounded-t-[24px] shadow-2xl"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
-          transform: sheetTransform,
-          transition: "transform 0.35s cubic-bezier(0.23,1,0.32,1)",
+          animation: `${closing ? "sheetExit 0.32s" : "sheetEnter 0.42s"} ${easing} both`,
         }}
         onClick={e => e.stopPropagation()}>
         {/* Drag handle — only this area triggers swipe-to-dismiss */}
@@ -885,7 +886,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const [closing, setClosing] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [editName, setEditName] = useState(user?.displayName || user?.username || "");
   const [previewPic, setPreviewPic] = useState("");
@@ -937,8 +937,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   useEffect(() => {
     if (isOpen) {
       setClosing(false);
-      setMounted(false);
-      requestAnimationFrame(() => requestAnimationFrame(() => setMounted(true)));
       setEditName(user?.displayName || user?.username || "");
       setPreviewPic("");
       setShowCustomizePanel(false);
@@ -1036,14 +1034,13 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showExitDialog ? undefined : stableHandleClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-        style={{ opacity: (closing || !mounted) ? 0 : 1, transition: "opacity 0.32s cubic-bezier(0.23,1,0.32,1)" }} />
+        style={{ animation: `${closing ? "overlayExit 0.3s" : "overlayEnter 0.38s"} cubic-bezier(0.23,1,0.32,1) both` }} />
       <div ref={settingsDrag.sheetRef}
         className="relative bg-background rounded-t-[24px] flex flex-col overflow-hidden"
         style={{
           height: "78vh",
           boxShadow: "0 -10px 60px rgba(0,0,0,0.35)",
-          transform: (closing || !mounted) ? "translateY(100%)" : "translateY(0)",
-          transition: "transform 0.38s cubic-bezier(0.23,1,0.32,1)",
+          animation: `${closing ? "sheetExit 0.32s" : "sheetEnter 0.45s"} cubic-bezier(0.23,1,0.32,1) both`,
         }}
         onClick={e => e.stopPropagation()}>
         {/* Drag handle — ONLY this strip triggers drag-to-dismiss */}
