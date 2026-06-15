@@ -902,6 +902,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [messageBarStyle, setMessageBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
+  const settingsTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const settingsNavRef = useRef<HTMLDivElement>(null);
+  const [settingsPill, setSettingsPill] = useState({ left: 0, width: 0, ready: false });
 
   // ── Dirty / exit-dialog state (mirrors PC CustomizeModal exactly) ──
   const [isDirty, setIsDirty] = useState(false);
@@ -1029,6 +1032,16 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   const settingsDrag = useDragDismiss(stableHandleClose);
 
+  useEffect(() => {
+    const idx = menuItems.findIndex(m => m.id === activeSection);
+    const btn = settingsTabRefs.current[idx];
+    const nav = settingsNavRef.current;
+    if (!btn || !nav) return;
+    const nr = nav.getBoundingClientRect();
+    const br = btn.getBoundingClientRect();
+    setSettingsPill({ left: br.left - nr.left, width: br.width, ready: true });
+  }, [activeSection, isOpen]);
+
   if (!isOpen && !closing && !showExitDialog) return null;
 
   return (
@@ -1051,24 +1064,42 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
         </div>
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/50 flex-shrink-0">
           <h2 className="text-[17px] font-bold text-foreground">Settings</h2>
-          <div className="flex items-center gap-2">
-            <button onClick={handleSave} className="px-4 py-1.5 rounded-full bg-foreground text-background text-xs font-bold active:scale-95 transition-all">Save</button>
-            <button onClick={stableHandleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-accent/80 text-muted-foreground hover:text-foreground transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button onClick={handleSave} className="px-4 py-1.5 rounded-full bg-foreground text-background text-xs font-bold active:scale-95 transition-all">Save</button>
         </div>
-        {/* Horizontal tab bar — full width, no cramped sidebar */}
+        {/* Tab bar — centered tabs with sliding pill + X at right */}
         <div className="flex flex-col flex-1 overflow-hidden">
           <div className="flex-shrink-0 border-b border-border/50 bg-zinc-50 dark:bg-[#161616]">
-            <div className="flex items-center overflow-x-auto px-2 py-1.5 gap-1" style={{ scrollbarWidth: "none" }}>
-              {menuItems.map(item => (
-                <button key={item.id} onClick={() => setActiveSection(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold transition-all flex-shrink-0 ${activeSection === item.id ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"}`}>
-                  <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
+            <div className="flex items-center px-2 py-1.5">
+              {/* Centered nav with pill */}
+              <div ref={settingsNavRef} className="relative flex flex-1 items-center justify-center">
+                {settingsPill.ready && (
+                  <div aria-hidden style={{
+                    position: "absolute",
+                    left: settingsPill.left,
+                    width: settingsPill.width,
+                    top: 1, bottom: 1,
+                    background: "var(--foreground)",
+                    borderRadius: 12,
+                    boxShadow: "0 1px 8px rgba(0,0,0,0.18)",
+                    transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)",
+                    pointerEvents: "none",
+                    zIndex: 0,
+                  }} />
+                )}
+                {menuItems.map((item, i) => (
+                  <button key={item.id}
+                    ref={el => { settingsTabRefs.current[i] = el; }}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`relative z-10 flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold transition-colors duration-200 ${activeSection === item.id ? "text-background" : "text-zinc-500 dark:text-zinc-400 hover:text-foreground"}`}>
+                    <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* X close at same level as tabs */}
+              <button onClick={stableHandleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-500 hover:text-foreground transition-colors flex-shrink-0">
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
