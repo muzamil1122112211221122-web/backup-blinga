@@ -445,22 +445,26 @@ function ModelSheet({ models, current, onSelect, onClose }: {
     <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200" />
       <div ref={drag.sheetRef}
-        className="relative bg-background rounded-t-[24px] shadow-2xl animate-in slide-in-from-bottom duration-350"
+        className="relative bg-background rounded-t-[24px] shadow-2xl animate-in slide-in-from-bottom duration-300"
         style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)", paddingBottom: "max(env(safe-area-inset-bottom), 20px)" }}
-        onClick={e => e.stopPropagation()}
-        onTouchStart={drag.onTouchStart} onTouchMove={drag.onTouchMove} onTouchEnd={drag.onTouchEnd}>
-        <div className="flex justify-center pt-3 pb-2 cursor-grab">
-          <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+        onClick={e => e.stopPropagation()}>
+        {/* Drag handle — only this area triggers swipe-to-dismiss */}
+        <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          onTouchStart={drag.onTouchStart} onTouchMove={drag.onTouchMove} onTouchEnd={drag.onTouchEnd}>
+          <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
         </div>
         <p className="text-[16px] font-bold text-foreground px-5 mb-2">Select Model</p>
-        {models.map((opt, i) => (
-          <button key={opt.id} onClick={() => { onSelect(opt.id); onClose(); }}
-            className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
-            <span className="w-2 h-2 rounded-full flex-shrink-0 bg-zinc-400" />
-            <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
-            {opt.id === current && <Check className="w-4 h-4 text-muted-foreground" />}
-          </button>
-        ))}
+        {/* Scrollable content — NOT intercepted by drag handler */}
+        <div className="overflow-y-auto" style={{ maxHeight: "60vh", WebkitOverflowScrolling: "touch" } as any}>
+          {models.map((opt, i) => (
+            <button key={opt.id} onClick={() => { onSelect(opt.id); onClose(); }}
+              className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors active:bg-accent/60 ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
+              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-zinc-400" />
+              <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
+              {opt.id === current && <Check className="w-4 h-4 text-muted-foreground" />}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -492,6 +496,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [expandOpen, setExpandOpen] = useState(false);
   const expandTaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayDrag = useDragDismiss(() => setExpandOpen(false), 60);
 
   useEffect(() => {
     const h1 = () => setFnBarStyle(localStorage.getItem("functionBarStyle") || "circle");
@@ -742,7 +747,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1 pr-4"
                   style={{ height: 38, maxHeight: 38, overflowY: "auto", scrollbarWidth: "none" }} />
                 <button
-                  className="absolute top-0 right-0 w-3 h-3 flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors"
+                  className="absolute top-0 right-0 w-3 h-3 flex items-center justify-center text-zinc-400 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
                   onClick={() => setExpandOpen(true)}>
                   <Maximize2 className="w-2 h-2" />
                 </button>
@@ -775,43 +780,50 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
     {/* ── Full-screen expand overlay ── */}
     {expandOpen && (
-      <div className="fixed inset-0 z-[300] bg-background flex flex-col animate-in fade-in duration-150"
-        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <span className="text-sm font-semibold text-foreground">Type your message</span>
-          <button
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-500 hover:text-foreground hover:bg-accent transition-all active:scale-90"
-            onClick={() => setExpandOpen(false)}>
-            <Minimize2 className="w-4 h-4" />
-          </button>
-        </div>
-        {/* Textarea fills available space */}
-        <div className="flex-1 px-4 py-2 overflow-hidden">
-          <textarea
-            ref={expandTaRef}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            placeholder={placeholder}
-            autoFocus
-            className="w-full h-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
-            style={{ scrollbarWidth: "none" }}
-          />
-        </div>
-        {/* Bottom bar */}
-        <div className="px-4 pb-4 flex items-center justify-end gap-3">
-          <span className="text-xs text-muted-foreground flex-1">{value.length > 0 ? `${value.length} chars` : ""}</span>
-          {isTyping ? (
-            <button onClick={() => { onStop?.(); setExpandOpen(false); }}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 transition-all">
-              <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
+      <div className="fixed inset-0 z-[300] bg-background flex flex-col animate-in slide-in-from-bottom duration-300"
+        style={{ animationTimingFunction: "cubic-bezier(0.23,1,0.32,1)", paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+        {/* Swipe-down handle — drags the whole overlay down to dismiss */}
+        <div ref={overlayDrag.sheetRef} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing"
+            onTouchStart={overlayDrag.onTouchStart} onTouchMove={overlayDrag.onTouchMove} onTouchEnd={overlayDrag.onTouchEnd}>
+            <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
+          </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-2 pb-2">
+            <span className="text-sm font-semibold text-foreground">Type your message</span>
+            <button
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-500 hover:text-foreground hover:bg-accent transition-all active:scale-90"
+              onClick={() => setExpandOpen(false)}>
+              <Minimize2 className="w-4 h-4" />
             </button>
-          ) : (
-            <button onClick={() => { onSend(); setExpandOpen(false); }} disabled={!value.trim()}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all">
-              <ArrowUp className="w-5 h-5 text-white dark:text-black" />
-            </button>
-          )}
+          </div>
+          {/* Textarea fills available space */}
+          <div className="flex-1 px-4 py-2 overflow-hidden">
+            <textarea
+              ref={expandTaRef}
+              value={value}
+              onChange={e => onChange(e.target.value)}
+              placeholder={placeholder}
+              autoFocus
+              className="w-full h-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
+              style={{ scrollbarWidth: "none" }}
+            />
+          </div>
+          {/* Bottom bar */}
+          <div className="px-4 pb-4 flex items-center justify-end gap-3">
+            <span className="text-xs text-muted-foreground flex-1">{value.length > 0 ? `${value.length} chars` : ""}</span>
+            {isTyping ? (
+              <button onClick={() => { onStop?.(); setExpandOpen(false); }}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 transition-all">
+                <div className="w-3.5 h-3.5 rounded-sm bg-white dark:bg-zinc-800" />
+              </button>
+            ) : (
+              <button onClick={() => { onSend(); setExpandOpen(false); }} disabled={!value.trim()}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all">
+                <ArrowUp className="w-5 h-5 text-white dark:text-black" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )}
@@ -2174,7 +2186,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="absolute inset-0 flex flex-col" style={{ display: tab === "ask" ? "flex" : "none" }}>
+            <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "ask" ? 1 : 0, pointerEvents: tab === "ask" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <ChatBg bg={chatBg} />
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
@@ -2186,21 +2198,21 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 model={askModel} setModel={setAskModel} user={user}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 flex flex-col" style={{ display: tab === "nomad" ? "flex" : "none" }}>
+            <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
                 isTyping={nomadTyping} nomadMessages={nomadMessages} nomadTyping={nomadIsTyping}
                 activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localStorage.getItem("nomadGrid") !== "false"} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 flex flex-col" style={{ display: tab === "imagine" ? "flex" : "none" }}>
+            <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "imagine" ? 1 : 0, pointerEvents: tab === "imagine" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <StudioTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput}
                 onSend={handleImagSend} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 flex flex-col" style={{ display: tab === "philosopher" ? "flex" : "none" }}>
+            <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "philosopher" ? 1 : 0, pointerEvents: tab === "philosopher" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <PhilosopherTab messages={philMsgs} isTyping={philTyping} input={philInput} setInput={setPhilInput}
                 onSend={handlePhilSend} onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
                 personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 overflow-hidden" style={{ display: tab === "games" ? "block" : "none" }}>
+            <div className="absolute inset-0 overflow-hidden" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
             </div>
           </div>
