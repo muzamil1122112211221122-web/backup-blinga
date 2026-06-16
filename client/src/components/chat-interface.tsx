@@ -3695,8 +3695,8 @@ Let's start the self-listen session!`;
             const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
             const nomadHasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant'));
             return (
-            /* min-h-full ensures grid background stretches to bottom even with little content */
-            <div className="w-full min-h-full flex flex-col relative">
+            /* flex-1 min-h-0 ensures the nomad panel fills height and allows children to scroll */
+            <div className="w-full flex-1 min-h-0 flex flex-col relative">
               {/* Nomad Summary Panel — slide in from right */}
               {nomadSummaryOpen && (
                 <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
@@ -3740,8 +3740,9 @@ Let's start the self-listen session!`;
                     ⬡ Multi Chat
                   </button>
                   <button onClick={() => setNomadMode('auto')}
-                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
-                    ⚡ Auto
+                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
+                    <img src="/nomad-auto-icon.png" alt="auto" className="w-3.5 h-3.5 object-contain" style={{ filter: 'url(#nomad-auto-gradient-filter)', WebkitFilter: nomadMode === 'auto' ? 'invert(1)' : 'none' }} />
+                    Auto
                   </button>
                   {nomadMode === 'auto' && nomadAutoMessages.length > 0 && (
                     <button onClick={() => setNomadAutoMessages([])}
@@ -3785,10 +3786,12 @@ Let's start the self-listen session!`;
 
               {/* === AUTO MODE TAB (full chat UI) === */}
               {nomadMode === 'auto' && (
-                <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
                     <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>⚡</div>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
+                        <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
+                      </div>
                       <div>
                         <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
                         <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
@@ -3835,7 +3838,7 @@ Let's start the self-listen session!`;
 
               {/* === MULTI-MODEL COLUMN LAYOUT === */}
               {nomadMode === 'multi' && !nomadSoloModel && (
-                <div className="flex flex-nowrap flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
+                <div className="flex flex-nowrap flex-1 min-h-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
                   {nomadModels.map((modelObj, idx) => {
                     const model = modelObj.id;
                     const config = nomadConfigMap[model] || { name: model, logo: `/${model}-logo.png`, color: '#6b7280', description: '' };

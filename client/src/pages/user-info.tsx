@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 
@@ -144,7 +145,7 @@ export default function UserInfo() {
 
   const logo = (
     <div className="flex items-center justify-center mb-6">
-      <img src="/fius-logo.png" alt="Fius" className="w-12 h-12 object-contain" />
+      <Logo size="lg" className="text-white" />
     </div>
   );
 

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { MessageCircle, Zap, Shield, Bot } from "lucide-react";
-
+import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
 import { useState } from "react";
 
@@ -65,7 +65,7 @@ export default function Landing() {
           style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 -3px 0 rgba(255,255,255,0.65), inset 0 -8px 20px rgba(255,255,255,0.12)' }}
         >
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <img src="/fius-logo.png" alt="Fius" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
+            <Logo size="sm" className="text-white" />
             <h1 className="text-lg sm:text-xl font-bold text-white">Fius</h1>
           </div>
           <Button
@@ -201,7 +201,7 @@ export default function Landing() {
         <footer className="bg-gray-900 text-white py-12">
           <div className="container mx-auto px-6 text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <img src="/fius-logo.png" alt="Fius" className="w-8 h-8 object-contain" />
+              <Logo size="sm" className="text-white" />
               <h4 className="text-2xl font-bold">Fius</h4>
             </div>
             <p className="text-gray-400 mb-6">The future of AI conversations, today.</p>
