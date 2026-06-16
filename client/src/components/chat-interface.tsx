@@ -230,6 +230,7 @@ import {
   ChevronUp,
   ChevronDown
 } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 interface ChatInterfaceProps {
   onShowAuth: () => void;
@@ -888,7 +889,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
-  const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
+  const [nomadMode] = useState<'multi'>('multi');
+  // Auto Mode state
+  const [nomadAutoOpen, setNomadAutoOpen] = useState(false);
+  const [nomadAutoPrompt, setNomadAutoPrompt] = useState('');
+  const [nomadAutoLoading, setNomadAutoLoading] = useState(false);
+  const [nomadAutoResult, setNomadAutoResult] = useState<{model: string, modelName: string, logo: string, color: string, response: string} | null>(null);
+  const nomadScrollRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [nomadSummaryOpen, setNomadSummaryOpen] = useState(false);
   const [nomadSummary, setNomadSummary] = useState('');
   const [nomadSummarizing, setNomadSummarizing] = useState(false);
@@ -1317,6 +1324,121 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return { displayedText, isTypingComplete };
   };
 
+  // ── Chart block renderer ─────────────────────────────────────────────────
+  // Parses [CHART:type]\nLabel: value\n[/CHART] blocks from AI text
+  const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
+  function parseChartBlocks(text: string): Array<{type: 'text', content: string} | {type: 'chart', chartType: string, data: {name: string, value: number}[]}> {
+    const segments: Array<{type: 'text', content: string} | {type: 'chart', chartType: string, data: {name: string, value: number}[]}> = [];
+    const regex = /\[CHART:(bar|line|pie)\]\n([\s\S]*?)\[\/CHART\]/gi;
+    let lastIndex = 0; let match;
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+      const chartType = match[1].toLowerCase();
+      const rawData = match[2].trim().split('\n').map(line => {
+        const colonIdx = line.lastIndexOf(':');
+        if (colonIdx === -1) return null;
+        const name = line.slice(0, colonIdx).trim();
+        const val = parseFloat(line.slice(colonIdx + 1).trim().replace(/[^0-9.-]/g, ''));
+        return isNaN(val) ? null : { name, value: val };
+      }).filter(Boolean) as {name: string, value: number}[];
+      if (rawData.length >= 2) segments.push({ type: 'chart', chartType, data: rawData });
+      else segments.push({ type: 'text', content: match[0] });
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) segments.push({ type: 'text', content: text.slice(lastIndex) });
+    return segments;
+  }
+
+  function InlineChart({ chartType, data }: { chartType: string, data: {name: string, value: number}[] }) {
+    if (chartType === 'pie') {
+      return (
+        <div className="my-4 bg-card rounded-xl border border-border p-3">
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+              </Pie>
+              <Legend />
+              <RechartsTooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+    if (chartType === 'line') {
+      return (
+        <div className="my-4 bg-card rounded-xl border border-border p-3">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <RechartsTooltip />
+              <Line type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+    return (
+      <div className="my-4 bg-card rounded-xl border border-border p-3">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <RechartsTooltip />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+              {data.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
+
+  // ── Auto Mode AI Picker ───────────────────────────────────────────────────
+  function pickBestAIForPrompt(prompt: string): {model: string, modelName: string, logo: string, color: string} {
+    const p = prompt.toLowerCase();
+    if (/code|program|function|debug|bug|script|python|javascript|typescript|react|css|html|algorithm|compile|error|fix.*code|write.*code|class|loop|array|sort|api/.test(p))
+      return { model: 'deepseek-r1', modelName: 'Deepseek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+    if (/search|news|today|latest|current|what.*happening|recent|2024|2025|2026|fact|who.*is|where.*is|when.*was|stock|price|weather/.test(p))
+      return { model: 'perplexity', modelName: 'Perplexity Sonar Pro', logo: '/kimi-logo.png', color: '#38bdf8' };
+    if (/write|story|essay|poem|creative|novel|blog|article|letter|email|caption|describe|explain.*deeply|paragraph|narrative/.test(p))
+      return { model: 'claude-3.5-sonnet', modelName: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#f97316' };
+    if (/math|calcul|equation|graph|chart|data|statistic|analyz|percent|probability|formula|number|solve|integral|derivative/.test(p))
+      return { model: 'gemini-pro', modelName: 'Gemini 2.5 Pro', logo: '/gemini-logo.png', color: '#14b8a6' };
+    if (/urdu|hindi|arabic|chinese|translate|pakistan|india|desi|aap|kya|hai|karo|bato/.test(p))
+      return { model: 'qwen', modelName: 'Qwen3.6-Plus', logo: '/mistral-logo.png', color: '#6366f1' };
+    return { model: 'gpt-4o', modelName: 'ChatGPT 5', logo: '/chatgpt-logo.png', color: '#10a37f' };
+  }
+
+  const handleNomadAutoSend = async () => {
+    if (!nomadAutoPrompt.trim() || nomadAutoLoading) return;
+    setNomadAutoLoading(true);
+    setNomadAutoResult(null);
+    const picked = pickBestAIForPrompt(nomadAutoPrompt);
+    const nomadSystemPrompts: {[id: string]: string} = {
+      'gpt-4o': 'You are ChatGPT 5 by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.',
+      'claude-3.5-sonnet': 'You are Claude Sonnet 4 by Anthropic — thoughtful, nuanced, excellent at coding and writing.',
+      'gemini-pro': 'You are Gemini 2.5 Pro by Google — a powerful AI with deep reasoning across all domains.',
+      'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers.',
+      'deepseek-r1': 'You are DeepSeek v3 — a powerful reasoning model. Excel at step-by-step logic, coding, and math.',
+      'qwen': 'You are Qwen3.6-Plus by Alibaba — a multilingual language expert. Be precise and culturally aware.',
+    };
+    try {
+      const res = await fetch('/api/test-ai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: nomadAutoPrompt, conversationId: 'nomad-auto', model: picked.model, provider: 'openai', systemPrompt: nomadSystemPrompts[picked.model] || `You are ${picked.modelName}, a helpful AI assistant.` }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNomadAutoResult({ ...picked, response: data.response || 'No response received.' });
+      } else setNomadAutoResult({ ...picked, response: 'Failed to get response. Please try again.' });
+    } catch { setNomadAutoResult({ ...picked, response: 'Connection error. Please try again.' }); }
+    finally { setNomadAutoLoading(false); }
+  };
+
   // Table with CSV download button
   const TableWithDownload = ({ children, ...props }: React.HTMLAttributes<HTMLTableElement>) => {
     const tableRef = useRef<HTMLTableElement>(null);
@@ -1361,66 +1483,80 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       }
     }, [isTypingComplete, messageId]);
 
+    const mdComponents = {
+      code({ node, inline, className, children, ...props }: any) {
+        const match = /language-(\w+)/.exec(className || '');
+        return !inline && match ? (
+          <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
+            <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                      showToast('Code copied to clipboard');
+                    }}
+                    className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Copy code</TooltipContent>
+              </Tooltip>
+            </div>
+            <SyntaxHighlighter
+              {...props}
+              style={vscDarkPlus}
+              language={match[1]}
+              PreTag="div"
+              customStyle={{
+                margin: 0,
+                padding: '1rem 0',
+                fontSize: '13px',
+                lineHeight: '1.6',
+                background: 'transparent'
+              }}
+            >
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          </div>
+        ) : (
+          <code className={cn("bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
+            {children}
+          </code>
+        );
+      },
+      img: ({src, alt}: any) => {
+        if (!src) return null;
+        return <GeneratedImageDisplay src={src} alt={alt || "Generated image"} />;
+      },
+      table: TableWithDownload as any,
+      thead: ({ children }: any) => <thead className="bg-muted/60">{children}</thead>,
+      th: ({ children }: any) => <th className="px-3 py-2 text-left text-xs font-semibold text-foreground border-b border-border">{children}</th>,
+      td: ({ children }: any) => <td className="px-3 py-2 text-sm text-foreground border-b border-border/50">{children}</td>,
+    };
+
+    const segments = parseChartBlocks(displayedText);
+    const hasCharts = segments.some(s => s.type === 'chart');
+
     return (
       <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]}
-          components={{
-            code({ node, inline, className, children, ...props }: any) {
-              const match = /language-(\w+)/.exec(className || '');
-              return !inline && match ? (
-                <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
-                  <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                            showToast('Code copied to clipboard');
-                          }}
-                          className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Copy code</TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <SyntaxHighlighter
-                    {...props}
-                    style={vscDarkPlus}
-                    language={match[1]}
-                    PreTag="div"
-                    customStyle={{
-                      margin: 0,
-                      padding: '1rem 0',
-                      fontSize: '13px',
-                      lineHeight: '1.6',
-                      background: 'transparent'
-                    }}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                </div>
-              ) : (
-                <code className={cn("bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
-                  {children}
-                </code>
-              );
-            },
-            img: ({src, alt}) => {
-              if (!src) return null;
-              return <GeneratedImageDisplay src={src} alt={alt || "Generated image"} />;
-            },
-            table: TableWithDownload as any,
-            thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
-            th: ({ children }) => <th className="px-3 py-2 text-left text-xs font-semibold text-foreground border-b border-border">{children}</th>,
-            td: ({ children }) => <td className="px-3 py-2 text-sm text-foreground border-b border-border/50">{children}</td>,
-          }}
-        >
-          {displayedText}
-        </ReactMarkdown>
+        {hasCharts ? (
+          segments.map((seg, i) =>
+            seg.type === 'chart' ? (
+              <InlineChart key={i} chartType={(seg as any).chartType} data={(seg as any).data} />
+            ) : (
+              <ReactMarkdown key={i} remarkPlugins={[remarkGfm]} components={mdComponents as any}>
+                {(seg as any).content}
+              </ReactMarkdown>
+            )
+          )
+        ) : (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents as any}>
+            {displayedText}
+          </ReactMarkdown>
+        )}
       </div>
     );
   };
@@ -2839,6 +2975,13 @@ Let's start the self-listen session!`;
 
 
 
+  // Auto-scroll Nomad columns to bottom on new messages
+  useEffect(() => {
+    nomadScrollRefs.current.forEach((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, [nomadMessages, nomadIsTyping]);
+
   // Check if any Nomad model is typing for thinking animation
   const isAnyNomadModelTyping = Object.values(nomadIsTyping).some(typing => typing);
 
@@ -3578,15 +3721,13 @@ Let's start the self-listen session!`;
                 </div>
                 {/* Mode selector */}
                 <div className="flex items-center gap-2 mb-3">
-                  <button onClick={() => setNomadMode('multi')}
-                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                  <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-foreground text-background">
                     ⬡ Multi Chat
+                  </span>
+                  <button onClick={() => { setNomadAutoOpen(true); setNomadAutoResult(null); setNomadAutoPrompt(''); }}
+                    className="px-3.5 py-1 rounded-full text-xs font-semibold bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-all border border-border">
+                    ⚡ Auto
                   </button>
-                  <button onClick={() => setNomadMode('auto')}
-                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                    ⚡ Auto Mode
-                  </button>
-                  {nomadMode === 'auto' && <span className="text-[11px] text-muted-foreground">Best AI selected per prompt</span>}
                 </div>
 
                 {/* Solo mode: back button + other model pills */}
@@ -3682,7 +3823,11 @@ Let's start the self-listen session!`;
                           </div>
 
                           {/* Messages */}
-                          <div className="mx-3 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto">
+                          <div
+                            ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
+                            className="mx-3 flex flex-col space-y-2 pb-4 overflow-y-auto"
+                            style={{ maxHeight: 420, minHeight: 60 }}
+                          >
                             {msgs.map(message => (
                               <div
                                 key={message.id}
@@ -5228,6 +5373,84 @@ Let's start the self-listen session!`;
           </div>
         </div>
       )}
+
+      {/* ── Auto Mode Dialog ── */}
+      <Dialog open={nomadAutoOpen} onOpenChange={setNomadAutoOpen}>
+        <DialogContent className="sm:max-w-lg w-full p-0 overflow-hidden" style={{ borderRadius: 20 }}>
+          <div className="flex flex-col" style={{ minHeight: 420 }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                  ⚡ Auto Mode
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Fius picks the best AI for your prompt</p>
+              </div>
+              <button onClick={() => setNomadAutoOpen(false)} className="w-7 h-7 rounded-full hover:bg-accent flex items-center justify-center transition-colors">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            {/* Input area */}
+            {!nomadAutoResult && !nomadAutoLoading && (
+              <div className="flex-1 flex flex-col px-5 py-4 gap-3">
+                <p className="text-sm text-muted-foreground">Type your question and Auto Mode will analyze it and pick the perfect AI model to answer it.</p>
+                <textarea
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
+                  rows={5}
+                  placeholder="Ask anything — e.g. 'Write a poem about rain', 'Debug this code...', 'Latest news about AI'..."
+                  value={nomadAutoPrompt}
+                  onChange={e => setNomadAutoPrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleNomadAutoSend(); }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleNomadAutoSend}
+                  disabled={!nomadAutoPrompt.trim()}
+                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ background: nomadAutoPrompt.trim() ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : undefined, color: nomadAutoPrompt.trim() ? 'white' : undefined, border: !nomadAutoPrompt.trim() ? '1px solid var(--border)' : 'none' }}
+                >
+                  <Zap className="w-4 h-4" /> Let Fius Pick
+                </button>
+              </div>
+            )}
+            {/* Loading */}
+            {nomadAutoLoading && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-5">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  <Loader2 className="w-7 h-7 text-white animate-spin" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Analyzing prompt & picking best AI…</p>
+                <p className="text-xs text-muted-foreground text-center">{nomadAutoPrompt.slice(0, 80)}{nomadAutoPrompt.length > 80 ? '…' : ''}</p>
+              </div>
+            )}
+            {/* Result */}
+            {nomadAutoResult && !nomadAutoLoading && (
+              <div className="flex-1 flex flex-col px-5 py-4 gap-3 overflow-y-auto">
+                <div className="flex items-center gap-3 p-3 rounded-xl border-2" style={{ borderColor: nomadAutoResult.color + '40', background: nomadAutoResult.color + '10' }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-2" style={{ background: nomadAutoResult.color + '20' }}>
+                    <img src={nomadAutoResult.logo} alt={nomadAutoResult.modelName} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.display='none'; }} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Best AI for this prompt</p>
+                    <p className="font-bold text-sm text-foreground" style={{ color: nomadAutoResult.color }}>{nomadAutoResult.modelName}</p>
+                  </div>
+                  <div className="ml-auto text-xs font-semibold px-2 py-1 rounded-full" style={{ background: nomadAutoResult.color + '20', color: nomadAutoResult.color }}>✓ Selected</div>
+                </div>
+                <div className="text-xs text-muted-foreground px-1">{nomadAutoPrompt}</div>
+                <div className="bg-card rounded-xl border border-border p-4 text-sm text-foreground leading-relaxed overflow-y-auto" style={{ maxHeight: 260 }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{nomadAutoResult.response}</ReactMarkdown>
+                </div>
+                <button
+                  onClick={() => { setNomadAutoResult(null); setNomadAutoPrompt(''); }}
+                  className="w-full py-2.5 rounded-xl font-medium text-sm border border-border hover:bg-accent transition-all text-muted-foreground hover:text-foreground"
+                >
+                  ← Ask Another
+                </button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Fullscreen image lightbox ── */}
       {fullscreenImg && (
