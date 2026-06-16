@@ -217,10 +217,7 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
       <div className="thinking-cloud-wrapper" style={{ position: "relative", width: W, height: H }}>
         <svg
           viewBox={`0 0 ${W} ${H}`} width={W} height={H}
-          style={{
-            position: "absolute", top: 0, left: 0,
-            filter: isLight ? 'drop-shadow(0 2px 10px rgba(0,0,0,0.13))' : 'none'
-          }}
+          style={{ position: "absolute", top: 0, left: 0 }}
         >
           <path
             d={cloudPath}
@@ -252,6 +249,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [msgExpanded, setMsgExpanded] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const [feedbackSelected, setFeedbackSelected] = useState<Set<string>>(new Set());
   const [feedbackText, setFeedbackText] = useState("");
@@ -336,10 +334,20 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               </div>
             </div>
           ) : (
-            <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
-              {shownText}
-              {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
-            </div>
+            <>
+              <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
+                {isUser && msg.content.length > 200 && !msgExpanded
+                  ? `${msg.content.slice(0, 200).trim()}…`
+                  : shownText}
+                {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
+              </div>
+              {isUser && msg.content.length > 200 && (
+                <button onClick={() => setMsgExpanded(!msgExpanded)}
+                  className="mt-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                  {msgExpanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </>
           )}
 
           {!isUser && (
@@ -1535,6 +1543,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [expandImg, setExpandImg] = useState<string | null>(null);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
 
@@ -1546,7 +1555,20 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
+      {/* Scroll to top/bottom buttons */}
+      {messages.length > 2 && (
+        <div className="fixed bottom-28 right-3 flex flex-col gap-1.5 z-50">
+          <button onClick={() => scrollAreaRef.current && (scrollAreaRef.current.scrollTop = 0)}
+            className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => scrollAreaRef.current && (scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight)}
+            className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
             <Logo size="xl" className="mb-5 text-foreground" />
@@ -1598,12 +1620,29 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 }) {
   const hasMessages = Object.values(nomadMessages).some(m => m.length > 0);
   const [soloModel, setSoloModel] = useState<string | null>(null);
+  const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   const models = NOMAD_DEFAULT_MODELS;
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
+  const hasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === "ai"));
 
   return (
     <>
+      {/* Mode selector bar */}
+      {!soloModel && (
+        <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-card">
+          <button onClick={() => setNomadMode('multi')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+            ⬡ Multi
+          </button>
+          <button onClick={() => setNomadMode('auto')}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+            ⚡ Auto
+          </button>
+          {nomadMode === 'auto' && <span className="text-[10px] text-muted-foreground">Best AI per prompt</span>}
+          <div className="flex-1" />
+        </div>
+      )}
       {/* Solo mode back button */}
       {soloModel && (
         <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-card">
@@ -1643,7 +1682,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     {/* Toggle card */}
                     <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
                       style={{ borderColor: isActive ? cfg.color : "rgba(128,128,128,0.2)" }}>
-                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: cfg.color + '20', padding: 4 }}>
                         <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}${modelId === "fius-ai" ? " rounded-full" : ""}`}
                           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       </div>
@@ -1672,7 +1711,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                       ))}
                       {nomadTyping[modelId] && (
                         <div className="flex items-start space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1">
+                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1 rounded" style={{ background: cfg.color + '20', padding: 2 }}>
                             <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           </div>
@@ -1736,6 +1775,26 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
           </div>
         )}
       </div>
+
+      {/* Nomad Summarize button */}
+      {hasAIMessages && !soloModel && (
+        <div className="flex-shrink-0 px-3 pt-1 pb-0.5">
+          <button onClick={() => {
+            const allMsgs = Object.entries(nomadMessages)
+              .filter(([,msgs]) => msgs.some(m => m.role === 'ai'))
+              .map(([modelId, msgs]) => {
+                const cfg = NOMAD_CONFIG[modelId];
+                const aiMsgs = msgs.filter(m => m.role === 'ai').map(m => m.content).join('\n');
+                return `**${cfg?.name || modelId}:** ${aiMsgs}`;
+              }).join('\n\n');
+            const summaryDiv = document.getElementById('mobile-nomad-summary');
+            if (summaryDiv) { summaryDiv.style.display = summaryDiv.style.display === 'none' ? '' : 'none'; }
+          }}
+            className="w-full py-1.5 rounded-xl bg-card border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-foreground/30 flex items-center justify-center gap-2 transition-all">
+            <Sparkles className="w-3 h-3" /> Summarize Responses
+          </button>
+        </div>
+      )}
 
       <MobileMessageBar value={input} onChange={setInput} onSend={onSend} isTyping={isTyping}
         placeholder="Ask all AIs at once…" tab="nomad" showEnhance={false} showModel={false}
@@ -2151,10 +2210,43 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       const convId = await ensureConv();
       askAbortRef.current?.abort();
       const ctrl = new AbortController(); askAbortRef.current = ctrl;
-      const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: convId, activeTab: "ask" }), signal: ctrl.signal });
+      // DuckDuckGo web search — same as PC
+      let messageToSend = text;
+      let sources: Array<{title: string; url: string; snippet: string}> = [];
+      const skipSearch = /^(hi|hello|hey|how are you|thanks|bye|ok|yes|no|lol|haha)[\s!?.]*$/i.test(text.trim()) || text.trim().split(/\s+/).length <= 2;
+      if (!skipSearch) {
+        try {
+          const searchData = await Promise.race([
+            fetch(`/api/search?q=${encodeURIComponent(text)}`, { signal: ctrl.signal }).then(r => r.ok ? r.json() : null).catch(() => null),
+            new Promise<null>(res2 => setTimeout(() => res2(null), 3000))
+          ]);
+          if (searchData) {
+            const snippets: string[] = [];
+            if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
+            if (searchData.abstract && searchData.abstractSource) {
+              snippets.push(`${searchData.abstractSource}: ${searchData.abstract}`);
+              if (searchData.abstractUrl) sources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
+            }
+            if (searchData.webResults?.length > 0) {
+              searchData.webResults.slice(0, 4).forEach((r: { title: string; url: string; snippet: string }) => {
+                if (r.snippet) snippets.push(`${r.title}: ${r.snippet}`);
+                if (r.url && r.title) sources.push(r);
+              });
+            }
+            if (snippets.length > 0) {
+              messageToSend = `[Web search results for: "${text}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself.]\nUser: ${text}`;
+            }
+          }
+        } catch { }
+      }
+      const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: messageToSend, conversationId: convId, activeTab: "ask" }), signal: ctrl.signal });
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
-      setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || data.message || "I couldn't generate a response.", timestamp: new Date() }]);
+      let content = data.response || data.message || "I couldn't generate a response.";
+      if (sources.length > 0) {
+        content += '\n\n---\n**Sources:**\n' + sources.slice(0, 3).map((s: {title: string; url: string}) => `• [${s.title}](${s.url})`).join('\n');
+      }
+      setAskMsgs(p => [...p, { id: uid(), role: "ai", content, timestamp: new Date() }]);
     } catch (e: any) {
       if (e?.name !== "AbortError") setAskMsgs(p => [...p, { id: uid(), role: "ai", content: "Something went wrong. Please try again.", timestamp: new Date() }]);
     } finally { setAskTyping(false); }

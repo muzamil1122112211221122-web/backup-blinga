@@ -226,7 +226,9 @@ import {
   Wand2,
   Maximize2,
   Minimize2,
-  AlignLeft
+  AlignLeft,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 
 interface ChatInterfaceProps {
@@ -886,6 +888,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
+  const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
+  const [nomadSummaryOpen, setNomadSummaryOpen] = useState(false);
+  const [nomadSummary, setNomadSummary] = useState('');
+  const [nomadSummarizing, setNomadSummarizing] = useState(false);
+  const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set());
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const nomadNotifEnabledRef = React.useRef(true);
@@ -1310,6 +1317,33 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return { displayedText, isTypingComplete };
   };
 
+  // Table with CSV download button
+  const TableWithDownload = ({ children, ...props }: React.HTMLAttributes<HTMLTableElement>) => {
+    const tableRef = useRef<HTMLTableElement>(null);
+    const downloadCSV = () => {
+      if (!tableRef.current) return;
+      const rows = Array.from(tableRef.current.querySelectorAll('tr'));
+      const csv = rows.map(row =>
+        Array.from(row.querySelectorAll('th, td'))
+          .map(cell => `"${(cell.textContent || '').replace(/"/g, '""')}"`)
+          .join(',')
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-table.csv'; a.click();
+    };
+    return (
+      <div className="relative group my-4">
+        <button onClick={downloadCSV}
+          className="absolute -top-0.5 right-0 opacity-0 group-hover:opacity-100 transition-all z-10 px-1.5 py-0.5 text-[10px] font-semibold bg-card border border-border rounded shadow-sm flex items-center gap-1 text-muted-foreground hover:text-foreground hover:bg-accent">
+          <Download className="w-2.5 h-2.5" /> CSV
+        </button>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table ref={tableRef} {...props} className="w-full text-sm border-collapse">{children}</table>
+        </div>
+      </div>
+    );
+  };
+
   // Typing Text Component - Completely isolated from parent re-renders
   const TypingText = ({ text, messageId, onAnimationComplete }: { text: string; messageId: string; onAnimationComplete?: (id: string) => void }) => {
     // Skip word-by-word animation for messages that embed images — base64 data URLs
@@ -1378,13 +1412,35 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
             img: ({src, alt}) => {
               if (!src) return null;
               return <GeneratedImageDisplay src={src} alt={alt || "Generated image"} />;
-            }
+            },
+            table: TableWithDownload as any,
+            thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
+            th: ({ children }) => <th className="px-3 py-2 text-left text-xs font-semibold text-foreground border-b border-border">{children}</th>,
+            td: ({ children }) => <td className="px-3 py-2 text-sm text-foreground border-b border-border/50">{children}</td>,
           }}
         >
           {displayedText}
         </ReactMarkdown>
       </div>
     );
+  };
+
+  const handleNomadSummarize = async () => {
+    const allMsgs = Object.entries(nomadMessages).filter(([, msgs]) => msgs.some(m => m.role === 'assistant'));
+    if (allMsgs.length === 0) return;
+    setNomadSummarizing(true); setNomadSummaryOpen(true); setNomadSummary('');
+    const parts = allMsgs.map(([id, msgs]) => {
+      const name = nomadModels.find(m => m.id === id)?.name || id;
+      const responses = msgs.filter(m => m.role === 'assistant').map(m => m.content).join('\n');
+      return `**${name}:**\n${responses}`;
+    });
+    const prompt = `Analyze these responses from multiple AI models:\n\n${parts.join('\n\n---\n\n')}\n\nGive a structured summary with:\n1. **Similarities** — What did they all agree on?\n2. **Differences** — Where did they differ?\n3. **Conclusion** — Which response was best and why?\n\nBe concise.`;
+    try {
+      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary' }) });
+      if (res.ok) { const data = await res.json(); setNomadSummary(data.response || 'Could not generate summary.'); }
+      else setNomadSummary('Failed to generate summary.');
+    } catch { setNomadSummary('Failed to generate summary. Please try again.'); }
+    finally { setNomadSummarizing(false); }
   };
 
   const handleNomadSendMessage = async (content: string) => {
@@ -3037,6 +3093,19 @@ Let's start the self-listen session!`;
       >
         {activeTab === 'ask' ? (
           <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-32 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
+          {/* Scroll to top/bottom buttons */}
+          {messages.length > 2 && (
+            <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-40">
+              <button onClick={() => chatScrollRef.current && (chatScrollRef.current.scrollTop = 0)}
+                className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to top">
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => chatScrollRef.current && (chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight)}
+                className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to bottom">
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
             <Logo size="2xl" className="mb-6" />
@@ -3094,28 +3163,46 @@ Let's start the self-listen session!`;
                       </div>
                     )}
                     <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown 
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          img: ({src, alt}) => {
-                            if (!src) return null;
-                            return (
-                              <img 
-                                src={src} 
-                                alt={alt || "Generated image"} 
-                                className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.onerror = null;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            );
-                          }
-                        }}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
+                      {message.content.length > 250 && !expandedMsgIds.has(message.id) ? (
+                        <p className="whitespace-pre-wrap break-words text-sm m-0">
+                          {message.content.slice(0, 250).trim()}&hellip;
+                          <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
+                            className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                            Show more
+                          </button>
+                        </p>
+                      ) : (
+                        <>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              img: ({src, alt}) => {
+                                if (!src) return null;
+                                return (
+                                  <img 
+                                    src={src} 
+                                    alt={alt || "Generated image"} 
+                                    className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.onerror = null;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                );
+                              }
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                          {message.content.length > 250 && (
+                            <button onClick={() => setExpandedMsgIds(p => { const n = new Set(p); n.delete(message.id); return n; })}
+                              className="text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                              Show less
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                     
                     {/* User Message Action Buttons */}
@@ -3374,10 +3461,7 @@ Let's start the self-listen session!`;
                     <svg
                       viewBox={`0 0 ${W} ${H}`}
                       width={W} height={H}
-                      style={{
-                        position: 'absolute', top: 0, left: 0,
-                        filter: resolvedTheme !== 'dark' ? 'drop-shadow(0 2px 10px rgba(0,0,0,0.13))' : 'none'
-                      }}
+                      style={{ position: 'absolute', top: 0, left: 0 }}
                     >
                       <path
                         d={cloudPath}
@@ -3450,15 +3534,60 @@ Let's start the self-listen session!`;
               };
               return slugMap[id] || id;
             };
-            // Theme-aware filter: dark-colored logos need invert in dark mode
+            // Theme-aware filter
             const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
+            const nomadHasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant'));
             return (
             /* min-h-full ensures grid background stretches to bottom even with little content */
-            <div className="w-full min-h-full flex flex-col">
+            <div className="w-full min-h-full flex flex-col relative">
+              {/* Nomad Summary Panel — slide in from right */}
+              {nomadSummaryOpen && (
+                <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
+                  style={{ animation: 'sheetEnter 0.3s cubic-bezier(0.23,1,0.32,1) both' }}>
+                  <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-border">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" /> AI Summary
+                    </span>
+                    <button onClick={() => setNomadSummaryOpen(false)} className="p-1.5 rounded-full hover:bg-accent transition-colors">
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3">
+                    {nomadSummarizing ? (
+                      <div className="flex flex-col items-center justify-center h-32 gap-3">
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm text-muted-foreground">Analyzing AI responses…</span>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{nomadSummary || 'Click Summarize to compare all AI responses.'}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="px-4 pt-4 pb-2">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
-                  Nomad - Multi-AI
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-2xl font-bold text-foreground">Nomad - Multi-AI</h2>
+                  {nomadHasAIMessages && (
+                    <button onClick={handleNomadSummarize}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
+                      <Sparkles className="w-3 h-3" /> Summarize
+                    </button>
+                  )}
+                </div>
+                {/* Mode selector */}
+                <div className="flex items-center gap-2 mb-3">
+                  <button onClick={() => setNomadMode('multi')}
+                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                    ⬡ Multi Chat
+                  </button>
+                  <button onClick={() => setNomadMode('auto')}
+                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
+                    ⚡ Auto Mode
+                  </button>
+                  {nomadMode === 'auto' && <span className="text-[11px] text-muted-foreground">Best AI selected per prompt</span>}
+                </div>
 
                 {/* Solo mode: back button + other model pills */}
                 {nomadSoloModel && (
@@ -3510,7 +3639,7 @@ Let's start the self-listen session!`;
                             className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1"
                             style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.25)' }}
                           >
-                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: config.color + '20', padding: 4 }}>
                               <img
                                 src={config.logo}
                                 alt={config.name}
@@ -3574,7 +3703,7 @@ Let's start the self-listen session!`;
                             ))}
                             {nomadIsTyping[model] && (
                               <div className="flex items-start space-x-2">
-                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1">
+                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1 rounded" style={{ background: config.color + '20', padding: 2 }}>
                                   <img
                                     src={config.logo}
                                     alt={config.name}
@@ -4325,6 +4454,15 @@ Let's start the self-listen session!`;
 
       {/* New Unified Message Bar */}
       <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+        {/* Nomad Summarize bar — above msg bar */}
+        {activeTab === 'nomad' && Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant')) && (
+          <div className="flex justify-center mb-2">
+            <button onClick={handleNomadSummarize}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
+              <Sparkles className="w-3.5 h-3.5" /> Summarize all responses
+            </button>
+          </div>
+        )}
 
         {/* ── Imagine reference image tray ── */}
         {activeTab === 'imagine' && imagineRefImage && (
