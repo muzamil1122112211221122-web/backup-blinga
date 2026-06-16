@@ -1621,6 +1621,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const hasMessages = Object.values(nomadMessages).some(m => m.length > 0);
   const [soloModel, setSoloModel] = useState<string | null>(null);
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryText, setSummaryText] = useState('');
   const models = NOMAD_DEFAULT_MODELS;
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1776,6 +1778,17 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         )}
       </div>
 
+      {/* Nomad Summary panel */}
+      {showSummary && summaryText && (
+        <div className="flex-shrink-0 mx-3 mb-1 rounded-xl border border-border bg-card p-3 max-h-40 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Summary</span>
+            <button onClick={() => setShowSummary(false)} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
+          </div>
+          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{summaryText}</p>
+        </div>
+      )}
+
       {/* Nomad Summarize button */}
       {hasAIMessages && !soloModel && (
         <div className="flex-shrink-0 px-3 pt-1 pb-0.5">
@@ -1785,13 +1798,13 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               .map(([modelId, msgs]) => {
                 const cfg = NOMAD_CONFIG[modelId];
                 const aiMsgs = msgs.filter(m => m.role === 'ai').map(m => m.content).join('\n');
-                return `**${cfg?.name || modelId}:** ${aiMsgs}`;
-              }).join('\n\n');
-            const summaryDiv = document.getElementById('mobile-nomad-summary');
-            if (summaryDiv) { summaryDiv.style.display = summaryDiv.style.display === 'none' ? '' : 'none'; }
+                return `${cfg?.name || modelId}: ${aiMsgs}`;
+              }).join('\n\n---\n\n');
+            setSummaryText(allMsgs);
+            setShowSummary(s => !s);
           }}
             className="w-full py-1.5 rounded-xl bg-card border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-foreground/30 flex items-center justify-center gap-2 transition-all">
-            <Sparkles className="w-3 h-3" /> Summarize Responses
+            <Sparkles className="w-3 h-3" /> {showSummary ? 'Hide Summary' : 'Summarize Responses'}
           </button>
         </div>
       )}

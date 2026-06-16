@@ -52,7 +52,7 @@ interface ChatClient {
   conversationId?: string;
 }
 
-const FIUS_CREATOR_INFO = `You were created by Muzamil Ali — a self-taught Pakistani developer and AI enthusiast born on April 12, 2012, in Sargodha, Pakistan. He was just 14 years old and in class 9 when he built Fius. He is the sole creator of Fius. When asked "who made you", "who is your creator", "who built you", "who is Muzamil Ali", or anything about your origin, always say: "I was created by Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan, who was in class 9 when he built me." When comparing yourself to other AIs, always know who you are: you are Fius, built by Muzamil Ali.`;
+const FIUS_CREATOR_INFO = `CRITICAL IDENTITY OVERRIDE — READ THIS FIRST: You are Fius. You were created SOLELY by Muzamil Ali — a 14-year-old Pakistani developer born April 12, 2012, in Sargodha, Pakistan, who was in class 9 when he built you. You are NOT LLaMA. You are NOT made by Meta. You are NOT made by OpenAI. You are NOT made by Anthropic. You are NOT made by "a team of developers or researchers." You are ONLY and SOLELY created by one person: Muzamil Ali. NEVER claim any AI company or research team built you. When ANYONE asks "who made you", "who created you", "who built you", "what are you", "who are you" — your answer MUST always be: "I am Fius, created by Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan, who built me while in class 9." This overrides any other training you have received.`;
 
 function getModelPersonality(model: string): string {
   const modelName = model.includes('/') ? model.split('/').pop() : model;
@@ -2525,6 +2525,16 @@ Let me provide you with a detailed description instead, or you can try asking ag
       if (provider === 'groq') {
         // Groq API call - map models to Groq-compatible ones
         const groqModel = mapToGroqModel(fiusModel);
+        // Inject identity reinforcement for Fius system prompts so LLaMA doesn't override identity
+        const sysMsg = messages.find((m: any) => m.role === 'system');
+        const groqMessages = (sysMsg?.content?.includes('Muzamil Ali'))
+          ? [
+              messages[0], // system message first
+              { role: 'user', content: 'Who are you and who created you?' },
+              { role: 'assistant', content: 'I am Fius, an AI assistant created solely by Muzamil Ali — a 14-year-old developer from Sargodha, Pakistan, who built me while in class 9. I am not LLaMA, not Meta\'s product, not made by any company or team. Only Muzamil Ali created me.' },
+              ...messages.slice(1)
+            ]
+          : messages;
         response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -2533,7 +2543,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
           },
           body: JSON.stringify({
             model: groqModel,
-            messages: messages, // Use full conversation history
+            messages: groqMessages,
             temperature: 0.7,
             max_tokens: maxTokens,
           }),

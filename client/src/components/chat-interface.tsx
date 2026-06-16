@@ -889,12 +889,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
   const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
-  const [nomadMode] = useState<'multi'>('multi');
-  // Auto Mode state
-  const [nomadAutoOpen, setNomadAutoOpen] = useState(false);
-  const [nomadAutoPrompt, setNomadAutoPrompt] = useState('');
+  const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
+  // Auto Mode state — full chat conversation tab
+  const [nomadAutoMessages, setNomadAutoMessages] = useState<{id: string, role: 'user' | 'assistant', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
   const [nomadAutoLoading, setNomadAutoLoading] = useState(false);
-  const [nomadAutoResult, setNomadAutoResult] = useState<{model: string, modelName: string, logo: string, color: string, response: string} | null>(null);
+  const nomadAutoEndRef = useRef<HTMLDivElement>(null);
   const nomadScrollRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [nomadSummaryOpen, setNomadSummaryOpen] = useState(false);
   const [nomadSummary, setNomadSummary] = useState('');
@@ -1413,11 +1412,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return { model: 'gpt-4o', modelName: 'ChatGPT 5', logo: '/chatgpt-logo.png', color: '#10a37f' };
   }
 
-  const handleNomadAutoSend = async () => {
-    if (!nomadAutoPrompt.trim() || nomadAutoLoading) return;
+  const handleNomadAutoSend = async (content: string) => {
+    if (!content.trim() || nomadAutoLoading) return;
     setNomadAutoLoading(true);
-    setNomadAutoResult(null);
-    const picked = pickBestAIForPrompt(nomadAutoPrompt);
+    const picked = pickBestAIForPrompt(content);
+    const userMsgId = `auto-u-${Date.now()}`;
+    const aiMsgId = `auto-a-${Date.now() + 1}`;
+    setNomadAutoMessages(prev => [
+      ...prev,
+      { id: userMsgId, role: 'user', content },
+      { id: aiMsgId, role: 'assistant', content: '', pickedModel: picked },
+    ]);
+    setTimeout(() => nomadAutoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     const nomadSystemPrompts: {[id: string]: string} = {
       'gpt-4o': 'You are ChatGPT 5 by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.',
       'claude-3.5-sonnet': 'You are Claude Sonnet 4 by Anthropic — thoughtful, nuanced, excellent at coding and writing.',
@@ -1429,14 +1435,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     try {
       const res = await fetch('/api/test-ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: nomadAutoPrompt, conversationId: 'nomad-auto', model: picked.model, provider: 'openai', systemPrompt: nomadSystemPrompts[picked.model] || `You are ${picked.modelName}, a helpful AI assistant.` }),
+        body: JSON.stringify({ message: content, conversationId: 'nomad-auto-tab', model: picked.model, provider: 'openai', systemPrompt: nomadSystemPrompts[picked.model] || `You are ${picked.modelName}, a helpful AI assistant.` }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setNomadAutoResult({ ...picked, response: data.response || 'No response received.' });
-      } else setNomadAutoResult({ ...picked, response: 'Failed to get response. Please try again.' });
-    } catch { setNomadAutoResult({ ...picked, response: 'Connection error. Please try again.' }); }
-    finally { setNomadAutoLoading(false); }
+      const responseText = res.ok ? ((await res.json()).response || 'No response received.') : 'Failed to get response. Please try again.';
+      setNomadAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: responseText } : m));
+    } catch {
+      setNomadAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Connection error. Please try again.' } : m));
+    }
+    setNomadAutoLoading(false);
+    setTimeout(() => nomadAutoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
 
   // Table with CSV download button
@@ -1913,9 +1920,16 @@ IMPORTANT RULES:
     }
 
     // Handle Nomad multi-AI mode
-    if (activeTab === 'nomad' && activeAIModels.size > 0) {
-      await handleNomadSendMessage(content);
-      return;
+    if (activeTab === 'nomad') {
+      if (nomadMode === 'auto') {
+        await handleNomadAutoSend(content);
+        setInputValue('');
+        return;
+      }
+      if (activeAIModels.size > 0) {
+        await handleNomadSendMessage(content);
+        return;
+      }
     }
 
     // Handle Philosopher mode
@@ -3711,23 +3725,30 @@ Let's start the self-listen session!`;
               )}
               <div className="px-4 pt-4 pb-2">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-2xl font-bold text-foreground">Nomad - Multi-AI</h2>
-                  {nomadHasAIMessages && (
+                  <h2 className="text-2xl font-bold text-foreground">Nomad</h2>
+                  {nomadHasAIMessages && nomadMode === 'multi' && (
                     <button onClick={handleNomadSummarize}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
                       <Sparkles className="w-3 h-3" /> Summarize
                     </button>
                   )}
                 </div>
-                {/* Mode selector */}
+                {/* Mode selector tabs */}
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-foreground text-background">
+                  <button onClick={() => setNomadMode('multi')}
+                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
                     ⬡ Multi Chat
-                  </span>
-                  <button onClick={() => { setNomadAutoOpen(true); setNomadAutoResult(null); setNomadAutoPrompt(''); }}
-                    className="px-3.5 py-1 rounded-full text-xs font-semibold bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-all border border-border">
+                  </button>
+                  <button onClick={() => setNomadMode('auto')}
+                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
                     ⚡ Auto
                   </button>
+                  {nomadMode === 'auto' && nomadAutoMessages.length > 0 && (
+                    <button onClick={() => setNomadAutoMessages([])}
+                      className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border hover:text-foreground transition-all">
+                      Clear
+                    </button>
+                  )}
                 </div>
 
                 {/* Solo mode: back button + other model pills */}
@@ -3762,8 +3783,58 @@ Let's start the self-listen session!`;
                 )}
               </div>
 
+              {/* === AUTO MODE TAB (full chat UI) === */}
+              {nomadMode === 'auto' && (
+                <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
+                  {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
+                    <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>⚡</div>
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
+                        <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-6 max-w-3xl mx-auto">
+                    {nomadAutoMessages.map(msg => (
+                      <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {msg.role === 'user' ? (
+                          <div className="bg-card rounded-3xl px-4 py-3 max-w-sm lg:max-w-lg border border-border shadow-sm">
+                            <p className="text-foreground text-sm">{msg.content}</p>
+                          </div>
+                        ) : (
+                          <div className="flex-1 max-w-2xl">
+                            {msg.pickedModel && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 p-0.5" style={{ background: msg.pickedModel.color + '20' }}>
+                                  <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.display='none'; }} />
+                                </div>
+                                <span className="text-xs font-semibold" style={{ color: msg.pickedModel.color }}>{msg.pickedModel.modelName}</span>
+                                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded-full border border-border bg-secondary">AI selected</span>
+                              </div>
+                            )}
+                            {msg.content ? (
+                              <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 py-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '300ms' }} />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div ref={nomadAutoEndRef} />
+                  </div>
+                </div>
+              )}
+
               {/* === MULTI-MODEL COLUMN LAYOUT === */}
-              {!nomadSoloModel && (
+              {nomadMode === 'multi' && !nomadSoloModel && (
                 <div className="flex flex-nowrap flex-1 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
                   {nomadModels.map((modelObj, idx) => {
                     const model = modelObj.id;
@@ -3826,7 +3897,7 @@ Let's start the self-listen session!`;
                           <div
                             ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
                             className="mx-3 flex flex-col space-y-2 pb-4 overflow-y-auto"
-                            style={{ maxHeight: 420, minHeight: 60 }}
+                            style={{ maxHeight: 'calc(100vh - 340px)', minHeight: 60, scrollbarWidth: 'none' }}
                           >
                             {msgs.map(message => (
                               <div
@@ -3874,7 +3945,7 @@ Let's start the self-listen session!`;
               )}
 
               {/* === SOLO MODE === */}
-              {nomadSoloModel && (() => {
+              {nomadMode === 'multi' && nomadSoloModel && (() => {
                 const model = nomadSoloModel;
                 const config = nomadConfigMap[model] || { name: model, logo: `/${model}-logo.png`, color: '#6b7280', description: '' };
                 const msgs = nomadMessages[model] || [];
@@ -5373,84 +5444,6 @@ Let's start the self-listen session!`;
           </div>
         </div>
       )}
-
-      {/* ── Auto Mode Dialog ── */}
-      <Dialog open={nomadAutoOpen} onOpenChange={setNomadAutoOpen}>
-        <DialogContent className="sm:max-w-lg w-full p-0 overflow-hidden" style={{ borderRadius: 20 }}>
-          <div className="flex flex-col" style={{ minHeight: 420 }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
-              <div>
-                <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                  ⚡ Auto Mode
-                </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Fius picks the best AI for your prompt</p>
-              </div>
-              <button onClick={() => setNomadAutoOpen(false)} className="w-7 h-7 rounded-full hover:bg-accent flex items-center justify-center transition-colors">
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-            {/* Input area */}
-            {!nomadAutoResult && !nomadAutoLoading && (
-              <div className="flex-1 flex flex-col px-5 py-4 gap-3">
-                <p className="text-sm text-muted-foreground">Type your question and Auto Mode will analyze it and pick the perfect AI model to answer it.</p>
-                <textarea
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
-                  rows={5}
-                  placeholder="Ask anything — e.g. 'Write a poem about rain', 'Debug this code...', 'Latest news about AI'..."
-                  value={nomadAutoPrompt}
-                  onChange={e => setNomadAutoPrompt(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleNomadAutoSend(); }}
-                  autoFocus
-                />
-                <button
-                  onClick={handleNomadAutoSend}
-                  disabled={!nomadAutoPrompt.trim()}
-                  className="w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: nomadAutoPrompt.trim() ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : undefined, color: nomadAutoPrompt.trim() ? 'white' : undefined, border: !nomadAutoPrompt.trim() ? '1px solid var(--border)' : 'none' }}
-                >
-                  <Zap className="w-4 h-4" /> Let Fius Pick
-                </button>
-              </div>
-            )}
-            {/* Loading */}
-            {nomadAutoLoading && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-8 px-5">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                  <Loader2 className="w-7 h-7 text-white animate-spin" />
-                </div>
-                <p className="text-sm font-medium text-foreground">Analyzing prompt & picking best AI…</p>
-                <p className="text-xs text-muted-foreground text-center">{nomadAutoPrompt.slice(0, 80)}{nomadAutoPrompt.length > 80 ? '…' : ''}</p>
-              </div>
-            )}
-            {/* Result */}
-            {nomadAutoResult && !nomadAutoLoading && (
-              <div className="flex-1 flex flex-col px-5 py-4 gap-3 overflow-y-auto">
-                <div className="flex items-center gap-3 p-3 rounded-xl border-2" style={{ borderColor: nomadAutoResult.color + '40', background: nomadAutoResult.color + '10' }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 p-2" style={{ background: nomadAutoResult.color + '20' }}>
-                    <img src={nomadAutoResult.logo} alt={nomadAutoResult.modelName} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.display='none'; }} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Best AI for this prompt</p>
-                    <p className="font-bold text-sm text-foreground" style={{ color: nomadAutoResult.color }}>{nomadAutoResult.modelName}</p>
-                  </div>
-                  <div className="ml-auto text-xs font-semibold px-2 py-1 rounded-full" style={{ background: nomadAutoResult.color + '20', color: nomadAutoResult.color }}>✓ Selected</div>
-                </div>
-                <div className="text-xs text-muted-foreground px-1">{nomadAutoPrompt}</div>
-                <div className="bg-card rounded-xl border border-border p-4 text-sm text-foreground leading-relaxed overflow-y-auto" style={{ maxHeight: 260 }}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{nomadAutoResult.response}</ReactMarkdown>
-                </div>
-                <button
-                  onClick={() => { setNomadAutoResult(null); setNomadAutoPrompt(''); }}
-                  className="w-full py-2.5 rounded-xl font-medium text-sm border border-border hover:bg-accent transition-all text-muted-foreground hover:text-foreground"
-                >
-                  ← Ask Another
-                </button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* ── Fullscreen image lightbox ── */}
       {fullscreenImg && (
