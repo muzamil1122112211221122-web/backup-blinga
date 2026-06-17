@@ -14,7 +14,7 @@ import {
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
-  MessageSquarePlus, FileDown, Square, AlignLeft,
+  MessageSquarePlus, FileDown, Square, AlignLeft, History,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -387,6 +387,13 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             </>
           )}
 
+          {isUser && (
+            <div className="flex items-center gap-0.5 mt-1 justify-end">
+              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
           {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
@@ -1595,11 +1602,11 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       {/* Scroll to top/bottom buttons */}
       {messages.length > 2 && (
         <div className="fixed bottom-28 right-3 flex flex-col gap-1.5 z-50">
-          <button onClick={() => scrollAreaRef.current && (scrollAreaRef.current.scrollTop = 0)}
+          <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
             className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
             <ChevronUp className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => scrollAreaRef.current && (scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight)}
+          <button onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
             className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
@@ -1661,6 +1668,11 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [summarizing, setSummarizing] = useState(false);
+  const [nomadHistoryOpen, setNomadHistoryOpen] = useState(false);
+  type MNomadSess = { id: string; ts: number; mode: 'multi'|'auto'; preview: string; autoMsgs: typeof autoMessages; multiMsgs: Record<string, {id:string;role:string;content:string}[]>; };
+  const [nomadHistSessions, setNomadHistSessions] = useState<MNomadSess[]>(() => {
+    try { return JSON.parse(localStorage.getItem('fius-nomad-m-history') || '[]'); } catch { return []; }
+  });
 
   // Auto mode state
   const [autoMessages, setAutoMessages] = useState<{id: string, role: 'user'|'ai', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
@@ -1699,7 +1711,12 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     try {
       const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx }) });
       const data = res.ok ? await res.json() : null;
-      setAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m));
+      setAutoMessages(prev => {
+        const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
+        const sess: MNomadSess = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-m-history', JSON.stringify(next)); return next; });
+        return updated;
+      });
     } catch {
       setAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Connection error. Please try again.' } : m));
     }
@@ -1712,6 +1729,57 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   return (
     <>
       {/* Mode selector bar */}
+      {/* Nomad History Sidebar */}
+      {nomadHistoryOpen && (
+        <div className="absolute inset-0 z-50 flex">
+          <div className="flex-1" onClick={() => setNomadHistoryOpen(false)} />
+          <div className="w-72 bg-card border-l border-border flex flex-col shadow-2xl"
+            style={{ animation: 'sheetEnter 0.25s cubic-bezier(0.23,1,0.32,1) both' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
+              <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                <History className="w-4 h-4" /> Nomad History
+              </span>
+              <div className="flex items-center gap-1">
+                {nomadHistSessions.length > 0 && (
+                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-m-history'); }}
+                    className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
+                    Clear
+                  </button>
+                )}
+                <button onClick={() => setNomadHistoryOpen(false)} className="p-1.5 rounded-full hover:bg-accent transition-colors">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {nomadHistSessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-28 gap-2 text-center">
+                  <History className="w-6 h-6 text-muted-foreground opacity-25" />
+                  <span className="text-xs text-muted-foreground">No history yet.<br/>Chat to save sessions.</span>
+                </div>
+              ) : (
+                nomadHistSessions.map(sess => (
+                  <button key={sess.id} onClick={() => {
+                    if (sess.mode === 'auto') { setAutoMessages(sess.autoMsgs); setNomadMode('auto'); }
+                    else { setNomadMode('multi'); }
+                    setNomadHistoryOpen(false);
+                  }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
+                        {sess.mode === 'auto' ? '⚡ Auto' : '⬡ Multi'}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground ml-auto">
+                        {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground line-clamp-2">{sess.preview || 'Nomad session'}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {!soloModel && (
         <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-card">
           <button onClick={() => setNomadMode('multi')}
@@ -1725,6 +1793,11 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
           </button>
           {nomadMode === 'auto' && <span className="text-[10px] text-muted-foreground">Best AI per prompt</span>}
           <div className="flex-1" />
+          <button onClick={() => setNomadHistoryOpen(v => !v)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${nomadHistoryOpen ? 'bg-foreground text-background border-transparent' : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
+            <History className="w-3 h-3" />
+            {nomadHistSessions.length > 0 && <span>{nomadHistSessions.length}</span>}
+          </button>
         </div>
       )}
       {/* Solo mode back button */}
@@ -2336,12 +2409,18 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       const res = await fetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "Continued Chat", model: askModel }),
+        body: JSON.stringify({ title: content.slice(0, 50) || "Continued Chat", model: askModel }),
       });
       if (!res.ok) return;
       const data = await res.json();
       const newId = data.id || data.conversation?.id;
       if (!newId) return;
+      // Save the AI message to the backend so it appears in history
+      await fetch("/api/test-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "[Continued from previous chat]", conversationId: newId, model: askModel, systemPrompt: `You previously said: "${content.slice(0, 300)}". The user wants to continue this conversation. Greet them and continue naturally.` }),
+      }).catch(() => {});
       setCurrentConvId(newId);
       setAskMsgs([{ id: uid(), role: "ai", content, timestamp: new Date() }]);
       setAskInput("");

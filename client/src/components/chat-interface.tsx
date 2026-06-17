@@ -898,6 +898,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadSummaryOpen, setNomadSummaryOpen] = useState(false);
   const [nomadSummary, setNomadSummary] = useState('');
   const [nomadSummarizing, setNomadSummarizing] = useState(false);
+  const [nomadHistoryOpen, setNomadHistoryOpen] = useState(false);
+  type NomadHistSession = { id: string; ts: number; mode: 'multi' | 'auto'; preview: string; autoMsgs: typeof nomadAutoMessages; multiMsgs: {[model: string]: ChatMessage[]}; };
+  const [nomadHistSessions, setNomadHistSessions] = useState<NomadHistSession[]>(() => {
+    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
+  });
   const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set());
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1439,7 +1444,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         body: JSON.stringify({ message: content, conversationId: 'nomad-auto-tab', model: picked.model, provider: 'openai', systemPrompt: nomadSystemPrompts[picked.model] || `You are ${picked.modelName}, a helpful AI assistant.` }),
       });
       const responseText = res.ok ? ((await res.json()).response || 'No response received.') : 'Failed to get response. Please try again.';
-      setNomadAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: responseText } : m));
+      setNomadAutoMessages(prev => {
+        const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: responseText } : m);
+        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: content.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-history', JSON.stringify(next)); return next; });
+        return updated;
+      });
     } catch {
       setNomadAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Connection error. Please try again.' } : m));
     }
@@ -1669,6 +1679,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         setNomadIsTyping(prev => ({ ...prev, [model.id]: false }));
       }
     }));
+    // Auto-save multi session after all models respond
+    setNomadMessages(prev => {
+      const firstUserMsg = Object.values(prev).flat().find(m => m.role === 'user');
+      if (firstUserMsg) {
+        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: firstUserMsg.content.slice(0, 60), autoMsgs: [], multiMsgs: prev };
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-history', JSON.stringify(next)); return next; });
+      }
+      return prev;
+    });
   };
 
   const handlePhilosopherSend = async (content: string) => {
@@ -3255,11 +3274,11 @@ Let's start the self-listen session!`;
           {/* Scroll to top/bottom buttons */}
           {messages.length > 2 && (
             <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-40">
-              <button onClick={() => chatScrollRef.current && (chatScrollRef.current.scrollTop = 0)}
+              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to top">
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => chatScrollRef.current && (chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight)}
+              <button onClick={() => chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' })}
                 className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to bottom">
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
@@ -3725,15 +3744,70 @@ Let's start the self-listen session!`;
                   </div>
                 </div>
               )}
+              {/* Nomad History Panel — slide in from right */}
+              {nomadHistoryOpen && (
+                <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
+                  style={{ animation: 'sheetEnter 0.3s cubic-bezier(0.23,1,0.32,1) both' }}>
+                  <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-border">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <History className="w-4 h-4" /> Nomad History
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {nomadHistSessions.length > 0 && (
+                        <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
+                          className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors border border-border">
+                          Clear all
+                        </button>
+                      )}
+                      <button onClick={() => setNomadHistoryOpen(false)} className="p-1.5 rounded-full hover:bg-accent transition-colors">
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {nomadHistSessions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-center">
+                        <History className="w-7 h-7 text-muted-foreground opacity-30" />
+                        <span className="text-sm text-muted-foreground">No sessions yet.<br/>Send a message to save history.</span>
+                      </div>
+                    ) : (
+                      nomadHistSessions.map(sess => (
+                        <button key={sess.id} onClick={() => {
+                          if (sess.mode === 'auto') { setNomadAutoMessages(sess.autoMsgs); setNomadMode('auto'); }
+                          else { setNomadMessages(sess.multiMsgs); setNomadMode('multi'); }
+                          setNomadHistoryOpen(false);
+                        }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all group">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
+                              {sess.mode === 'auto' ? '⚡ Auto' : '⬡ Multi'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground ml-auto">
+                              {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-foreground line-clamp-2 group-hover:text-foreground">{sess.preview || 'Nomad session'}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="px-4 pt-4 pb-2">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-2xl font-bold text-foreground">Nomad</h2>
-                  {nomadHasAIMessages && nomadMode === 'multi' && (
-                    <button onClick={handleNomadSummarize}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
-                      <Sparkles className="w-3 h-3" /> Summarize
+                  <div className="flex items-center gap-2">
+                    {nomadHasAIMessages && nomadMode === 'multi' && (
+                      <button onClick={handleNomadSummarize}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
+                        <Sparkles className="w-3 h-3" /> Summarize
+                      </button>
+                    )}
+                    <button onClick={() => { setNomadHistoryOpen(v => !v); setNomadSummaryOpen(false); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${nomadHistoryOpen ? 'bg-foreground text-background' : 'bg-card border border-border hover:bg-accent text-foreground'}`}>
+                      <History className="w-3 h-3" /> History
+                      {nomadHistSessions.length > 0 && <span className="ml-0.5 bg-primary text-primary-foreground rounded-full text-[9px] px-1 py-0">{nomadHistSessions.length}</span>}
                     </button>
-                  )}
+                  </div>
                 </div>
                 {/* Mode selector tabs */}
                 <div className="flex items-center gap-2 mb-3">
