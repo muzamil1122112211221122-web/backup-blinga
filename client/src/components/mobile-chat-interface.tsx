@@ -340,18 +340,50 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             </div>
           ) : (
             <>
-              <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
-                {isUser && msg.content.length > 200 && !msgExpanded
-                  ? `${msg.content.slice(0, 200).trim()}…`
-                  : shownText}
-                {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
-              </div>
-              {isUser && msg.content.length > 200 && (
-                <button onClick={() => setMsgExpanded(!msgExpanded)}
-                  className="mt-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground underline transition-colors">
-                  {msgExpanded ? "Show less" : "Show more"}
-                </button>
-              )}
+              {(() => {
+                const sourceSep = '\n\n---\n**Sources:**\n';
+                const sepIdx = shownText.indexOf(sourceSep);
+                const mainText = sepIdx !== -1 ? shownText.slice(0, sepIdx) : shownText;
+                const sourceLines = sepIdx !== -1 ? shownText.slice(sepIdx + sourceSep.length).split('\n').filter(l => l.startsWith('• ')) : [];
+                const parsedSrcs = sourceLines.map(l => { const m = l.match(/• \[(.+?)\]\((.+?)\)/); return m ? { title: m[1], url: m[2] } : null; }).filter(Boolean) as {title: string; url: string}[];
+                return (
+                  <>
+                    <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
+                      {isUser && mainText.length > 200 && !msgExpanded
+                        ? `${mainText.slice(0, 200).trim()}…`
+                        : mainText}
+                      {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
+                    </div>
+                    {!isUser && parsedSrcs.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-border/40">
+                        <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1 font-medium">
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                          Sources
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {parsedSrcs.map((src, i) => {
+                            let hostname = '';
+                            try { hostname = new URL(src.url).hostname.replace('www.', ''); } catch {}
+                            return (
+                              <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg bg-secondary text-foreground border border-border hover:bg-accent transition-colors max-w-[180px]">
+                                <img src={`https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(src.url)}`} alt="" className="w-3 h-3 rounded-sm flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                <span className="truncate font-medium">{hostname || src.title}</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {isUser && mainText.length > 200 && (
+                      <button onClick={() => setMsgExpanded(!msgExpanded)}
+                        className="mt-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                        {msgExpanded ? "Show less" : "Show more"}
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </>
           )}
 
@@ -1614,7 +1646,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   );
 }
 
-// ─── Nomad Tab (PC-style multi-column) ────────────────────────────────────────
+// ─── Nomad Tab (multi-column + auto mode) ────────────────────────────────────────
 function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
   nomadMessages: Record<string, { id: string; role: "user" | "ai"; content: string }[]>;
@@ -1629,10 +1661,53 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [summarizing, setSummarizing] = useState(false);
+
+  // Auto mode state
+  const [autoMessages, setAutoMessages] = useState<{id: string, role: 'user'|'ai', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
+  const [autoLoading, setAutoLoading] = useState(false);
+  const autoEndRef = useRef<HTMLDivElement>(null);
+
   const models = NOMAD_DEFAULT_MODELS;
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === "ai"));
+
+  const pickBestAI = (text: string): {model: string, modelName: string, logo: string, color: string} => {
+    const t = text.toLowerCase();
+    if (/\b(code|function|debug|python|javascript|typescript|algorithm|sql|bug|error|program)\b/.test(t))
+      return { model: 'deepseek-r1', modelName: 'DeepSeek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+    if (/\b(search|latest|news|current|today|2025|2026|who is|what is|when did|find me)\b/.test(t))
+      return { model: 'perplexity', modelName: 'Perplexity Sonar', logo: '/perplexity-logo.png', color: '#20808d' };
+    if (/\b(math|calculate|equation|formula|solve|proof|integral|derivative)\b/.test(t))
+      return { model: 'deepseek-r1', modelName: 'DeepSeek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+    if (/\b(write|essay|story|poem|creative|draft|email|letter|blog)\b/.test(t))
+      return { model: 'claude-3.5-sonnet', modelName: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#d97706' };
+    return { model: 'gpt-4o', modelName: 'ChatGPT 5', logo: '/gpt-logo.png', color: '#10a37f' };
+  };
+
+  const handleAutoSend = async () => {
+    if (!input.trim() || autoLoading) return;
+    const text = input.trim();
+    setInput('');
+    setAutoLoading(true);
+    const picked = pickBestAI(text);
+    const userMsgId = uid();
+    const aiMsgId = uid();
+    setAutoMessages(prev => [...prev, { id: userMsgId, role: 'user', content: text }, { id: aiMsgId, role: 'ai', content: '', pickedModel: picked }]);
+    setTimeout(() => autoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha). Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
+    try {
+      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx }) });
+      const data = res.ok ? await res.json() : null;
+      setAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m));
+    } catch {
+      setAutoMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Connection error. Please try again.' } : m));
+    }
+    setAutoLoading(false);
+    setTimeout(() => autoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
+
+  const handleSendDispatch = () => { if (nomadMode === 'auto') handleAutoSend(); else onSend(); };
 
   return (
     <>
@@ -1654,15 +1729,15 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
       )}
       {/* Solo mode back button */}
       {soloModel && (
-        <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-card">
-          <button onClick={() => setSoloModel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft className="w-4 h-4" /> All Models
+        <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-card overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <button onClick={() => setSoloModel(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+            <ChevronLeft className="w-4 h-4" /> All
           </button>
           {models.filter(id => id !== soloModel && activeModels.has(id)).map(id => {
             const cfg = NOMAD_CONFIG[id]; if (!cfg) return null;
             return (
               <button key={id} onClick={() => setSoloModel(id)} title={cfg.name}
-                className="w-7 h-7 rounded-full border-2 flex items-center justify-center bg-card hover:scale-110 transition-all overflow-hidden p-1"
+                className="w-7 h-7 rounded-full border-2 flex items-center justify-center bg-card hover:scale-110 transition-all overflow-hidden p-1 flex-shrink-0"
                 style={{ borderColor: cfg.color }}>
                 <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(id)}`}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
@@ -1672,14 +1747,67 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden flex flex-col relative"
-        style={nomadGrid ? {
-          backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
-          backgroundSize: '36px 36px',
-        } : undefined}>
-        {/* Multi-column (normal mode) */}
-        {!soloModel && (
-          <div ref={scrollRef} className="flex-1 flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: "thin", alignItems: "stretch", overscrollBehavior: "contain" }}>
+      {/* === AUTO MODE CONTENT === */}
+      {nomadMode === 'auto' && !soloModel && (
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
+          {autoMessages.length === 0 && !autoLoading && (
+            <div className="flex flex-col items-center justify-center min-h-full gap-4 text-center py-12">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-foreground">
+                <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain invert dark:invert-0" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 w-full max-w-xs mt-1">
+                {[{ label: '🧠 Reasoning', hint: 'DeepSeek v3' }, { label: '🔍 Search', hint: 'Perplexity' }, { label: '✍️ Writing', hint: 'Claude Sonnet 4' }, { label: '💬 General', hint: 'ChatGPT 5' }].map(c => (
+                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left">
+                    <p className="text-[11px] font-semibold text-foreground">{c.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{c.hint}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="space-y-4">
+            {autoMessages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'user' ? (
+                  <div className="bg-card rounded-3xl px-4 py-3 max-w-[85%] border border-border shadow-sm">
+                    <p className="text-foreground text-sm">{msg.content}</p>
+                  </div>
+                ) : (
+                  <div className="flex-1">
+                    {msg.pickedModel && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 p-0.5" style={{ background: msg.pickedModel.color + '20' }}>
+                          <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className="w-full h-full object-contain" onError={e => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+                        </div>
+                        <span className="text-xs font-semibold" style={{ color: msg.pickedModel.color }}>{msg.pickedModel.modelName}</span>
+                        <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded-full border border-border bg-secondary">auto-selected</span>
+                      </div>
+                    )}
+                    {msg.content ? (
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    ) : (
+                      <div className="flex items-center gap-1 py-1">
+                        {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*150}ms`, animationDuration: '0.9s' }} />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div ref={autoEndRef} />
+          </div>
+        </div>
+      )}
+
+      {/* === MULTI MODE CONTENT === */}
+      {nomadMode === 'multi' && !soloModel && (
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative"
+          style={nomadGrid ? { backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)', backgroundSize: '36px 36px' } : undefined}>
+          <div ref={scrollRef} className="flex-1 min-h-0 flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: "thin", alignItems: "stretch", overscrollBehavior: "contain" }}>
             {models.map((modelId, idx) => {
               const cfg = NOMAD_CONFIG[modelId]; if (!cfg) return null;
               const isActive = activeModels.has(modelId);
@@ -1688,7 +1816,6 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               return (
                 <React.Fragment key={modelId}>
                   <div className="flex-shrink-0 flex flex-col" style={{ width: 220 }}>
-                    {/* Toggle card */}
                     <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
                       style={{ borderColor: isActive ? cfg.color : "rgba(128,128,128,0.2)" }}>
                       <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: cfg.color + '20', padding: 4 }}>
@@ -1698,20 +1825,16 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                       <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{cfg.name}</span>
                       <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <button onClick={() => onToggleModel(modelId)}
-                          className="relative flex-shrink-0 rounded-full transition-all duration-300"
-                          style={{ width: 36, height: 18, background: isActive ? cfg.color : "#d1d5db" }}
-                          >
+                        <button onClick={() => onToggleModel(modelId)} className="relative flex-shrink-0 rounded-full transition-all duration-300"
+                          style={{ width: 36, height: 18, background: isActive ? cfg.color : "#d1d5db" }}>
                           <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
                         </button>
                         <button onClick={() => setSoloModel(modelId)} title={`Chat only with ${cfg.name}`}
-                          className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
-                          style={{ color: cfg.color }}>
+                          className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all" style={{ color: cfg.color }}>
                           <Target className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-                    {/* Messages */}
                     <div className="mx-2.5 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                       {msgs.map(msg => (
                         <div key={msg.id} className={`p-2.5 rounded-lg text-sm ${msg.role === "user" ? "bg-secondary text-secondary-foreground ml-3" : "bg-card border border-border text-foreground"}`}>
@@ -1725,7 +1848,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           </div>
                           <div className="flex items-center gap-1 py-1">
-                            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
+                            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*150}ms`, animationDuration:"0.9s" }} />)}
                           </div>
                         </div>
                       )}
@@ -1736,54 +1859,53 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               );
             })}
           </div>
-        )}
-
-        {/* Solo mode */}
-        {soloModel && (() => {
-          const cfg = NOMAD_CONFIG[soloModel];
-          const msgs = nomadMessages[soloModel] || [];
-          if (!cfg) return null;
-          return (
-            <div className="flex-1 px-4 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-              <div className="space-y-4 max-w-full">
-                {msgs.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    {msg.role === "user" ? (
-                      <div className="bg-card rounded-3xl px-4 py-3 max-w-xs border border-border"><p className="text-foreground text-sm">{msg.content}</p></div>
-                    ) : (
-                      <div className="flex space-x-3 w-full">
-                        <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
-                          <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
-                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                        </div>
-                        <div className="rounded-3xl px-4 py-3 flex-1 border bg-card border-border text-foreground text-sm">{msg.content}</div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {nomadTyping[soloModel] && (
-                  <div className="flex justify-start"><div className="flex space-x-3">
-                    <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
-                      <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
-                        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    </div>
-                    <div className="flex items-center gap-1 py-1">
-                      {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
-                    </div>
-                  </div></div>
-                )}
-              </div>
+          {!hasMessages && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
+              <h3 className="text-lg font-semibold text-foreground mb-1">Multi-AI Paradise Awaits</h3>
+              <p className="text-sm text-muted-foreground">Toggle models, then send a message to compare all AIs at once</p>
             </div>
-          );
-        })()}
+          )}
+        </div>
+      )}
 
-        {!hasMessages && !soloModel && (
-          <div className="flex-shrink-0 flex flex-col items-center justify-center py-6 text-center px-4">
-            <h3 className="text-lg font-semibold text-foreground mb-1">Multi-AI Paradise Awaits</h3>
-            <p className="text-sm text-muted-foreground">Toggle models above, then send a message to compare all AIs at once</p>
+      {/* Solo mode */}
+      {soloModel && (() => {
+        const cfg = NOMAD_CONFIG[soloModel];
+        const msgs = nomadMessages[soloModel] || [];
+        if (!cfg) return null;
+        return (
+          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="space-y-4 max-w-full">
+              {msgs.map(msg => (
+                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "user" ? (
+                    <div className="bg-card rounded-3xl px-4 py-3 max-w-xs border border-border"><p className="text-foreground text-sm">{msg.content}</p></div>
+                  ) : (
+                    <div className="flex space-x-3 w-full">
+                      <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
+                        <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                      <div className="rounded-3xl px-4 py-3 flex-1 border bg-card border-border text-foreground text-sm">{msg.content}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {nomadTyping[soloModel] && (
+                <div className="flex justify-start"><div className="flex space-x-3">
+                  <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
+                    <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
+                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                  <div className="flex items-center gap-1 py-1">
+                    {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*150}ms`, animationDuration:"0.9s" }} />)}
+                  </div>
+                </div></div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Nomad Summary panel */}
       {showSummary && (
@@ -1810,8 +1932,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         </div>
       )}
 
-      {/* Nomad Summarize button */}
-      {hasAIMessages && !soloModel && (
+      {/* Nomad Summarize button — only in multi mode */}
+      {hasAIMessages && !soloModel && nomadMode === 'multi' && (
         <div className="flex-shrink-0 px-3 pt-1 pb-0.5">
           <button onClick={async () => {
             if (showSummary) { setShowSummary(false); return; }
@@ -1840,8 +1962,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         </div>
       )}
 
-      <MobileMessageBar value={input} onChange={setInput} onSend={onSend} isTyping={isTyping}
-        placeholder="Ask all AIs at once…" tab="nomad" showEnhance={false} showModel={false}
+      <MobileMessageBar value={input} onChange={setInput} onSend={handleSendDispatch} isTyping={isTyping || autoLoading}
+        placeholder={nomadMode === 'auto' ? "Ask anything — best AI auto-selected…" : "Ask all AIs at once…"} tab="nomad" showEnhance={false} showModel={false}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
     </>
   );
@@ -2112,7 +2234,7 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
           <div className="flex gap-2 mb-3.5 animate-in fade-in">
             <div className="self-end mb-5 flex-shrink-0"><WikiFace name={personality.name} wikiTitle={personality.wikiTitle} size={26} /></div>
             <div className="flex items-center gap-1 py-2">
-              {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
+              {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration:"0.9s" }} />)}
             </div>
           </div>
         )}
