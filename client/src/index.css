@@ -845,10 +845,26 @@
   }
 }
 
-/* Scrollbar styling — theme-aware slim style */
+/* ── Custom scrollbar: ultra-slim, theme-aware, hover-reveal ── */
+
+/* Hide scrollbar by default; reveal only on scroll/hover */
+* {
+  scrollbar-width: none; /* Firefox: hidden by default */
+}
+
+*:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+.dark *:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* WebKit: hidden track, invisible until hovered */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -857,30 +873,38 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: transparent;
   border-radius: 999px;
-  transition: background 0.2s;
+  transition: background 0.25s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+/* Show thumb only when the scroll container is hovered */
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
-}
-
+/* Utility: fully hidden scrollbar */
 .no-scrollbar {
-  scrollbar-width: none;
+  scrollbar-width: none !important;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
 }
 
 @keyframes pop-out {
