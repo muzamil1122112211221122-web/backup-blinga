@@ -3924,7 +3924,7 @@ Let's start the self-listen session!`;
                     return (
                       <React.Fragment key={model}>
                         {/* Column */}
-                        <div className="flex-shrink-0 flex flex-col" style={{ width: 230 }}>
+                        <div className="flex-shrink-0 flex flex-col" style={{ width: 230, height: '100%' }}>
                           {/* Toggle card — compact mid size */}
                           <div
                             className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1"
@@ -3975,8 +3975,8 @@ Let's start the self-listen session!`;
                           {/* Messages */}
                           <div
                             ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
-                            className="mx-3 flex flex-col space-y-2 pb-4 overflow-y-auto"
-                            style={{ maxHeight: 'calc(100vh - 340px)', minHeight: 60, scrollbarWidth: 'none' }}
+                            className="mx-3 flex flex-col space-y-2 pb-4 overflow-y-auto flex-1 min-h-0"
+                            style={{ minHeight: 60 }}
                           >
                             {msgs.map(message => (
                               <div

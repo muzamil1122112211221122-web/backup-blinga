@@ -847,55 +847,59 @@
 
 /* ── Custom scrollbar: ultra-slim, theme-aware, hover-reveal ── */
 
-/* Hide scrollbar by default; reveal only on scroll/hover */
-* {
-  scrollbar-width: none; /* Firefox: hidden by default */
+/* Kill the default browser scrollbar on every element */
+html, body, * {
+  scrollbar-width: none !important;
 }
 
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+}
+
+/* Slim custom thumb — only visible when hovering the scrollable area */
 *:hover {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-color: rgba(120, 120, 120, 0.35) transparent;
 }
 
 .dark *:hover {
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: rgba(200, 200, 200, 0.25) transparent;
 }
 
-/* WebKit: hidden track, invisible until hovered */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* WebKit hover-reveal thumb */
+*:hover::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+  display: block !important;
 }
 
-::-webkit-scrollbar-track {
+*:hover::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 999px;
-  transition: background 0.25s ease;
-}
-
-/* Show thumb only when the scroll container is hovered */
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.16);
+  background: rgba(120, 120, 120, 0.30);
+  border-radius: 999px;
 }
 
 .dark *:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(200, 200, 200, 0.22);
 }
 
 *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.32);
+  background: rgba(100, 100, 100, 0.55);
 }
 
 .dark *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(220, 220, 220, 0.45);
 }
 
-::-webkit-scrollbar-corner {
+*::-webkit-scrollbar-corner {
   background: transparent;
 }
 
@@ -905,6 +909,8 @@
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 @keyframes pop-out {
