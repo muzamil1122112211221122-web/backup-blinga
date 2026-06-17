@@ -2346,7 +2346,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [askTyping, setAskTyping] = useState(false);
   const [askModel, setAskModel] = useState("fius-lite");
   const [topModelSheetOpen, setTopModelSheetOpen] = useState(false);
-  const [currentConvId, setCurrentConvId] = useState<string | undefined>();
+  const [currentConvId, setCurrentConvId] = useState<string | undefined>(() => localStorage.getItem('currentProjectId') || undefined);
   const askAbortRef = useRef<AbortController | null>(null);
 
   // Studio
@@ -2407,8 +2407,14 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     } catch { }
   }, []);
 
-  const handleSelectConv = useCallback((id: string) => { setCurrentConvId(id); setAskMsgs([]); setTab("ask"); loadConv(id); }, [loadConv]);
-  const handleNewChat = useCallback(() => { setCurrentConvId(undefined); setAskMsgs([]); setAskInput(""); setTab("ask"); }, []);
+  // Restore last conversation on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('currentProjectId');
+    if (saved) loadConv(saved);
+  }, [loadConv]);
+
+  const handleSelectConv = useCallback((id: string) => { setCurrentConvId(id); localStorage.setItem('currentProjectId', id); setAskMsgs([]); setTab("ask"); loadConv(id); }, [loadConv]);
+  const handleNewChat = useCallback(() => { setCurrentConvId(undefined); localStorage.removeItem('currentProjectId'); setAskMsgs([]); setAskInput(""); setTab("ask"); }, []);
 
   const handleChatInNewChat = useCallback(async (content: string) => {
     try {
@@ -2428,6 +2434,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         body: JSON.stringify({ message: "[Continued from previous chat]", conversationId: newId, model: askModel, systemPrompt: `You previously said: "${content.slice(0, 300)}". The user wants to continue this conversation. Greet them and continue naturally.` }),
       }).catch(() => {});
       setCurrentConvId(newId);
+      localStorage.setItem('currentProjectId', newId);
       setAskMsgs([{ id: uid(), role: "ai", content, timestamp: new Date() }]);
       setAskInput("");
       setTab("ask");
@@ -2449,7 +2456,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (!res.ok) throw new Error("Could not create conversation");
     const data = await res.json();
     const newId = data.id || data.conversation?.id;
-    if (newId) { setCurrentConvId(newId); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); return newId; }
+    if (newId) { setCurrentConvId(newId); localStorage.setItem('currentProjectId', newId); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); return newId; }
     throw new Error("No ID");
   }, [currentConvId, askModel]);
 

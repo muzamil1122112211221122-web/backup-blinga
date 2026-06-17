@@ -1452,8 +1452,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       const responseText = res.ok ? ((await res.json()).response || 'No response received.') : 'Failed to get response. Please try again.';
       setNomadAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: responseText } : m);
-        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: content.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-history', JSON.stringify(next)); return next; });
+        const trimMsgs = (msgs: typeof updated) => msgs.map(m => ({ ...m, content: m.content.slice(0, 400) }));
+        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: content.slice(0, 60), autoMsgs: trimMsgs(updated), multiMsgs: {} };
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0, 5))); } catch {} } return next; });
         return updated;
       });
     } catch {
@@ -1689,8 +1690,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setNomadMessages(prev => {
       const firstUserMsg = Object.values(prev).flat().find(m => m.role === 'user');
       if (firstUserMsg) {
-        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: firstUserMsg.content.slice(0, 60), autoMsgs: [], multiMsgs: prev };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-history', JSON.stringify(next)); return next; });
+        const trimmedMulti: {[model: string]: ChatMessage[]} = {};
+        for (const [k, msgs] of Object.entries(prev)) {
+          trimmedMulti[k] = msgs.map(m => ({ ...m, content: m.content.slice(0, 400) }));
+        }
+        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: firstUserMsg.content.slice(0, 60), autoMsgs: [], multiMsgs: trimmedMulti };
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0, 5))); } catch {} } return next; });
       }
       return prev;
     });
@@ -3868,7 +3873,7 @@ Let's start the self-listen session!`;
 
               {/* === AUTO MODE TAB (full chat UI) === */}
               {nomadMode === 'auto' && (
-                <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-36" style={{ scrollbarWidth: 'thin' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-52" style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
                     <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
@@ -3981,7 +3986,7 @@ Let's start the self-listen session!`;
                           {/* Messages */}
                           <div
                             ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
-                            className="mx-3 flex flex-col space-y-2 pb-36 overflow-y-auto flex-1 min-h-0"
+                            className="mx-3 flex flex-col space-y-2 pb-52 overflow-y-auto flex-1 min-h-0"
                             style={{ minHeight: 60 }}
                           >
                             {msgs.map(message => (
