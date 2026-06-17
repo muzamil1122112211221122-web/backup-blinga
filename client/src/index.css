@@ -847,70 +847,63 @@
 
 /* ── Custom scrollbar: ultra-slim, theme-aware, hover-reveal ── */
 
-/* Kill the default browser scrollbar on every element */
-html, body, * {
-  scrollbar-width: none !important;
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-::-webkit-scrollbar {
-  width: 0px !important;
-  height: 0px !important;
-  display: none !important;
-}
-
-/* Slim custom thumb — only visible when hovering the scrollable area */
-*:hover {
+/* Firefox: always reserve slim space with invisible thumb;
+   on hover reveal the thumb. (Firefox ignores hover on pseudo-elements
+   so we compromise: transparent by default, shown on hover.) */
+* {
   scrollbar-width: thin;
-  scrollbar-color: rgba(120, 120, 120, 0.35) transparent;
+  scrollbar-color: transparent transparent;
 }
-
+*:hover {
+  scrollbar-color: rgba(130, 130, 130, 0.30) transparent;
+}
 .dark *:hover {
-  scrollbar-color: rgba(200, 200, 200, 0.25) transparent;
+  scrollbar-color: rgba(200, 200, 200, 0.22) transparent;
 }
 
-/* WebKit hover-reveal thumb */
-*:hover::-webkit-scrollbar {
-  width: 4px !important;
-  height: 4px !important;
-  display: block !important;
+/* WebKit (Chrome, Safari, Edge): hide by default, reveal on hover */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
-
-*:hover::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 999px;
 }
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
 
+/* Show scrollbar when hovering the scrollable container */
+*:hover::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.30);
+  background: rgba(130, 130, 130, 0.28);
   border-radius: 999px;
 }
-
 .dark *:hover::-webkit-scrollbar-thumb {
-  background: rgba(200, 200, 200, 0.22);
+  background: rgba(210, 210, 210, 0.20);
 }
-
 *:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 100, 100, 0.55);
 }
-
 .dark *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(220, 220, 220, 0.45);
+  background: rgba(230, 230, 230, 0.45);
 }
 
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Utility: fully hidden scrollbar */
+/* Utility: fully invisible scrollbar */
 .no-scrollbar {
-  scrollbar-width: none !important;
+  scrollbar-width: none;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @keyframes pop-out {

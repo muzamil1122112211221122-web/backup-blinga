@@ -213,7 +213,10 @@ function useTypingAnimation(text: string, msgId: string, speed = 35) {
 
 // ─── Micro components ─────────────────────────────────────────────────────────
 function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
-  const { resolvedTheme } = useTheme();
+  const { theme } = useTheme();
+  const resolvedTheme = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : theme;
   const isLight = resolvedTheme !== 'dark';
   const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
   const W = 196, H = 66;
@@ -578,8 +581,11 @@ interface MsgBarProps {
 }
 
 function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false }: MsgBarProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { theme: _mbTheme } = useTheme();
+  const _mbResolved = _mbTheme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : _mbTheme;
+  const isDark = _mbResolved === "dark";
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);

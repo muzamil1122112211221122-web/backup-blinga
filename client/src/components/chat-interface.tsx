@@ -903,6 +903,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [nomadHistSessions, setNomadHistSessions] = useState<NomadHistSession[]>(() => {
     try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
   });
+  // Belt-and-suspenders: persist history on every change
+  React.useEffect(() => {
+    if (nomadHistSessions.length > 0) {
+      try { localStorage.setItem('fius-nomad-history', JSON.stringify(nomadHistSessions)); } catch {}
+    }
+  }, [nomadHistSessions]);
   const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set());
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
