@@ -845,58 +845,46 @@
   }
 }
 
-/* ── Custom scrollbar: ultra-slim, theme-aware, hover-reveal ── */
+/* ── Custom scrollbar: slim, clean, always-visible ── */
 
-/* Firefox: always reserve slim space with invisible thumb;
-   on hover reveal the thumb. (Firefox ignores hover on pseudo-elements
-   so we compromise: transparent by default, shown on hover.) */
+/* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: rgba(155, 155, 155, 0.35) transparent;
 }
-*:hover {
-  scrollbar-color: rgba(130, 130, 130, 0.30) transparent;
-}
-.dark *:hover {
-  scrollbar-color: rgba(200, 200, 200, 0.22) transparent;
+.dark * {
+  scrollbar-color: rgba(200, 200, 200, 0.20) transparent;
 }
 
-/* WebKit (Chrome, Safari, Edge): hide by default, reveal on hover */
+/* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: transparent;
+  background: rgba(155, 155, 155, 0.35);
   border-radius: 999px;
+  transition: background 0.2s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 120, 0.60);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Show scrollbar when hovering the scrollable container */
-*:hover::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-*:hover::-webkit-scrollbar-thumb {
-  background: rgba(130, 130, 130, 0.28);
-  border-radius: 999px;
-}
-.dark *:hover::-webkit-scrollbar-thumb {
+/* Dark mode thumb */
+.dark ::-webkit-scrollbar-thumb {
   background: rgba(210, 210, 210, 0.20);
 }
-*:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 100, 100, 0.55);
-}
-.dark *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(230, 230, 230, 0.45);
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 220, 220, 0.45);
 }
 
-/* Utility: fully invisible scrollbar */
+/* Utility: fully hidden scrollbar */
 .no-scrollbar {
   scrollbar-width: none;
 }

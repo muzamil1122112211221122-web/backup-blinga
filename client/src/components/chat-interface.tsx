@@ -3722,8 +3722,8 @@ Let's start the self-listen session!`;
             const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
             const nomadHasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant'));
             return (
-            /* flex-1 min-h-0 ensures the nomad panel fills height and allows children to scroll */
-            <div className="w-full flex-1 min-h-0 flex flex-col relative">
+            /* h-full fills the absolute inset-0 parent and allows children to scroll */
+            <div className="w-full h-full flex flex-col relative">
               {/* Nomad Summary Panel — slide in from right */}
               {nomadSummaryOpen && (
                 <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
@@ -3798,7 +3798,7 @@ Let's start the self-listen session!`;
                   </div>
                 </div>
               )}
-              <div className="px-4 pt-4 pb-2">
+              <div className="px-4 pt-4 pb-2 flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-2xl font-bold text-foreground">Nomad</h2>
                   <div className="flex items-center gap-2">
@@ -3868,7 +3868,7 @@ Let's start the self-listen session!`;
 
               {/* === AUTO MODE TAB (full chat UI) === */}
               {nomadMode === 'auto' && (
-                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-36" style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
                     <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
@@ -3981,7 +3981,7 @@ Let's start the self-listen session!`;
                           {/* Messages */}
                           <div
                             ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
-                            className="mx-3 flex flex-col space-y-2 pb-4 overflow-y-auto flex-1 min-h-0"
+                            className="mx-3 flex flex-col space-y-2 pb-36 overflow-y-auto flex-1 min-h-0"
                             style={{ minHeight: 60 }}
                           >
                             {msgs.map(message => (
