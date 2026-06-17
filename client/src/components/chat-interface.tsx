@@ -1577,7 +1577,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       const responses = msgs.filter(m => m.role === 'assistant').map(m => m.content).join('\n');
       return `**${name}:**\n${responses}`;
     });
-    const prompt = `Analyze these responses from multiple AI models:\n\n${parts.join('\n\n---\n\n')}\n\nGive a structured summary with:\n1. **Similarities** — What did they all agree on?\n2. **Differences** — Where did they differ?\n3. **Conclusion** — Which response was best and why?\n\nBe concise.`;
+    const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\nUse exact AI names from the summary section. Be concise and clear.`;
     try {
       const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary' }) });
       if (res.ok) { const data = await res.json(); setNomadSummary(data.response || 'Could not generate summary.'); }
@@ -3741,7 +3741,7 @@ Let's start the self-listen session!`;
                   </button>
                   <button onClick={() => setNomadMode('auto')}
                     className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
-                    <img src="/nomad-auto-icon.png" alt="auto" className="w-3.5 h-3.5 object-contain" style={{ filter: 'url(#nomad-auto-gradient-filter)', WebkitFilter: nomadMode === 'auto' ? 'invert(1)' : 'none' }} />
+                    <img src="/nomad-auto-icon.png" alt="auto" className={`w-3.5 h-3.5 object-contain ${nomadMode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} />
                     Auto
                   </button>
                   {nomadMode === 'auto' && nomadAutoMessages.length > 0 && (

@@ -81,13 +81,18 @@ const GALLERY_PHOTOS = [
 ];
 
 const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; description: string }> = {
-  "gpt-4o":          { name: "ChatGPT 5",          logo: "/chatgpt-logo.png",    color: "#10a37f", description: "Advanced reasoning & multimodal AI by OpenAI" },
-  "claude-3.5-sonnet":{ name: "Claude Sonnet 4",   logo: "/claude-logo.png",    color: "#f97316", description: "Nuanced writing, analysis & coding" },
-  "gemini-pro":      { name: "Gemini 2.5 Pro",      logo: "/gemini-logo.png",    color: "#14b8a6", description: "Google's multimodal reasoning model" },
-  "perplexity":      { name: "Perplexity Sonar Pro",logo: "/kimi-logo.png",      color: "#38bdf8", description: "Real-time web search & cited answers" },
-  "grok-4":          { name: "Grok 4",              logo: "/grok-logo.png",      color: "#6b7280", description: "xAI's witty, curious & unfiltered model" },
-  "deepseek-r1":     { name: "Deepseek v3",         logo: "/deepseek-logo.png",  color: "#3b82f6", description: "Open-source reasoning & coding" },
-  "fius-ai":         { name: "Fius Pro",            logo: "/fius-logo.png",      color: "#a855f7", description: "Specialized productivity AI" },
+  "gpt-4o":          { name: "ChatGPT 5",             logo: "/chatgpt-logo.png",    color: "#10a37f", description: "Advanced reasoning & multimodal AI by OpenAI" },
+  "claude-3.5-sonnet":{ name: "Claude Sonnet 4",      logo: "/claude-logo.png",     color: "#f97316", description: "Nuanced writing, analysis & coding" },
+  "gemini-pro":      { name: "Gemini 2.5 Pro",         logo: "/gemini-logo.png",     color: "#14b8a6", description: "Google's multimodal reasoning model" },
+  "perplexity":      { name: "Perplexity Sonar Pro",   logo: "/kimi-logo.png",       color: "#38bdf8", description: "Real-time web search & cited answers" },
+  "grok-4":          { name: "Grok 4",                 logo: "/grok-logo.png",       color: "#6b7280", description: "xAI's witty, curious & unfiltered model" },
+  "deepseek-r1":     { name: "Deepseek v3",            logo: "/deepseek-logo.png",   color: "#3b82f6", description: "Open-source reasoning & coding" },
+  "doubao":          { name: "Doubao-Seed-2.0 Pro",    logo: "/qwen-logo.png",       color: "#f59e0b", description: "ByteDance's multilingual smart assistant" },
+  "kimi":            { name: "Kimi K2.5",              logo: "/perplexity-logo.png", color: "#06b6d4", description: "Moonshot's long-context language model" },
+  "qwen":            { name: "Qwen3.6-Plus",           logo: "/mistral-logo.png",    color: "#6366f1", description: "Alibaba's multilingual language expert" },
+  "llama-4":         { name: "Llama 4",                logo: "/llama-logo.png",      color: "#3b82f6", description: "Meta's open-source frontier AI model" },
+  "mistral":         { name: "Mistral Small 4",        logo: "/doubao-logo.png",     color: "#7c3aed", description: "Fast & efficient European open AI" },
+  "fius-ai":         { name: "Fius Pro",               logo: "/fius-logo.png",       color: "#a855f7", description: "Specialized productivity AI" },
 };
 
 const NOMAD_DEFAULT_MODELS = Object.keys(NOMAD_CONFIG);
@@ -1623,6 +1628,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
+  const [summarizing, setSummarizing] = useState(false);
   const models = NOMAD_DEFAULT_MODELS;
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1638,8 +1644,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
             ⬡ Multi
           </button>
           <button onClick={() => setNomadMode('auto')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
-            ⚡ Auto
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+            <img src="/nomad-auto-icon.png" alt="auto" className={`w-3 h-3 object-contain ${nomadMode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} />
+            Auto
           </button>
           {nomadMode === 'auto' && <span className="text-[10px] text-muted-foreground">Best AI per prompt</span>}
           <div className="flex-1" />
@@ -1779,32 +1786,56 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
       </div>
 
       {/* Nomad Summary panel */}
-      {showSummary && summaryText && (
-        <div className="flex-shrink-0 mx-3 mb-1 rounded-xl border border-border bg-card p-3 max-h-40 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+      {showSummary && (
+        <div className="flex-shrink-0 mx-3 mb-1 rounded-xl border border-border bg-card p-3 max-h-52 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Summary</span>
             <button onClick={() => setShowSummary(false)} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
           </div>
-          <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{summaryText}</p>
+          {summarizing ? (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">Analyzing AI responses…</span>
+            </div>
+          ) : (
+            <div className="text-xs text-foreground leading-relaxed space-y-1.5">
+              {summaryText.split('\n').map((line, i) => {
+                if (line.startsWith('## ')) return <p key={i} className="font-bold text-foreground text-xs mt-2 first:mt-0">{line.replace('## ','')}</p>;
+                if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="font-semibold text-foreground text-xs">{line.replace(/\*\*/g,'')}</p>;
+                const boldLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                return line ? <p key={i} className="text-xs" dangerouslySetInnerHTML={{ __html: boldLine }} /> : <div key={i} className="h-1" />;
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* Nomad Summarize button */}
       {hasAIMessages && !soloModel && (
         <div className="flex-shrink-0 px-3 pt-1 pb-0.5">
-          <button onClick={() => {
-            const allMsgs = Object.entries(nomadMessages)
+          <button onClick={async () => {
+            if (showSummary) { setShowSummary(false); return; }
+            const parts = Object.entries(nomadMessages)
               .filter(([,msgs]) => msgs.some(m => m.role === 'ai'))
               .map(([modelId, msgs]) => {
                 const cfg = NOMAD_CONFIG[modelId];
                 const aiMsgs = msgs.filter(m => m.role === 'ai').map(m => m.content).join('\n');
-                return `${cfg?.name || modelId}: ${aiMsgs}`;
-              }).join('\n\n---\n\n');
-            setSummaryText(allMsgs);
-            setShowSummary(s => !s);
+                return `**${cfg?.name || modelId}:**\n${aiMsgs}`;
+              });
+            setSummarizing(true);
+            setShowSummary(true);
+            setSummaryText('');
+            try {
+              const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\nUse exact AI names. Be concise and clear.`;
+              const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary-mobile' }) });
+              if (res.ok) { const data = await res.json(); setSummaryText(data.response || 'Could not generate summary.'); }
+              else setSummaryText('Failed to generate summary.');
+            } catch { setSummaryText('Failed to generate summary. Please try again.'); }
+            finally { setSummarizing(false); }
           }}
+            disabled={summarizing}
             className="w-full py-1.5 rounded-xl bg-card border border-border text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-foreground/30 flex items-center justify-center gap-2 transition-all">
-            <Sparkles className="w-3 h-3" /> {showSummary ? 'Hide Summary' : 'Summarize Responses'}
+            <Sparkles className="w-3 h-3" /> {summarizing ? 'Analyzing...' : showSummary ? 'Hide Summary' : 'Summarize Responses'}
           </button>
         </div>
       )}
@@ -2134,7 +2165,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadTyping, setNomadTyping] = useState(false);
   const [nomadMessages, setNomadMessages] = useState<Record<string, { id: string; role: "user" | "ai"; content: string }[]>>({});
   const [nomadIsTyping, setNomadIsTyping] = useState<Record<string, boolean>>({});
-  const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "fius-ai"]));
+  const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral", "fius-ai"]));
   const [showNomadNotif, setShowNomadNotif] = useState(false);
   const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
