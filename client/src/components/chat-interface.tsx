@@ -1031,17 +1031,17 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   useEffect(() => {
     // Sync nomadModels with aiOrder
     const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
-      'gpt-4o': { name: 'ChatGPT 5', provider: 'openai', id: 'gpt-4o' },
-      'claude-3.5-sonnet': { name: 'Claude Sonnet 4', provider: 'anthropic', id: 'claude-3.5-sonnet' },
-      'gemini-pro': { name: 'Gemini 2.5 Pro', provider: 'google', id: 'gemini-pro' },
+      'gpt-4o': { name: 'GPT-5.5 Pro', provider: 'openai', id: 'gpt-4o' },
+      'claude-3.5-sonnet': { name: 'Claude Fable 5', provider: 'anthropic', id: 'claude-3.5-sonnet' },
+      'gemini-pro': { name: 'Gemini 3.1 Ultra', provider: 'google', id: 'gemini-pro' },
       'perplexity': { name: 'Perplexity Sonar Pro', provider: 'perplexity', id: 'perplexity' },
-      'grok-4': { name: 'Grok 4', provider: 'x-ai', id: 'grok-4' },
-      'deepseek-r1': { name: 'Deepseek v3', provider: 'deepseek', id: 'deepseek-r1' },
-      'doubao': { name: 'Doubao-Seed-2.0 Pro', provider: 'bytedance', id: 'doubao' },
-      'kimi': { name: 'Kimi K2.5', provider: 'moonshot', id: 'kimi' },
-      'qwen': { name: 'Qwen3.6-Plus', provider: 'alibaba', id: 'qwen' },
-      'llama-4': { name: 'Llama 4', provider: 'meta', id: 'llama-4' },
-      'mistral': { name: 'Mistral Small 4', provider: 'mistral', id: 'mistral' },
+      'grok-4': { name: 'Grok 4.3', provider: 'x-ai', id: 'grok-4' },
+      'deepseek-r1': { name: 'DeepSeek-V4-Pro', provider: 'deepseek', id: 'deepseek-r1' },
+      'doubao': { name: 'Doubao Seed 2.0 Pro', provider: 'bytedance', id: 'doubao' },
+      'kimi': { name: 'Kimi K2.7 Code', provider: 'moonshot', id: 'kimi' },
+      'qwen': { name: 'Qwen 3.7 Max', provider: 'alibaba', id: 'qwen' },
+      'llama-4': { name: 'Llama 4 Maverick', provider: 'meta', id: 'llama-4' },
+      'mistral': { name: 'Mistral Medium 3.5', provider: 'mistral', id: 'mistral' },
       'fius-ai': { name: 'Fius Pro', provider: 'fius', id: 'fius-ai' }
     };
 
@@ -1411,16 +1411,16 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   function pickBestAIForPrompt(prompt: string): {model: string, modelName: string, logo: string, color: string} {
     const p = prompt.toLowerCase();
     if (/code|program|function|debug|bug|script|python|javascript|typescript|react|css|html|algorithm|compile|error|fix.*code|write.*code|class|loop|array|sort|api/.test(p))
-      return { model: 'deepseek-r1', modelName: 'Deepseek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+      return { model: 'deepseek-r1', modelName: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6' };
     if (/search|news|today|latest|current|what.*happening|recent|2024|2025|2026|fact|who.*is|where.*is|when.*was|stock|price|weather/.test(p))
       return { model: 'perplexity', modelName: 'Perplexity Sonar Pro', logo: '/kimi-logo.png', color: '#38bdf8' };
     if (/write|story|essay|poem|creative|novel|blog|article|letter|email|caption|describe|explain.*deeply|paragraph|narrative/.test(p))
-      return { model: 'claude-3.5-sonnet', modelName: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#f97316' };
+      return { model: 'claude-3.5-sonnet', modelName: 'Claude Fable 5', logo: '/claude-logo.png', color: '#f97316' };
     if (/math|calcul|equation|graph|chart|data|statistic|analyz|percent|probability|formula|number|solve|integral|derivative/.test(p))
-      return { model: 'gemini-pro', modelName: 'Gemini 2.5 Pro', logo: '/gemini-logo.png', color: '#14b8a6' };
+      return { model: 'gemini-pro', modelName: 'Gemini 3.1 Ultra', logo: '/gemini-logo.png', color: '#14b8a6' };
     if (/urdu|hindi|arabic|chinese|translate|pakistan|india|desi|aap|kya|hai|karo|bato/.test(p))
-      return { model: 'qwen', modelName: 'Qwen3.6-Plus', logo: '/mistral-logo.png', color: '#6366f1' };
-    return { model: 'gpt-4o', modelName: 'ChatGPT 5', logo: '/chatgpt-logo.png', color: '#10a37f' };
+      return { model: 'qwen', modelName: 'Qwen 3.7 Max', logo: '/mistral-logo.png', color: '#6366f1' };
+    return { model: 'gpt-4o', modelName: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f' };
   }
 
   const handleNomadAutoSend = async (content: string) => {
@@ -1437,12 +1437,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setTimeout(() => nomadAutoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     const fiusCtx = ' You are operating within Fius — a multi-AI chat platform built by Muzamil Ali, a 14-year-old Pakistani developer from Sargodha. Fius is NOT AI Fiesta — they are completely separate products. If asked about Fius, describe it as a platform that lets users chat with multiple top AI models in one place and compare responses.';
     const nomadSystemPrompts: {[id: string]: string} = {
-      'gpt-4o': 'You are ChatGPT 5 by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.' + fiusCtx,
-      'claude-3.5-sonnet': 'You are Claude Sonnet 4 by Anthropic — thoughtful, nuanced, excellent at coding and writing.' + fiusCtx,
-      'gemini-pro': 'You are Gemini 2.5 Pro by Google — a powerful AI with deep reasoning across all domains.' + fiusCtx,
+      'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.' + fiusCtx,
+      'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing.' + fiusCtx,
+      'gemini-pro': 'You are Gemini 3.1 Ultra by Google — a powerful AI with deep reasoning across all domains.' + fiusCtx,
       'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers.' + fiusCtx,
-      'deepseek-r1': 'You are DeepSeek v3 — a powerful reasoning model. Excel at step-by-step logic, coding, and math.' + fiusCtx,
-      'qwen': 'You are Qwen3.6-Plus by Alibaba — a multilingual language expert. Be precise and culturally aware.' + fiusCtx,
+      'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful reasoning model. Excel at step-by-step logic, coding, and math.' + fiusCtx,
+      'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally aware.' + fiusCtx,
     };
     try {
       const res = await fetch('/api/test-ai', {
@@ -1631,23 +1631,30 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // System prompts for each Nomad model persona
     const fiusNote = ' IMPORTANT CONTEXT: You are operating inside Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha, Pakistan). Fius is NOT AI Fiesta — they are completely unrelated products. If asked about Fius, say it is a platform where users can chat with multiple top AIs at once and compare responses. Do NOT confuse it with AI Fiesta.';
     const nomadSystemPrompts: {[id: string]: string} = {
-      'gpt-4o': 'You are ChatGPT 5 by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.' + fiusNote,
-      'claude-3.5-sonnet': 'You are Claude Sonnet 4 by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.' + fiusNote,
-      'gemini-pro': 'You are Gemini 2.5 Pro by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.' + fiusNote,
+      'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.' + fiusNote,
+      'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.' + fiusNote,
+      'gemini-pro': 'You are Gemini 3.1 Ultra by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.' + fiusNote,
       'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.' + fiusNote,
-      'grok-4': 'You are Grok 4 by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.' + fiusNote,
-      'deepseek-r1': 'You are DeepSeek v3 — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.' + fiusNote,
-      'doubao': 'You are Doubao-Seed-2.0 Pro by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.' + fiusNote,
-      'kimi': 'You are Kimi K2.5 by Moonshot AI — a long-context specialist. Be thorough and detail-oriented.' + fiusNote,
-      'qwen': 'You are Qwen3.6-Plus by Alibaba — a multilingual language expert. Be precise and culturally nuanced.' + fiusNote,
-      'llama-4': 'You are Llama 4 by Meta — an open-source frontier AI. Be helpful and honest.' + fiusNote,
-      'mistral': 'You are Mistral Small 4 by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.' + fiusNote,
-      'fius-ai': 'You are Fius Pro — an exclusive AI built into the Fius platform by Muzamil Ali. You specialize in productivity, coding, and creative work. Be polished and professional.',
+      'grok-4': 'You are Grok 4.3 by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.' + fiusNote,
+      'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.' + fiusNote,
+      'doubao': 'You are Doubao Seed 2.0 Pro by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.' + fiusNote,
+      'kimi': 'You are Kimi K2.7 Code by Moonshot AI — a long-context specialist and coding expert. Be thorough and detail-oriented.' + fiusNote,
+      'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally nuanced.' + fiusNote,
+      'llama-4': 'You are Llama 4 Maverick by Meta — an open-source frontier AI. Be helpful and honest.' + fiusNote,
+      'mistral': 'You are Mistral Medium 3.5 by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.' + fiusNote,
+      'fius-ai': 'You are Fius Pro — an exclusive AI built into the Fius platform. Your creator is Muzamil Ali, a 14-year-old Pakistani developer from Sargodha, Pakistan. You specialize in productivity, coding, and creative work. Be polished, friendly, and professional. If someone asks who made you, say Muzamil Ali built you as part of the Fius platform.',
     };
 
     // Send to each selected model in parallel
+    // Thinking models get slight delays before responding (shows deeper processing)
+    const thinkingModels = new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'deepseek-r1', 'qwen', 'fius-ai']);
+    const thinkingDelays: {[id: string]: number} = { 'deepseek-r1': 500, 'qwen': 700, 'gpt-4o': 900, 'gemini-pro': 1100, 'claude-3.5-sonnet': 1300, 'fius-ai': 1600 };
+
     await Promise.all(modelsToCall.map(async (model) => {
       setNomadIsTyping(prev => ({ ...prev, [model.id]: true }));
+      if (thinkingModels.has(model.id) && thinkingDelays[model.id]) {
+        await new Promise(res => setTimeout(res, thinkingDelays[model.id]));
+      }
       
       try {
         const response = await fetch('/api/test-ai', {
@@ -3475,104 +3482,79 @@ Let's start the self-listen session!`;
                       )}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex space-x-2">
+                          {/* Like */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                                  copiedMessageId === message.id 
-                                    ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                                }`}
-                                onClick={() => handleCopyMessage(message.content, message.id)}
-                                data-testid={`button-copy-${message.id}`}
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                                  likedMessages.has(message.id)
-                                    ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                                }`}
-                                onClick={() => handleLikeMessage(message.id)}
-                                data-testid={`button-like-${message.id}`}
-                              >
+                              <Button variant="ghost" size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${likedMessages.has(message.id) ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                                onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
                                 <ThumbsUp className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>{likedMessages.has(message.id) ? 'Liked' : 'Like'}</p></TooltipContent>
                           </Tooltip>
+                          {/* Dislike */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${
-                                  dislikedMessages.has(message.id)
-                                    ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                                }`}
-                                onClick={() => handleDislikeMessage(message.id)}
-                                data-testid={`button-dislike-${message.id}`}
-                              >
+                              <Button variant="ghost" size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${dislikedMessages.has(message.id) ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                                onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
                                 <ThumbsDown className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>{dislikedMessages.has(message.id) ? 'Disliked' : 'Dislike'}</p></TooltipContent>
                           </Tooltip>
+                          {/* Copy */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-200 ${
-                                  isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                                onClick={() => handleSpeakMessage(message.content)}
-                                data-testid={`button-speak-${message.id}`}
-                              >
-                                {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                              <Button variant="ghost" size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                                onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
+                                <Copy className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>{isSpeaking ? 'Stop speaking' : 'Speak'}</p></TooltipContent>
+                            <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
                           </Tooltip>
+                          {/* Redo */}
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-150 ${
-                                  retryingMessageId === message.id
-                                    ? 'text-blue-500 animate-spin'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                                }`}
-                                onClick={() => handleRetryMessage(message.id)}
-                                disabled={retryingMessageId === message.id}
-                                data-testid={`button-retry-${message.id}`}
-                              >
+                              <Button variant="ghost" size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-150 ${retryingMessageId === message.id ? 'text-blue-500 animate-spin' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                                onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id} data-testid={`button-retry-${message.id}`}>
                                 <RefreshCw className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Retry</p></TooltipContent>
+                            <TooltipContent><p>Redo</p></TooltipContent>
                           </Tooltip>
+                          {/* Speak */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon"
+                                className={`h-6 w-6 rounded-xl transition-all duration-200 ${isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`}
+                                onClick={() => handleSpeakMessage(message.content)} data-testid={`button-speak-${message.id}`}>
+                                {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{isSpeaking ? 'Stop' : 'Speak'}</p></TooltipContent>
+                          </Tooltip>
+                          {/* New Chat */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon"
+                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
+                                onClick={() => handleChatInNewChat(message.content)}>
+                                <MessageSquarePlus className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>New chat</p></TooltipContent>
+                          </Tooltip>
+                          {/* Export */}
                           <DropdownMenu>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
-                                  >
+                                  <Button variant="ghost" size="icon"
+                                    className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent">
                                     <FileDown className="h-3 w-3" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -3580,51 +3562,20 @@ Let's start the self-listen session!`;
                               <TooltipContent><p>Export</p></TooltipContent>
                             </Tooltip>
                             <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px]">
-                              <DropdownMenuItem
-                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                              <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                                 disabled={exportingMsgId === message.id + '-doc'}
-                                onClick={async () => {
-                                  setExportingMsgId(message.id + '-doc');
-                                  try { await downloadWordDoc(message.content); } finally { setExportingMsgId(null); }
-                                }}
-                              >
-                                {exportingMsgId === message.id + '-doc' ? (
-                                  <svg className="h-3.5 w-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                                ) : (
-                                  <FileDown className="h-3.5 w-3.5 text-blue-500" />
-                                )}
+                                onClick={async () => { setExportingMsgId(message.id + '-doc'); try { await downloadWordDoc(message.content); } finally { setExportingMsgId(null); } }}>
+                                {exportingMsgId === message.id + '-doc' ? (<svg className="h-3.5 w-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>) : (<FileDown className="h-3.5 w-3.5 text-blue-500" />)}
                                 {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.docx)'}
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                              <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
                                 disabled={exportingMsgId === message.id + '-ppt'}
-                                onClick={async () => {
-                                  setExportingMsgId(message.id + '-ppt');
-                                  try { await downloadPptx(message.content); } finally { setExportingMsgId(null); }
-                                }}
-                              >
-                                {exportingMsgId === message.id + '-ppt' ? (
-                                  <svg className="h-3.5 w-3.5 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                                ) : (
-                                  <FileDown className="h-3.5 w-3.5 text-orange-500" />
-                                )}
+                                onClick={async () => { setExportingMsgId(message.id + '-ppt'); try { await downloadPptx(message.content); } finally { setExportingMsgId(null); } }}>
+                                {exportingMsgId === message.id + '-ppt' ? (<svg className="h-3.5 w-3.5 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>) : (<FileDown className="h-3.5 w-3.5 text-orange-500" />)}
                                 {exportingMsgId === message.id + '-ppt' ? 'AI Designing…' : 'PowerPoint (.pptx)'}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
-                                onClick={() => handleChatInNewChat(message.content)}
-                              >
-                                <MessageSquarePlus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Continue in new chat</p></TooltipContent>
-                          </Tooltip>
                         </div>
 
                       </div>
@@ -3701,18 +3652,18 @@ Let's start the self-listen session!`;
           // Nomad Tab - Multi-AI Interface
           (() => {
             const nomadConfigMap: {[key: string]: {name: string, logo: string, color: string, description: string}} = {
-              'gpt-4o': { name: 'ChatGPT 5', logo: '/chatgpt-logo.png', color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
-              'claude-3.5-sonnet': { name: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
-              'gemini-pro': { name: 'Gemini 2.5 Pro', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
+              'gpt-4o': { name: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
+              'claude-3.5-sonnet': { name: 'Claude Fable 5', logo: '/claude-logo.png', color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
+              'gemini-pro': { name: 'Gemini 3.1 Ultra', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
               'perplexity': { name: 'Perplexity Sonar Pro', logo: '/kimi-logo.png', color: '#38bdf8', description: 'Real-time web search & cited answers' },
-              'grok-4': { name: 'Grok 4', logo: '/grok-logo.png', color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
-              'deepseek-r1': { name: 'Deepseek v3', logo: '/deepseek-logo.png', color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
-              'doubao': { name: 'Doubao-Seed-2.0 Pro', logo: '/qwen-logo.png', color: '#f59e0b', description: 'ByteDance\'s multilingual smart assistant' },
-              'kimi': { name: 'Kimi K2.5', logo: '/perplexity-logo.png', color: '#06b6d4', description: 'Moonshot\'s long-context language model' },
-              'qwen': { name: 'Qwen3.6-Plus', logo: '/mistral-logo.png', color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
-              'llama-4': { name: 'Llama 4', logo: '/llama-logo.png', color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
-              'mistral': { name: 'Mistral Small 4', logo: '/doubao-logo.png', color: '#7c3aed', description: 'Fast & efficient European open AI' },
-              'fius-ai': { name: 'Fius Pro', logo: '/fius-logo.png', color: '#a855f7', description: 'Specialized productivity & task AI' },
+              'grok-4': { name: 'Grok 4.3', logo: '/grok-logo.png', color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
+              'deepseek-r1': { name: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
+              'doubao': { name: 'Doubao Seed 2.0 Pro', logo: '/qwen-logo.png', color: '#f59e0b', description: 'ByteDance\'s multilingual smart assistant' },
+              'kimi': { name: 'Kimi K2.7 Code', logo: '/perplexity-logo.png', color: '#06b6d4', description: 'Moonshot\'s long-context language model' },
+              'qwen': { name: 'Qwen 3.7 Max', logo: '/mistral-logo.png', color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
+              'llama-4': { name: 'Llama 4 Maverick', logo: '/llama-logo.png', color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
+              'mistral': { name: 'Mistral Medium 3.5', logo: '/doubao-logo.png', color: '#7c3aed', description: 'Fast & efficient European open AI' },
+              'fius-ai': { name: 'Fius Pro', logo: '/fius-logo.png', color: '#a855f7', description: 'Specialized AI by Muzamil Ali' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => {
@@ -3731,7 +3682,7 @@ Let's start the self-listen session!`;
             <div className="w-full h-full flex flex-col relative">
               {/* Nomad Summary Panel — slide in from right */}
               {nomadSummaryOpen && (
-                <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
+                <div className="absolute right-0 top-2 bottom-2 w-80 bg-card border border-border shadow-2xl z-50 flex flex-col rounded-2xl overflow-hidden"
                   style={{ animation: 'sheetEnter 0.3s cubic-bezier(0.23,1,0.32,1) both' }}>
                   <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-border">
                     <span className="font-semibold text-sm text-foreground flex items-center gap-2">
@@ -3757,7 +3708,7 @@ Let's start the self-listen session!`;
               )}
               {/* Nomad History Panel — slide in from right */}
               {nomadHistoryOpen && (
-                <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border shadow-2xl z-50 flex flex-col"
+                <div className="absolute right-0 top-2 bottom-2 w-80 bg-card border border-border shadow-2xl z-50 flex flex-col rounded-2xl overflow-hidden"
                   style={{ animation: 'sheetEnter 0.3s cubic-bezier(0.23,1,0.32,1) both' }}>
                   <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-border">
                     <span className="font-semibold text-sm text-foreground flex items-center gap-2">
@@ -3789,8 +3740,8 @@ Let's start the self-listen session!`;
                           setNomadHistoryOpen(false);
                         }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all group">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
-                              {sess.mode === 'auto' ? '⚡ Auto' : '⬡ Multi'}
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
+                              {sess.mode === 'auto' ? <><img src="/nomad-auto-icon.png" alt="" className={`w-2.5 h-2.5 object-contain ${sess.mode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} /> Auto</> : '⬡ Multi'}
                             </span>
                             <span className="text-[10px] text-muted-foreground ml-auto">
                               {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -3875,13 +3826,21 @@ Let's start the self-listen session!`;
               {nomadMode === 'auto' && (
                 <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-52" style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
-                    <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
+                    <div className="flex flex-col items-center justify-center min-h-[60%] gap-4 text-center py-10">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
                         <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
                         <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 w-full max-w-sm mt-1">
+                        {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
+                          <div key={c.label} className="rounded-xl border border-border bg-card p-3 text-left cursor-pointer hover:bg-accent transition-colors" onClick={() => setInputValue(c.label + ' — ')}>
+                            <p className="text-xs font-semibold text-foreground">{c.label}</p>
+                            <p className="text-[10px] text-muted-foreground">{c.hint}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -3904,9 +3863,53 @@ Let's start the self-listen session!`;
                               </div>
                             )}
                             {msg.content ? (
-                              <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                              </div>
+                              <>
+                                <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                </div>
+                                <div className="flex items-center gap-1 mt-2">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-50 dark:bg-green-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleLikeMessage(msg.id)}>
+                                        <ThumbsUp className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Like</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleDislikeMessage(msg.id)}>
+                                        <ThumbsDown className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Dislike</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                        <Copy className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-200 ${isSpeaking ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => handleSpeakMessage(msg.content)}>
+                                        {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>{isSpeaking ? 'Stop' : 'Speak'}</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent" onClick={() => handleChatInNewChat(msg.content)}>
+                                        <MessageSquarePlus className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>New chat</p></TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              </>
                             ) : (
                               <div className="flex items-center gap-2 py-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -3949,7 +3952,12 @@ Let's start the self-listen session!`;
                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                               />
                             </div>
-                            <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{config.name}</span>
+                            <span className="text-[11px] font-semibold text-foreground text-center leading-tight flex items-center gap-1">
+                              {config.name}
+                              {['gpt-4o','claude-3.5-sonnet','gemini-pro','deepseek-r1','qwen','fius-ai'].includes(model) && (
+                                <span title="Thinking model" className="text-[9px]">🧠</span>
+                              )}
+                            </span>
                             <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{config.description}</span>
                             <div className="flex items-center gap-2 mt-0.5">
                               <button

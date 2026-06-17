@@ -311,7 +311,7 @@ export function Sidebar({
         <div className="px-3 space-y-0.5 mt-1">
           {/* Search */}
           <div className="relative group">
-            <div className="absolute left-3 top-[54%] -translate-y-1/2 opacity-70 group-focus-within:opacity-100 transition-opacity">
+            <div className="absolute left-3 top-[57%] -translate-y-1/2 opacity-70 group-focus-within:opacity-100 transition-opacity">
               <MaskIcon src={searchIcon} color="#3b82f6" />
             </div>
             <input
@@ -370,12 +370,11 @@ export function Sidebar({
         </div>
 
         {/* History */}
-        <div className="flex-1 overflow-y-auto mt-3 px-3">
-          <div className="flex items-center space-x-3 px-3 mb-2 text-zinc-900 dark:text-zinc-100 font-semibold">
-            <MaskIcon src={historyIcon} color="#f59e0b" />
-            <span className="text-[15px]">History</span>
-          </div>
-
+        <div className="flex items-center space-x-3 px-6 mb-1 mt-3 text-zinc-900 dark:text-zinc-100 font-semibold flex-shrink-0">
+          <MaskIcon src={historyIcon} color="#f59e0b" />
+          <span className="text-[15px]">History</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3">
           <div className="space-y-2">
             {Object.entries(chatGroups).map(([groupName, groupChats]) => (
               groupChats.length > 0 && (

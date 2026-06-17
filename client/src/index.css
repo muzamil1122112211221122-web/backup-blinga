@@ -82,6 +82,20 @@
     animation: logoSpin 0.8s ease-in-out;
   }
 
+  /* Light theme — subtle gray outlines for definition and depth */
+  :root .border-border,
+  :root [class*="border-border"] {
+    border-color: hsl(220, 14%, 86%) !important;
+  }
+  :root .bg-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  :root .rounded-xl.border,
+  :root .rounded-2xl.border,
+  :root .rounded-3xl.border {
+    border-color: hsl(220, 12%, 84%) !important;
+  }
+
   /* Message input styling for dark theme - transparent backgrounds */
   .dark .message-input-container {
     background: transparent !important;

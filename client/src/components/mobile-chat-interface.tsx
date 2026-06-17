@@ -81,18 +81,18 @@ const GALLERY_PHOTOS = [
 ];
 
 const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; description: string }> = {
-  "gpt-4o":          { name: "ChatGPT 5",             logo: "/chatgpt-logo.png",    color: "#10a37f", description: "Advanced reasoning & multimodal AI by OpenAI" },
-  "claude-3.5-sonnet":{ name: "Claude Sonnet 4",      logo: "/claude-logo.png",     color: "#f97316", description: "Nuanced writing, analysis & coding" },
-  "gemini-pro":      { name: "Gemini 2.5 Pro",         logo: "/gemini-logo.png",     color: "#14b8a6", description: "Google's multimodal reasoning model" },
+  "gpt-4o":          { name: "GPT-5.5 Pro",           logo: "/chatgpt-logo.png",    color: "#10a37f", description: "Advanced reasoning & multimodal AI by OpenAI" },
+  "claude-3.5-sonnet":{ name: "Claude Fable 5",       logo: "/claude-logo.png",     color: "#f97316", description: "Nuanced writing, analysis & coding" },
+  "gemini-pro":      { name: "Gemini 3.1 Ultra",       logo: "/gemini-logo.png",     color: "#14b8a6", description: "Google's multimodal reasoning model" },
   "perplexity":      { name: "Perplexity Sonar Pro",   logo: "/kimi-logo.png",       color: "#38bdf8", description: "Real-time web search & cited answers" },
-  "grok-4":          { name: "Grok 4",                 logo: "/grok-logo.png",       color: "#6b7280", description: "xAI's witty, curious & unfiltered model" },
-  "deepseek-r1":     { name: "Deepseek v3",            logo: "/deepseek-logo.png",   color: "#3b82f6", description: "Open-source reasoning & coding" },
-  "doubao":          { name: "Doubao-Seed-2.0 Pro",    logo: "/qwen-logo.png",       color: "#f59e0b", description: "ByteDance's multilingual smart assistant" },
-  "kimi":            { name: "Kimi K2.5",              logo: "/perplexity-logo.png", color: "#06b6d4", description: "Moonshot's long-context language model" },
-  "qwen":            { name: "Qwen3.6-Plus",           logo: "/mistral-logo.png",    color: "#6366f1", description: "Alibaba's multilingual language expert" },
-  "llama-4":         { name: "Llama 4",                logo: "/llama-logo.png",      color: "#3b82f6", description: "Meta's open-source frontier AI model" },
-  "mistral":         { name: "Mistral Small 4",        logo: "/doubao-logo.png",     color: "#7c3aed", description: "Fast & efficient European open AI" },
-  "fius-ai":         { name: "Fius Pro",               logo: "/fius-logo.png",       color: "#a855f7", description: "Specialized productivity AI" },
+  "grok-4":          { name: "Grok 4.3",               logo: "/grok-logo.png",       color: "#6b7280", description: "xAI's witty, curious & unfiltered model" },
+  "deepseek-r1":     { name: "DeepSeek-V4-Pro",        logo: "/deepseek-logo.png",   color: "#3b82f6", description: "Open-source reasoning & coding" },
+  "doubao":          { name: "Doubao Seed 2.0 Pro",    logo: "/qwen-logo.png",       color: "#f59e0b", description: "ByteDance's multilingual smart assistant" },
+  "kimi":            { name: "Kimi K2.7 Code",         logo: "/perplexity-logo.png", color: "#06b6d4", description: "Moonshot's long-context language model" },
+  "qwen":            { name: "Qwen 3.7 Max",           logo: "/mistral-logo.png",    color: "#6366f1", description: "Alibaba's multilingual language expert" },
+  "llama-4":         { name: "Llama 4 Maverick",       logo: "/llama-logo.png",      color: "#3b82f6", description: "Meta's open-source frontier AI model" },
+  "mistral":         { name: "Mistral Medium 3.5",     logo: "/doubao-logo.png",     color: "#7c3aed", description: "Fast & efficient European open AI" },
+  "fius-ai":         { name: "Fius Pro",               logo: "/fius-logo.png",       color: "#a855f7", description: "Specialized productivity AI by Muzamil Ali" },
 };
 
 const NOMAD_DEFAULT_MODELS = Object.keys(NOMAD_CONFIG);
@@ -1677,7 +1677,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [nomadHistoryOpen, setNomadHistoryOpen] = useState(false);
   type MNomadSess = { id: string; ts: number; mode: 'multi'|'auto'; preview: string; autoMsgs: typeof autoMessages; multiMsgs: Record<string, {id:string;role:string;content:string}[]>; };
   const [nomadHistSessions, setNomadHistSessions] = useState<MNomadSess[]>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-m-history') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
   });
 
   // Auto mode state
@@ -1693,14 +1693,14 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const pickBestAI = (text: string): {model: string, modelName: string, logo: string, color: string} => {
     const t = text.toLowerCase();
     if (/\b(code|function|debug|python|javascript|typescript|algorithm|sql|bug|error|program)\b/.test(t))
-      return { model: 'deepseek-r1', modelName: 'DeepSeek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+      return { model: 'deepseek-r1', modelName: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6' };
     if (/\b(search|latest|news|current|today|2025|2026|who is|what is|when did|find me)\b/.test(t))
-      return { model: 'perplexity', modelName: 'Perplexity Sonar', logo: '/perplexity-logo.png', color: '#20808d' };
+      return { model: 'perplexity', modelName: 'Perplexity Sonar Pro', logo: '/perplexity-logo.png', color: '#20808d' };
     if (/\b(math|calculate|equation|formula|solve|proof|integral|derivative)\b/.test(t))
-      return { model: 'deepseek-r1', modelName: 'DeepSeek v3', logo: '/deepseek-logo.png', color: '#3b82f6' };
+      return { model: 'deepseek-r1', modelName: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6' };
     if (/\b(write|essay|story|poem|creative|draft|email|letter|blog)\b/.test(t))
-      return { model: 'claude-3.5-sonnet', modelName: 'Claude Sonnet 4', logo: '/claude-logo.png', color: '#d97706' };
-    return { model: 'gpt-4o', modelName: 'ChatGPT 5', logo: '/gpt-logo.png', color: '#10a37f' };
+      return { model: 'claude-3.5-sonnet', modelName: 'Claude Fable 5', logo: '/claude-logo.png', color: '#d97706' };
+    return { model: 'gpt-4o', modelName: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f' };
   };
 
   const handleAutoSend = async () => {
@@ -1720,7 +1720,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
         const sess: MNomadSess = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 30); localStorage.setItem('fius-nomad-m-history', JSON.stringify(next)); return next; });
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } return next; });
         return updated;
       });
     } catch {
@@ -1747,7 +1747,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               </span>
               <div className="flex items-center gap-1">
                 {nomadHistSessions.length > 0 && (
-                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-m-history'); }}
+                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
                     className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
                     Clear
                   </button>
@@ -1771,8 +1771,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     setNomadHistoryOpen(false);
                   }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
-                        {sess.mode === 'auto' ? '⚡ Auto' : '⬡ Multi'}
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
+                        {sess.mode === 'auto' ? <><img src="/nomad-auto-icon.png" alt="" className={`w-2 h-2 object-contain ${sess.mode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} /> Auto</> : '⬡ Multi'}
                       </span>
                       <span className="text-[9px] text-muted-foreground ml-auto">
                         {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -1839,8 +1839,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                 <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full max-w-xs mt-1">
-                {[{ label: '🧠 Reasoning', hint: 'DeepSeek v3' }, { label: '🔍 Search', hint: 'Perplexity' }, { label: '✍️ Writing', hint: 'Claude Sonnet 4' }, { label: '💬 General', hint: 'ChatGPT 5' }].map(c => (
-                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left">
+                {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
+                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors" onClick={() => { setInput(c.label + ' — '); }}>
                     <p className="text-[11px] font-semibold text-foreground">{c.label}</p>
                     <p className="text-[10px] text-muted-foreground">{c.hint}</p>
                   </div>
@@ -2450,9 +2450,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     try { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/"; } catch { onShowAuth(); }
   }, [onShowAuth]);
 
-  const ensureConv = useCallback(async (): Promise<string> => {
+  const ensureConv = useCallback(async (firstMsg?: string): Promise<string> => {
     if (currentConvId) return currentConvId;
-    const res = await fetch("/api/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "New Chat", model: askModel }) });
+    const title = firstMsg ? firstMsg.slice(0, 50) : "New Chat";
+    const res = await fetch("/api/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, model: askModel }) });
     if (!res.ok) throw new Error("Could not create conversation");
     const data = await res.json();
     const newId = data.id || data.conversation?.id;
@@ -2465,7 +2466,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     setAskInput(""); setAskTyping(true);
     setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
     try {
-      const convId = await ensureConv();
+      const convId = await ensureConv(text);
       askAbortRef.current?.abort();
       const ctrl = new AbortController(); askAbortRef.current = ctrl;
       // DuckDuckGo web search — same as PC
