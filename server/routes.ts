@@ -595,7 +595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, originalMessage, conversationId, model, provider, systemPrompt: customSystemPrompt, history } = req.body;
+      const { message, originalMessage, conversationId, model, provider, systemPrompt: customSystemPrompt, history, activeTab } = req.body;
+      const isNomad = activeTab === 'nomad';
       const user = req.user;
       // cleanMessage is the user's original query without any web-search context wrapper
       const cleanMessage: string = originalMessage || message.replace(/^\[Web search results for:[\s\S]*?\[Use the above search results[\s\S]*?\]\s*\nUser:\s*/i, '').trim();
@@ -664,7 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
 
-          if (conversationId) {
+          if (conversationId && !isNomad) {
             const conv = await storage.getConversation(conversationId);
             if (conv) {
               await storage.createMessage({ conversationId, role: 'user', content: cleanMessage });
@@ -1762,6 +1763,25 @@ Prompt to improve: ${originalPrompt}`;
   });
 
   // ── Games Data (server-side persistence per user account) ────────────────────
+  app.get('/api/games/leaderboard', requireAuth, async (req, res) => {
+    try {
+      const entries = await storage.getAllUsersWithSettings();
+      const board = entries
+        .map(e => {
+          const scores: any[] = (e.settings as any)?.gamesData?.scores || [];
+          const totalScore = scores.reduce((sum: number, s: any) => sum + (s.score || 0), 0);
+          const bestGame = scores.length > 0 ? scores.reduce((a: any, b: any) => a.score > b.score ? a : b) : null;
+          return { userId: e.userId, name: e.displayName || e.username, totalScore, bestGame };
+        })
+        .filter(e => e.totalScore > 0)
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .slice(0, 20);
+      res.json(board);
+    } catch {
+      res.status(500).json([]);
+    }
+  });
+
   app.get('/api/games/data', requireAuth, async (req, res) => {
     try {
       const userId = (req.user as any)?.id;

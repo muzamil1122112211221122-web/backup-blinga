@@ -743,24 +743,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       <input id="m-file-input" ref={fileInputRef} type="file" className="sr-only" onChange={() => setAttachOpen(false)} />
       <input id="m-img-input" ref={imageInputRef} type="file" accept="image/*" className="sr-only" onChange={() => setAttachOpen(false)} />
 
-      {/* Attachment mini-menu — outside pill so it's never clipped */}
+      {/* Attachment options strip — slides in above message bar when open */}
       {attachOpen && (
-        <>
-          {/* Backdrop — tap outside to close */}
-          <div className="fixed inset-0 z-[199]" onClick={() => setAttachOpen(false)} />
-          <div className="absolute bottom-full left-3 mb-2 bg-white dark:bg-[#2a2a2a] rounded-2xl shadow-2xl border border-black/8 dark:border-white/10 overflow-hidden z-[200]"
-            style={{ minWidth: 164 }}>
-            <label htmlFor="m-file-input" onClick={() => setAttachOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors cursor-pointer">
-              <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload File
-            </label>
-            <div className="h-px bg-border/50 mx-3" />
-            <label htmlFor="m-img-input" onClick={() => setAttachOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 text-[14px] text-foreground active:bg-black/8 dark:active:bg-white/10 transition-colors cursor-pointer">
-              <Image className="w-4 h-4 text-zinc-400 flex-shrink-0" /> Upload Image
-            </label>
-          </div>
-        </>
+        <div className="flex items-center gap-2 px-3 py-2 bg-background/95 backdrop-blur-sm border border-border/50 rounded-2xl mx-0 mb-2 animate-in slide-in-from-bottom-2 duration-200">
+          <label htmlFor="m-file-input" onClick={() => setAttachOpen(false)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[12px] font-semibold text-foreground cursor-pointer active:scale-95 transition-all flex-shrink-0">
+            <FileText className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" /> File
+          </label>
+          <label htmlFor="m-img-input" onClick={() => setAttachOpen(false)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[12px] font-semibold text-foreground cursor-pointer active:scale-95 transition-all flex-shrink-0">
+            <Image className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" /> Image
+          </label>
+          <div className="flex-1" />
+          <button onClick={() => setAttachOpen(false)} className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-500 flex-shrink-0">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
       )}
 
       {/* ── Main input pill ── */}
@@ -788,7 +786,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                 placeholder={placeholder}
                 className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
-                style={{ minHeight: 52, maxHeight: 120, scrollbarWidth: "none" }} />
+                style={{ minHeight: 52, maxHeight: 120, overflowY: "auto", scrollbarWidth: "none" }} />
             </div>
             {/* Row 2: attach + model left | mic + enhance + send right */}
             <div className="flex items-center justify-between px-2 pb-2">
@@ -866,16 +864,14 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert" : ""}`} />
               </button>
               <div className="relative flex-1">
-                <textarea ref={taRef} value={value} onChange={e => { onChange(e.target.value); const t = e.target; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 78) + 'px'; }} onKeyDown={handleKey}
+                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                   placeholder={placeholder} rows={1}
                   className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1"
                   style={{
-                    minHeight: 38,
-                    maxHeight: 78,
+                    height: 38,
                     overflowY: "auto",
                     scrollbarWidth: "none",
                     paddingRight: 16,
-                    transition: "height 0.18s cubic-bezier(0.23,1,0.32,1)"
                   }} />
                 {/* Fullscreen open */}
                 <button
@@ -1875,9 +1871,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                 <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
                 <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full max-w-xs mt-1">
+              <div className="flex flex-row gap-2 w-full mt-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                 {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
-                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors" onClick={() => { setInput(c.label + ' — '); }}>
+                  <div key={c.label} className="flex-shrink-0 rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors" style={{ minWidth: 90 }} onClick={() => { setInput(c.label + ' — '); }}>
                     <p className="text-[11px] font-semibold text-foreground">{c.label}</p>
                     <p className="text-[10px] text-muted-foreground">{c.hint}</p>
                   </div>
@@ -1939,14 +1935,16 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                       </div>
                       <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{cfg.name}</span>
                       <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex flex-col items-center gap-1.5 mt-1 w-full">
                         <button onClick={() => onToggleModel(modelId)} className="relative flex-shrink-0 rounded-full transition-all duration-300"
                           style={{ width: 36, height: 18, background: isActive ? cfg.color : "#d1d5db" }}>
                           <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
                         </button>
-                        <button onClick={() => setSoloModel(modelId)} title={`Chat only with ${cfg.name}`}
-                          className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all" style={{ color: cfg.color }}>
-                          <Target className="w-3.5 h-3.5" />
+                        <button onClick={() => setSoloModel(modelId)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95 w-full justify-center"
+                          style={{ background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}50` }}>
+                          <Target className="w-2.5 h-2.5 flex-shrink-0" />
+                          Chat only
                         </button>
                       </div>
                     </div>
@@ -2481,6 +2479,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [currentConvId, askModel]);
 
   const handleAskSend = useCallback(async () => {
+    if (tab !== "ask") return;
     const text = askInput.trim(); if (!text || askTyping) return;
     setAskInput(""); setAskTyping(true);
     setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
@@ -2563,6 +2562,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [philInput, philTyping, philPerson]);
 
   const handleNomadSend = useCallback(async () => {
+    if (tab !== "nomad") return;
     const text = nomadInput.trim(); if (!text || nomadTyping) return;
     setNomadInput(""); setNomadTyping(true);
     const activeIds = Array.from(activeModels).filter(id => NOMAD_DEFAULT_MODELS.includes(id));

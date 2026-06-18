@@ -1859,7 +1859,9 @@ const STORE_CATALOG = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function loadScores(): ScoreEntry[] { try { return JSON.parse(localStorage.getItem(SCORES_KEY) || '[]'); } catch { return []; } }
-function addScore(gameId: string, gameName: string, score: number, level: number) {
+function levelMultiplier(level: number): number { return 1 + (level - 1) * 0.5; }
+function addScore(gameId: string, gameName: string, rawScore: number, level: number) {
+  const score = Math.round(rawScore * levelMultiplier(level));
   const all = loadScores();
   all.push({ id: gameId, game: gameName, score, level, date: new Date().toLocaleDateString() });
   all.sort((a, b) => b.score - a.score);
@@ -1898,9 +1900,10 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
+  const [globalLeaders, setGlobalLeaders] = useState<Array<{ name: string; totalScore: number; bestGame: any | null }>>([]);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
 
-  // ── Load from server on mount (replaces localStorage if server has data) ──
+  // ── Load from server on mount ──────────────────────────────────────────────
   useEffect(() => {
     loadGamesFromServer().then(data => {
       if (!data) return;
@@ -1912,6 +1915,10 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         setScores(data.scores);
       }
     });
+    // Fetch global leaderboard
+    fetch('/api/games/leaderboard').then(r => r.ok ? r.json() : []).then((board: any[]) => {
+      if (Array.isArray(board) && board.length > 0) setGlobalLeaders(board);
+    }).catch(() => {});
   }, []);
 
   // ── Sync helper ───────────────────────────────────────────────────────────
@@ -2113,58 +2120,66 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
 
         {/* ── GLOBAL LEADERBOARD (inline in games tab) ── */}
         {tab === 'games' && (() => {
-          const GLOBAL_LEADERS = [
-            { name: 'AlphaZero_X', score: 98450, rank: 1, badge: '🥇' },
-            { name: 'NovaMind', score: 87230, rank: 2, badge: '🥈' },
-            { name: 'CodeBreaker99', score: 76180, rank: 3, badge: '🥉' },
-            { name: 'StarPlayer_PK', score: 64320, rank: 4, badge: null },
-            { name: 'TechWizard', score: 59870, rank: 5, badge: null },
-            { name: 'QuantumQi', score: 54210, rank: 6, badge: null },
-            { name: 'ByteHunter', score: 48650, rank: 7, badge: null },
-            { name: 'NeuralNomad', score: 43900, rank: 8, badge: null },
-            { name: 'PixelPro', score: 38720, rank: 9, badge: null },
-            { name: 'CipherStar', score: 33450, rank: 10, badge: null },
-          ];
           const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
           const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
+          const badges = ['🥇', '🥈', '🥉'];
+          const topColors = ['linear-gradient(135deg,#b45309,#fbbf24)', 'linear-gradient(135deg,#6b7280,#d1d5db)', 'linear-gradient(135deg,#92400e,#f97316)'];
+          const scoreColors = ['#fbbf24', '#d1d5db', '#f97316'];
+          const displayLeaders = globalLeaders.length > 0 ? globalLeaders : [];
           return (
             <div>
-              <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">🌍 Global Leaderboard</div>
-              <div className="space-y-1.5">
-                {GLOBAL_LEADERS.map((leader) => (
-                  <div key={leader.rank} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                    style={{ background: leader.rank <= 3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: leader.rank <= 3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">🌍 Global Leaderboard</div>
+                {globalLeaders.length === 0 && <div className="text-zinc-700 text-[9px]">Play games to appear here</div>}
+              </div>
+              {displayLeaders.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="text-3xl mb-2">🏆</div>
+                  <p className="text-zinc-600 text-xs font-bold">No scores yet</p>
+                  <p className="text-zinc-700 text-[10px] mt-0.5">Win games to climb the board!</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {displayLeaders.map((leader, idx) => {
+                    const rank = idx + 1;
+                    const isTop3 = rank <= 3;
+                    return (
+                      <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                        style={{ background: isTop3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: isTop3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                          style={{ background: isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.08)', color: isTop3 ? '#fff' : '#71717a' }}>
+                          {isTop3 ? badges[rank - 1] : rank}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white text-[11px] font-bold truncate">{leader.name}</div>
+                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate">Best: {leader.bestGame.game} · Lv{leader.bestGame.level}</div>}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-extrabold" style={{ color: isTop3 ? scoreColors[rank - 1] : '#71717a' }}>{leader.totalScore.toLocaleString()}</div>
+                          <div className="text-[9px] text-zinc-700">pts</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Current user row */}
+                  <div className="h-px bg-zinc-800 my-1" />
+                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                    style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                      style={{ background: leader.rank === 1 ? 'linear-gradient(135deg,#b45309,#fbbf24)' : leader.rank === 2 ? 'linear-gradient(135deg,#6b7280,#d1d5db)' : leader.rank === 3 ? 'linear-gradient(135deg,#92400e,#f97316)' : 'rgba(255,255,255,0.08)', color: leader.rank <= 3 ? '#fff' : '#71717a' }}>
-                      {leader.badge || leader.rank}
+                      style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
+                      {playerName.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-white text-[11px] font-bold truncate">{leader.name}</div>
+                      <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
+                      {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level} · {(levelMultiplier(userBestGame.level)).toFixed(1)}x</div>}
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-extrabold" style={{ color: leader.rank === 1 ? '#fbbf24' : leader.rank === 2 ? '#d1d5db' : leader.rank === 3 ? '#f97316' : '#71717a' }}>{leader.score.toLocaleString()}</div>
+                      <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
                       <div className="text-[9px] text-zinc-700">pts</div>
                     </div>
                   </div>
-                ))}
-                {/* Current user row */}
-                <div className="h-px bg-zinc-800 my-1" />
-                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                  style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
-                    {playerName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
-                    {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level}</div>}
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
-                    <div className="text-[9px] text-zinc-700">pts</div>
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })()}

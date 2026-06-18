@@ -34,6 +34,7 @@ export interface IStorage {
   // Settings operations
   getUserSettings(userId: string): Promise<Record<string, any>>;
   saveUserSettings(userId: string, settings: Record<string, any>): Promise<void>;
+  getAllUsersWithSettings(): Promise<Array<{ userId: string; username: string; displayName: string | null; settings: Record<string, any> }>>;
 }
 
 export class MemStorage implements IStorage {
@@ -103,6 +104,14 @@ export class MemStorage implements IStorage {
   async deleteMessage(id: string) { return this.messages.delete(id); }
   async getUserSettings(userId: string) { return this.settings.get(userId) || {}; }
   async saveUserSettings(userId: string, settings: Record<string, any>) { this.settings.set(userId, settings); }
+  async getAllUsersWithSettings() {
+    const result: Array<{ userId: string; username: string; displayName: string | null; settings: Record<string, any> }> = [];
+    for (const [userId, user] of (this as any).users.entries()) {
+      const settings = (this as any).settings.get(userId) || {};
+      result.push({ userId, username: user.username || user.email || userId, displayName: user.displayName || null, settings });
+    }
+    return result;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -236,6 +245,17 @@ export class DatabaseStorage implements IStorage {
       target: userSettings.userId,
       set: { settings, updatedAt: new Date() },
     });
+  }
+  async getAllUsersWithSettings(): Promise<Array<{ userId: string; username: string; displayName: string | null; settings: Record<string, any> }>> {
+    const d = db();
+    if (!d) return [];
+    const allUsers = await d.select().from(users);
+    const result: Array<{ userId: string; username: string; displayName: string | null; settings: Record<string, any> }> = [];
+    for (const user of allUsers) {
+      const [row] = await d.select().from(userSettings).where(eq(userSettings.userId, user.id));
+      result.push({ userId: user.id, username: user.username || user.email || user.id, displayName: user.displayName, settings: (row?.settings as Record<string, any>) || {} });
+    }
+    return result;
   }
 }
 
