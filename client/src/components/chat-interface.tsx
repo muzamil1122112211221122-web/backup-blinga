@@ -3955,7 +3955,7 @@ Let's start the self-listen session!`;
                             <span className="text-[11px] font-semibold text-foreground text-center leading-tight flex items-center gap-1">
                               {config.name}
                               {['gpt-4o','claude-3.5-sonnet','gemini-pro','deepseek-r1','qwen','fius-ai'].includes(model) && (
-                                <span title="Thinking model" className="text-[9px]">🧠</span>
+                                <img src="/brain-icon.png" title="Thinking model" alt="" className="w-[11px] h-[11px] object-contain brightness-0 dark:brightness-0 dark:invert" />
                               )}
                             </span>
                             <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{config.description}</span>
@@ -4101,13 +4101,6 @@ Let's start the self-listen session!`;
                 );
               })()}
 
-              {/* Empty State */}
-              {!hasMessages && !nomadSoloModel && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Multi-AI Paradise Awaits</h3>
-                  <p className="text-muted-foreground">Toggle models above, then send a message to compare all AIs at once</p>
-                </div>
-              )}
             </div>
             );
           })()

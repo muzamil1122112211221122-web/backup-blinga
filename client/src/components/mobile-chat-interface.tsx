@@ -1831,8 +1831,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
           {autoMessages.length === 0 && !autoLoading && (
             <div className="flex flex-col items-center justify-center min-h-full gap-4 text-center py-12">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-foreground">
-                <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain invert dark:invert-0" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
+                <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
