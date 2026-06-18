@@ -95,7 +95,7 @@ const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; 
   "fius-ai":         { name: "Fius Pro",               logo: "/fius-logo.png",       color: "#a855f7", description: "Specialized productivity AI by Muzamil Ali" },
 };
 
-const NOMAD_DEFAULT_MODELS = Object.keys(NOMAD_CONFIG);
+const NOMAD_DEFAULT_MODELS = ["fius-ai", "gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral"];
 
 const PRESETS = [
   { id: "custom", label: "Custom", desc: "Default style" },
@@ -325,8 +325,8 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   return (
     <>
       <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
-        {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1" />}
-        <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
+        {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1 ml-1" />}
+        <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"} ${!isUser ? "ml-0.5" : ""}`}>
           {isUser ? (
             <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
               {msg.content}
@@ -390,13 +390,6 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             </>
           )}
 
-          {isUser && (
-            <div className="flex items-center gap-0.5 mt-1 justify-end">
-              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          )}
           {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
@@ -418,10 +411,29 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                 <DropdownMenuTrigger asChild>
                   <button className={ab}><FileDown className="w-4 h-4" /></button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[170px] z-[200]">
                   <DropdownMenuItem onClick={handleExport}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const md = msg.content;
+                    const blob = new Blob([md], { type: "text/markdown" });
+                    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.md"; a.click();
+                  }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const win = window.open('', '_blank');
+                    if (!win) return;
+                    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${msg.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); }, 500);
+                  }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-red-500" /> Export as PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -783,7 +795,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <div className="flex items-center gap-1">
                 <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
                   onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
-                  <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
+                  <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert" : ""}`} />
                 </button>
                 {showModel && tab !== "nomad" && model && onModelChange && (
                   <button onClick={() => setShowModelSheet(true)}
@@ -851,20 +863,19 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             <div className="flex items-center px-2 py-2 gap-1.5">
               <button className={`${iconBtnCls} flex-shrink-0 ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
-                <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "invert dark:invert-0" : ""}`} />
+                <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert" : ""}`} />
               </button>
               <div className="relative flex-1">
-                <textarea ref={taRef} value={value} onChange={e => { onChange(e.target.value); if (e.target.value.length <= 60) setPromptInlineExpanded(false); }} onKeyDown={handleKey}
+                <textarea ref={taRef} value={value} onChange={e => { onChange(e.target.value); const t = e.target; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 78) + 'px'; }} onKeyDown={handleKey}
                   placeholder={placeholder} rows={1}
                   className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1"
                   style={{
-                    height: promptInlineExpanded ? undefined : 38,
-                    maxHeight: promptInlineExpanded ? 78 : 38,
-                    minHeight: promptInlineExpanded ? 62 : 38,
-                    overflowY: promptInlineExpanded ? "auto" : "hidden",
+                    minHeight: 38,
+                    maxHeight: 78,
+                    overflowY: "auto",
                     scrollbarWidth: "none",
-                    paddingRight: value.length > 60 ? 20 : 16,
-                    transition: "max-height 0.28s cubic-bezier(0.23,1,0.32,1), min-height 0.28s cubic-bezier(0.23,1,0.32,1)"
+                    paddingRight: 16,
+                    transition: "height 0.18s cubic-bezier(0.23,1,0.32,1)"
                   }} />
                 {/* Fullscreen open */}
                 <button
@@ -872,19 +883,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   onClick={() => setExpandOpen(true)}>
                   <Maximize2 className="w-2 h-2" />
                 </button>
-                {/* Inline expand/collapse — only when text is long */}
-                {value.length > 60 && (
-                  <button
-                    className="absolute bottom-0 right-0 w-5 h-5 flex items-center justify-center rounded-full bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm transition-all active:scale-90"
-                    style={{ bottom: -2, right: -2 }}
-                    onClick={() => setPromptInlineExpanded(v => !v)}
-                  >
-                    {promptInlineExpanded
-                      ? <ChevronUp className="w-3 h-3" />
-                      : <ChevronDown className="w-3 h-3" />}
-                  </button>
-                )}
-              </div>
+                </div>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
                 <img src={micLight} alt="Mic" className={imgCls} />
               </button>
@@ -1659,6 +1658,39 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   );
 }
 
+// ─── Nomad auto-mode typing text ─────────────────────────────────────────────
+function NomadAutoTypingText({ text, msgId }: { text: string; msgId: string }) {
+  const { displayed } = useTypingAnimation(text, `nomad-auto-${msgId}`, 28);
+  return <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displayed}</p>;
+}
+
+// ─── Nomad multi-column message list with auto-scroll + typing animation ──────
+function NomadColumnMsgs({ msgs, modelId, isTyping }: {
+  msgs: { id: string; role: "user" | "ai"; content: string }[];
+  modelId: string;
+  isTyping: boolean;
+}) {
+  const endRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length, isTyping]);
+  return (
+    <div className="mx-2.5 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+      {msgs.map(msg => (
+        <div key={msg.id} className={`p-2.5 rounded-lg text-sm relative group ${msg.role === "user" ? "bg-secondary text-secondary-foreground ml-3" : "bg-card border border-border text-foreground"}`}>
+          {msg.role === "ai" ? <NomadAutoTypingText text={msg.content} msgId={msg.id} /> : msg.content}
+          {msg.role === "ai" && (
+            <button onClick={() => navigator.clipboard.writeText(msg.content)}
+              className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-black/10">
+              <Copy className="w-2.5 h-2.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+      ))}
+      {isTyping && <div className="flex justify-start"><ThinkingCloud /></div>}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
 // ─── Nomad Tab (multi-column + auto mode) ────────────────────────────────────────
 function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
@@ -1714,8 +1746,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     setAutoMessages(prev => [...prev, { id: userMsgId, role: 'user', content: text }, { id: aiMsgId, role: 'ai', content: '', pickedModel: picked }]);
     setTimeout(() => autoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha). Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
+    const history = autoMessages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     try {
-      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx }) });
+      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx, history }) });
       const data = res.ok ? await res.json() : null;
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
@@ -1870,7 +1903,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                       </div>
                     )}
                     {msg.content ? (
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <NomadAutoTypingText text={msg.content} msgId={msg.id} />
                     ) : (
                       <ThinkingCloud />
                     )}
@@ -1899,8 +1932,10 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
                       style={{ borderColor: isActive ? cfg.color : "rgba(128,128,128,0.2)" }}>
                       <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: cfg.color + '20', padding: 4 }}>
-                        <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}${modelId === "fius-ai" ? " rounded-full" : ""}`}
-                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        {modelId === "fius-ai"
+                          ? <Logo size="sm" />
+                          : <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                       </div>
                       <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{cfg.name}</span>
                       <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
@@ -1915,18 +1950,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                         </button>
                       </div>
                     </div>
-                    <div className="mx-2.5 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-                      {msgs.map(msg => (
-                        <div key={msg.id} className={`p-2.5 rounded-lg text-sm ${msg.role === "user" ? "bg-secondary text-secondary-foreground ml-3" : "bg-card border border-border text-foreground"}`}>
-                          {msg.content}
-                        </div>
-                      ))}
-                      {nomadTyping[modelId] && (
-                        <div className="flex justify-start">
-                          <ThinkingCloud />
-                        </div>
-                      )}
-                    </div>
+                    <NomadColumnMsgs msgs={msgs} modelId={modelId} isTyping={!!nomadTyping[modelId]} />
                   </div>
                   {!isLast && <div className="flex-shrink-0 w-px self-stretch" style={{ background: "rgba(128,128,128,0.3)" }} />}
                 </React.Fragment>
@@ -1954,7 +1978,13 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                         <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(soloModel)}`}
                           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       </div>
-                      <div className="rounded-3xl px-4 py-3 flex-1 border bg-card border-border text-foreground text-sm">{msg.content}</div>
+                      <div className="rounded-3xl px-4 py-3 flex-1 border bg-card border-border text-foreground text-sm relative group">
+                      <NomadAutoTypingText text={msg.content} msgId={msg.id} />
+                      <button onClick={() => navigator.clipboard.writeText(msg.content)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-black/10">
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
                     </div>
                   )}
                 </div>

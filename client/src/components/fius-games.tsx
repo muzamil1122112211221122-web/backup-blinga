@@ -1883,7 +1883,7 @@ const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; desc: st
 ];
 
 export function FiusGames({ playerName, userId }: FiusGamesProps) {
-  const [tab, setTab] = useState<'games'|'store'|'leaderboard'>('games');
+  const [tab] = useState<'games'>('games');
   const [screen, setScreen] = useState<'menu'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
   const [activeGameLabel, setActiveGameLabel] = useState('');
@@ -2037,40 +2037,12 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tight">⚡ Fius Game Zone</h2>
+          <h2 className="text-xl font-black text-white tracking-tight">Fius Game Zone</h2>
           <p className="text-zinc-500 text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
         </div>
         <FragmentBadge count={fragments} />
       </div>
 
-      {/* ── Tab Bar (sliding pill) ── */}
-      {(() => {
-        const TABS = ['games','store','leaderboard'] as const;
-        const idx = TABS.indexOf(tab);
-        return (
-          <div className="relative flex mb-4 p-1 rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0" style={{ gap: 0 }}>
-            <div aria-hidden style={{
-              position: 'absolute',
-              top: 4, bottom: 4,
-              left: `calc(${idx} * 33.333% + 4px)`,
-              width: 'calc(33.333% - 8px)',
-              background: 'white',
-              borderRadius: 12,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-              transition: 'left 0.38s cubic-bezier(0.23,1,0.32,1)',
-              pointerEvents: 'none',
-              zIndex: 0,
-            }} />
-            {TABS.map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                style={{ flex: 1, position: 'relative', zIndex: 1, border: 'none', background: 'transparent' }}
-                className={`py-2 rounded-xl text-xs font-bold capitalize transition-colors duration-200 ${tab === t ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                {t === 'games' ? '🎮 Games' : t === 'store' ? '🛒 Store' : '🏆 Leaderboard'}
-              </button>
-            ))}
-          </div>
-        );
-      })()}
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
@@ -2130,29 +2102,75 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  {STORE_CATALOG.slice(0, 3).map((g, i) => (
-                    <button key={i} onClick={() => setTab('store')}
-                      className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden relative transition-all hover:scale-110 active:scale-95"
-                      style={{ border: '2.5px solid rgba(255,255,255,0.1)' }}>
-                      <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
-                        <Lock size={14} className="text-zinc-300" />
-                      </div>
-                    </button>
-                  ))}
-                  <button onClick={() => setTab('store')}
-                    className="text-blue-400 text-xs font-bold hover:text-blue-300 transition-colors ml-1">
-                    Visit Store →
-                  </button>
+                <div className="flex flex-col items-center py-4 gap-1 text-center">
+                  <p className="text-zinc-600 text-xs">No games owned yet</p>
+                  <p className="text-zinc-700 text-[10px]">Win games to earn fragments</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ── STORE TAB ── */}
-        {tab === 'store' && (
+        {/* ── GLOBAL LEADERBOARD (inline in games tab) ── */}
+        {tab === 'games' && (() => {
+          const GLOBAL_LEADERS = [
+            { name: 'AlphaZero_X', score: 98450, rank: 1, badge: '🥇' },
+            { name: 'NovaMind', score: 87230, rank: 2, badge: '🥈' },
+            { name: 'CodeBreaker99', score: 76180, rank: 3, badge: '🥉' },
+            { name: 'StarPlayer_PK', score: 64320, rank: 4, badge: null },
+            { name: 'TechWizard', score: 59870, rank: 5, badge: null },
+            { name: 'QuantumQi', score: 54210, rank: 6, badge: null },
+            { name: 'ByteHunter', score: 48650, rank: 7, badge: null },
+            { name: 'NeuralNomad', score: 43900, rank: 8, badge: null },
+            { name: 'PixelPro', score: 38720, rank: 9, badge: null },
+            { name: 'CipherStar', score: 33450, rank: 10, badge: null },
+          ];
+          const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
+          const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
+          return (
+            <div>
+              <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">🌍 Global Leaderboard</div>
+              <div className="space-y-1.5">
+                {GLOBAL_LEADERS.map((leader) => (
+                  <div key={leader.rank} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                    style={{ background: leader.rank <= 3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: leader.rank <= 3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                      style={{ background: leader.rank === 1 ? 'linear-gradient(135deg,#b45309,#fbbf24)' : leader.rank === 2 ? 'linear-gradient(135deg,#6b7280,#d1d5db)' : leader.rank === 3 ? 'linear-gradient(135deg,#92400e,#f97316)' : 'rgba(255,255,255,0.08)', color: leader.rank <= 3 ? '#fff' : '#71717a' }}>
+                      {leader.badge || leader.rank}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-[11px] font-bold truncate">{leader.name}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-extrabold" style={{ color: leader.rank === 1 ? '#fbbf24' : leader.rank === 2 ? '#d1d5db' : leader.rank === 3 ? '#f97316' : '#71717a' }}>{leader.score.toLocaleString()}</div>
+                      <div className="text-[9px] text-zinc-700">pts</div>
+                    </div>
+                  </div>
+                ))}
+                {/* Current user row */}
+                <div className="h-px bg-zinc-800 my-1" />
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                  style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
+                    {playerName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
+                    {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level}</div>}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
+                    <div className="text-[9px] text-zinc-700">pts</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── STORE TAB (hidden — store removed) ── */}
+        {false && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>
@@ -2218,8 +2236,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
-        {/* ── LEADERBOARD TAB ── */}
-        {tab === 'leaderboard' && (
+        {/* ── LEADERBOARD TAB (hidden — merged into global leaderboard above) ── */}
+        {false && (
           <div>
             {/* Game filter pills */}
             <div className="flex gap-1 overflow-x-auto mb-3 pb-1" style={{ scrollbarWidth: 'none' }}>
