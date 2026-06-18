@@ -3715,6 +3715,10 @@ Let's start the self-listen session!`;
                       <History className="w-4 h-4" /> Nomad History
                     </span>
                     <div className="flex items-center gap-1">
+                      <button onClick={() => { setNomadAutoMessages([]); setNomadMessages({}); setNomadSoloModel(null); setNomadHistoryOpen(false); }}
+                        className="text-[10px] px-2 py-0.5 rounded-full text-foreground bg-foreground/10 hover:bg-foreground/20 border border-border transition-colors font-medium">
+                        + New Chat
+                      </button>
                       {nomadHistSessions.length > 0 && (
                         <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
                           className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors border border-border">
@@ -3824,7 +3828,7 @@ Let's start the self-listen session!`;
 
               {/* === AUTO MODE TAB (full chat UI) === */}
               {nomadMode === 'auto' && (
-                <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-4 pb-52" style={{ scrollbarWidth: 'thin' }}>
+                <div className={`flex-1 min-h-0 ${nomadAutoMessages.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} px-4 pt-4 pb-52`} style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] gap-4 text-center py-10">
                       <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
@@ -3856,10 +3860,9 @@ Let's start the self-listen session!`;
                             {msg.pickedModel && (
                               <div className="flex items-center gap-2 mb-2">
                                 <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 p-0.5" style={{ background: msg.pickedModel.color + '20' }}>
-                                  <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className="w-full h-full object-contain" onError={e => { e.currentTarget.style.display='none'; }} />
+                                  <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className={`w-full h-full object-contain ${iconFilter(msg.pickedModel.model)}`} onError={e => { e.currentTarget.style.display='none'; }} />
                                 </div>
                                 <span className="text-xs font-semibold" style={{ color: msg.pickedModel.color }}>{msg.pickedModel.modelName}</span>
-                                <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded-full border border-border bg-secondary">AI selected</span>
                               </div>
                             )}
                             {msg.content ? (
@@ -3911,11 +3914,21 @@ Let's start the self-listen session!`;
                                 </div>
                               </>
                             ) : (
-                              <div className="flex items-center gap-2 py-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '300ms' }} />
-                              </div>
+                              (() => {
+                                const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
+                                const W = 196, H = 66;
+                                return (
+                                  <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: W, height: H }}>
+                                    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
+                                      <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
+                                      <Logo size="sm" />
+                                      <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
+                                    </div>
+                                  </div>
+                                );
+                              })()
                             )}
                           </div>
                         )}
@@ -3955,7 +3968,12 @@ Let's start the self-listen session!`;
                             <span className="text-[11px] font-semibold text-foreground text-center leading-tight flex items-center gap-1">
                               {config.name}
                               {['gpt-4o','claude-3.5-sonnet','gemini-pro','deepseek-r1','qwen','fius-ai'].includes(model) && (
-                                <img src="/brain-icon.png" title="Thinking model" alt="" className="w-[11px] h-[11px] object-contain brightness-0 dark:brightness-0 dark:invert" />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <img src="/brain-icon.png" alt="" className="w-[11px] h-[11px] object-contain brightness-0 dark:brightness-0 dark:invert cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>Deep Thinking Model</TooltipContent>
+                                </Tooltip>
                               )}
                             </span>
                             <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{config.description}</span>
@@ -4025,9 +4043,21 @@ Let's start the self-listen session!`;
                                     onError={(e) => { e.currentTarget.style.display='none'; }}
                                   />
                                 </div>
-                                <div className="bg-card rounded-2xl px-3 py-2 border border-border">
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
-                                </div>
+                                {(() => {
+                                  const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
+                                  const W = 196, H = 66;
+                                  return (
+                                    <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: W, height: H }}>
+                                      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
+                                        <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
+                                      </svg>
+                                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
+                                        <Logo size="sm" />
+                                        <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>

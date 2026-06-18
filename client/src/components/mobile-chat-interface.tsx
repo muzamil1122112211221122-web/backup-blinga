@@ -1746,6 +1746,10 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                 <History className="w-4 h-4" /> Nomad History
               </span>
               <div className="flex items-center gap-1">
+                <button onClick={() => { setAutoMessages([]); setNomadMessages({}); setSoloModel(null); setNomadHistoryOpen(false); }}
+                  className="text-[10px] px-2 py-0.5 rounded-full text-foreground bg-foreground/10 hover:bg-foreground/20 border border-border transition-colors font-medium">
+                  + New Chat
+                </button>
                 {nomadHistSessions.length > 0 && (
                   <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
                     className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
@@ -1828,7 +1832,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
       {/* === AUTO MODE CONTENT === */}
       {nomadMode === 'auto' && !soloModel && (
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
+        <div className={`flex-1 min-h-0 ${autoMessages.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} px-3 py-3`} style={{ scrollbarWidth: 'thin' }}>
           {autoMessages.length === 0 && !autoLoading && (
             <div className="flex flex-col items-center justify-center min-h-full gap-4 text-center py-12">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
@@ -1860,18 +1864,15 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     {msg.pickedModel && (
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 p-0.5" style={{ background: msg.pickedModel.color + '20' }}>
-                          <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className="w-full h-full object-contain" onError={e => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+                          <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className={`w-full h-full object-contain ${iconFilter(msg.pickedModel.model)}`} onError={e => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
                         </div>
                         <span className="text-xs font-semibold" style={{ color: msg.pickedModel.color }}>{msg.pickedModel.modelName}</span>
-                        <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded-full border border-border bg-secondary">auto-selected</span>
                       </div>
                     )}
                     {msg.content ? (
                       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                     ) : (
-                      <div className="flex items-center gap-1 py-1">
-                        {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*150}ms`, animationDuration: '0.9s' }} />)}
-                      </div>
+                      <ThinkingCloud />
                     )}
                   </div>
                 )}
@@ -1921,14 +1922,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                         </div>
                       ))}
                       {nomadTyping[modelId] && (
-                        <div className="flex items-start space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1 rounded" style={{ background: cfg.color + '20', padding: 2 }}>
-                            <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
-                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                          </div>
-                          <div className="flex items-center gap-1 py-1">
-                            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: `${i*150}ms`, animationDuration:"0.9s" }} />)}
-                          </div>
+                        <div className="flex justify-start">
+                          <ThinkingCloud />
                         </div>
                       )}
                     </div>
@@ -1938,12 +1933,6 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               );
             })}
           </div>
-          {!hasMessages && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pointer-events-none">
-              <h3 className="text-lg font-semibold text-foreground mb-1">Multi-AI Paradise Awaits</h3>
-              <p className="text-sm text-muted-foreground">Toggle models, then send a message to compare all AIs at once</p>
-            </div>
-          )}
         </div>
       )}
 
