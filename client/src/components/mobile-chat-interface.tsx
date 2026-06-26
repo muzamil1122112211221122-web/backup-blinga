@@ -52,7 +52,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Er
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MobileTab = "ask" | "imagine" | "philosopher" | "nomad" | "games";
 
-interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; }
+interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; images?: string[]; attachedFiles?: Array<{name: string; size: string}>; }
 interface Conv { id: string; title: string; createdAt: string | Date; updatedAt?: string | Date; aiRole?: string; isProject?: boolean; }
 interface Personality { id: string; name: string; era: string; role: string; category: string; style: string; wikiTitle?: string; }
 
@@ -328,18 +328,57 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1 ml-1" />}
         <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"} ${!isUser ? "ml-0.5" : ""}`}>
           {isUser ? (
-            <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
-              {msg.content}
-              <div className="flex items-center justify-end gap-0.5 mt-1.5">
-                <button onClick={handleCopy}
-                  className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                  {copied ? <Check className="w-4 h-4 text-blue-500" /> : <Copy className="w-4 h-4" />}
-                </button>
-                <button onClick={() => onRetryUser?.(msg.content)}
-                  className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="flex flex-col gap-2 items-end">
+              {/* Attached images grid */}
+              {msg.images && msg.images.length > 0 && (
+                <div className={`grid gap-1.5 ${msg.images.length === 1 ? "grid-cols-1" : "grid-cols-2"} max-w-[240px]`}>
+                  {msg.images.map((src, i) => (
+                    <img key={i} src={src} alt={`attachment-${i}`}
+                      className="rounded-2xl object-cover w-full cursor-zoom-in border border-border shadow-sm"
+                      style={{ maxHeight: 180 }}
+                      onClick={() => onExpandImg?.(src)} />
+                  ))}
+                </div>
+              )}
+              {/* Attached file chips */}
+              {msg.attachedFiles && msg.attachedFiles.length > 0 && (
+                <div className="flex flex-col gap-1 w-full items-end">
+                  {msg.attachedFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card border border-border shadow-sm max-w-[220px]">
+                      <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium text-foreground truncate">{f.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{f.size}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Text bubble (only if there's text) */}
+              {msg.content && (
+                <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+                  {msg.content}
+                  <div className="flex items-center justify-end gap-0.5 mt-1.5">
+                    <button onClick={handleCopy}
+                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                      {copied ? <Check className="w-4 h-4 text-blue-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                    <button onClick={() => onRetryUser?.(msg.content)}
+                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              {/* Copy/retry when no text */}
+              {!msg.content && (
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  <button onClick={() => onRetryUser?.("")}
+                    className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -2629,22 +2668,49 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     throw new Error("No ID");
   }, [currentConvId, askModel]);
 
-  const handleAskAttachmentSend = useCallback(async (images: Array<{file: File; preview: string}>, _files: Array<{file: File; name: string; size: string}>, text: string) => {
+  const handleAskAttachmentSend = useCallback(async (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => {
     setAskTyping(true);
-    const userContent = images.length > 0
-      ? `[${images.length} image(s) attached]${text ? `\n${text}` : ""}`
-      : text || "[File attached]";
-    setAskMsgs(p => [...p, { id: uid(), role: "user", content: userContent, images: images.map(i => i.preview), timestamp: new Date() }]);
+    // Build user message — images shown as grid, files as chips, text as bubble
+    const userMsg: Msg = {
+      id: uid(), role: "user", content: text,
+      images: images.length > 0 ? images.map(i => i.preview) : undefined,
+      attachedFiles: files.length > 0 ? files.map(f => ({ name: f.name, size: f.size })) : undefined,
+      timestamp: new Date(),
+    };
+    setAskMsgs(p => [...p, userMsg]);
     try {
-      const convId = await ensureConv(userContent);
+      const convId = await ensureConv(text || (images.length > 0 ? "Image analysis" : files[0]?.name || "File"));
       if (images.length > 0) {
+        // Analyze images (send first image to /api/analyze-image)
         const imgB64 = images[0].preview;
-        const res = await fetch('/api/analyze-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: imgB64, prompt: text || "What is in this image?", conversationId: convId }) });
+        const res = await fetch('/api/analyze-image', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: imgB64, prompt: text || "What is in this image? Describe it in detail.", conversationId: convId })
+        });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
-        setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't analyze the image.", timestamp: new Date() }]);
-      } else {
-        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: userContent, conversationId: convId, activeTab: "ask" }) });
+        let aiContent = data.response || "I couldn't analyze the image.";
+        if (images.length > 1) aiContent = `*(Showing analysis of image 1 of ${images.length})*\n\n${aiContent}`;
+        setAskMsgs(p => [...p, { id: uid(), role: "ai", content: aiContent, timestamp: new Date() }]);
+      } else if (files.length > 0) {
+        // Read text-readable files and send content to AI
+        const readFile = (file: File): Promise<string> => new Promise((resolve) => {
+          const isText = file.type.startsWith('text/') || /\.(txt|md|csv|json|xml|html|css|js|ts|py|java|c|cpp|sh|yaml|yml)$/i.test(file.name);
+          if (!isText) { resolve(`[Binary file: ${file.name} (${file.type || "unknown type"})]`); return; }
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target?.result as string || "");
+          reader.onerror = () => resolve(`[Could not read: ${file.name}]`);
+          reader.readAsText(file);
+        });
+        const contents = await Promise.all(files.map(f => readFile(f.file)));
+        const fileContext = files.map((f, i) => `--- File: ${f.name} ---\n${contents[i].slice(0, 4000)}`).join('\n\n');
+        const message = text ? `${text}\n\n${fileContext}` : `Please analyze the following file(s):\n\n${fileContext}`;
+        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, conversationId: convId, activeTab: "ask" }) });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't process the file.", timestamp: new Date() }]);
+      } else if (text) {
+        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: convId, activeTab: "ask" }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't generate a response.", timestamp: new Date() }]);
