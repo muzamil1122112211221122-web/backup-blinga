@@ -52,7 +52,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Er
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MobileTab = "ask" | "imagine" | "philosopher" | "nomad" | "games";
 
-interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; images?: string[]; attachedFiles?: Array<{name: string; size: string}>; }
+interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; images?: string[]; attachedFiles?: Array<{name: string; size: string; content?: string}>; }
 interface Conv { id: string; title: string; createdAt: string | Date; updatedAt?: string | Date; aiRole?: string; isProject?: boolean; }
 interface Personality { id: string; name: string; era: string; role: string; category: string; style: string; wikiTitle?: string; }
 
@@ -251,6 +251,40 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
+// ─── File chip with tap-to-preview content ────────────────────────────────────
+function FileChips({ files }: { files: Array<{name: string; size: string; content?: string}> }) {
+  const [preview, setPreview] = useState<{name: string; content: string} | null>(null);
+  return (
+    <>
+      <div className="flex flex-col gap-1 w-full items-end">
+        {files.map((f, i) => (
+          <button key={i} onClick={() => f.content ? setPreview({ name: f.name, content: f.content }) : undefined}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl bg-card border border-border shadow-sm max-w-[220px] text-left transition-all active:scale-95 ${f.content ? "cursor-pointer hover:bg-accent" : "cursor-default"}`}>
+            <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-foreground truncate">{f.name}</p>
+              <p className="text-[10px] text-muted-foreground">{f.size}{f.content ? " · tap to view" : ""}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+      {preview && (
+        <div className="fixed inset-0 z-[500] bg-black/90 flex flex-col" onClick={() => setPreview(null)}>
+          <div className="flex items-center justify-between px-4 pt-safe-top pt-4 pb-3 bg-zinc-900" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-white truncate flex-1 mr-3">{preview.name}</p>
+            <button onClick={() => setPreview(null)} className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4" onClick={e => e.stopPropagation()}>
+            <pre className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap break-words font-mono">{preview.content}</pre>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
@@ -340,23 +374,13 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                   ))}
                 </div>
               )}
-              {/* Attached file chips */}
+              {/* Attached file chips — tap to preview content */}
               {msg.attachedFiles && msg.attachedFiles.length > 0 && (
-                <div className="flex flex-col gap-1 w-full items-end">
-                  {msg.attachedFiles.map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card border border-border shadow-sm max-w-[220px]">
-                      <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-medium text-foreground truncate">{f.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{f.size}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <FileChips files={msg.attachedFiles} />
               )}
               {/* Text bubble (only if there's text) */}
               {msg.content && (
-                <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+                <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all">
                   {msg.content}
                   <div className="flex items-center justify-end gap-0.5 mt-1.5">
                     <button onClick={handleCopy}
@@ -843,20 +867,32 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       <input ref={fileInputRef} type="file" multiple className="sr-only" onChange={handleFileChange} />
       <input ref={imageInputRef} type="file" accept="image/*" multiple className="sr-only" onChange={handleImageChange} />
 
-      {/* ── Attached images preview tray ── */}
+      {/* ── Attached images preview tray — horizontal scroll ── */}
       {attachedImages.length > 0 && (
-        <div className="flex items-center gap-2 px-1 pb-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          {attachedImages.map((img, i) => (
-            <div key={i} className="relative flex-shrink-0 group">
-              <img src={img.preview} alt={`img-${i}`}
-                className="w-16 h-16 rounded-xl object-cover border border-border cursor-zoom-in hover:scale-105 transition-transform shadow-sm"
-                onClick={() => setFullscreenImg(img.preview)} />
-              <button onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 dark:bg-zinc-200 flex items-center justify-center shadow">
-                <X className="w-2.5 h-2.5 text-white dark:text-zinc-800" />
-              </button>
+        <div className="relative">
+          <div className="flex items-center gap-2 px-1 pb-2 overflow-x-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(155,155,155,0.4) transparent" }}>
+            {attachedImages.map((img, i) => (
+              <div key={i} className="relative flex-shrink-0 group">
+                <img src={img.preview} alt={`img-${i}`}
+                  className="w-16 h-16 rounded-xl object-cover border border-border cursor-zoom-in hover:scale-105 transition-transform shadow-sm"
+                  onClick={() => setFullscreenImg(img.preview)} />
+                <button onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 dark:bg-zinc-200 flex items-center justify-center shadow">
+                  <X className="w-2.5 h-2.5 text-white dark:text-zinc-800" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {attachedImages.length > 3 && (
+            <div className="absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          )}
+          {attachedImages.length > 1 && (
+            <div className="flex justify-center gap-1 pb-0.5">
+              {attachedImages.map((_, i) => (
+                <div key={i} className="w-1 h-1 rounded-full bg-zinc-400/60 dark:bg-zinc-500/60" />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -2681,29 +2717,34 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     try {
       const convId = await ensureConv(text || (images.length > 0 ? "Image analysis" : files[0]?.name || "File"));
       if (images.length > 0) {
-        // Analyze images (send first image to /api/analyze-image)
-        const imgB64 = images[0].preview;
+        // Analyze images — backend expects `imageData` field
+        const imgDataUrl = images[0].preview;
         const res = await fetch('/api/analyze-image', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: imgB64, prompt: text || "What is in this image? Describe it in detail.", conversationId: convId })
+          body: JSON.stringify({ imageData: imgDataUrl, prompt: text || "What is in this image? Describe it in detail." })
         });
-        if (!res.ok) throw new Error("API error");
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || "API error"); }
         const data = await res.json();
-        let aiContent = data.response || "I couldn't analyze the image.";
-        if (images.length > 1) aiContent = `*(Showing analysis of image 1 of ${images.length})*\n\n${aiContent}`;
+        let aiContent = data.analysis || data.response || "I couldn't analyze the image.";
+        if (images.length > 1) aiContent = `*(Analyzing image 1 of ${images.length})*\n\n${aiContent}`;
         setAskMsgs(p => [...p, { id: uid(), role: "ai", content: aiContent, timestamp: new Date() }]);
       } else if (files.length > 0) {
-        // Read text-readable files and send content to AI
-        const readFile = (file: File): Promise<string> => new Promise((resolve) => {
-          const isText = file.type.startsWith('text/') || /\.(txt|md|csv|json|xml|html|css|js|ts|py|java|c|cpp|sh|yaml|yml)$/i.test(file.name);
-          if (!isText) { resolve(`[Binary file: ${file.name} (${file.type || "unknown type"})]`); return; }
+        // Read text-readable files, store content in msg for tap-to-view
+        const readFile = (f: {file: File; name: string; size: string}): Promise<string> => new Promise((resolve) => {
+          const isText = f.file.type.startsWith('text/') || /\.(txt|md|csv|json|xml|html|css|js|ts|py|java|c|cpp|sh|yaml|yml)$/i.test(f.name);
+          if (!isText) { resolve(""); return; }
           const reader = new FileReader();
           reader.onload = e => resolve(e.target?.result as string || "");
-          reader.onerror = () => resolve(`[Could not read: ${file.name}]`);
-          reader.readAsText(file);
+          reader.onerror = () => resolve("");
+          reader.readAsText(f.file);
         });
-        const contents = await Promise.all(files.map(f => readFile(f.file)));
-        const fileContext = files.map((f, i) => `--- File: ${f.name} ---\n${contents[i].slice(0, 4000)}`).join('\n\n');
+        const contents = await Promise.all(files.map(f => readFile(f)));
+        // Update msg with file content for tap-to-view
+        setAskMsgs(p => p.map(m => m.id === userMsg.id
+          ? { ...m, attachedFiles: files.map((f, i) => ({ name: f.name, size: f.size, content: contents[i] || undefined })) }
+          : m
+        ));
+        const fileContext = files.map((f, i) => `--- File: ${f.name} ---\n${(contents[i] || "[binary file]").slice(0, 4000)}`).join('\n\n');
         const message = text ? `${text}\n\n${fileContext}` : `Please analyze the following file(s):\n\n${fileContext}`;
         const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, conversationId: convId, activeTab: "ask" }) });
         if (!res.ok) throw new Error("API error");

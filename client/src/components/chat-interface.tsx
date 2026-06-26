@@ -3334,7 +3334,7 @@ Let's start the self-listen session!`;
                 data-testid={`message-${message.role}-${message.id}`}
               >
                 {message.role === 'user' ? (
-                  <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
+                  <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border [overflow-wrap:anywhere]">
                     {/* Display uploaded image if present */}
                     {message.imageUrl && (
                       <div className="mb-3">
@@ -4078,8 +4078,8 @@ Let's start the self-listen session!`;
                         <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           {message.role === 'user' ? (
                             /* User bubble — identical to Ask tab */
-                            <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border">
-                              <p className="text-foreground text-sm">{message.content}</p>
+                            <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border [overflow-wrap:anywhere]">
+                              <p className="text-foreground text-sm break-all">{message.content}</p>
                             </div>
                           ) : (
                             /* AI bubble — model icon + bubble, identical style to Ask tab */
