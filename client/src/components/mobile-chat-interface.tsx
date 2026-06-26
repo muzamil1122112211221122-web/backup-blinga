@@ -581,6 +581,9 @@ function ModelSheet({ models, current, onSelect, onClose }: {
 }
 
 // ─── Mobile Message Bar (PC compact style) ────────────────────────────────────
+const M_MAX_FILES = 5;
+const M_MAX_IMAGES = 15;
+
 interface MsgBarProps {
   value: string; onChange: (v: string) => void; onSend: () => void; onStop?: () => void;
   isTyping: boolean; placeholder: string;
@@ -590,9 +593,10 @@ interface MsgBarProps {
   onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   showEnhance?: boolean; showModel?: boolean; onCameraRef?: () => void;
   hidden?: boolean;
+  onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
 }
 
-function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false }: MsgBarProps) {
+function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend }: MsgBarProps) {
   const { theme: _mbTheme } = useTheme();
   const _mbResolved = _mbTheme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -604,9 +608,10 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [isListening, setIsListening] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showModelSheet, setShowModelSheet] = useState(false);
-  const [isAttachDialogOpen, setIsAttachDialogOpen] = useState(false);
   const [attachedImages, setAttachedImages] = useState<Array<{ file: File; preview: string }>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{ file: File; name: string; size: string }>>([]);
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
+  const { toast } = useToast();
   const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [expandOpen, setExpandOpen] = useState(false);
@@ -636,7 +641,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   }, [value, msgBarStyle]);
 
   const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   const toggleMic = async () => {
@@ -672,11 +677,18 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const newFiles = files.map(f => ({
-      file: f,
-      name: f.name,
-      size: f.size > 1024 * 1024 ? `${(f.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(f.size / 1024)} KB`,
-    }));
+    const remaining = M_MAX_FILES - attachedFiles.length;
+    if (remaining <= 0) {
+      toast({ title: `Max ${M_MAX_FILES} files allowed`, variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+    const nonImg = files.filter(f => !f.type.startsWith('image/'));
+    if (!nonImg.length) { toast({ title: "Use Upload Image for image files" }); e.target.value = ""; return; }
+    const toProcess = nonImg.slice(0, remaining);
+    if (nonImg.length > remaining) toast({ title: `Only ${remaining} more file(s) allowed` });
+    const formatSize = (b: number) => b > 1024 * 1024 ? `${(b / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
+    const newFiles = toProcess.map(f => ({ file: f, name: f.name, size: formatSize(f.size) }));
     setAttachedFiles(prev => [...prev, ...newFiles]);
     e.target.value = "";
   };
@@ -684,7 +696,16 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    files.forEach(f => {
+    const remaining = M_MAX_IMAGES - attachedImages.length;
+    if (remaining <= 0) {
+      toast({ title: `Max ${M_MAX_IMAGES} images allowed`, variant: "destructive" });
+      e.target.value = "";
+      return;
+    }
+    const imgFiles = files.filter(f => f.type.startsWith('image/')).slice(0, remaining);
+    if (!imgFiles.length) { toast({ title: "Please select image files only" }); e.target.value = ""; return; }
+    if (files.length > remaining) toast({ title: `Only ${remaining} more image(s) allowed` });
+    imgFiles.forEach(f => {
       const reader = new FileReader();
       reader.onload = ev => {
         setAttachedImages(prev => [...prev, { file: f, preview: ev.target?.result as string }]);
@@ -692,6 +713,19 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       reader.readAsDataURL(f);
     });
     e.target.value = "";
+  };
+
+  const handleSend = () => {
+    if (attachedImages.length > 0 || attachedFiles.length > 0) {
+      if (onAttachmentSend) {
+        onAttachmentSend([...attachedImages], [...attachedFiles], value);
+        setAttachedImages([]);
+        setAttachedFiles([]);
+        onChange("");
+        return;
+      }
+    }
+    onSend();
   };
 
   if (hidden) return null;
@@ -774,10 +808,12 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       {attachedImages.length > 0 && (
         <div className="flex items-center gap-2 px-1 pb-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {attachedImages.map((img, i) => (
-            <div key={i} className="relative flex-shrink-0">
-              <img src={img.preview} alt={`img-${i}`} className="w-14 h-14 rounded-xl object-cover border border-border" />
+            <div key={i} className="relative flex-shrink-0 group">
+              <img src={img.preview} alt={`img-${i}`}
+                className="w-16 h-16 rounded-xl object-cover border border-border cursor-zoom-in hover:scale-105 transition-transform shadow-sm"
+                onClick={() => setFullscreenImg(img.preview)} />
               <button onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-800 dark:bg-zinc-200 flex items-center justify-center">
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-800 dark:bg-zinc-200 flex items-center justify-center shadow">
                 <X className="w-2.5 h-2.5 text-white dark:text-zinc-800" />
               </button>
             </div>
@@ -787,14 +823,16 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Attached files preview tray ── */}
       {attachedFiles.length > 0 && (
-        <div className="flex flex-col gap-1 px-1 pb-1">
+        <div className="flex flex-wrap gap-1.5 px-1 pb-1">
           {attachedFiles.map((f, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-border">
-              <FileText className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
-              <span className="text-[11px] font-medium text-foreground flex-1 truncate">{f.name}</span>
-              <span className="text-[10px] text-muted-foreground flex-shrink-0">{f.size}</span>
+            <div key={i} className="relative flex items-center gap-2 px-3 py-2 pr-8 rounded-xl bg-white dark:bg-zinc-800 border border-border shadow-sm max-w-[200px]">
+              <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-foreground truncate">{f.name}</p>
+                <p className="text-[10px] text-muted-foreground">{f.size}</p>
+              </div>
               <button onClick={() => setAttachedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                className="w-4 h-4 flex items-center justify-center text-zinc-400 flex-shrink-0">
+                className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -832,10 +870,21 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             {/* Row 2: attach + model left | mic + enhance + send right */}
             <div className="flex items-center justify-between px-2 pb-2">
               <div className="flex items-center gap-1">
-                <button className={iconBtnCls}
-                  onClick={() => setIsAttachDialogOpen(true)}>
-                  <img src={attachmentLight} alt="Attach" className={imgCls} />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={iconBtnCls}>
+                      <img src={attachmentLight} alt="Attach" className={imgCls} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]" side="top" align="start">
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
+                      <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                      <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 {showModel && tab !== "nomad" && model && onModelChange && (
                   <button onClick={() => setShowModelSheet(true)}
                     className="h-7 px-2.5 rounded-full flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
@@ -860,7 +909,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                     <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
                   </button>
                 ) : (
-                  <button onClick={onSend} disabled={!value.trim()}
+                  <button onClick={handleSend} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
                     className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all">
                     <ArrowUp className="w-4 h-4 text-white dark:text-black" />
                   </button>
@@ -900,10 +949,21 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               </div>
             )}
             <div className="flex items-center px-2 py-2 gap-1.5">
-              <button className={`${iconBtnCls} flex-shrink-0`}
-                onClick={() => setIsAttachDialogOpen(true)}>
-                <img src={attachmentLight} alt="Attach" className={imgCls} />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={`${iconBtnCls} flex-shrink-0`}>
+                    <img src={attachmentLight} alt="Attach" className={imgCls} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]" side="top" align="start">
+                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
+                    <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                    <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <div className="relative flex-1">
                 <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
                   placeholder={placeholder} rows={1}
@@ -935,7 +995,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
                 </button>
               ) : (
-                <button onClick={onSend} disabled={!value.trim()}
+                <button onClick={handleSend} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
                   className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100">
                   <ArrowUp className="w-4 h-4 text-white dark:text-black" />
                 </button>
@@ -1011,8 +1071,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <button onClick={() => {
                 if (longAnswer && value.trim()) onChange(value.trim() + "\n\nPlease provide a very detailed and thorough answer.");
                 setLongAnswer(false);
-                setTimeout(() => { onSend(); setExpandOpen(false); }, 0);
-              }} disabled={!value.trim()}
+                setTimeout(() => { handleSend(); setExpandOpen(false); }, 0);
+              }} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
                 className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all flex-shrink-0">
                 <ArrowUp className="w-5 h-5 text-white dark:text-black" />
               </button>
@@ -1021,38 +1081,23 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         </div>
       </div>
     )}
-    {/* ── Attachment Dialog (same as PC) ── */}
-    <Dialog open={isAttachDialogOpen} onOpenChange={setIsAttachDialogOpen}>
-      <DialogContent className="sm:max-w-xs mx-4">
-        <DialogHeader>
-          <DialogTitle>Add Attachment</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 py-4">
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center space-y-2"
-            onClick={() => {
-              setIsAttachDialogOpen(false);
-              setTimeout(() => fileInputRef.current?.click(), 150);
-            }}
-          >
-            <FileText className="h-6 w-6" />
-            <span className="text-sm">Upload File</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center space-y-2"
-            onClick={() => {
-              setIsAttachDialogOpen(false);
-              setTimeout(() => imageInputRef.current?.click(), 150);
-            }}
-          >
-            <Image className="h-6 w-6" />
-            <span className="text-sm">Upload Image</span>
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    {/* ── Fullscreen image lightbox ── */}
+    {fullscreenImg && (
+      <div
+        className="fixed inset-0 z-[400] bg-black/90 flex items-center justify-center"
+        onClick={() => setFullscreenImg(null)}>
+        <img
+          src={fullscreenImg}
+          alt="Preview"
+          className="max-w-[95vw] max-h-[95vh] rounded-2xl object-contain shadow-2xl"
+          onClick={e => e.stopPropagation()} />
+        <button
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+          onClick={() => setFullscreenImg(null)}>
+          <X className="w-5 h-5 text-white" />
+        </button>
+      </div>
+    )}
     </>
   );
 }
@@ -1653,12 +1698,13 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 }
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
+  onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1722,7 +1768,8 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
         placeholder="Ask anything…" tab="ask" model={model} onModelChange={setModel}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
-        onSettings={onSettings} onEducation={onEducation} showEnhance showModel />
+        onSettings={onSettings} onEducation={onEducation} showEnhance showModel
+        onAttachmentSend={onAttachmentSend} />
     </>
   );
 }
@@ -2582,6 +2629,30 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     throw new Error("No ID");
   }, [currentConvId, askModel]);
 
+  const handleAskAttachmentSend = useCallback(async (images: Array<{file: File; preview: string}>, _files: Array<{file: File; name: string; size: string}>, text: string) => {
+    setAskTyping(true);
+    const userContent = images.length > 0
+      ? `[${images.length} image(s) attached]${text ? `\n${text}` : ""}`
+      : text || "[File attached]";
+    setAskMsgs(p => [...p, { id: uid(), role: "user", content: userContent, images: images.map(i => i.preview), timestamp: new Date() }]);
+    try {
+      const convId = await ensureConv(userContent);
+      if (images.length > 0) {
+        const imgB64 = images[0].preview;
+        const res = await fetch('/api/analyze-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: imgB64, prompt: text || "What is in this image?", conversationId: convId }) });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't analyze the image.", timestamp: new Date() }]);
+      } else {
+        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: userContent, conversationId: convId, activeTab: "ask" }) });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't generate a response.", timestamp: new Date() }]);
+      }
+    } catch { setAskMsgs(p => [...p, { id: uid(), role: "ai", content: "Something went wrong. Please try again.", timestamp: new Date() }]); }
+    finally { setAskTyping(false); }
+  }, [ensureConv]);
+
   const handleAskSend = useCallback(async () => {
     if (tab !== "ask") return;
     const text = askInput.trim(); if (!text || askTyping) return;
@@ -2813,6 +2884,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                   if (lastUser) { setAskMsgs(p => p.slice(0, -1)); setAskInput(lastUser.content); setTimeout(() => handleAskSend(), 50); }
                 }}
                 model={askModel} setModel={setAskModel} user={user}
+                onAttachmentSend={handleAskAttachmentSend}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>

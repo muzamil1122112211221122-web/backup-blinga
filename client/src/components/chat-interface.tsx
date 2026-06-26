@@ -494,7 +494,8 @@ const HISTORICAL_PERSONALITIES: HistoricalPersonality[] = [
 
 const PERSONALITY_CATEGORIES = ['All', 'Leaders', 'Philosophers', 'Scientists', 'Artists', 'Explorers', 'Reformers'];
 
-const MAX_ATTACHMENTS = 20;
+const MAX_FILES = 5;
+const MAX_IMAGES = 15;
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -2520,29 +2521,21 @@ IMPORTANT RULES:
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const currentTotal = attachedImages.length + attachedFiles.length;
-    const remaining = MAX_ATTACHMENTS - currentTotal;
+    const remaining = MAX_FILES - attachedFiles.length;
     if (remaining <= 0) {
-      showToast(`Maximum ${MAX_ATTACHMENTS} attachments allowed.`);
+      showToast(`Maximum ${MAX_FILES} files allowed.`);
       event.target.value = '';
       return;
     }
-    const toProcess = files.slice(0, remaining);
-    if (files.length > remaining) showToast(`Only ${remaining} more attachment(s) allowed. First ${remaining} selected.`);
+    const nonImageFiles = files.filter(f => !f.type.startsWith('image/'));
+    const toProcess = nonImageFiles.slice(0, remaining);
+    if (nonImageFiles.length > remaining) showToast(`Only ${remaining} more file(s) allowed. First ${remaining} selected.`);
+    if (!toProcess.length) { showToast('Please select non-image files here. Use Upload Image for images.'); event.target.value = ''; return; }
 
-    const newImages: Array<{file: File, preview: string}> = [];
     const newFiles: Array<{file: File, name: string, size: string, type: string}> = [];
-
     for (const file of toProcess) {
-      if (file.type.startsWith('image/')) {
-        const preview = await readFileAsDataURL(file);
-        newImages.push({ file, preview });
-      } else {
-        newFiles.push({ file, name: file.name, size: formatFileSize(file.size), type: file.type || 'unknown' });
-      }
+      newFiles.push({ file, name: file.name, size: formatFileSize(file.size), type: file.type || 'unknown' });
     }
-
-    if (newImages.length) setAttachedImages(prev => [...prev, ...newImages]);
     if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
     event.target.value = '';
   };
@@ -2551,9 +2544,9 @@ IMPORTANT RULES:
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const remaining = MAX_ATTACHMENTS - attachedImages.length - attachedFiles.length;
+    const remaining = MAX_IMAGES - attachedImages.length;
     if (remaining <= 0) {
-      showToast(`Maximum ${MAX_ATTACHMENTS} attachments allowed.`);
+      showToast(`Maximum ${MAX_IMAGES} images allowed.`);
       event.target.value = '';
       return;
     }
