@@ -1808,6 +1808,29 @@ Prompt to improve: ${originalPrompt}`;
     }
   });
 
+  // Nomad history — persistent server-side storage
+  app.get('/api/nomad/history', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json([]);
+      const settings = await storage.getUserSettings(userId);
+      res.json((settings as any).nomadHistory || []);
+    } catch { res.status(500).json([]); }
+  });
+
+  app.post('/api/nomad/history', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ ok: false });
+      const { sessions } = req.body;
+      if (!Array.isArray(sessions)) return res.status(400).json({ ok: false });
+      const settings = await storage.getUserSettings(userId);
+      (settings as any).nomadHistory = sessions.slice(0, 30);
+      await storage.saveUserSettings(userId, settings);
+      res.json({ ok: true });
+    } catch { res.status(500).json({ ok: false }); }
+  });
+
   // API Status endpoint - quick overview
   app.get('/api/status', requireAuth, async (req, res) => {
     try {

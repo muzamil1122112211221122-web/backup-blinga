@@ -793,7 +793,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <div className="flex items-center gap-1">
                 <button className={`${iconBtnCls} ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
                   onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
-                  <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert" : ""}`} />
+                  <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert dark:invert-0" : ""}`} />
                 </button>
                 {showModel && tab !== "nomad" && model && onModelChange && (
                   <button onClick={() => setShowModelSheet(true)}
@@ -861,7 +861,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             <div className="flex items-center px-2 py-2 gap-1.5">
               <button className={`${iconBtnCls} flex-shrink-0 ${attachOpen ? "!bg-zinc-900 dark:!bg-zinc-100" : ""}`}
                 onPointerDown={e => { e.preventDefault(); setAttachOpen(v => !v); }}>
-                <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert" : ""}`} />
+                <img src={attachmentLight} alt="Attach" className={`${imgCls} ${attachOpen ? "brightness-0 invert dark:invert-0" : ""}`} />
               </button>
               <div className="relative flex-1">
                 <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
@@ -1708,6 +1708,16 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
   });
 
+  // Sync Nomad history from server on mount
+  useEffect(() => {
+    fetch('/api/nomad/history').then(r => r.ok ? r.json() : null).then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        setNomadHistSessions(data);
+        try { localStorage.setItem('fius-nomad-history', JSON.stringify(data)); } catch {}
+      }
+    }).catch(() => {});
+  }, []);
+
   // Auto mode state
   const [autoMessages, setAutoMessages] = useState<{id: string, role: 'user'|'ai', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
   const [autoLoading, setAutoLoading] = useState(false);
@@ -1749,7 +1759,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
         const sess: MNomadSess = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } return next; });
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } fetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
         return updated;
       });
     } catch {
@@ -1780,7 +1790,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                   + New Chat
                 </button>
                 {nomadHistSessions.length > 0 && (
-                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
+                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); fetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: [] }) }).catch(() => {}); }}
                     className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
                     Clear
                   </button>
@@ -2157,50 +2167,93 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
     );
   }
 
-  // Discovery panel (default view)
+  // Discovery panel (default view) — clean minimal studio design
   return (
     <>
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
-        <p className="text-sm font-bold text-foreground">✦ Imagination Studio</p>
-        <button onClick={refreshGallery} disabled={galleryLoading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
-          <RefreshCw className={`w-3.5 h-3.5 ${galleryLoading ? "animate-spin" : ""}`} /> Refresh
-        </button>
+      {/* Studio header */}
+      <div className="flex-shrink-0 px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <p className="text-base font-bold text-foreground tracking-tight">Fius Studio</p>
+            <p className="text-[11px] text-muted-foreground">Type a prompt to generate an image</p>
+          </div>
+          <button onClick={refreshGallery} disabled={galleryLoading}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-accent transition-all disabled:opacity-40 text-muted-foreground">
+            <RefreshCw className={`w-4 h-4 ${galleryLoading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2" style={{ scrollbarWidth: "none" }}>
-        {/* 3 gallery photos */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          {gallery.slice(0, 3).map((item, i) => (
-            <button key={i} className="group text-left focus:outline-none" onClick={() => setInput(item.prompt)}>
-              <div className="w-full rounded-2xl overflow-hidden border border-border" style={{ height: 160 }}>
-                <img src={item.url} alt={item.label}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                  onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80"; }} />
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+        {/* Gallery — 2 large + 1 tall */}
+        <div className="px-3 mb-3">
+          <div className="grid grid-cols-2 gap-2">
+            {gallery.slice(0, 2).map((item, i) => (
+              <button key={i} className="group text-left focus:outline-none" onClick={() => setInput(item.prompt)}>
+                <div className="w-full rounded-2xl overflow-hidden bg-muted relative" style={{ height: 140 }}>
+                  <img src={item.url} alt={item.label}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                    onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80"; }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-[10px] font-semibold text-white truncate">{item.label}</p>
+                  </div>
+                </div>
+                <p className="text-[10.5px] text-muted-foreground leading-tight truncate mt-1 px-0.5">{item.label}</p>
+              </button>
+            ))}
+          </div>
+          {gallery[2] && (
+            <button className="group w-full mt-2 text-left focus:outline-none" onClick={() => setInput(gallery[2].prompt)}>
+              <div className="w-full rounded-2xl overflow-hidden bg-muted relative" style={{ height: 110 }}>
+                <img src={gallery[2].url} alt={gallery[2].label}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=600&q=80"; }} />
+                <div className="absolute bottom-2 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-[10px] font-semibold text-white">{gallery[2].label}</p>
+                </div>
               </div>
-              <p className="text-[11px] font-semibold text-foreground leading-tight truncate mt-1.5 px-0.5">{item.label}</p>
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Logo */}
-        <div className="w-full flex justify-center py-4">
-          <Logo size="xl" className="opacity-60 hover:opacity-90 transition-opacity" />
+        {/* Quick prompts */}
+        <div className="px-3 mb-3">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Quick Ideas</p>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              "Neon city at night",
+              "Portrait of a samurai",
+              "Ocean at golden hour",
+              "Futuristic spaceship",
+              "Mystical forest",
+              "Abstract colorful art",
+            ].map(prompt => (
+              <button key={prompt} onClick={() => setInput(prompt)}
+                className="px-3 py-1.5 rounded-full border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent hover:border-foreground/20 transition-all active:scale-95">
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Style circles */}
-        <div className="flex-shrink-0 border-t border-border pt-3 pb-1">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Styles</p>
-          <div className="flex gap-4 overflow-x-auto pb-2 px-1" style={{ scrollbarWidth: "none" }}>
+        {/* Style pills — compact horizontal scroll */}
+        <div className="px-3 mb-2">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Style</p>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
             {styleNames.map(styleName => (
-              <button key={styleName} onClick={() => setImagineStyle(styleName)} title={styleName}
-                className="flex-shrink-0 flex flex-col items-center gap-2 group">
-                <div className={`w-[80px] h-[80px] rounded-full overflow-hidden border-[3px] transition-all duration-200 group-hover:scale-110 ${imagineStyle === styleName ? "border-primary shadow-md ring-2 ring-primary/30 ring-offset-2" : "border-border"}`}>
+              <button key={styleName} onClick={() => setImagineStyle(styleName)}
+                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all active:scale-95 ${
+                  imagineStyle === styleName
+                    ? "border-primary bg-primary/8 text-primary font-semibold"
+                    : "border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}>
+                <div className="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
                   <img src={IMAGINE_STYLES_LOCAL[styleName] || ""} alt={styleName}
                     className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&q=60"; }} />
+                    onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=60&q=60"; }} />
                 </div>
-                <span className={`text-[10.5px] font-medium text-center leading-tight ${imagineStyle === styleName ? "text-primary" : "text-muted-foreground"}`}>{styleName}</span>
+                <span className="text-[11px] whitespace-nowrap">{styleName}</span>
               </button>
             ))}
           </div>
@@ -2208,7 +2261,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
       </div>
 
       <MobileMessageBar value={input} onChange={setInput} onSend={handleSend} isTyping={isTyping}
-        placeholder="Just Prompt and image is in your hands!" tab="imagine" showEnhance showModel={false}
+        placeholder="Describe your image…" tab="imagine" showEnhance showModel={false}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
     </>
   );
@@ -2576,7 +2629,12 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     setNomadIsTyping(prev => { const u = { ...prev }; activeIds.forEach(id => { u[id] = true; }); return u; });
     await Promise.allSettled(activeIds.map(async (modelId) => {
       try {
-        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, activeTab: "nomad" }) });
+        // Build per-model conversation history for memory
+        const prevMsgs = (nomadMessages[modelId] || []).slice(-12).map(m => ({
+          role: m.role === "ai" ? "assistant" : "user",
+          content: m.content,
+        }));
+        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, activeTab: "nomad", history: prevMsgs }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         setNomadMessages(prev => ({ ...prev, [modelId]: [...(prev[modelId] || []), { id: uid(), role: "ai" as const, content: data.response || data.message || "No response" }] }));
@@ -2587,7 +2645,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       }
     }));
     setNomadTyping(false);
-  }, [nomadInput, nomadTyping, activeModels]);
+  }, [nomadInput, nomadTyping, activeModels, nomadMessages]);
 
   const handleToggleModel = useCallback((id: string) => {
     setActiveModels(prev => {
