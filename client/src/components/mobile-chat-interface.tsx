@@ -351,7 +351,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                 const parsedSrcs = sourceLines.map(l => { const m = l.match(/• \[(.+?)\]\((.+?)\)/); return m ? { title: m[1], url: m[2] } : null; }).filter(Boolean) as {title: string; url: string}[];
                 return (
                   <>
-                    <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap break-words text-foreground py-1${!done ? " typing-message" : ""}`}>
+                    <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground py-1${!done ? " typing-message" : ""}`}>
                       {isUser && mainText.length > 200 && !msgExpanded
                         ? `${mainText.slice(0, 200).trim()}…`
                         : mainText}
@@ -743,26 +743,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       <input id="m-file-input" ref={fileInputRef} type="file" className="sr-only" onChange={() => setAttachOpen(false)} />
       <input id="m-img-input" ref={imageInputRef} type="file" accept="image/*" className="sr-only" onChange={() => setAttachOpen(false)} />
 
-      {/* Attachment options strip — slides in above message bar when open */}
-      {attachOpen && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-background/95 backdrop-blur-sm border border-border/50 rounded-2xl mx-0 mb-2 animate-in slide-in-from-bottom-2 duration-200">
-          <label htmlFor="m-file-input" onClick={() => setAttachOpen(false)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[12px] font-semibold text-foreground cursor-pointer active:scale-95 transition-all flex-shrink-0">
-            <FileText className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" /> File
-          </label>
-          <label htmlFor="m-img-input" onClick={() => setAttachOpen(false)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-[12px] font-semibold text-foreground cursor-pointer active:scale-95 transition-all flex-shrink-0">
-            <Image className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" /> Image
-          </label>
-          <div className="flex-1" />
-          <button onClick={() => setAttachOpen(false)} className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-500 flex-shrink-0">
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : (attachOpen ? "rounded-[22px]" : "rounded-full")}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -830,6 +812,23 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
         ) : (
           /* ── Compact: single-row pill (original mobile layout) ── */
           <>
+            {/* Attachment file/image options inside pill — shown above textarea when open */}
+            {attachOpen && (
+              <div className="flex items-center gap-1.5 px-2 pt-2 pb-0 animate-in slide-in-from-top-1 duration-150">
+                <label htmlFor="m-file-input" onClick={() => setAttachOpen(false)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700/80 text-[11px] font-semibold text-foreground cursor-pointer active:scale-95 transition-all flex-shrink-0">
+                  <FileText className="w-3 h-3 text-zinc-500 flex-shrink-0" /> File
+                </label>
+                <label htmlFor="m-img-input" onClick={() => setAttachOpen(false)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-[11px] font-semibold text-blue-600 dark:text-blue-400 cursor-pointer active:scale-95 transition-all flex-shrink-0">
+                  <Image className="w-3 h-3 flex-shrink-0" /> Image
+                </label>
+                <div className="flex-1" />
+                <button onClick={() => setAttachOpen(false)} className="w-5 h-5 flex items-center justify-center text-zinc-400 flex-shrink-0">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             {/* "In Bar" icon strip inside pill top */}
             {showFnBar && fnBarStyle === "message-bar" && (
               <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
@@ -1688,16 +1687,16 @@ function NomadColumnMsgs({ msgs, modelId, isTyping }: {
 }
 
 // ─── Nomad Tab (multi-column + auto mode) ────────────────────────────────────────
-function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
+function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, soloModel, setSoloModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
   nomadMessages: Record<string, { id: string; role: "user" | "ai"; content: string }[]>;
   nomadTyping: Record<string, boolean>;
   nomadGrid?: boolean;
   activeModels: Set<string>; onToggleModel: (id: string) => void;
+  soloModel: string | null; setSoloModel: (m: string | null) => void;
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
 }) {
   const hasMessages = Object.values(nomadMessages).some(m => m.length > 0);
-  const [soloModel, setSoloModel] = useState<string | null>(null);
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
@@ -1881,9 +1880,9 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                 <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
                 <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
               </div>
-              <div className="flex flex-row gap-2 w-full mt-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              <div className="grid grid-cols-2 gap-2 w-full mt-1">
                 {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
-                  <div key={c.label} className="flex-shrink-0 rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors" style={{ minWidth: 90 }} onClick={() => { setInput(c.label + ' — '); }}>
+                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors active:scale-95" onClick={() => { setInput(c.label + ' — '); }}>
                     <p className="text-[11px] font-semibold text-foreground">{c.label}</p>
                     <p className="text-[10px] text-muted-foreground">{c.hint}</p>
                   </div>
@@ -1974,7 +1973,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         const msgs = nomadMessages[soloModel] || [];
         if (!cfg) return null;
         return (
-          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+          <div className="flex-1 min-h-0 px-4 pt-3 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
             <div className="space-y-4 max-w-full">
               {msgs.map(msg => (
                 <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -2080,14 +2079,13 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void; onSend: () => void;
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
 }) {
-  const [imagineStyle, setImagineStyle] = useState("Photorealistic");
+  const imagineStyle = "Photorealistic";
   const [showResults, setShowResults] = useState(false);
   const [expandImg, setExpandImg] = useState<string | null>(null);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [gallery, setGallery] = useState(GALLERY_PHOTOS);
   const [shuffleKey, setShuffleKey] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
-  const styleNames = Object.keys(IMAGINE_STYLES_LOCAL);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
 
@@ -2232,28 +2230,6 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
               <button key={prompt} onClick={() => setInput(prompt)}
                 className="px-3 py-1.5 rounded-full border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent hover:border-foreground/20 transition-all active:scale-95">
                 {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Style pills — compact horizontal scroll */}
-        <div className="px-3 mb-2">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Style</p>
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {styleNames.map(styleName => (
-              <button key={styleName} onClick={() => setImagineStyle(styleName)}
-                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all active:scale-95 ${
-                  imagineStyle === styleName
-                    ? "border-primary bg-primary/8 text-primary font-semibold"
-                    : "border-border bg-card text-muted-foreground hover:text-foreground"
-                }`}>
-                <div className="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={IMAGINE_STYLES_LOCAL[styleName] || ""} alt={styleName}
-                    className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=60&q=60"; }} />
-                </div>
-                <span className="text-[11px] whitespace-nowrap">{styleName}</span>
               </button>
             ))}
           </div>
@@ -2436,6 +2412,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadTyping, setNomadTyping] = useState(false);
   const [nomadMessages, setNomadMessages] = useState<Record<string, { id: string; role: "user" | "ai"; content: string }[]>>({});
   const [nomadIsTyping, setNomadIsTyping] = useState<Record<string, boolean>>({});
+  const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral", "fius-ai"]));
   const [showNomadNotif, setShowNomadNotif] = useState(false);
   const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2618,7 +2595,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (tab !== "nomad") return;
     const text = nomadInput.trim(); if (!text || nomadTyping) return;
     setNomadInput(""); setNomadTyping(true);
-    const activeIds = Array.from(activeModels).filter(id => NOMAD_DEFAULT_MODELS.includes(id));
+    // If Chat Only mode is active, only send to the selected model
+    const activeIds = nomadSoloModel
+      ? [nomadSoloModel]
+      : Array.from(activeModels).filter(id => NOMAD_DEFAULT_MODELS.includes(id));
     // Add user message to each active model
     setNomadMessages(prev => {
       const updated = { ...prev };
@@ -2645,12 +2625,16 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       }
     }));
     setNomadTyping(false);
-  }, [nomadInput, nomadTyping, activeModels, nomadMessages]);
+  }, [nomadInput, nomadTyping, activeModels, nomadMessages, nomadSoloModel]);
 
   const handleToggleModel = useCallback((id: string) => {
     setActiveModels(prev => {
       const n = new Set(prev);
-      if (n.has(id)) { n.delete(id); setNomadMessages(prev2 => { const u = { ...prev2 }; delete u[id]; return u; }); }
+      if (n.has(id)) {
+        n.delete(id);
+        setNomadMessages(prev2 => { const u = { ...prev2 }; delete u[id]; return u; });
+        setNomadSoloModel(prev2 => prev2 === id ? null : prev2);
+      }
       else n.add(id);
       return n;
     });
@@ -2760,7 +2744,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
                 isTyping={nomadTyping} nomadMessages={nomadMessages} nomadTyping={nomadIsTyping}
-                activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localStorage.getItem("nomadGrid") !== "false"} {...voiceHandlers} />
+                activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localStorage.getItem("nomadGrid") !== "false"}
+                soloModel={nomadSoloModel} setSoloModel={setNomadSoloModel} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "imagine" ? 1 : 0, pointerEvents: tab === "imagine" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <StudioTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput}

@@ -2143,41 +2143,46 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   {displayLeaders.map((leader, idx) => {
                     const rank = idx + 1;
                     const isTop3 = rank <= 3;
+                    const isCurrentUser = leader.name === playerName;
                     return (
                       <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                        style={{ background: isTop3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: isTop3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
+                        style={{ background: isCurrentUser ? 'rgba(168,85,247,0.12)' : isTop3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.3)' : isTop3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                          style={{ background: isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.08)', color: isTop3 ? '#fff' : '#71717a' }}>
+                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.08)', color: isTop3 || isCurrentUser ? '#fff' : '#71717a' }}>
                           {isTop3 ? badges[rank - 1] : rank}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-white text-[11px] font-bold truncate">{leader.name}</div>
+                          <div className={`text-[11px] font-bold truncate ${isCurrentUser ? 'text-purple-300' : 'text-white'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
                           {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate">Best: {leader.bestGame.game} · Lv{leader.bestGame.level}</div>}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className="text-sm font-extrabold" style={{ color: isTop3 ? scoreColors[rank - 1] : '#71717a' }}>{leader.totalScore.toLocaleString()}</div>
+                          <div className="text-sm font-extrabold" style={{ color: isCurrentUser ? '#c084fc' : isTop3 ? scoreColors[rank - 1] : '#71717a' }}>{leader.totalScore.toLocaleString()}</div>
                           <div className="text-[9px] text-zinc-700">pts</div>
                         </div>
                       </div>
                     );
                   })}
-                  {/* Current user row */}
-                  <div className="h-px bg-zinc-800 my-1" />
-                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                    style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                      style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
-                      {playerName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
-                      {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level} · {(levelMultiplier(userBestGame.level)).toFixed(1)}x</div>}
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
-                      <div className="text-[9px] text-zinc-700">pts</div>
-                    </div>
-                  </div>
+                  {/* Show "You" row only if user is NOT already in the leaders list */}
+                  {!displayLeaders.some(l => l.name === playerName) && (
+                    <>
+                      <div className="h-px bg-zinc-800 my-1" />
+                      <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                          style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
+                          {playerName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
+                          {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level} · {(levelMultiplier(userBestGame.level)).toFixed(1)}x</div>}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
+                          <div className="text-[9px] text-zinc-700">pts</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
