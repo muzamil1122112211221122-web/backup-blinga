@@ -5,6 +5,7 @@ import { Logo } from "./logo";
 import { Sidebar } from "./sidebar";
 import { VoiceModeModal } from "./voice-mode-modal";
 import { EducationModal } from "./education-modal";
+import { QuizModal, type QuizQuestion } from "./quiz-modal";
 import { NomadNotification } from "./nomad-notification";
 import { useTheme } from "./theme-provider";
 import {
@@ -251,6 +252,40 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
+// ─── Scroll buttons with fade when at limit ────────────────────────────────────
+function ScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLDivElement | null> }) {
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
+  useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const update = () => {
+      setAtTop(el.scrollTop <= 8);
+      setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, [scrollAreaRef]);
+  const btnBase = "w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90";
+  return (
+    <div className="fixed bottom-28 right-3 flex flex-col gap-1.5 z-50">
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+        disabled={atTop}
+        className={`${btnBase} ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        <ChevronUp className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
+        disabled={atBottom}
+        className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        <ChevronDown className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Mobile markdown renderer — parses bold, lists, code/text copy-boxes ──────
 function MobileMarkdown({ text }: { text: string }) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -336,7 +371,6 @@ function MobileMarkdown({ text }: { text: string }) {
 }
 
 function renderInline(text: string): React.ReactNode {
-  // Handle **bold**, *italic*, `code`
   const parts: React.ReactNode[] = [];
   const re = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g;
   let last = 0; let m;
@@ -348,7 +382,7 @@ function renderInline(text: string): React.ReactNode {
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push(text.slice(last));
-  return parts.length > 1 ? parts : text;
+  return parts.length > 0 ? parts : text;
 }
 
 // ─── File chip with tap-to-preview content ────────────────────────────────────
@@ -534,7 +568,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                           {parsedSrcs.map((src, i) => (
                             <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
                               title={src.title}
-                              className="w-8 h-8 rounded-lg bg-secondary border border-border hover:bg-accent transition-all active:scale-90 flex items-center justify-center shadow-sm">
+                              className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 hover:scale-110 transition-all active:scale-90 flex items-center justify-center shadow-sm">
                               <img src={`https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(src.url)}`} alt={src.title}
                                 className="w-5 h-5 rounded-sm" onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z'/%3E%3C/svg%3E"; }} />
                             </a>
@@ -1500,10 +1534,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   </button>
                 ))}
               </div>
-              {/* X close at same level as tabs */}
-              <button onClick={stableHandleClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-zinc-200/80 dark:bg-zinc-700/80 text-zinc-500 hover:text-foreground transition-colors flex-shrink-0">
-                <X className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
@@ -1621,6 +1651,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Display</p>
                   <div className="space-y-4">
                     {[
+                      { key: "minimalMode", label: "Minimal Mode", desc: "Clean squarish UI like Claude — no rounded excess" },
                       { key: "wrapLines", label: "Wrap Long Lines", desc: "Wrap code blocks by default" },
                       { key: "showPreviews", label: "Conversation Previews", desc: "Show previews in history sidebar" },
                       { key: "showFiusLogo", label: "Show Fius Logo in Responses", desc: "Display logo next to AI replies" },
@@ -1895,18 +1926,9 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
         </div>
       )}
-      {/* Scroll to top/bottom buttons */}
+      {/* Scroll to top/bottom buttons — fade when already at that extreme */}
       {messages.length > 2 && (
-        <div className="fixed bottom-28 right-3 flex flex-col gap-1.5 z-50">
-          <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
-            <ChevronUp className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
-            className="w-7 h-7 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all">
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <ScrollButtons scrollAreaRef={scrollAreaRef} />
       )}
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
         {messages.length === 0 && !isTyping ? (
@@ -2679,6 +2701,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [educationOpen, setEducationOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizTitle, setQuizTitle] = useState("Fius Examination");
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
   const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() => localStorage.getItem("profilePicture") || undefined);
@@ -3031,9 +3057,43 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           {educationOpen && (
             <EducationModal isOpen={educationOpen} onClose={() => setEducationOpen(false)}
-              onStartExamination={() => setEducationOpen(false)}
+              onStartExamination={async (data) => {
+                setEducationOpen(false);
+                setQuizTitle(`${data.class || "General"} · ${data.school || "Exam"}`);
+                setQuizQuestions([]);
+                setQuizLoading(true);
+                setQuizOpen(true);
+                try {
+                  const res = await fetch("/api/education/generate-quiz", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      examClass: data.class,
+                      school: data.school,
+                      country: data.country,
+                      educationSystem: data.educationSystem,
+                      topic: data.uploadedPages?.length ? `Based on uploaded study material (${data.uploadedPages.map(f => f.name).join(", ")})` : data.educationSystem || "General Knowledge",
+                    }),
+                  });
+                  if (!res.ok) throw new Error("Failed");
+                  const json = await res.json();
+                  setQuizQuestions(json.questions || []);
+                } catch {
+                  setQuizQuestions([]);
+                } finally {
+                  setQuizLoading(false);
+                }
+              }}
               onStartSelfListen={() => setEducationOpen(false)} />
           )}
+
+          <QuizModal
+            isOpen={quizOpen}
+            onClose={() => { setQuizOpen(false); setQuizQuestions([]); setQuizLoading(false); }}
+            questions={quizQuestions}
+            isLoading={quizLoading}
+            title={quizTitle}
+          />
 
           <MobileSettings
             isOpen={settingsOpen} onClose={() => setSettingsOpen(false)}
