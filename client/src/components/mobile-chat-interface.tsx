@@ -251,6 +251,106 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   );
 }
 
+// ─── Mobile markdown renderer — parses bold, lists, code/text copy-boxes ──────
+function MobileMarkdown({ text }: { text: string }) {
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const copyBlock = (content: string, idx: number) => {
+    navigator.clipboard.writeText(content);
+    setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1500);
+  };
+
+  // Split on ``` fences
+  const parts: Array<{ type: 'text' | 'code' | 'block'; content: string; lang?: string }> = [];
+  const fenceRe = /```(\w*)\n?([\s\S]*?)```/g;
+  let lastIdx = 0; let m;
+  while ((m = fenceRe.exec(text)) !== null) {
+    if (m.index > lastIdx) parts.push({ type: 'text', content: text.slice(lastIdx, m.index) });
+    const lang = m[1].trim();
+    parts.push({ type: lang ? 'code' : 'block', content: m[2].replace(/\n$/, ''), lang: lang || undefined });
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < text.length) parts.push({ type: 'text', content: text.slice(lastIdx) });
+
+  let blockIdx = 0;
+  return (
+    <div className="text-[13.5px] leading-relaxed text-foreground py-1">
+      {parts.map((part, pi) => {
+        if (part.type === 'code' || part.type === 'block') {
+          const idx = blockIdx++;
+          const isCode = part.type === 'code';
+          return (
+            <div key={pi} className={`my-2 rounded-xl overflow-hidden border ${isCode ? "border-zinc-700 bg-zinc-900" : "border-border bg-secondary/60"}`}>
+              <div className={`flex items-center justify-between px-3 py-1.5 ${isCode ? "bg-zinc-800" : "bg-muted/60"} border-b ${isCode ? "border-zinc-700" : "border-border"}`}>
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isCode ? "text-zinc-400" : "text-muted-foreground"}`}>
+                  {isCode ? (part.lang || "code") : "text"}
+                </span>
+                <button onClick={() => copyBlock(part.content, idx)}
+                  className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md transition-all active:scale-90 ${isCode ? "text-zinc-400 hover:text-white hover:bg-zinc-700" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}>
+                  {copiedIdx === idx ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedIdx === idx ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <pre className={`px-3 py-3 text-[12px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] font-mono ${isCode ? "text-zinc-200" : "text-foreground"}`}>{part.content}</pre>
+            </div>
+          );
+        }
+        // Render text segments with basic markdown
+        const lines = part.content.split('\n');
+        return (
+          <div key={pi}>
+            {lines.map((line, li) => {
+              // Numbered list
+              const numMatch = line.match(/^(\d+)\.\s+(.+)/);
+              if (numMatch) return (
+                <div key={li} className="flex gap-2 mb-0.5">
+                  <span className="text-muted-foreground font-medium flex-shrink-0 min-w-[1.2rem]">{numMatch[1]}.</span>
+                  <span className="[overflow-wrap:anywhere]">{renderInline(numMatch[2])}</span>
+                </div>
+              );
+              // Bullet list
+              const bulletMatch = line.match(/^[\*\-•]\s+(.+)/);
+              if (bulletMatch) return (
+                <div key={li} className="flex gap-2 mb-0.5">
+                  <span className="text-muted-foreground flex-shrink-0 mt-0.5">•</span>
+                  <span className="[overflow-wrap:anywhere]">{renderInline(bulletMatch[1])}</span>
+                </div>
+              );
+              // Heading
+              const h3 = line.match(/^###\s+(.+)/);
+              if (h3) return <p key={li} className="font-semibold text-[14px] mt-2 mb-0.5 [overflow-wrap:anywhere]">{renderInline(h3[1])}</p>;
+              const h2 = line.match(/^##\s+(.+)/);
+              if (h2) return <p key={li} className="font-bold text-[15px] mt-2 mb-1 [overflow-wrap:anywhere]">{renderInline(h2[1])}</p>;
+              const h1 = line.match(/^#\s+(.+)/);
+              if (h1) return <p key={li} className="font-extrabold text-[16px] mt-3 mb-1 [overflow-wrap:anywhere]">{renderInline(h1[1])}</p>;
+              // Horizontal rule
+              if (/^---+$/.test(line.trim())) return <hr key={li} className="my-2 border-border/50" />;
+              // Empty line → spacing
+              if (!line.trim()) return <div key={li} className="h-2" />;
+              return <p key={li} className="mb-0.5 [overflow-wrap:anywhere]">{renderInline(line)}</p>;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Handle **bold**, *italic*, `code`
+  const parts: React.ReactNode[] = [];
+  const re = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g;
+  let last = 0; let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    if (m[0].startsWith('**')) parts.push(<strong key={m.index} className="font-semibold">{m[2]}</strong>);
+    else if (m[0].startsWith('*')) parts.push(<em key={m.index}>{m[3]}</em>);
+    else parts.push(<code key={m.index} className="bg-secondary px-1 py-0.5 rounded text-[11px] font-mono">{m[4]}</code>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length > 1 ? parts : text;
+}
+
 // ─── File chip with tap-to-preview content ────────────────────────────────────
 function FileChips({ files }: { files: Array<{name: string; size: string; content?: string}> }) {
   const [preview, setPreview] = useState<{name: string; content: string} | null>(null);
@@ -414,10 +514,14 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                 const parsedSrcs = sourceLines.map(l => { const m = l.match(/• \[(.+?)\]\((.+?)\)/); return m ? { title: m[1], url: m[2] } : null; }).filter(Boolean) as {title: string; url: string}[];
                 return (
                   <>
-                    <div className={`text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground py-1${!done ? " typing-message" : ""}`}>
-                      {isUser && mainText.length > 200 && !msgExpanded
-                        ? `${mainText.slice(0, 200).trim()}…`
-                        : mainText}
+                    <div className={`${!done ? "typing-message" : ""}`}>
+                      {isUser ? (
+                        <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground py-1">
+                          {mainText.length > 200 && !msgExpanded ? `${mainText.slice(0, 200).trim()}…` : mainText}
+                        </div>
+                      ) : (
+                        <MobileMarkdown text={mainText} />
+                      )}
                       {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
                     </div>
                     {!isUser && parsedSrcs.length > 0 && (
@@ -426,18 +530,15 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                           Sources
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {parsedSrcs.map((src, i) => {
-                            let hostname = '';
-                            try { hostname = new URL(src.url).hostname.replace('www.', ''); } catch {}
-                            return (
-                              <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-lg bg-secondary text-foreground border border-border hover:bg-accent transition-colors max-w-[180px]">
-                                <img src={`https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(src.url)}`} alt="" className="w-3 h-3 rounded-sm flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                                <span className="truncate font-medium">{hostname || src.title}</span>
-                              </a>
-                            );
-                          })}
+                        <div className="flex flex-wrap gap-2">
+                          {parsedSrcs.map((src, i) => (
+                            <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
+                              title={src.title}
+                              className="w-8 h-8 rounded-lg bg-secondary border border-border hover:bg-accent transition-all active:scale-90 flex items-center justify-center shadow-sm">
+                              <img src={`https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(src.url)}`} alt={src.title}
+                                className="w-5 h-5 rounded-sm" onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z'/%3E%3C/svg%3E"; }} />
+                            </a>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -2781,19 +2882,23 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           ]);
           if (searchData) {
             const snippets: string[] = [];
+            const seenUrls = new Set<string>();
             if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
-            if (searchData.abstract && searchData.abstractSource) {
+            if (searchData.abstract && searchData.abstractSource && searchData.abstractUrl) {
               snippets.push(`${searchData.abstractSource}: ${searchData.abstract}`);
-              if (searchData.abstractUrl) sources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
+              seenUrls.add(searchData.abstractUrl);
+              sources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
             }
             if (searchData.webResults?.length > 0) {
-              searchData.webResults.slice(0, 4).forEach((r: { title: string; url: string; snippet: string }) => {
+              searchData.webResults.slice(0, 5).forEach((r: { title: string; url: string; snippet: string }) => {
+                if (!r.url || seenUrls.has(r.url)) return;
+                seenUrls.add(r.url);
                 if (r.snippet) snippets.push(`${r.title}: ${r.snippet}`);
-                if (r.url && r.title) sources.push(r);
+                sources.push(r);
               });
             }
             if (snippets.length > 0) {
-              messageToSend = `[Web search results for: "${text}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself.]\nUser: ${text}`;
+              messageToSend = `[Web search results for: "${text}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically below your response. Do NOT repeat source names inside your answer.]\nUser: ${text}`;
             }
           }
         } catch { }
@@ -2802,8 +2907,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
       let content = data.response || data.message || "I couldn't generate a response.";
-      if (sources.length > 0) {
-        content += '\n\n---\n**Sources:**\n' + sources.slice(0, 3).map((s: {title: string; url: string}) => `• [${s.title}](${s.url})`).join('\n');
+      // Deduplicate sources once more by URL before appending
+      const uniqueSrcs = sources.filter((s, i, a) => a.findIndex(x => x.url === s.url) === i).slice(0, 4);
+      if (uniqueSrcs.length > 0) {
+        content += '\n\n---\n**Sources:**\n' + uniqueSrcs.map((s: {title: string; url: string}) => `• [${s.title}](${s.url})`).join('\n');
       }
       setAskMsgs(p => [...p, { id: uid(), role: "ai", content, timestamp: new Date() }]);
     } catch (e: any) {

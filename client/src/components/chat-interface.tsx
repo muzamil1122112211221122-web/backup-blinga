@@ -1512,42 +1512,59 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const mdComponents = {
       code({ node, inline, className, children, ...props }: any) {
         const match = /language-(\w+)/.exec(className || '');
-        return !inline && match ? (
-          <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
-            <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                      showToast('Code copied to clipboard');
-                    }}
-                    className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Copy code</TooltipContent>
-              </Tooltip>
+        if (!inline && match) {
+          return (
+            <div className="rounded-lg overflow-hidden my-4 border-none shadow-none bg-transparent">
+              <div className="bg-transparent px-0 py-1.5 flex justify-between items-center">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{match[1]}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+                        showToast('Code copied to clipboard');
+                      }}
+                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy code</TooltipContent>
+                </Tooltip>
+              </div>
+              <SyntaxHighlighter
+                {...props}
+                style={vscDarkPlus}
+                language={match[1]}
+                PreTag="div"
+                customStyle={{ margin: 0, padding: '1rem 0', fontSize: '13px', lineHeight: '1.6', background: 'transparent' }}
+              >
+                {String(children).replace(/\n$/, '')}
+              </SyntaxHighlighter>
             </div>
-            <SyntaxHighlighter
-              {...props}
-              style={vscDarkPlus}
-              language={match[1]}
-              PreTag="div"
-              customStyle={{
-                margin: 0,
-                padding: '1rem 0',
-                fontSize: '13px',
-                lineHeight: '1.6',
-                background: 'transparent'
-              }}
-            >
-              {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
-          </div>
-        ) : (
+          );
+        }
+        if (!inline) {
+          const content = String(children).replace(/\n$/, '');
+          return (
+            <div className="my-3 rounded-xl overflow-hidden border border-border bg-secondary/50">
+              <div className="flex items-center justify-between px-3 py-1.5 bg-muted/60 border-b border-border">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">text</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button onClick={() => { navigator.clipboard.writeText(content); showToast('Copied!'); }}
+                      className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy</TooltipContent>
+                </Tooltip>
+              </div>
+              <pre className="px-3 py-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground font-sans">{content}</pre>
+            </div>
+          );
+        }
+        return (
           <code className={cn("bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
             {children}
           </code>
@@ -2228,22 +2245,26 @@ IMPORTANT RULES:
         const searchData = await Promise.race([searchPromise, timeoutPromise]);
         if (searchData) {
           const snippets: string[] = [];
+          const seenUrls = new Set<string>();
           if (searchData.answer) snippets.push(`Instant answer: ${searchData.answer}`);
-          if (searchData.abstract && searchData.abstractSource) {
+          if (searchData.abstract && searchData.abstractSource && searchData.abstractUrl) {
             snippets.push(`${searchData.abstractSource}: ${searchData.abstract}`);
-            if (searchData.abstractUrl) webSources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
+            seenUrls.add(searchData.abstractUrl);
+            webSources.push({ title: searchData.abstractSource, url: searchData.abstractUrl, snippet: searchData.abstract.slice(0, 120) });
           }
           if (searchData.definition && searchData.definitionSource) {
             snippets.push(`Definition (${searchData.definitionSource}): ${searchData.definition}`);
           }
           if (searchData.webResults?.length > 0) {
-            searchData.webResults.slice(0, 4).forEach((r: { title: string; url: string; snippet: string }) => {
+            searchData.webResults.slice(0, 5).forEach((r: { title: string; url: string; snippet: string }) => {
+              if (!r.url || seenUrls.has(r.url)) return;
+              seenUrls.add(r.url);
               if (r.snippet) snippets.push(`${r.title}: ${r.snippet}`);
-              if (r.url && r.title) webSources.push(r);
+              if (r.title) webSources.push(r);
             });
           }
           if (snippets.length > 0) {
-            enrichedContent = `[Web search results for: "${content}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically as credits below your response.]\nUser: ${content}`;
+            enrichedContent = `[Web search results for: "${content}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically as credits below your response. Do NOT repeat source names in your answer.]\nUser: ${content}`;
           }
         }
       } catch {
@@ -3458,18 +3479,18 @@ Let's start the self-listen session!`;
                             Sources
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {message.metadata.webSources.map((src: { title: string; url: string }, i: number) => {
-                              let hostname = '';
-                              try { hostname = new URL(src.url).hostname.replace('www.', ''); } catch {}
-                              const faviconUrl = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(src.url)}`;
-                              return (
+                            {(message.metadata.webSources as { title: string; url: string }[])
+                              .filter((s, i, a) => a.findIndex(x => x.url === s.url) === i)
+                              .slice(0, 5)
+                              .map((src, i) => (
                                 <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors max-w-[200px]">
-                                  <img src={faviconUrl} alt="" className="w-3.5 h-3.5 rounded-sm flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <span className="truncate font-medium">{hostname || src.title}</span>
+                                  title={src.title}
+                                  className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all hover:scale-110 flex items-center justify-center shadow-sm">
+                                  <img src={`https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(src.url)}`} alt={src.title}
+                                    className="w-5 h-5 rounded-sm"
+                                    onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z'/%3E%3C/svg%3E"; }} />
                                 </a>
-                              );
-                            })}
+                              ))}
                           </div>
                         </div>
                       )}
