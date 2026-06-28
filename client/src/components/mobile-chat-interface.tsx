@@ -1114,7 +1114,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${localStorage.getItem("minimalMode") === "true" ? "rounded-md" : msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -2511,18 +2511,37 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
     );
   }
 
+  const STYLE_PRESETS = [
+    { label: "Photorealistic", emoji: "📸" },
+    { label: "Anime", emoji: "🎌" },
+    { label: "Oil Painting", emoji: "🖼️" },
+    { label: "Cyberpunk", emoji: "🌆" },
+    { label: "Watercolor", emoji: "🎨" },
+    { label: "3D Render", emoji: "💎" },
+  ];
+  const [activeStyle, setActiveStyle] = useState("Photorealistic");
+
+  const QUICK_PROMPTS = [
+    { label: "Neon city at night", icon: "🌃" },
+    { label: "Portrait of a samurai", icon: "⚔️" },
+    { label: "Ocean at golden hour", icon: "🌅" },
+    { label: "Futuristic spaceship", icon: "🚀" },
+    { label: "Mystical enchanted forest", icon: "🌲" },
+    { label: "Abstract colorful swirls", icon: "🌀" },
+    { label: "Ancient ruins at sunset", icon: "🏛️" },
+    { label: "Dragon over a mountain", icon: "🐉" },
+  ];
+
   // Results panel (shown after prompt sent)
   if (showResults) {
     return (
       <>
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-card">
           <button onClick={() => setShowResults(false)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Gallery
+            <ChevronLeft className="w-4 h-4" /> Studio
           </button>
-          <span className="text-sm font-semibold text-foreground">{messages.filter(m => m.role === "ai").length} image{messages.filter(m => m.role === "ai").length !== 1 ? "s" : ""}</span>
-          <button onClick={() => { /* clear */ }} className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <span className="text-sm font-semibold text-foreground">{messages.filter(m => m.role === "ai").length} image{messages.filter(m => m.role === "ai").length !== 1 ? "s" : ""} created</span>
+          <div className="w-7" />
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: "none" }}>
           {messages.length === 0 && (
@@ -2532,7 +2551,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
               <p className="text-xs text-muted-foreground">Type a prompt below</p>
             </div>
           )}
-          {messages.map((msg, idx) => (
+          {messages.map((msg) => (
             msg.role === "user" ? (
               <div key={msg.id} className="flex justify-end">
                 <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 text-xs max-w-[90%]">{msg.content}</div>
@@ -2544,93 +2563,84 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
           {isTyping && (
             <div className="rounded-2xl border border-border overflow-hidden bg-background">
               <div className="flex flex-col items-center justify-center gap-3 py-10">
-                <div className="flex gap-1.5">{[0,150,300].map(d => <div key={d} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${d}ms`, animationDuration: "0.9s" }} />)}</div>
-                <span className="text-[11px] text-muted-foreground font-medium">Creating your image…</span>
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
+                  <div className="absolute inset-1 rounded-full border-2 border-t-primary border-primary/30 animate-spin" />
+                  <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-primary" />
+                </div>
+                <span className="text-[11px] text-muted-foreground font-medium">Generating your image…</span>
               </div>
             </div>
           )}
           <div ref={endRef} />
         </div>
         <MobileMessageBar value={input} onChange={setInput} onSend={handleSend} isTyping={isTyping}
-          placeholder="Just Prompt and image is in your hands!" tab="imagine" showEnhance showModel={false}
+          placeholder="Describe another image…" tab="imagine" showEnhance showModel={false}
           fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
       </>
     );
   }
 
-  // Discovery panel (default view) — clean minimal studio design
+  // Discovery panel — redesigned studio
   return (
     <>
-      {/* Studio header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-base font-bold text-foreground tracking-tight">Fius Studio</p>
-            <p className="text-[11px] text-muted-foreground">Type a prompt to generate an image</p>
+      {/* Hero gradient header */}
+      <div className="flex-shrink-0 relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)", minHeight: 120 }}>
+        <div className="absolute inset-0 opacity-30"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #7c3aed33 0%, transparent 50%), radial-gradient(circle at 80% 20%, #ec489933 0%, transparent 50%)" }} />
+        <div className="relative px-4 pt-5 pb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
+              <Sparkles className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="text-white font-bold text-base tracking-tight">Fius Studio</span>
           </div>
-          <button onClick={refreshGallery} disabled={galleryLoading}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-accent transition-all disabled:opacity-40 text-muted-foreground">
-            <RefreshCw className={`w-4 h-4 ${galleryLoading ? "animate-spin" : ""}`} />
-          </button>
+          <p className="text-white/50 text-[11px] mb-3">Describe anything — AI will paint it</p>
+          {/* Style selector */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {STYLE_PRESETS.map(s => (
+              <button key={s.label} onClick={() => setActiveStyle(s.label)}
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold transition-all active:scale-95"
+                style={activeStyle === s.label
+                  ? { background: "linear-gradient(135deg,#7c3aed,#ec4899)", color: "#fff", border: "1px solid transparent" }
+                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                <span>{s.emoji}</span> {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-        {/* Gallery — 2 large + 1 tall */}
-        <div className="px-3 mb-3">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-background" style={{ scrollbarWidth: "none" }}>
+        {/* Quick prompt grid */}
+        <div className="px-3 pt-3 pb-2">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">Quick Prompts</p>
           <div className="grid grid-cols-2 gap-2">
-            {gallery.slice(0, 2).map((item, i) => (
-              <button key={i} className="group text-left focus:outline-none" onClick={() => setInput(item.prompt)}>
-                <div className="w-full rounded-2xl overflow-hidden bg-muted relative" style={{ height: 140 }}>
-                  <img src={item.url} alt={item.label}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                    onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80"; }} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                  <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-[10px] font-semibold text-white truncate">{item.label}</p>
-                  </div>
-                </div>
-                <p className="text-[10.5px] text-muted-foreground leading-tight truncate mt-1 px-0.5">{item.label}</p>
+            {QUICK_PROMPTS.map(p => (
+              <button key={p.label} onClick={() => { setInput(`${p.label}, ${activeStyle} style`); }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 text-left transition-all active:scale-[0.97] group">
+                <span className="text-base flex-shrink-0">{p.icon}</span>
+                <span className="text-[11px] font-medium text-foreground leading-tight line-clamp-2">{p.label}</span>
               </button>
             ))}
           </div>
-          {gallery[2] && (
-            <button className="group w-full mt-2 text-left focus:outline-none" onClick={() => setInput(gallery[2].prompt)}>
-              <div className="w-full rounded-2xl overflow-hidden bg-muted relative" style={{ height: 110 }}>
-                <img src={gallery[2].url} alt={gallery[2].label}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=600&q=80"; }} />
-                <div className="absolute bottom-2 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-[10px] font-semibold text-white">{gallery[2].label}</p>
-                </div>
-              </div>
-            </button>
-          )}
         </div>
 
-        {/* Quick prompts */}
-        <div className="px-3 mb-3">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Quick Ideas</p>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              "Neon city at night",
-              "Portrait of a samurai",
-              "Ocean at golden hour",
-              "Futuristic spaceship",
-              "Mystical forest",
-              "Abstract colorful art",
-            ].map(prompt => (
-              <button key={prompt} onClick={() => setInput(prompt)}
-                className="px-3 py-1.5 rounded-full border border-border bg-card text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent hover:border-foreground/20 transition-all active:scale-95">
-                {prompt}
-              </button>
-            ))}
+        {/* Tips */}
+        <div className="px-3 pb-4">
+          <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 flex items-start gap-2">
+            <Wand2 className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-[10.5px] text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">Pro tip:</span> Tap ✦ to enhance your prompt with AI before generating.
+            </p>
           </div>
         </div>
       </div>
 
       <MobileMessageBar value={input} onChange={setInput} onSend={handleSend} isTyping={isTyping}
-        placeholder="Describe your image…" tab="imagine" showEnhance showModel={false}
+        placeholder={`A ${activeStyle.toLowerCase()} image of…`} tab="imagine" showEnhance showModel={false}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
     </>
   );
@@ -3259,7 +3269,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 onSend={handlePhilSend} onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
                 personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 overflow-hidden" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
+            <div className="absolute inset-0 overflow-hidden bg-zinc-950 px-4 pt-4 pb-2" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
             </div>
           </div>
