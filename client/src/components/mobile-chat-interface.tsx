@@ -33,6 +33,10 @@ import attachmentLight from "@assets/attachment_button_1766904971888.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 
+// ─── Minimal Mode context — consumed by PCHeader, MobileMessageBar, AskTab ────
+const MinimalModeCtx = React.createContext(false);
+const useMinimalMode = () => React.useContext(MinimalModeCtx);
+
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
   state = { error: null };
@@ -1110,7 +1114,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -1507,6 +1511,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.dispatchEvent(new Event("messageBarStyleChanged"));
     onChatBgChange?.(chatBg);
     window.dispatchEvent(new Event("chatBgChanged"));
+    window.dispatchEvent(new Event("settingsSaved"));
     setIsDirty(false);
     setShowExitDialog(false);
     doClose();
@@ -1939,25 +1944,27 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 
   const cycleTheme = () => { if (theme === "light") setTheme("dark"); else if (theme === "dark") setTheme("system"); else setTheme("light"); };
 
+  const mm = useMinimalMode();
+  const navR = mm ? 8 : 14;
   return (
-    <header className="flex-shrink-0 bg-card border border-border rounded-full px-2 py-1.5 flex items-center mx-3 mt-2 mb-1 z-10 gap-1 glossy-outline">
-      <button onClick={onMenuClick} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
+    <header className={`flex-shrink-0 bg-card border border-border px-2 py-1.5 flex items-center gap-1 z-10 ${mm ? "rounded-none mx-0 mt-0 mb-0 border-x-0 border-t-0" : "rounded-full mx-3 mt-2 mb-1 glossy-outline"}`}>
+      <button onClick={onMenuClick} className={`w-8 h-8 flex items-center justify-center ${mm ? "rounded-md" : "rounded-2xl"} text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0`}>
         <Menu className="w-4 h-4" />
       </button>
       <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         <div ref={navRef} className="relative flex items-center min-w-max">
           {pill.ready && (
-            <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "white", borderRadius: 14, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 8px rgba(0,0,0,0.14)", transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)", pointerEvents: "none", zIndex: 0 }} />
+            <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "white", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 8px rgba(0,0,0,0.14)", transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)", pointerEvents: "none", zIndex: 0 }} />
           )}
           {TABS.map(({ id, label }, i) => (
             <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 ${mm ? "rounded-md" : "rounded-2xl"} font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
         </div>
       </div>
-      <button onClick={cycleTheme} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
+      <button onClick={cycleTheme} className={`w-8 h-8 flex items-center justify-center ${mm ? "rounded-md" : "rounded-2xl"} text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0`}>
         {theme === "dark" ? <Moon className="w-3.5 h-3.5" /> : theme === "system" ? <Monitor className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
       </button>
     </header>
@@ -2002,7 +2009,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
             <div className="w-full flex flex-col gap-2.5">
               {SUGGESTION_CARDS.map((card, i) => (
                 <button key={i} onClick={() => setInput(card.prompt)}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                  className={`flex items-center gap-3 px-4 py-3.5 ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : "rounded-2xl"} border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800`}>
                   <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 border border-border/60">{card.icon}</div>
                   <div className="flex-1 min-w-0"><p className="text-[13.5px] font-semibold text-foreground">{card.title}</p><p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p></div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -2765,6 +2772,14 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const [tab, setTab] = useState<MobileTab>("ask");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // ── Minimal Mode — reactive: re-reads whenever settings are saved ─────────
+  const [minimalMode, setMinimalMode] = useState(() => localStorage.getItem("minimalMode") === "true");
+  useEffect(() => {
+    const sync = () => setMinimalMode(localStorage.getItem("minimalMode") === "true");
+    window.addEventListener("storage", sync);
+    window.addEventListener("settingsSaved", sync);
+    return () => { window.removeEventListener("storage", sync); window.removeEventListener("settingsSaved", sync); };
+  }, []);
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [educationOpen, setEducationOpen] = useState(false);
@@ -3098,6 +3113,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const voiceHandlers = { onVoiceMode: () => setVoiceModalOpen(true), onSettings: () => setSettingsOpen(true), onIntegration: () => setFiusIntegrationMode(v => !v), fiusIntegrationMode };
 
   return (
+    <MinimalModeCtx.Provider value={minimalMode}>
     <ErrorBoundary>
       <TooltipProvider delayDuration={400}>
         <div className="fixed inset-0 bg-background flex flex-col overflow-hidden"
@@ -3250,5 +3266,6 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         </div>
       </TooltipProvider>
     </ErrorBoundary>
+    </MinimalModeCtx.Provider>
   );
 }
