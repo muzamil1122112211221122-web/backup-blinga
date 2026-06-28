@@ -1,0 +1,124 @@
+issues to fix :
+1) old scroller in startup page(both pc and mobile ui)
+2) ai behaviour :Design a conversational AI that engages users in a friendly and respectful manner, similar to a real friend. The AI should be able to adapt to the user's language, including typos and colloquialisms, and provide unique and creative responses that are both informative and entertaining. The AI should not repeat user prompts or provide generic responses, but instead offer thoughtful and personalized interactions that demonstrate a genuine interest in the user's thoughts, feelings, and experiences.
+
+The AI should be able to understand the user's context and preferences, and adjust its responses accordingly. For example, if the user is discussing a serious topic, the AI should respond in a serious and empathetic tone. On the other hand, if the user is joking or being sarcastic, the AI should be able to recognize this and respond in a lighthearted and playful manner.
+
+The AI should also be able to learn from the user's interactions and adapt its responses over time. For instance, if the user consistently uses a particular slang or colloquialism, the AI should be able to incorporate this into its responses and use it in a way that feels natural and authentic.
+
+In addition to its conversational abilities, the AI should also be able to provide helpful and informative responses to the user's questions and requests. This could include providing definitions, explanations, and examples, as well as offering suggestions and recommendations. The AI should be able to access a vast knowledge base and provide accurate and up-to-date information on a wide range of topics.
+
+The AI's responses should be engaging and easy to understand, with a tone that is friendly, approachable, and non-judgmental. The AI should be able to use humor, anecdotes, and other literary devices to make its responses more interesting and relatable. At the same time, the AI should be sensitive to the user's feelings and emotions, and avoid using language or tone that could be perceived as insensitive or offensive.
+
+At the end of each conversation, the AI should politely ask the user if they have any further questions or topics they'd like to discuss, demonstrating a genuine interest in continuing the conversation and building a rapport with the user. The AI should also be able to summarize the main points of the conversation and provide a brief recap of what was discussed, in case the user wants to review or refer back to the conversation later.
+Overall, the goal of the AI is to provide a conversational experience that feels natural, intuitive, and engaging, like talking to a real friend. The AI should be able to understand the user's needs and preferences, and respond in a way that is helpful, informative, and entertaining.
+
+3) sources logo shit hen kabhi bhot dark kabhi bhot white or phir y promt bhi follow nahi hoi (jo mene paste ki ,is ko iimplement karo) ,points m heading jo h wo y ** ati instead of Bold and points m mix hona chiye kabhi y "•" or kabhi 1. 2. 3. so on.. ,acha y go max and go max down m aik chez jab hm max down ho to max down button fade like ho jae or in clickable hojae or jab max up to max up button in clickable fade hojae llekin wo jo max down clickable or unfade hojae or max down m max up unfade or clickable hojae ,4thly in fius education none of features work means just wo promt likh dete instead of google geimini jese quiz leti or options select karne hote or hint hota or end p accuracy etc hota i mean interactable gui etc nahi h is ko fix karo(both mobile and pc) ,phir fius education jo h uski ui mobile k sath optimized nahi h,phir mobiles settings gui m y (photo attach ki) hoti line y dragable i mean jese hoti nahi wese nahi h or mobile gui m close k liye seprate button h cross ka ise remove karo phir y games mobile gui shit h ise clean redesign karo see in attached image how shit it is ,acha lastly in settings preferences and in pc appearance aik naya toggle dalo namely minimal mode jisme like har cheez minimal squarish ho jae you know like claude uI(harr cheez nahi sirf msg bar top bar function bar or is toggle ko band karne s normal hojae ,acha aik last chez y jo code waghera ata y border end p ata or jese code m colors ate instead of simple white y mobile m nahi arahe to in sab bugs glitches ko fix karo
+
+4) in nomad scroller is automatically scrolled to end instead of start
+5) shitty fius logo in nomad (pc ui) and also make nomad ai order same as mobile (mobile order is perfect)
+6) games ui redesign: Refactor and redesign the UI of this gaming dashboard (Fius Game Zone) to make it look incredibly premium, sleek, modern, and cohesive across both desktop and mobile views. Maintain the dark theme but enhance it with better typography, spacing, and polished components.
+
+Please implement the following specific UI/UX enhancements:
+
+1. Layout & Grid Real Estate:
+   - On desktop, implement a max-width container (e.g., max-w-6xl or 7xl) so the content doesn't stretch too wide on huge displays. Center the grid layout beautifully.
+   - For the "Free Games" grid, use a responsive grid that changes smoothly: 2 columns on mobile, 3 on tablet, and 4 or 5 columns on desktop to optimize space.
+   - Ensure consistent vertical and horizontal padding across all sections.
+
+2. Game Card Redesign (The Core Improvement):
+   - Replace the current simple circles with premium, modern cards. Each card should have a subtle dark background (e.g., a glassmorphism effect using a very translucent white/grey background with a backdrop-blur).
+   - Keep the vibrant glowing icons but enclose them inside these cards.
+   - Fix text truncation: ensure titles like "Memory Match" or "Word Scramble" display fully without being cut off with "...".
+   - Elevate the "Level" badge: Instead of a bright green block button, make it a sleek, pill-shaped tag with a subtle dark border or a semi-transparent background color matching the card's accent.
+
+3. Owned Games Section:
+   - Apply the same premium card container layout to the "Owned Games" (Tic-Tac-Toe, Rock Paper Scissors) so they match the aesthetic of the free games section, creating visual harmony. 
+   - Refine the green "✓ Owned" check text to look like a clean, minimal status indicator.
+
+4. Global Leaderboard Component:
+   - Make the leaderboard look like a high-end gaming widget. Give it a distinct glassmorphic container with a subtle gradient border.
+   - Ensure the user's row ("Pro Man (You)") has clear contrast, beautiful typography, and perfectly aligned text (e.g., name on the left, high score on the right with a bold, distinct font weight).
+
+5. Navigation Bar & Header Tuning:
+   - Clean up the top navigation bar. Make the pill-shaped container slightly more compact with crisp, uniform padding.
+   - Ensure perfect vertical alignment for the menu icon, logo text, nav links, and the theme/notification toggle icons.
+   - Match the "Fius Games" active button state styling perfectly with the rest of the dark/neon aesthetic.
+   - Refine the top-right currency/fragment badge (the blue "15" icon) to look sharp and clean.
+
+6. Typography & Motion:
+   - Use a modern sans-serif font family optimized for gaming (like Inter, Plus Jakarta Sans, or Orbitron for headers).
+   - Add subtle, premium micro-interactions: smooth hover transitions on the game cards (e.g., slight lift-up effect, increased glow brightness, or subtle scale).
+
+Please output the clean, fully responsive Tailwind CSS / HTML / React code (whichever framework is active) implementing these specific adjustments.
+
+7) shitty pc and mobile image studio:Refactor and clean up the UI for this AI Image Generation studio ("Fius Imagine Studio") based on the mobile and desktop layouts. The current UI has scaling, alignment, and spacing issues. We need to make it look highly professional, streamlined, minimalist, and premium.
+
+Please implement the following specific design overhauls:
+
+1. Unified Naming & Header:
+   - Ensure consistency across views: Use "Fius Imagine Studio" as the main header.
+   - Clean up the desktop header alignment so the "Refresh" button and title line up perfectly on a single horizontal axis.
+
+2. Generated Images Grid & Aspect Ratios:
+   - Fix the image grid layout. All generated images must maintain a clean, consistent aspect ratio (e.g., a uniform 1:1 square or 16:9 cinematic aspect ratio with object-cover) so they don't crop or stretch irregularly.
+   - Fix the text labels below the images. Instead of displaying massive, ugly raw filenames that truncate into "...", hide the filename or show a clean, small, semi-transparent prompt hover-overlay on top of the image.
+
+3. Desktop Layout Balancing (Eliminate Dead Space):
+   - Group the interactive generation controls logically. Move the "Styles" selector and the generation prompt input bar into a cohesive layout block.
+   - Fix the right-side layout: Instead of having "Ready to create" floating out in space on the right and an isolated "F" circle icon on the left, create a balanced grid where the generation history takes up a clean main area, and generation settings/styles live in an elegant sidebar or a neatly docked bottom panel.
+
+4. Style Selector Polish:
+   - The circular "Styles" icons (Photorealistic, Anime, etc.) need a clean, uniform look. Give the style row a subtle border or a dark container background.
+   - Add a smooth hover effect on the style circles (e.g., a clean neon accent border ring when active or hovered) to match the dark futuristic aesthetic.
+
+5. Mobile Layout & Input Bar Cleanup:
+   - On the mobile view, the action buttons ("Long Answer", "Voice Mode", "Settings") are cluttering the space above the text input. Move these secondary toggles either inside a clean collapsible drawer, or minimize them into small, clean icon-only buttons directly inside or neatly aligned just above the input bar.
+   - Streamline the bottom chat/prompt bar on both mobile and desktop. Make it slimmer, use uniform minimalist icons (attachment clip, mic, magic wand, send), and give it a crisp, subtle glassmorphic blur with a fine border.
+
+6. Quick Ideas Tags:
+   - Modernize the "Quick Ideas" buttons. Make them small, sleek, pill-shaped tags with a very subtle dark background and light gray text. They should wrap cleanly on mobile and stack beautifully without taking up massive vertical space.
+
+Please provide the updated, fully responsive code with polished layouts and smooth CSS transitions.
+
+summary of promt : You are an expert full-stack developer. Your task is to refactor, debug, and premium-optimize the entire Fius AI platform codebase based on the following comprehensive specifications. Ensure all fixes apply across React/Tailwind elements seamlessly on both mobile and PC layouts.
+
+Fix and implement the following modules and bugs completely:
+
+1. Platform-Wide Formatting & Core AI Behavior Adjustments
+   - Formatting Fixes: When rendering points or headers, do NOT use default unformatted text or standard header tags that feel detached. Implement explicit conditional formatting where section titles are cleanly styled using bold typography (`**Title**`) mixed naturally into lists. Alternate list markers dynamically between bullet items ("•") and ordered counters ("1. 2. 3.") so the output looks organic and polished rather than raw or repetitive.
+   - Sources Logo Consistency: The sources logo component is visually unstable, shifting drastically between being overly dark or blindingly white. Apply a locked-in theme-aware opacity/fill variable (e.g., text-neutral-400 dark:text-neutral-500) so it blends cleanly into the dark theme without shifting contrast wildly.
+   - Scroll Control System (Go Max / Go Max Down): Fix the scroll navigation behavior. When a user clicks "Go Max Down" and reaches the absolute bottom of the container, the button must instantly visually fade (opacity reduced) and become disabled/unclickable. Simultaneously, the "Go Max Up" button must become fully opaque and active. Conversely, when scrolled fully to the top, "Go Max Up" must fade out and disable, while "Go Max Down" activates instantly.
+
+2. Fius Education: Complete Engine & UI Overhaul (Mobile & PC)
+   - Do not just output static prose prompts or text blocks when using the Education module. It must render a fully interactive, operational gamified GUI engine.
+   - Build a state-driven, interactable interface for quizzes. Users must be presented with dynamic interactive elements: multiple-choice option buttons with active click states, an expandable "Hint" panel, and an immediate visual feedback mechanism for selections.
+   - At the completion of a quiz, calculate and present an automated end-session diagnostic summary featuring clear interactive stats, including accuracy percentage metrics, total time taken, and progress tracking indicators.
+   - Complete Mobile Optimization: Re-architect the Fius Education layout for mobile devices. Eliminate element overlapping and squished text frames. Ensure the quiz modules scale fluidly with perfect vertical breathing room on narrow Viewports.
+
+3. Mobile Settings GUI & Interface Redesigns
+   - Draggable Handle Sheet: Fix the mobile settings modal. The top of the settings tray must feature a physical, modern pill-shaped draggable indicator line, styled like a native mobile drawer handle (e.g., a centered 40px wide, 4px high rounded bar with a neutral border background).
+   - Modal Close Execution: Remove the raw, ugly floating cross ("X") close button entirely from the mobile settings GUI. Closing the view must rely naturally on tapping the container backdrop or swiping down on the draggable sheet handler.
+   - Claude-Inspired Minimal Mode Toggle: Inside PC Appearance settings and Mobile Preferences, inject a new functional state toggle named "Minimal Mode". When flipped TRUE, it strips away excessive rounded corners and intricate shadows, applying an ultra-sleek, squish-minimal look across major layout anchors—specifically compressing the message bar, the main top bar, and the primary function navigation bar into flat, geometric elements. Turning it FALSE instantly reverts components back to the fluid, glowing ambient style.
+   - Code Block Syntax Highlighting (Mobile Bug): Fix the code rendering box on mobile. Ensure code blocks include a crisp, clean border bounding the container and properly process full multi-color token syntax highlighting instead of falling back to flat monochromatic white text.
+
+4. Startup & Nomad Routing Fixes
+   - Old Scroller Elimination: Locate and completely rip out the legacy startup scroller logic operating across both PC and Mobile startup views.
+   - Nomad Initialization: Fix the auto-scroll glitch inside the Nomad interface. On component mount, ensure the chat container or viewport defaults explicitly to the absolute START (top) of the scroll window context rather than breaking and automatically pinning to the bottom.
+   - Nomad Logo & Layout Alignment: Replace the unoptimized Fius logo inside the Nomad PC view. Ensure the logo scales properly and aligns cleanly with the rest of the dark ambient layout. Align the order of elements inside the Nomad AI layout on PC to perfectly replicate the layout hierarchy used on Mobile, maintaining a unified visual structure.
+
+5. Fius Game Zone Complete Redesign
+   - Grid Real Estate: On desktop, constrain the gaming layout inside a centered max-width container (`max-w-6xl` or `max-w-7xl`). Set up a responsive grid shifting smoothly from 2 columns on mobile, to 3 on tablet, and up to 4 or 5 columns on desktop widescreen views.
+   - Premium Cards: Discard basic circular shapes. Wrap game selections in premium cards sporting a dark, translucent glassmorphism effect via backdrop blur filters. Ensure text elements never truncate into "..." (e.g., titles like "Memory Match" must display completely). Swap out blocky green level badges for streamlined, semi-transparent pill tags.
+   - Leaderboard & Navigation Widgetry: Elevate the Global Leaderboard into a distinct, high-contrast widget using gradient-tinted borders and prominent distinct text weights for user statuses ("Pro Man (You)"). Tighten the top navigation bar, establishing perfect vertical center alignment for all menu vectors, notifications, and active button indicators.
+
+6. Fius Imagine Studio Layout Refactoring
+   - Aspect Ratios & Content Protection: Force all generated images inside the grid to lock onto matching, strict dimensions (such as standard squares or cinematic 16:9 boxes using CSS `object-cover`), avoiding stretched images. Strip raw string filenames from under thumbnails; replace them with small, clean, semi-transparent hover overlays containing the core image prompt text.
+   - Dead Space Remediation (Desktop): Restructure the desktop landscape. Cluster the prompt bar and style circles directly into a unified interactive dock or responsive side panel. Eliminate floating elements like the unanchored "Ready to create" string and isolated brand icons by securing them to explicit grid columns.
+   - Control Bars & Styling Circles (Mobile): Minimize desktop control keys ("Long Answer", "Voice Mode") on mobile into a clean collapsible menu drawer or as small clean icons tucked directly inside or neatly aligned above the prompt input bar. Clean up the style selector array with matching neon border active rings.
+
+7. Unified Conversational Persona Logic
+   Apply the following system instructions to the core AI processing node:
+   "Engage users in a friendly, conversational, and deeply respectful manner, acting like a true peer. Dynamically adjust tone, slang, and response styling based on user interaction trends, seamlessly navigating typos and colloquial terms. Ensure responses are uniquely creative, deeply personalized, and empathetic to context (matching serious subjects with gravity, or playful moments with wit). Never parrot user inputs or offer empty platitudes. Maintain an expansive, up-to-date knowledge base to provide informative examples or detailed definitions when prompted. Always integrate subtle humor or relatable narrative devices. Upon terminating an exchange, summarize key highlights cleanly for user reference and smoothly query if further help or chat continuation is desired."
+
+Refactor code structures across all files, ensure maximum optimization, and output clean, fully operational responsive code.
