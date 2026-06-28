@@ -1,0 +1,41 @@
+You are an expert full-stack developer. Your task is to refactor, debug, and premium-optimize the entire Fius AI platform codebase based on the following comprehensive specifications. Ensure all fixes apply across React/Tailwind elements seamlessly on both mobile and PC layouts.
+
+Fix and implement the following modules and bugs completely:
+
+1. Platform-Wide Formatting & Core AI Behavior Adjustments
+   - Formatting Fixes: When rendering points or headers, do NOT use default unformatted text or standard header tags that feel detached. Implement explicit conditional formatting where section titles are cleanly styled using bold typography (`**Title**`) mixed naturally into lists. Alternate list markers dynamically between bullet items ("•") and ordered counters ("1. 2. 3.") so the output looks organic and polished rather than raw or repetitive.
+   - Sources Logo Consistency: The sources logo component is visually unstable, shifting drastically between being overly dark or blindingly white. Apply a locked-in theme-aware opacity/fill variable (e.g., text-neutral-400 dark:text-neutral-500) so it blends cleanly into the dark theme without shifting contrast wildly.
+   - Scroll Control System (Go Max / Go Max Down): Fix the scroll navigation behavior. When a user clicks "Go Max Down" and reaches the absolute bottom of the container, the button must instantly visually fade (opacity reduced) and become disabled/unclickable. Simultaneously, the "Go Max Up" button must become fully opaque and active. Conversely, when scrolled fully to the top, "Go Max Up" must fade out and disable, while "Go Max Down" activates instantly.
+
+2. Fius Education: Complete Engine & UI Overhaul (Mobile & PC)
+   - Do not just output static prose prompts or text blocks when using the Education module. It must render a fully interactive, operational gamified GUI engine.
+   - Build a state-driven, interactable interface for quizzes. Users must be presented with dynamic interactive elements: multiple-choice option buttons with active click states, an expandable "Hint" panel, and an immediate visual feedback mechanism for selections.
+   - At the completion of a quiz, calculate and present an automated end-session diagnostic summary featuring clear interactive stats, including accuracy percentage metrics, total time taken, and progress tracking indicators.
+   - Complete Mobile Optimization: Re-architect the Fius Education layout for mobile devices. Eliminate element overlapping and squished text frames. Ensure the quiz modules scale fluidly with perfect vertical breathing room on narrow Viewports.
+
+3. Mobile Settings GUI & Interface Redesigns
+   - Draggable Handle Sheet: Fix the mobile settings modal. The top of the settings tray must feature a physical, modern pill-shaped draggable indicator line, styled like a native mobile drawer handle (e.g., a centered 40px wide, 4px high rounded bar with a neutral border background).
+   - Modal Close Execution: Remove the raw, ugly floating cross ("X") close button entirely from the mobile settings GUI. Closing the view must rely naturally on tapping the container backdrop or swiping down on the draggable sheet handler.
+   - Claude-Inspired Minimal Mode Toggle: Inside PC Appearance settings and Mobile Preferences, inject a new functional state toggle named "Minimal Mode". When flipped TRUE, it strips away excessive rounded corners and intricate shadows, applying an ultra-sleek, squish-minimal look across major layout anchors—specifically compressing the message bar, the main top bar, and the primary function navigation bar into flat, geometric elements. Turning it FALSE instantly reverts components back to the fluid, glowing ambient style.
+   - Code Block Syntax Highlighting (Mobile Bug): Fix the code rendering box on mobile. Ensure code blocks include a crisp, clean border bounding the container and properly process full multi-color token syntax highlighting instead of falling back to flat monochromatic white text.
+
+4. Startup & Nomad Routing Fixes
+   - Old Scroller Elimination: Locate and completely rip out the legacy startup scroller logic operating across both PC and Mobile startup views.
+   - Nomad Initialization: Fix the auto-scroll glitch inside the Nomad interface. On component mount, ensure the chat container or viewport defaults explicitly to the absolute START (top) of the scroll window context rather than breaking and automatically pinning to the bottom.
+   - Nomad Logo & Layout Alignment: Replace the unoptimized Fius logo inside the Nomad PC view. Ensure the logo scales properly and aligns cleanly with the rest of the dark ambient layout. Align the order of elements inside the Nomad AI layout on PC to perfectly replicate the layout hierarchy used on Mobile, maintaining a unified visual structure.
+
+5. Fius Game Zone Complete Redesign
+   - Grid Real Estate: On desktop, constrain the gaming layout inside a centered max-width container (`max-w-6xl` or `max-w-7xl`). Set up a responsive grid shifting smoothly from 2 columns on mobile, to 3 on tablet, and up to 4 or 5 columns on desktop widescreen views.
+   - Premium Cards: Discard basic circular shapes. Wrap game selections in premium cards sporting a dark, translucent glassmorphism effect via backdrop blur filters. Ensure text elements never truncate into "..." (e.g., titles like "Memory Match" must display completely). Swap out blocky green level badges for streamlined, semi-transparent pill tags.
+   - Leaderboard & Navigation Widgetry: Elevate the Global Leaderboard into a distinct, high-contrast widget using gradient-tinted borders and prominent distinct text weights for user statuses ("Pro Man (You)"). Tighten the top navigation bar, establishing perfect vertical center alignment for all menu vectors, notifications, and active button indicators.
+
+6. Fius Imagine Studio Layout Refactoring
+   - Aspect Ratios & Content Protection: Force all generated images inside the grid to lock onto matching, strict dimensions (such as standard squares or cinematic 16:9 boxes using CSS `object-cover`), avoiding stretched images. Strip raw string filenames from under thumbnails; replace them with small, clean, semi-transparent hover overlays containing the core image prompt text.
+   - Dead Space Remediation (Desktop): Restructure the desktop landscape. Cluster the prompt bar and style circles directly into a unified interactive dock or responsive side panel. Eliminate floating elements like the unanchored "Ready to create" string and isolated brand icons by securing them to explicit grid columns.
+   - Control Bars & Styling Circles (Mobile): Minimize desktop control keys ("Long Answer", "Voice Mode") on mobile into a clean collapsible menu drawer or as small clean icons tucked directly inside or neatly aligned above the prompt input bar. Clean up the style selector array with matching neon border active rings.
+
+7. Unified Conversational Persona Logic
+   Apply the following system instructions to the core AI processing node:
+   "Engage users in a friendly, conversational, and deeply respectful manner, acting like a true peer. Dynamically adjust tone, slang, and response styling based on user interaction trends, seamlessly navigating typos and colloquial terms. Ensure responses are uniquely creative, deeply personalized, and empathetic to context (matching serious subjects with gravity, or playful moments with wit). Never parrot user inputs or offer empty platitudes. Maintain an expansive, up-to-date knowledge base to provide informative examples or detailed definitions when prompted. Always integrate subtle humor or relatable narrative devices. Upon terminating an exchange, summarize key highlights cleanly for user reference and smoothly query if further help or chat continuation is desired."
+
+Refactor code structures across all files, ensure maximum optimization, and output clean, fully operational responsive code.

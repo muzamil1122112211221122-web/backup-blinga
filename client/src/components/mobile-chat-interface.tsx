@@ -1334,7 +1334,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localToggles, setLocalToggles] = useState({
     autoScroll: true, richText: true, improveModel: true, personalize: true,
     nomadGrid: true, nomadNotification: true, philosopherNotification: true, fiusGamesNotification: true,
-    wrapLines: false, showPreviews: true, showFiusLogo: true,
+    wrapLines: false, showPreviews: true, showFiusLogo: true, minimalMode: false,
   });
   const [functionBarStyle, setFunctionBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
   const [messageBarStyle, setMessageBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
@@ -1359,7 +1359,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     togglesRaw: {} as Record<string, string>,
   });
 
-  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
+  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo","minimalMode"];
 
   const makeTogglesBool = () => ({
     autoScroll: localStorage.getItem("autoScroll") !== "false",
@@ -1373,6 +1373,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     wrapLines: localStorage.getItem("wrapLines") === "true",
     showPreviews: localStorage.getItem("showPreviews") !== "false",
     showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
+    minimalMode: localStorage.getItem("minimalMode") === "true",
   });
 
   useEffect(() => {
@@ -1494,11 +1495,11 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           animation: `${closing ? "sheetExit 0.32s" : "sheetEnter 0.45s"} cubic-bezier(0.23,1,0.32,1) both`,
         }}
         onClick={e => e.stopPropagation()}>
-        {/* Drag handle — ONLY this strip triggers drag-to-dismiss */}
-        <div className="flex justify-center pt-4 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing"
+        {/* Drag handle — pill-shaped native drawer handle, ONLY this strip triggers drag-to-dismiss */}
+        <div className="flex justify-center pt-3.5 pb-2.5 flex-shrink-0 cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: "none" }}
           onTouchStart={settingsDrag.onTouchStart} onTouchMove={settingsDrag.onTouchMove} onTouchEnd={settingsDrag.onTouchEnd}>
-          <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-600 rounded-full" />
+          <div className="rounded-full" style={{ width: 40, height: 4, background: 'var(--border)', opacity: 0.7 }} />
         </div>
         <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/50 flex-shrink-0">
           <h2 className="text-[17px] font-bold text-foreground">Settings</h2>
@@ -2045,6 +2046,13 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === "ai"));
+
+  // Ensure Nomad multi-panel starts scrolled to the far left (first model) on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = 0;
+    }
+  }, []);
 
   const pickBestAI = (text: string): {model: string, modelName: string, logo: string, color: string} => {
     const t = text.toLowerCase();

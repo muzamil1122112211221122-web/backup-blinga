@@ -285,7 +285,7 @@ function FragmentBadge({ count }: { count: number }) {
   );
 }
 
-// ─── Level Badge ───────────────────────────────────────────────────────────────
+// ─── Level Badge (compact pill used inside games) ──────────────────────────────
 function LevelBadge({ level }: { level: number }) {
   const diff = getDifficulty(level);
   const colors: Record<string, string> = { easy: 'from-green-500 to-emerald-600', medium: 'from-yellow-500 to-orange-500', hard: 'from-red-500 to-pink-600' };
@@ -294,6 +294,19 @@ function LevelBadge({ level }: { level: number }) {
       <Star size={10} fill="white" />
       <span>Level {level}</span>
     </div>
+  );
+}
+
+// ─── Level Pill (semi-transparent, used in game cards) ─────────────────────────
+function LevelPill({ level }: { level: number }) {
+  const diff = getDifficulty(level);
+  const bg: Record<string, string> = { easy: 'rgba(34,197,94,0.18)', medium: 'rgba(245,158,11,0.18)', hard: 'rgba(239,68,68,0.18)' };
+  const tx: Record<string, string> = { easy: '#4ade80', medium: '#fbbf24', hard: '#f87171' };
+  return (
+    <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+      style={{ background: bg[diff], color: tx[diff] }}>
+      ★ Lv {level}
+    </span>
   );
 }
 
@@ -2056,24 +2069,29 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
           <div className="flex flex-col gap-6">
-            {/* Free games — circular icon grid */}
+            {/* Free games — premium glassmorphism card grid */}
             <div>
               <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">Free Games</div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {FREE_GAMES.map(g => {
                   const lv = getGameLevel(g.id);
                   const { Icon, gradient, shadow } = g.icon;
                   return (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
-                      className="flex flex-col items-center gap-2 group transition-all duration-200 active:scale-95">
-                      <div className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-white/30"
-                        style={{ background: gradient, boxShadow: `0 6px 24px ${shadow}` }}>
-                        <Icon className="w-9 h-9 text-white" />
+                      className="flex flex-col items-start gap-3 p-3.5 rounded-2xl group transition-all duration-200 active:scale-[0.97] relative overflow-hidden text-left"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)' }}>
+                      {/* Subtle gradient glow behind card */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        style={{ background: `radial-gradient(ellipse at 30% 40%, ${shadow}22 0%, transparent 70%)` }} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                        style={{ background: gradient, boxShadow: `0 4px 16px ${shadow}` }}>
+                        <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{g.label}</div>
-                        <LevelBadge level={lv} />
+                      <div className="w-full">
+                        <div className="text-white font-bold text-[12px] leading-tight mb-0.5">{g.label}</div>
+                        <div className="text-zinc-500 text-[10px] leading-relaxed mb-1.5">{g.desc}</div>
+                        <LevelPill level={lv} />
                       </div>
                     </button>
                   );
@@ -2092,18 +2110,21 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                 )}
               </div>
               {myPurchased.length > 0 ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="flex flex-col items-center gap-2 group transition-all duration-200 active:scale-95">
-                      <div className="w-20 h-20 rounded-full overflow-hidden transition-all duration-200 group-hover:scale-110 group-hover:ring-2 group-hover:ring-emerald-400/70"
-                        style={{ border: '2.5px solid rgba(16,185,129,0.6)', boxShadow: '0 0 16px rgba(16,185,129,0.28)' }}>
+                      className="flex flex-col items-start gap-3 p-3.5 rounded-2xl group transition-all duration-200 active:scale-[0.97] relative overflow-hidden text-left"
+                      style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.22)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
+                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                        style={{ border: '1.5px solid rgba(16,185,129,0.5)' }}>
                         <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{g.name}</div>
-                        <div className="text-[9px] text-emerald-500 font-bold mt-0.5">✓ Owned</div>
+                      <div className="w-full">
+                        <div className="text-white font-bold text-[12px] leading-tight mb-0.5">{g.name}</div>
+                        <div className="text-zinc-500 text-[10px] leading-relaxed mb-1.5">{g.desc}</div>
+                        <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold w-fit"
+                          style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80' }}>✓ Owned</span>
                       </div>
                     </button>
                   ))}
@@ -2118,25 +2139,32 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
-        {/* ── GLOBAL LEADERBOARD (inline in games tab) ── */}
+        {/* ── GLOBAL LEADERBOARD ── Premium gradient-tinted widget */}
         {tab === 'games' && (() => {
           const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
           const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
           const badges = ['🥇', '🥈', '🥉'];
-          const topColors = ['linear-gradient(135deg,#b45309,#fbbf24)', 'linear-gradient(135deg,#6b7280,#d1d5db)', 'linear-gradient(135deg,#92400e,#f97316)'];
-          const scoreColors = ['#fbbf24', '#d1d5db', '#f97316'];
+          const topColors = ['linear-gradient(135deg,#b45309,#fbbf24)', 'linear-gradient(135deg,#6b7280,#d1d5db)', 'linear-gradient(135deg,#78350f,#fb923c)'];
+          const scoreColors = ['#fbbf24', '#d1d5db', '#fb923c'];
           const displayLeaders = globalLeaders.length > 0 ? globalLeaders : [];
           return (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">🌍 Global Leaderboard</div>
-                {globalLeaders.length === 0 && <div className="text-zinc-700 text-[9px]">Play games to appear here</div>}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.28)', boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 8px 32px rgba(0,0,0,0.4)' }}>
+              {/* Widget header */}
+              <div className="flex items-center justify-between px-4 py-3"
+                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14) 0%, rgba(168,85,247,0.08) 100%)', borderBottom: '1px solid rgba(99,102,241,0.18)' }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-base" style={{ background: 'rgba(99,102,241,0.2)' }}>🏆</div>
+                  <span className="text-white text-[11px] font-extrabold uppercase tracking-widest">Global Leaderboard</span>
+                </div>
+                {globalLeaders.length === 0 && <span className="text-zinc-600 text-[9px]">Play to appear here</span>}
               </div>
+              <div className="p-3">
               {displayLeaders.length === 0 ? (
                 <div className="text-center py-6">
                   <div className="text-3xl mb-2">🏆</div>
-                  <p className="text-zinc-600 text-xs font-bold">No scores yet</p>
-                  <p className="text-zinc-700 text-[10px] mt-0.5">Win games to climb the board!</p>
+                  <p className="text-zinc-500 text-xs font-bold">No scores yet</p>
+                  <p className="text-zinc-600 text-[10px] mt-0.5">Win games to climb the board!</p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -2145,39 +2173,39 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                     const isTop3 = rank <= 3;
                     const isCurrentUser = leader.name === playerName;
                     return (
-                      <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                        style={{ background: isCurrentUser ? 'rgba(168,85,247,0.12)' : isTop3 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.3)' : isTop3 ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.08)', color: isTop3 || isCurrentUser ? '#fff' : '#71717a' }}>
+                      <div key={idx} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all"
+                        style={{ background: isCurrentUser ? 'rgba(168,85,247,0.14)' : isTop3 ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.4)' : isTop3 ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.07)', color: isTop3 || isCurrentUser ? '#fff' : '#52525b' }}>
                           {isTop3 ? badges[rank - 1] : rank}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className={`text-[11px] font-bold truncate ${isCurrentUser ? 'text-purple-300' : 'text-white'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
-                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate">Best: {leader.bestGame.game} · Lv{leader.bestGame.level}</div>}
+                          <div className={`text-[12px] font-extrabold truncate ${isCurrentUser ? 'text-purple-300' : 'text-white'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
+                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate mt-0.5">Best: {leader.bestGame.game} · Lv{leader.bestGame.level}</div>}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className="text-sm font-extrabold" style={{ color: isCurrentUser ? '#c084fc' : isTop3 ? scoreColors[rank - 1] : '#71717a' }}>{leader.totalScore.toLocaleString()}</div>
+                          <div className="text-[13px] font-extrabold" style={{ color: isCurrentUser ? '#c084fc' : isTop3 ? scoreColors[rank - 1] : '#52525b' }}>{leader.totalScore.toLocaleString()}</div>
                           <div className="text-[9px] text-zinc-700">pts</div>
                         </div>
                       </div>
                     );
                   })}
-                  {/* Show "You" row only if user is NOT already in the leaders list */}
+                  {/* "You" row when not in the list */}
                   {!displayLeaders.some(l => l.name === playerName) && (
                     <>
-                      <div className="h-px bg-zinc-800 my-1" />
-                      <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                      <div className="h-px my-1" style={{ background: 'rgba(99,102,241,0.15)' }} />
+                      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)' }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
                           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
                           {playerName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} (You)</div>
-                          {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game} · Lv{userBestGame.level} · {(levelMultiplier(userBestGame.level)).toFixed(1)}x</div>}
+                          <div className="text-purple-300 text-[12px] font-extrabold truncate">{playerName} (You)</div>
+                          {userBestGame && <div className="text-zinc-600 text-[9px] mt-0.5">Best: {userBestGame.game} · Lv{userBestGame.level}</div>}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className="text-sm font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
+                          <div className="text-[13px] font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
                           <div className="text-[9px] text-zinc-700">pts</div>
                         </div>
                       </div>
@@ -2185,6 +2213,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   )}
                 </div>
               )}
+              </div>
             </div>
           );
         })()}
