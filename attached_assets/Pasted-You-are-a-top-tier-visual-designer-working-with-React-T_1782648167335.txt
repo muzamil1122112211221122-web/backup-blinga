@@ -1,0 +1,30 @@
+You are a top-tier visual designer working with React/Tailwind. Your only priority is to immediately and aggressively fix the UI/UX regressions on the Fius AI platform based on the user's specific complaints and the provided screenshots. Do not produce abstract theory; produce visually clean, corrected code.
+
+Execute the following visual design corrections:
+
+1. Image Studio Redesign (Priority One - `{7D5B5F8A-AF7F-4204-AB1B-FB4A5B19A092}.png`):
+   - The desktop layout must be visually balanced immediately. Group the interactable elements (Styles selector, Quick Ideas, and the main Prompt input bar) into a tight, cohesive dock.
+   - Eliminate the massive empty right-hand column. Center the content.
+   - Force a uniform aspect ratio on the image grid (1:1 square or 16:9 cinematic) to prevent stretching. Replace the filename text labels beneath the images with a subtle prompt overlay on hover.
+
+2. Nomad UI Ordering & Logo:
+   - Fix the Nomad PC UI immediately. Replace the blurry Fius logo with a sharp, high-resolution version and center it at the top.
+   - Restructure the Nomad AI interaction order on PC to perfectly replicate the ordering seen on the mobile view, ensuring a seamless visual and functional transition.
+
+3. Mobile Settings GUI & Gestures:
+   - Introduce a minimal, grey horizontal draggable sheet handle line at the top-center of the mobile settings tray (like a modern iOS/Android drawer).
+   - Remove the separate close cross ("X") button from the mobile settings GUI; closing must occur via tapping the backdrop or swiping down.
+
+4. Minimal Mode Deployment:
+   - Create a global boolean state toggle ('minimal_mode').
+   - When active, it must aggressively strip rounding, shadows, and spacing, reducing the top navigation, message input, and utility bars into minimal, squarish, Claude UI-like containers.
+
+5. Formatting & Code Highlighting Bugs:
+   - Code Block Visuals: Fix the code block component on mobile. It must render with a clean border bounding the code container and display multi-color syntax highlighting, not flat monochromatic white text.
+   - Dynamic Point Styling: Implement conditional logic to alternate between bullet points ('•') and numbered lists ('1.', '2.', '3.') and ensure bold headers are styled inline (`**Header**`) rather than generic blocks.
+   - Go Max Button State: Implement logic to visually fade (0.5 opacity) and disable the 'Go Max' button when the view is already at the maximum position, simultaneously activating the 'Go Max Down' button.
+
+6. Fius Education Interactivity:
+   - Convert the Education module from a text prompt to a fully interactable GUI engine. The screen must render dynamic quiz options (e.g., selectable radio buttons for multiple-choice answers), a 'Hint' toggle, and a post-quiz accuracy report/summary.
+
+Generate the corrected code for the active components implementing these exact visual and functional fixes.

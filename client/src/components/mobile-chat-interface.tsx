@@ -286,6 +286,63 @@ function ScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLD
   );
 }
 
+// ─── Syntax highlighter ───────────────────────────────────────────────────────
+const LANG_KW: Record<string, string[]> = {
+  js:   ['const','let','var','function','return','if','else','for','while','class','import','export','from','of','in','new','this','true','false','null','undefined','async','await','try','catch','throw','switch','case','break','continue','typeof','instanceof','default','void','delete','do'],
+  ts:   ['const','let','var','function','return','if','else','for','while','class','import','export','from','of','in','new','this','true','false','null','undefined','async','await','try','catch','throw','type','interface','extends','implements','readonly','public','private','protected','enum','string','number','boolean','void','any','never','unknown','switch','case','break','continue','default','keyof','as','is','declare'],
+  py:   ['def','class','import','from','return','if','elif','else','for','while','in','not','and','or','True','False','None','pass','break','continue','with','as','try','except','finally','lambda','yield','self','print','is','del','global','nonlocal','raise','assert','async','await'],
+  java: ['public','private','protected','class','interface','extends','implements','return','if','else','for','while','new','this','static','void','int','String','boolean','import','package','try','catch','throw','finally','abstract','final','super','null','true','false'],
+  bash: ['echo','cd','ls','mkdir','rm','cp','mv','cat','grep','awk','sed','chmod','sudo','apt','npm','pip','git','curl','wget','if','then','fi','for','do','done','while','function','return','exit','export','source'],
+  css:  ['display','flex','grid','position','absolute','relative','fixed','sticky','color','background','border','margin','padding','width','height','overflow','opacity','transform','transition','animation','content','cursor'],
+  html: ['html','head','body','div','span','p','a','img','ul','ol','li','h1','h2','h3','nav','header','footer','main','section','form','input','button','textarea','select'],
+};
+function tokenizeLine(line: string, kwSet: Set<string>, lang: string, base: number): React.ReactNode[] {
+  const toks: React.ReactNode[] = [];
+  let i = 0;
+  while (i < line.length) {
+    if ((lang !== 'py' && lang !== 'bash' && line[i] === '/' && line[i+1] === '/') ||
+        ((lang === 'py' || lang === 'bash') && line[i] === '#')) {
+      toks.push(<span key={base+i} style={{ color:'#6b7280', fontStyle:'italic' }}>{line.slice(i)}</span>);
+      return toks;
+    }
+    if (line[i] === '"' || line[i] === "'" || line[i] === '`') {
+      const q = line[i]; let j = i + 1;
+      while (j < line.length) { if (line[j] === '\\') { j += 2; continue; } if (line[j] === q) { j++; break; } j++; }
+      toks.push(<span key={base+i} style={{ color:'#86efac' }}>{line.slice(i, j)}</span>);
+      i = j; continue;
+    }
+    if (/\d/.test(line[i]) && (i === 0 || /\W/.test(line[i-1]))) {
+      let j = i; while (j < line.length && /[\d._]/.test(line[j])) j++;
+      toks.push(<span key={base+i} style={{ color:'#fb923c' }}>{line.slice(i, j)}</span>);
+      i = j; continue;
+    }
+    if (/[a-zA-Z_$]/.test(line[i])) {
+      let j = i; while (j < line.length && /[\w$]/.test(line[j])) j++;
+      const word = line.slice(i, j);
+      if (kwSet.has(word)) toks.push(<span key={base+i} style={{ color:'#818cf8' }}>{word}</span>);
+      else if (/^[A-Z]/.test(word) && word.length > 1) toks.push(<span key={base+i} style={{ color:'#67e8f9' }}>{word}</span>);
+      else toks.push(<span key={base+i} style={{ color:'#e2e8f0' }}>{word}</span>);
+      i = j; continue;
+    }
+    if (/[{}()[\]=<>!+\-*/%&|^~?,;:]/.test(line[i])) {
+      toks.push(<span key={base+i} style={{ color:'#94a3b8' }}>{line[i]}</span>);
+    } else { toks.push(<span key={base+i}>{line[i]}</span>); }
+    i++;
+  }
+  return toks;
+}
+function tokenizeCode(code: string, lang: string): React.ReactNode {
+  const nl = lang.toLowerCase().replace('typescript','ts').replace('javascript','js').replace('python','py').replace(/^sh$|^shell$/,'bash');
+  const kwSet = new Set(LANG_KW[nl] || LANG_KW['js'] || []);
+  const lines = code.split('\n');
+  const result: React.ReactNode[] = [];
+  lines.forEach((line, li) => {
+    result.push(...tokenizeLine(line, kwSet, nl, li * 10000));
+    if (li < lines.length - 1) result.push('\n');
+  });
+  return result;
+}
+
 // ─── Mobile markdown renderer — parses bold, lists, code/text copy-boxes ──────
 function MobileMarkdown({ text }: { text: string }) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -314,8 +371,8 @@ function MobileMarkdown({ text }: { text: string }) {
           const idx = blockIdx++;
           const isCode = part.type === 'code';
           return (
-            <div key={pi} className={`my-2 rounded-xl overflow-hidden border ${isCode ? "border-zinc-700 bg-zinc-900" : "border-border bg-secondary/60"}`}>
-              <div className={`flex items-center justify-between px-3 py-1.5 ${isCode ? "bg-zinc-800" : "bg-muted/60"} border-b ${isCode ? "border-zinc-700" : "border-border"}`}>
+            <div key={pi} className={`my-2 rounded-xl overflow-hidden border ${isCode ? "border-zinc-700/80" : "border-border bg-secondary/60"}`} style={isCode ? { background: '#0d1117' } : {}}>
+              <div className={`flex items-center justify-between px-3 py-1.5 border-b ${isCode ? "bg-zinc-800/80 border-zinc-700/60" : "bg-muted/60 border-border"}`}>
                 <span className={`text-[10px] font-semibold uppercase tracking-wider ${isCode ? "text-zinc-400" : "text-muted-foreground"}`}>
                   {isCode ? (part.lang || "code") : "text"}
                 </span>
@@ -325,7 +382,9 @@ function MobileMarkdown({ text }: { text: string }) {
                   {copiedIdx === idx ? "Copied" : "Copy"}
                 </button>
               </div>
-              <pre className={`px-3 py-3 text-[12px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] font-mono ${isCode ? "text-zinc-200" : "text-foreground"}`}>{part.content}</pre>
+              <pre className={`px-3 py-3 text-[12px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] font-mono ${isCode ? "bg-[#0d1117]" : ""}`}>
+                {isCode ? tokenizeCode(part.content, part.lang || '') : part.content}
+              </pre>
             </div>
           );
         }
@@ -514,7 +573,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               )}
               {/* Text bubble (only if there's text) */}
               {msg.content && (
-                <div className="bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all">
+                <div className={`bg-card ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : "rounded-3xl"} px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all`}>
                   {msg.content}
                   <div className="flex items-center justify-end gap-0.5 mt-1.5">
                     <button onClick={handleCopy}
