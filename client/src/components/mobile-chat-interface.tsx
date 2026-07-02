@@ -2478,7 +2478,27 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [gallery, setGallery] = useState(GALLERY_PHOTOS);
   const [shuffleKey, setShuffleKey] = useState(0);
+  const [activeStyle, setActiveStyle] = useState("Photorealistic");
   const endRef = useRef<HTMLDivElement>(null);
+
+  const STYLE_PRESETS = [
+    { label: "Photorealistic", emoji: "📸" },
+    { label: "Anime", emoji: "🎌" },
+    { label: "Oil Painting", emoji: "🖼️" },
+    { label: "Cyberpunk", emoji: "🌆" },
+    { label: "Watercolor", emoji: "🎨" },
+    { label: "3D Render", emoji: "💎" },
+  ];
+  const QUICK_PROMPTS = [
+    { label: "Neon city at night", icon: "🌃" },
+    { label: "Portrait of a samurai", icon: "⚔️" },
+    { label: "Ocean at golden hour", icon: "🌅" },
+    { label: "Futuristic spaceship", icon: "🚀" },
+    { label: "Mystical enchanted forest", icon: "🌲" },
+    { label: "Abstract colorful swirls", icon: "🌀" },
+    { label: "Ancient ruins at sunset", icon: "🏛️" },
+    { label: "Dragon over a mountain", icon: "🐉" },
+  ];
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
 
@@ -2510,27 +2530,6 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
       </div>
     );
   }
-
-  const STYLE_PRESETS = [
-    { label: "Photorealistic", emoji: "📸" },
-    { label: "Anime", emoji: "🎌" },
-    { label: "Oil Painting", emoji: "🖼️" },
-    { label: "Cyberpunk", emoji: "🌆" },
-    { label: "Watercolor", emoji: "🎨" },
-    { label: "3D Render", emoji: "💎" },
-  ];
-  const [activeStyle, setActiveStyle] = useState("Photorealistic");
-
-  const QUICK_PROMPTS = [
-    { label: "Neon city at night", icon: "🌃" },
-    { label: "Portrait of a samurai", icon: "⚔️" },
-    { label: "Ocean at golden hour", icon: "🌅" },
-    { label: "Futuristic spaceship", icon: "🚀" },
-    { label: "Mystical enchanted forest", icon: "🌲" },
-    { label: "Abstract colorful swirls", icon: "🌀" },
-    { label: "Ancient ruins at sunset", icon: "🏛️" },
-    { label: "Dragon over a mountain", icon: "🐉" },
-  ];
 
   // Results panel (shown after prompt sent)
   if (showResults) {
