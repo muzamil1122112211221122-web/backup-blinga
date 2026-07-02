@@ -3384,8 +3384,8 @@ Let's start the self-listen session!`;
                         <p className="whitespace-pre-wrap break-words text-sm m-0">
                           {message.content.slice(0, 250).trim()}&hellip;
                           <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
-                            className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
-                            Show more
+                            className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            ...
                           </button>
                         </p>
                       ) : (

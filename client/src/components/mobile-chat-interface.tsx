@@ -15,7 +15,7 @@ import {
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
-  MessageSquarePlus, FileDown, Square, AlignLeft, History,
+  MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -506,7 +506,8 @@ function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onS
     <div className="mt-2.5 flex flex-wrap gap-1.5">
       {suggestions.map((s, i) => (
         <button key={i} onClick={() => onSelect(s)}
-          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[240px] truncate shadow-sm">
+          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[240px] truncate shadow-sm flex items-center gap-1.5">
+          <span className="text-muted-foreground text-[13px] leading-none">⤷</span>
           {s}
         </button>
       ))}
@@ -514,7 +515,7 @@ function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onS
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest, onFollowUp }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean; onFollowUp?: (q: string) => void }) {
+function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest, onFollowUp, isStreaming }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean; onFollowUp?: (q: string) => void; isStreaming?: boolean }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -587,9 +588,9 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
 
   return (
     <>
-      <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200`}>
+      <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200 relative`}>
         {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1 ml-1" />}
-        <div className={`flex flex-col max-w-[85%] ${isUser ? "items-end" : "items-start"} ${!isUser ? "ml-0.5" : ""}`}>
+        <div className={`flex flex-col ${isUser ? "max-w-[85%] items-end" : "flex-1 min-w-0 items-start"} ${!isUser ? "ml-0.5" : ""}`}>
           {isUser ? (
             <div className="flex flex-col gap-2 items-end">
               {/* Attached images grid */}
@@ -673,8 +674,8 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                     )}
                     {isUser && mainText.length > 200 && (
                       <button onClick={() => setMsgExpanded(!msgExpanded)}
-                        className="mt-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground underline transition-colors">
-                        {msgExpanded ? "Show less" : "Show more"}
+                        className="mt-0.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        {msgExpanded ? "‹ Less" : "..."}
                       </button>
                     )}
                   </>
@@ -683,6 +684,12 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             </>
           )}
 
+          {!isUser && done && (
+            <button onClick={handleSpeak}
+              className={`absolute top-0 right-0 h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : "text-muted-foreground/50 hover:text-foreground hover:bg-accent"}`}>
+              {speaking ? <Square className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          )}
           {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
@@ -694,50 +701,46 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </button>
-              <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {speaking ? <Square className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-              <button onClick={onRetry} className={`${ab} ${!onRetry ? "opacity-30 cursor-default" : ""}`}>
-                <RefreshCw className="w-4 h-4" />
-              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className={ab}><FileDown className="w-4 h-4" /></button>
+                  <button className={ab}><MoreHorizontal className="w-4 h-4" /></button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[170px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
+                  <DropdownMenuItem onClick={onRetry} disabled={!onRetry}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
+                    <RefreshCw className="w-3.5 h-3.5 text-green-500" /> Regenerate
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExport}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
-                    const md = msg.content;
-                    const blob = new Blob([md], { type: "text/markdown" });
+                    const blob = new Blob([msg.content], { type: "text/markdown" });
                     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.md"; a.click();
-                  }}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                  }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     const win = window.open('', '_blank');
                     if (!win) return;
                     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${msg.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
-                    win.document.close();
-                    win.focus();
-                    setTimeout(() => { win.print(); }, 500);
-                  }}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    win.document.close(); win.focus(); setTimeout(() => { win.print(); }, 500);
+                  }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-red-500" /> Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onNewChat?.(msg.content)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <MessageSquarePlus className="w-3.5 h-3.5 text-zinc-500" /> New chat from this
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <button onClick={() => onNewChat?.(msg.content)} className={ab}><MessageSquarePlus className="w-4 h-4" /></button>
             </div>
           )}
-          {!isUser && done && isLatest && msg.content && (
+          {!isUser && done && isLatest && !isStreaming && msg.content && (
             <FollowUpSuggestions msgContent={msg.content} onSelect={q => onFollowUp?.(q)} />
           )}
           {!isUser && (
-            <p className="text-[9.5px] text-muted-foreground/40 mt-1.5 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+            <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
           )}
         </div>
       </div>
@@ -868,9 +871,9 @@ function ModelSheet({ models, current, onSelect, onClose }: {
           {models.map((opt, i) => (
             <button key={opt.id} onClick={() => { onSelect(opt.id); handleClose(); }}
               className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors active:bg-accent/60 ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
-              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-zinc-400" />
-              <span className="text-[14px] font-semibold text-foreground flex-1">{opt.name}</span>
-              {opt.id === current && <Check className="w-4 h-4 text-muted-foreground" />}
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.id === current ? "bg-foreground" : "bg-zinc-400"}`} />
+              <span className="text-[14px] font-semibold text-foreground flex-1 text-left">{opt.name}</span>
+              {opt.id === current && <Check className="w-4 h-4 text-foreground" />}
             </button>
           ))}
         </div>
@@ -2062,7 +2065,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
               return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI}
                 onNewChat={onNewChat} onRetry={m.role === "ai" ? onRetry : undefined}
                 onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined}
-                onFollowUp={setInput} />;
+                onFollowUp={setInput} isStreaming={isLatestAI && isTyping} />;
             })}
             {isTyping && <ThinkingCloud />}
             <div ref={endRef} />
