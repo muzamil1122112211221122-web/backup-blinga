@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff } from "lucide-react";
 import searchIcon from "@assets/search_1780877151956.png";
 import chatIcon from "@assets/chat-bubble_1780877151955.png";
 import imagineIcon from "@assets/creativity_1780877151954.png";
@@ -111,6 +111,18 @@ export function Sidebar({
   const [editTitle, setEditTitle] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllGroups, setShowAllGroups] = useState<Set<string>>(new Set());
+  const [pinnedChats, setPinnedChats] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("pinnedChats") || "[]")); } catch { return new Set(); }
+  });
+  const togglePin = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setPinnedChats(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      localStorage.setItem("pinnedChats", JSON.stringify([...next]));
+      return next;
+    });
+  };
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -281,7 +293,9 @@ export function Sidebar({
 
   // Only show regular chats (not projects)
   const chatItems = projects.filter(p => !p.isProject);
-  const chatGroups = groupItemsByDate(chatItems);
+  const pinnedItems = chatItems.filter(p => pinnedChats.has(p.id));
+  const unpinnedItems = chatItems.filter(p => !pinnedChats.has(p.id));
+  const chatGroups = groupItemsByDate(unpinnedItems);
 
   return (
     <>
@@ -376,6 +390,33 @@ export function Sidebar({
         </div>
         <div className="flex-1 overflow-y-auto px-3">
           <div className="space-y-2">
+            {/* ── Pinned section ── */}
+            {pinnedItems.length > 0 && (
+              <div className="space-y-0.5">
+                <h4 className="text-[11px] font-bold text-amber-500 uppercase tracking-wider mb-1 px-3 flex items-center gap-1.5">
+                  <Pin className="w-2.5 h-2.5" /> Pinned
+                </h4>
+                <div className="space-y-1">
+                  {pinnedItems.map(chat => (
+                    <div key={chat.id}
+                      className={`group relative px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer ${currentProjectId === chat.id ? 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'hover:bg-zinc-50 dark:hover:bg-zinc-900/30 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+                      onClick={() => onProjectSelect(chat.id)}
+                      onMouseEnter={() => setHoveredProject(`pinned-${chat.id}`)}
+                      onMouseLeave={() => setHoveredProject(null)}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[13px] font-medium truncate leading-relaxed flex-1 min-w-0">{chat.title || 'New Chat'}</p>
+                        {hoveredProject === `pinned-${chat.id}` && (
+                          <button onClick={e => togglePin(e, chat.id)}
+                            className="ml-2 p-1 text-amber-500 hover:text-amber-600 transition-colors flex-shrink-0">
+                            <PinOff className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {Object.entries(chatGroups).map(([groupName, groupChats]) => (
               groupChats.length > 0 && (
                 <div key={groupName} className="space-y-0.5">
@@ -446,6 +487,17 @@ export function Sidebar({
                           </div>
                           {hoveredProject === chat.id && editingProject !== chat.id && (
                             <div className="flex items-center space-x-1 ml-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={(e) => togglePin(e, chat.id)}
+                                    className={`p-1 transition-colors ${pinnedChats.has(chat.id) ? "text-amber-500 hover:text-amber-600" : "hover:text-zinc-700 dark:hover:text-zinc-200 text-zinc-400"}`}
+                                  >
+                                    {pinnedChats.has(chat.id) ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>{pinnedChats.has(chat.id) ? "Unpin" : "Pin chat"}</TooltipContent>
+                              </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button

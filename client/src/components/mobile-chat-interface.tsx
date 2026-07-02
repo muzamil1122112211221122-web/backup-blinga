@@ -482,7 +482,39 @@ function FileChips({ files }: { files: Array<{name: string; size: string; conten
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean }) {
+function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onSelect: (q: string) => void }) {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/suggest-followups', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msgContent.slice(0, 700) }),
+    }).then(r => r.json()).then(d => {
+      if (!cancelled && Array.isArray(d.suggestions) && d.suggestions.length > 0) setSuggestions(d.suggestions.slice(0, 3));
+    }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return (
+    <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {[72, 96, 84].map((w, i) => <div key={i} className="h-7 rounded-full bg-accent animate-pulse" style={{ width: w }} />)}
+    </div>
+  );
+  if (!suggestions.length) return null;
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {suggestions.map((s, i) => (
+        <button key={i} onClick={() => onSelect(s)}
+          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[240px] truncate shadow-sm">
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest, onFollowUp }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean; onFollowUp?: (q: string) => void }) {
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -653,14 +685,14 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
 
           {!isUser && (
             <div className="flex items-center gap-0.5 mt-1">
-              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
                 <ThumbsUp className="w-4 h-4" />
               </button>
               <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
                 <ThumbsDown className="w-4 h-4" />
+              </button>
+              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </button>
               <button onClick={handleSpeak} className={`${ab} ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
                 {speaking ? <Square className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -700,6 +732,12 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               </DropdownMenu>
               <button onClick={() => onNewChat?.(msg.content)} className={ab}><MessageSquarePlus className="w-4 h-4" /></button>
             </div>
+          )}
+          {!isUser && done && isLatest && msg.content && (
+            <FollowUpSuggestions msgContent={msg.content} onSelect={q => onFollowUp?.(q)} />
+          )}
+          {!isUser && (
+            <p className="text-[9.5px] text-muted-foreground/40 mt-1.5 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
           )}
         </div>
       </div>
@@ -2023,7 +2061,8 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
               const isLatestAI = m.role === "ai" && i === messages.length - 1;
               return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI}
                 onNewChat={onNewChat} onRetry={m.role === "ai" ? onRetry : undefined}
-                onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined} />;
+                onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined}
+                onFollowUp={setInput} />;
             })}
             {isTyping && <ThinkingCloud />}
             <div ref={endRef} />

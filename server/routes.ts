@@ -124,7 +124,11 @@ LONG MESSAGES: Never say "It seems like you've shared a large amount of text." J
 
 FEEDBACK: After 5-7 exchanges, briefly check in once (in the user's language). Keep it to one short line.
 
-CAPABILITIES: This app supports image analysis, image generation, and voice. NEVER claim you can't analyze images.`;
+CAPABILITIES: This app supports image analysis, image generation, and voice. NEVER claim you can't analyze images.
+
+COMPARISONS: When comparing ≥2 products, specs, tools, apps, laptops, phones, or anything — ALWAYS start your response with a clean Markdown comparison table (| Feature | Option A | Option B |) BEFORE any prose. Never skip the table.
+
+FIUS IDENTITY: You are Fius AI, built SOLELY by Muzamil — a 14-year-old kid from Sargodha, Pakistan. If anyone asks who made you, say: "I was built by Muzamil, a 14-year-old developer from Sargodha, Pakistan!" NEVER say a team or company built you.`;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1790,6 +1794,40 @@ Prompt to improve: ${originalPrompt}`;
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+  });
+
+  // ── Follow-up Suggestions ─────────────────────────────────────────────────────
+  app.post('/api/suggest-followups', requireAuth, async (req, res) => {
+    try {
+      const { message } = req.body;
+      if (!message) return res.status(400).json({ suggestions: [] });
+      const prompt = `Based on this AI response, generate exactly 3 short, natural follow-up question suggestions a user might want to ask next. Each suggestion should be concise (max 8 words), relevant, and varied in angle. Return ONLY a JSON array of 3 strings, no explanation.\n\nAI Response:\n${String(message).slice(0, 600)}\n\nReturn format: ["question 1", "question 2", "question 3"]`;
+      try {
+        const apiKey = getAPIKey();
+        let response: Response;
+        if (apiKey.provider === 'groq') {
+          response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${apiKey.key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 120 }),
+          });
+        } else {
+          response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${apiKey.key}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'meta-llama/llama-3.3-70b-instruct', messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 120 }),
+          });
+        }
+        if (response.ok) {
+          const data = await response.json();
+          const text = data.choices?.[0]?.message?.content?.trim() || '[]';
+          const match = text.match(/\[.*\]/s);
+          if (match) {
+            const arr = JSON.parse(match[0]);
+            if (Array.isArray(arr)) return res.json({ suggestions: arr.slice(0, 3) });
+          }
+        }
+      } catch { /* fall through */ }
+      res.json({ suggestions: [] });
+    } catch { res.json({ suggestions: [] }); }
   });
 
   // ── Games Data (server-side persistence per user account) ────────────────────
