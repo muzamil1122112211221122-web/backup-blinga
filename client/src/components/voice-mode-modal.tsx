@@ -1,94 +1,25 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Mic, MicOff, X, Globe, AudioLines, Send, Camera, Monitor, CameraOff } from "lucide-react";
+import { Mic, MicOff, X, Send, Camera, Monitor, CameraOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─────────────────────────────────────────────
-   Language options
+   Automatic language + voice/accent detection
+   — no manual language picker, works like
+   Gemini's voice mode: detects the language of
+   the text itself and picks the matching voice.
+   English → Guy (American accent)
+   Roman Urdu / Urdu / Hindi → Asad (Urdu accent)
 ───────────────────────────────────────────── */
-const LANGUAGES = [
-  { code: 'en-US', label: 'English' },
-  { code: 'ur-PK', label: 'اردو' },
-  { code: 'ar-SA', label: 'عربي' },
-  { code: 'hi-IN', label: 'हिन्दी' },
-  { code: 'fr-FR', label: 'Français' },
-  { code: 'es-ES', label: 'Español' },
-  { code: 'de-DE', label: 'Deutsch' },
-  { code: 'zh-CN', label: '中文 (简体)' },
-  { code: 'pt-BR', label: 'Português' },
-  { code: 'ru-RU', label: 'Русский' },
-  { code: 'ja-JP', label: '日本語' },
-  { code: 'ko-KR', label: '한국어' },
-  { code: 'it-IT', label: 'Italiano' },
-  { code: 'tr-TR', label: 'Türkçe' },
-];
-
-/* ─────────────────────────────────────────────
-   Voice presets — Edge neural voices per language
-───────────────────────────────────────────── */
-const LANG_VOICES: Record<string, Array<{id: string; label: string; icon: string; desc: string; voice: string}>> = {
-  'en-US': [
-    { id: 'en-male1',  label: 'Guy',       icon: '♂', desc: 'American Deep',       voice: 'en-US-GuyNeural' },
-    { id: 'en-male2',  label: 'Ryan',      icon: '♂', desc: 'British Accent',      voice: 'en-GB-RyanNeural' },
-    { id: 'en-fem1',   label: 'Natasha',   icon: '♀', desc: 'Australian',          voice: 'en-AU-NatashaNeural' },
-    { id: 'en-fem2',   label: 'Jenny',     icon: '♀', desc: 'American Natural',    voice: 'en-US-JennyNeural' },
-  ],
-  'ur-PK': [
-    { id: 'ur-fem1',   label: 'اُزمٰا',   icon: '♀', desc: 'اردو خاتون',          voice: 'ur-PK-UzmaNeural' },
-    { id: 'ur-male1',  label: 'اسد',      icon: '♂', desc: 'اردو مرد',            voice: 'ur-PK-AsadNeural' },
-  ],
-  'hi-IN': [
-    { id: 'hi-fem1',   label: 'स्वरा',    icon: '♀', desc: 'हिंदी महिला',         voice: 'hi-IN-SwaraNeural' },
-    { id: 'hi-male1',  label: 'मधुर',     icon: '♂', desc: 'हिंदी पुरुष',          voice: 'hi-IN-MadhurNeural' },
-  ],
-  'ar-SA': [
-    { id: 'ar-fem1',   label: 'زارية',    icon: '♀', desc: 'عربي أنثى',           voice: 'ar-SA-ZariyahNeural' },
-    { id: 'ar-male1',  label: 'حامد',     icon: '♂', desc: 'عربي ذكر',            voice: 'ar-SA-HamedNeural' },
-  ],
-  'fr-FR': [
-    { id: 'fr-fem1',   label: 'Denise',   icon: '♀', desc: 'Français Femme',      voice: 'fr-FR-DeniseNeural' },
-    { id: 'fr-male1',  label: 'Henri',    icon: '♂', desc: 'Français Homme',      voice: 'fr-FR-HenriNeural' },
-  ],
-  'es-ES': [
-    { id: 'es-fem1',   label: 'Elvira',   icon: '♀', desc: 'Español Mujer',       voice: 'es-ES-ElviraNeural' },
-    { id: 'es-male1',  label: 'Álvaro',   icon: '♂', desc: 'Español Hombre',      voice: 'es-ES-AlvaroNeural' },
-  ],
-  'de-DE': [
-    { id: 'de-fem1',   label: 'Katja',    icon: '♀', desc: 'Deutsch Frau',        voice: 'de-DE-KatjaNeural' },
-    { id: 'de-male1',  label: 'Conrad',   icon: '♂', desc: 'Deutsch Mann',        voice: 'de-DE-ConradNeural' },
-  ],
-  'zh-CN': [
-    { id: 'zh-fem1',   label: '晓晓',     icon: '♀', desc: '中文女声',             voice: 'zh-CN-XiaoxiaoNeural' },
-    { id: 'zh-male1',  label: '云希',     icon: '♂', desc: '中文男声',             voice: 'zh-CN-YunxiNeural' },
-  ],
-  'pt-BR': [
-    { id: 'pt-fem1',   label: 'Francisca',icon: '♀', desc: 'Português Feminino',  voice: 'pt-BR-FranciscaNeural' },
-    { id: 'pt-male1',  label: 'Antônio',  icon: '♂', desc: 'Português Masculino', voice: 'pt-BR-AntonioNeural' },
-  ],
-  'ru-RU': [
-    { id: 'ru-fem1',   label: 'Светлана', icon: '♀', desc: 'Русский Женский',     voice: 'ru-RU-SvetlanaNeural' },
-    { id: 'ru-male1',  label: 'Дмитрий',  icon: '♂', desc: 'Русский Мужской',     voice: 'ru-RU-DmitryNeural' },
-  ],
-  'ja-JP': [
-    { id: 'ja-fem1',   label: '七海',     icon: '♀', desc: '日本語 女性',          voice: 'ja-JP-NanamiNeural' },
-    { id: 'ja-male1',  label: '慶太',     icon: '♂', desc: '日本語 男性',          voice: 'ja-JP-KeitaNeural' },
-  ],
-  'ko-KR': [
-    { id: 'ko-fem1',   label: '선희',     icon: '♀', desc: '한국어 여성',          voice: 'ko-KR-SunHiNeural' },
-    { id: 'ko-male1',  label: '인준',     icon: '♂', desc: '한국어 남성',          voice: 'ko-KR-InJoonNeural' },
-  ],
-  'it-IT': [
-    { id: 'it-fem1',   label: 'Elsa',     icon: '♀', desc: 'Italiano Donna',      voice: 'it-IT-ElsaNeural' },
-    { id: 'it-male1',  label: 'Diego',    icon: '♂', desc: 'Italiano Uomo',       voice: 'it-IT-DiegoNeural' },
-  ],
-  'tr-TR': [
-    { id: 'tr-fem1',   label: 'Emel',     icon: '♀', desc: 'Türkçe Kadın',        voice: 'tr-TR-EmelNeural' },
-    { id: 'tr-male1',  label: 'Ahmet',    icon: '♂', desc: 'Türkçe Erkek',        voice: 'tr-TR-AhmetNeural' },
-  ],
-};
-
-function getVoicesForLang(code: string) {
-  return LANG_VOICES[code] ?? LANG_VOICES['en-US'];
+function detectSpokenLang(text: string): { code: 'en' | 'ur'; label: string; voice: string } {
+  // Native Urdu/Arabic script
+  if (/[\u0600-\u06FF]/.test(text)) return { code: 'ur', label: 'اردو', voice: 'ur-PK-AsadNeural' };
+  // Native Hindi (Devanagari) script — still uses Asad's accent per app convention
+  if (/[\u0900-\u097F]/.test(text)) return { code: 'ur', label: 'हिन्दी', voice: 'ur-PK-AsadNeural' };
+  // Roman Urdu / Hindi keywords typed in Latin script
+  if (/\b(hai|hain|kya|aap|mein|nahi|haan|bhi|toh|ab|jo|ke|ka|ki|ko|yeh|woh|tha|thi|theek|accha|lekin|phir|kaisa|matlab|bilkul|kyun|kaise|kab|kaun|kahan|aaj|agar|tum|hum)\b/i.test(text))
+    return { code: 'ur', label: 'Roman Urdu', voice: 'ur-PK-AsadNeural' };
+  return { code: 'en', label: 'English', voice: 'en-US-GuyNeural' };
 }
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -102,13 +33,8 @@ interface Props { isOpen: boolean; onClose: () => void; }
 
 export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [phase, setPhase]         = useState<Phase>('idle');
-  const [lang, setLang]           = useState(() => localStorage.getItem('voiceLang') || 'en-US');
-  const [showLang, setShowLang]   = useState(false);
-  const [showVoice, setShowVoice] = useState(false);
-  const [selSlot, setSelSlot]     = useState(() => {
-    const savedLang = localStorage.getItem('voiceLang') || 'en-US';
-    return getVoicesForLang(savedLang)[0].id;
-  });
+  // Auto-detected language of the conversation — no manual picker, updates live
+  const [autoLang, setAutoLang]   = useState<'en' | 'ur'>('en');
   const [bars, setBars]           = useState<number[]>(Array(32).fill(4));
   const [aiReply, setAiReply]     = useState('');
   const [liveText, setLiveText]   = useState('');
@@ -116,8 +42,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const [camError, setCamError]   = useState('');
 
   const phaseRef        = useRef<Phase>('idle');
-  const langRef         = useRef('en-US');
-  const selSlotRef      = useRef('male1');
+  const autoLangRef     = useRef<'en' | 'ur'>('en');
   const inConvRef       = useRef(false);
   const collectedRef    = useRef('');
   const recRef          = useRef<any>(null);
@@ -204,16 +129,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  useEffect(() => {
-    langRef.current = lang;
-    localStorage.setItem('voiceLang', lang);
-    // Auto-switch to first voice of the new language
-    const voices = getVoicesForLang(lang);
-    const firstId = voices[0].id;
-    setSelSlot(firstId);
-    selSlotRef.current = firstId;
-  }, [lang]);
-  useEffect(() => { selSlotRef.current = selSlot; }, [selSlot]);
+  useEffect(() => { autoLangRef.current = autoLang; }, [autoLang]);
 
   // Add/remove body class so CSS can instantly hide the message bar with no React timing gap
   useEffect(() => {
@@ -257,12 +173,12 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     }
   }
 
-  /* ── Browser speech — find best available voice for the current language ── */
+  /* ── Browser speech — auto-detect the language of this exact text ── */
   function speakBrowserFallback(text: string): Promise<void> {
     return new Promise(resolve => {
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
-      const targetLang = langRef.current;          // e.g. 'ur-PK'
+      const targetLang = detectSpokenLang(text).code === 'ur' ? 'ur-PK' : 'en-US';
       const targetBase = targetLang.split('-')[0]; // e.g. 'ur'
       const voices = window.speechSynthesis.getVoices();
       // Try exact lang match → base lang match → any voice
@@ -359,13 +275,15 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     // Capture frame if camera/screen is active
     const frameB64 = camModeRef.current !== 'off' ? captureFrame() : null;
 
-    const langLabel = LANGUAGES.find(x => x.code === langRef.current)?.label ?? 'English';
+    // Auto-detect the language of what the user just said — drives both the
+    // AI's reply language instruction and the TTS voice/accent, no manual picker.
+    const detected = detectSpokenLang(text.trim());
+    const langLabel = detected.label;
+    setAutoLang(detected.code); autoLangRef.current = detected.code;
     historyRef.current = [...historyRef.current, { role: 'user', content: text.trim() }];
     if (historyRef.current.length > 30) historyRef.current = historyRef.current.slice(-30);
 
     const sess = ++speakSessRef.current;
-    const voices = getVoicesForLang(langRef.current);
-    const slot = voices.find(s => s.id === selSlotRef.current) ?? voices[0];
     const ac = new AbortController();
 
     // Queue of TTS promises — producer (SSE reader) pushes, consumer (playback loop) pops
@@ -379,7 +297,9 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
     function fireSentence(s: string) {
       if (!s.trim()) return;
       sentenceTexts.push(s.trim());
-      ttsPending.push(fetchChunk(s.trim(), slot.voice, ac.signal));
+      // Detect the language/accent per-sentence so mixed-language replies still sound right
+      const voice = detectSpokenLang(s).voice;
+      ttsPending.push(fetchChunk(s.trim(), voice, ac.signal));
       notifyConsumer?.();   // wake the playback loop if it's waiting
     }
 
@@ -519,7 +439,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ audio: base64, lang: langRef.current }),
+            body: JSON.stringify({ audio: base64 }),
           });
           const data = await resp.json();
           const text = (data.text || '').trim();
@@ -528,7 +448,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             collectedRef.current = text;
             sendToAI(text);
           } else {
-            const isUrduNow = langRef.current === 'ur-PK';
+            const isUrduNow = autoLangRef.current === 'ur';
             setAiReply(isUrduNow ? 'کچھ نہیں سنا۔ دوبارہ کوشش کریں۔' : 'Nothing heard. Tap mic and try again.');
             syncPhase('idle');
             inConvRef.current = false;
@@ -577,7 +497,9 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
 
     const rec = new SR();
     recRef.current = rec;
-    rec.lang = langRef.current;
+    // Let the browser auto-detect the spoken language (Gemini-style) instead of
+    // forcing a fixed locale — most browsers default to the OS/browser language
+    // and handle code-switching reasonably well without an explicit lang tag.
     rec.continuous     = true;
     rec.interimResults = true;
 
@@ -675,7 +597,7 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
   const glowOp   = phase === 'listening' ? 0.95 : phase === 'speaking' ? 0.85 : phase === 'thinking' ? 0.45 : 0.22;
   const glowBlur = phase === 'listening' ? 80 : phase === 'speaking' ? 70 : 40;
 
-  const isUrdu = lang === 'ur-PK';
+  const isUrdu = autoLang === 'ur';
   const isRecording = useMediaSTTRef.current && phase === 'listening';
   const statusLabel =
     isRecording        ? (isUrdu ? '● ریکارڈ ہو رہا ہے — روکنے کے لیے دبائیں' : '● Recording — tap mic to send') :
@@ -721,61 +643,6 @@ export function VoiceModeModal({ isOpen, onClose }: Props) {
             <span className="text-white/50 text-[9px]">{camMode === 'screen' ? 'Screen' : 'Cam'}</span>
           </div>
         )}
-      </div>
-
-      {/* Top-left: language + voice pickers */}
-      <div className="absolute top-4 left-4 z-50 flex gap-1 items-center">
-        {/* Language */}
-        <div className="relative">
-          <button onClick={() => { setShowLang(p => !p); setShowVoice(false); }}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white/90 px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/10">
-            <Globe className="w-4 h-4" />
-            <span className="text-xs font-medium">{LANGUAGES.find(l => l.code === lang)?.label ?? 'English'}</span>
-          </button>
-          <AnimatePresence>
-            {showLang && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 min-w-[145px] backdrop-blur-sm z-50 overflow-y-auto"
-                style={{ maxHeight: 320 }}>
-                {LANGUAGES.map(l => (
-                  <button key={l.code}
-                    onClick={() => { setLang(l.code); langRef.current = l.code; setShowLang(false); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm transition-colors ${lang === l.code ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
-                    {l.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Voice */}
-        <div className="relative">
-          <button onClick={() => { setShowVoice(p => !p); setShowLang(false); }}
-            className="text-white/40 hover:text-white/70 p-2 transition-colors">
-            <AudioLines className="w-5 h-5" />
-          </button>
-          <AnimatePresence>
-            {showVoice && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className="absolute top-10 left-0 bg-zinc-900/95 border border-white/10 rounded-2xl p-2 flex flex-col gap-0.5 backdrop-blur-sm z-50 min-w-[190px]">
-                <div className="px-3 py-1.5 text-white/40 text-xs font-semibold uppercase tracking-wider">Voice</div>
-                {getVoicesForLang(lang).map(slot => (
-                  <button key={slot.id}
-                    onClick={() => { setSelSlot(slot.id); selSlotRef.current = slot.id; setShowVoice(false); }}
-                    className={`text-left px-3 py-2 rounded-xl text-sm flex items-center gap-3 transition-colors ${selSlot === slot.id ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}>
-                    <span className="text-base">{slot.icon}</span>
-                    <span className="flex-1 flex flex-col leading-tight">
-                      <span>{slot.label}</span>
-                      <span className="text-xs opacity-50">{slot.desc}</span>
-                    </span>
-                    {selSlot === slot.id && <span className="text-xs text-white/50">✓</span>}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
 
       {/* Text display */}

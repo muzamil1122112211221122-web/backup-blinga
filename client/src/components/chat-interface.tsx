@@ -713,20 +713,51 @@ function PCFollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; o
   }, []);
 
   if (loading) return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
-      {[72, 96, 84].map((w, i) => <div key={i} className="h-7 rounded-full bg-accent animate-pulse" style={{ width: w }} />)}
+    <div className="mt-2.5 flex flex-col gap-1.5">
+      {[0, 1, 2].map((i) => <div key={i} className="h-7 w-full max-w-[420px] rounded-full bg-accent animate-pulse" />)}
     </div>
   );
   if (!suggestions.length) return null;
   return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
+    <div className="mt-2.5 flex flex-col gap-1.5">
       {suggestions.map((s, i) => (
         <button key={i} onClick={() => onSelect(s)}
-          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[280px] truncate shadow-sm flex items-center gap-1.5">
+          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left shadow-sm flex items-center gap-1.5 w-fit max-w-full">
           <span className="text-muted-foreground text-[13px] leading-none">⤷</span>
           {s}
         </button>
       ))}
+    </div>
+  );
+}
+
+// ─── PC Scroll buttons — fade + disable at scroll limits (matches mobile) ────
+function PCScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLDivElement | null> }) {
+  const [atTop, setAtTop] = React.useState(true);
+  const [atBottom, setAtBottom] = React.useState(false);
+  React.useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const update = () => {
+      setAtTop(el.scrollTop <= 8);
+      setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, [scrollAreaRef]);
+  return (
+    <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-40">
+      <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+        disabled={atTop}
+        className={`w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90 ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
+        <ChevronUp className="w-3.5 h-3.5" />
+      </button>
+      <button onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
+        disabled={atBottom}
+        className={`w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90 ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to bottom">
+        <ChevronDown className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }
@@ -1305,8 +1336,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     onError: () => {},
   });
 
-  // Text-to-speech
-  const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
+  // Text-to-speech — Edge neural voices (Guy/Asad) via /api/tts, matching mobile
+  const { speak: browserSpeak, stop: stopBrowserSpeaking } = useSpeechSynthesis();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speakAudioSrcRef = useRef<AudioBufferSourceNode | null>(null);
 
   // Module-scoped caches (defined outside component) survive component remounts.
   // Refs here just expose them with a stable identity for in-component reads.
@@ -1867,7 +1900,7 @@ IMPORTANT RULES:
               .trim();
             
             if (cleanedContent) {
-              speak(cleanedContent);
+              handleSpeakMessage(cleanedContent);
             }
           }
         }
@@ -1888,7 +1921,7 @@ IMPORTANT RULES:
         }]);
         break;
     }
-  }, [isVoiceToVoiceMode, speak, currentProjectId]);
+  }, [isVoiceToVoiceMode, currentProjectId]);
 
   const handleProjectSelect = async (id: string) => {
     setCurrentProjectId(id);
@@ -2406,7 +2439,7 @@ IMPORTANT RULES:
             .trim();
           
           if (cleanedContent) {
-            speak(cleanedContent);
+            handleSpeakMessage(cleanedContent);
           }
         }
         
@@ -2513,11 +2546,39 @@ IMPORTANT RULES:
     setFeedbackOpen(false);
   };
 
-  const handleSpeakMessage = (content: string) => {
+  const handleSpeakMessage = async (content: string) => {
     if (isSpeaking) {
-      stopSpeaking();
-    } else {
-      speak(content);
+      window.speechSynthesis.cancel();
+      stopBrowserSpeaking();
+      if (speakAudioSrcRef.current) { try { speakAudioSrcRef.current.stop(); } catch {} speakAudioSrcRef.current = null; }
+      setIsSpeaking(false);
+      return;
+    }
+    setIsSpeaking(true);
+    const voice = detectVoiceForText(content);
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: content.slice(0, 3000), voice }),
+      });
+      if (!res.ok) throw new Error('tts');
+      const { audio } = await res.json();
+      if (!audio) throw new Error('no-audio');
+      const bin = atob(audio); const buf = new ArrayBuffer(bin.length); const view = new Uint8Array(buf);
+      for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const decoded = await ctx.decodeAudioData(buf.slice(0));
+      const src = ctx.createBufferSource(); src.buffer = decoded; src.connect(ctx.destination);
+      speakAudioSrcRef.current = src;
+      src.onended = () => { setIsSpeaking(false); speakAudioSrcRef.current = null; };
+      src.start(0);
+    } catch {
+      // Fallback to browser-native speech synthesis if the Edge TTS endpoint fails
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(content);
+      u.onend = () => setIsSpeaking(false);
+      u.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(u);
     }
   };
 
@@ -3349,16 +3410,7 @@ Let's start the self-listen session!`;
           <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-32 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
           {/* Scroll to top/bottom buttons */}
           {messages.length > 2 && (
-            <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-40">
-              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to top">
-                <ChevronUp className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' })}
-                className="w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center hover:bg-accent transition-all text-muted-foreground hover:text-foreground" title="Scroll to bottom">
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <PCScrollButtons scrollAreaRef={chatScrollRef} />
           )}
           {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
@@ -3587,6 +3639,11 @@ Let's start the self-listen session!`;
                                 <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                                <DropdownMenuItem onClick={() => handleSpeakMessage(message.content)}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  {isSpeaking ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
+                                  {isSpeaking ? 'Stop reading' : 'Read aloud'}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
                                   <RefreshCw className={`w-3.5 h-3.5 text-green-500 ${retryingMessageId === message.id ? 'animate-spin' : ''}`} /> Regenerate
