@@ -228,7 +228,8 @@ import {
   Minimize2,
   AlignLeft,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  MoreHorizontal
 } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
@@ -686,6 +687,41 @@ const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; i
     { label: "Arctic Expedition",   prompt: "cinematic wide shot of explorers trudging across a vast frozen arctic wilderness in a whiteout",     img: "https://images.unsplash.com/photo-1517783999520-f068d7431a60?w=400&q=70&auto=format&fit=crop" },
   ],
 };
+
+// ─── PC Follow-up Suggestions ────────────────────────────────────────────────
+function PCFollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onSelect: (q: string) => void }) {
+  const [suggestions, setSuggestions] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/suggest-followups', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msgContent.slice(0, 700) }),
+    }).then(r => r.json()).then(d => {
+      if (!cancelled && Array.isArray(d.suggestions) && d.suggestions.length > 0)
+        setSuggestions(d.suggestions.slice(0, 3));
+    }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) return (
+    <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {[72, 96, 84].map((w, i) => <div key={i} className="h-7 rounded-full bg-accent animate-pulse" style={{ width: w }} />)}
+    </div>
+  );
+  if (!suggestions.length) return null;
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {suggestions.map((s, i) => (
+        <button key={i} onClick={() => onSelect(s)}
+          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[280px] truncate shadow-sm flex items-center gap-1.5">
+          <span className="text-muted-foreground text-[13px] leading-none">⤷</span>
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
@@ -3462,140 +3498,135 @@ Let's start the self-listen session!`;
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex space-x-3 max-w-4xl">
-                    {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
-                    <div className={`rounded-3xl px-4 py-3 flex-1 chat-bubble ${
-                      message.content.includes('```') 
-                        ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' 
-                        : ''
-                    }`}>
-                      <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
-                      {/* Source credits for web-searched responses */}
-                      {message.metadata?.webSources && message.metadata.webSources.length > 0 && (
-                        <div className="mt-3 pt-2 border-t border-border/40">
-                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5 font-medium">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                            Sources
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {(message.metadata.webSources as { title: string; url: string }[])
-                              .filter((s, i, a) => a.findIndex(x => x.url === s.url) === i)
-                              .slice(0, 5)
-                              .map((src, i) => (
-                                <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
-                                  title={src.title}
-                                  className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all hover:scale-110 flex items-center justify-center shadow-sm">
-                                  <img src={`https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(src.url)}`} alt={src.title}
-                                    className="w-5 h-5 rounded-sm"
-                                    onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z'/%3E%3C/svg%3E"; }} />
-                                </a>
-                              ))}
-                          </div>
+                ) : (() => {
+                  const lastAiMsgId = messages.reduce<string | undefined>((acc, m) => m.role !== 'user' ? m.id : acc, undefined);
+                  const isLatestAi = message.id === lastAiMsgId;
+                  // "being streamed" = this is the latest AI msg AND isTyping AND the last message in array is AI
+                  // (if last msg is user, no AI response exists yet → don't block the previous completed AI msg)
+                  const isBeingStreamed = isLatestAi && isTyping && messages[messages.length - 1]?.role !== 'user';
+                  const isDone = !isBeingStreamed && !pendingAnimationIds.has(message.id);
+                  const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
+                  return (
+                    <div className="flex space-x-3 max-w-4xl">
+                      {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+                      <div className="flex-1 min-w-0">
+                        {/* Bubble — relative for speak button */}
+                        <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${message.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
+                          <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
+                          {/* Source credits */}
+                          {message.metadata?.webSources && message.metadata.webSources.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-border/40">
+                              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5 font-medium">
+                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                Sources
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {(message.metadata.webSources as { title: string; url: string }[])
+                                  .filter((s, i, a) => a.findIndex(x => x.url === s.url) === i)
+                                  .slice(0, 5)
+                                  .map((src, i) => (
+                                    <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" title={src.title}
+                                      className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all hover:scale-110 flex items-center justify-center shadow-sm">
+                                      <img src={`https://www.google.com/s2/favicons?sz=32&domain_url=${encodeURIComponent(src.url)}`} alt={src.title}
+                                        className="w-5 h-5 rounded-sm"
+                                        onError={e => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cpath d='M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z'/%3E%3C/svg%3E"; }} />
+                                    </a>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                          {/* Speak — absolute top-right of bubble */}
+                          {isDone && (
+                            <button onClick={() => handleSpeakMessage(message.content)} data-testid={`button-speak-${message.id}`}
+                              className={`absolute top-2 right-2 h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 ${isSpeaking ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground/50 hover:text-foreground hover:bg-accent'}`}>
+                              {isSpeaking ? <Square className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                            </button>
+                          )}
                         </div>
-                      )}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex space-x-2">
-                          {/* Like */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${likedMessages.has(message.id) ? 'text-green-500 hover:text-green-600 bg-green-50 dark:bg-green-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                                onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
-                                <ThumbsUp className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{likedMessages.has(message.id) ? 'Liked' : 'Like'}</p></TooltipContent>
-                          </Tooltip>
-                          {/* Dislike */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${dislikedMessages.has(message.id) ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                                onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
-                                <ThumbsDown className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{dislikedMessages.has(message.id) ? 'Disliked' : 'Dislike'}</p></TooltipContent>
-                          </Tooltip>
-                          {/* Copy */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                                onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
-                          </Tooltip>
-                          {/* Redo */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-150 ${retryingMessageId === message.id ? 'text-blue-500 animate-spin' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                                onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id} data-testid={`button-retry-${message.id}`}>
-                                <RefreshCw className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Redo</p></TooltipContent>
-                          </Tooltip>
-                          {/* Speak */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className={`h-6 w-6 rounded-xl transition-all duration-200 ${isSpeaking ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`}
-                                onClick={() => handleSpeakMessage(message.content)} data-testid={`button-speak-${message.id}`}>
-                                {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{isSpeaking ? 'Stop' : 'Speak'}</p></TooltipContent>
-                          </Tooltip>
-                          {/* New Chat */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon"
-                                className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent"
-                                onClick={() => handleChatInNewChat(message.content)}>
-                                <MessageSquarePlus className="h-3 w-3" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>New chat</p></TooltipContent>
-                          </Tooltip>
-                          {/* Export */}
-                          <DropdownMenu>
+                        {/* Action row — only after done */}
+                        {isDone && (
+                          <div className="flex items-center gap-0.5 mt-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon"
-                                    className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent">
-                                    <FileDown className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-50 dark:bg-green-950' : ''}`}
+                                  onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
+                                  <ThumbsUp className="h-3.5 w-3.5" />
+                                </button>
                               </TooltipTrigger>
-                              <TooltipContent><p>Export</p></TooltipContent>
+                              <TooltipContent><p>Like</p></TooltipContent>
                             </Tooltip>
-                            <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px]">
-                              <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                disabled={exportingMsgId === message.id + '-doc'}
-                                onClick={async () => { setExportingMsgId(message.id + '-doc'); try { await downloadWordDoc(message.content); } finally { setExportingMsgId(null); } }}>
-                                {exportingMsgId === message.id + '-doc' ? (<svg className="h-3.5 w-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>) : (<FileDown className="h-3.5 w-3.5 text-blue-500" />)}
-                                {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.docx)'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                disabled={exportingMsgId === message.id + '-ppt'}
-                                onClick={async () => { setExportingMsgId(message.id + '-ppt'); try { await downloadPptx(message.content); } finally { setExportingMsgId(null); } }}>
-                                {exportingMsgId === message.id + '-ppt' ? (<svg className="h-3.5 w-3.5 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>) : (<FileDown className="h-3.5 w-3.5 text-orange-500" />)}
-                                {exportingMsgId === message.id + '-ppt' ? 'AI Designing…' : 'PowerPoint (.pptx)'}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button className={`${ab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`}
+                                  onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
+                                  <ThumbsDown className="h-3.5 w-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Dislike</p></TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button className={`${ab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}
+                                  onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
+                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
+                            </Tooltip>
+                            {/* … more menu */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                                <DropdownMenuItem onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
+                                  <RefreshCw className={`w-3.5 h-3.5 text-green-500 ${retryingMessageId === message.id ? 'animate-spin' : ''}`} /> Regenerate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { const win = window.open('', '_blank'); if (!win) return; win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${message.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`); win.document.close(); win.focus(); setTimeout(() => { win.print(); }, 500); }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-red-500" /> Export as PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem disabled={exportingMsgId === message.id + '-doc'}
+                                  onClick={async () => { setExportingMsgId(message.id + '-doc'); try { await downloadWordDoc(message.content); } finally { setExportingMsgId(null); } }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
+                                  {exportingMsgId === message.id + '-doc' ? <svg className="w-3.5 h-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> : <FileDown className="w-3.5 h-3.5 text-blue-500" />}
+                                  {exportingMsgId === message.id + '-doc' ? 'AI Formatting…' : 'Word Document (.docx)'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem disabled={exportingMsgId === message.id + '-ppt'}
+                                  onClick={async () => { setExportingMsgId(message.id + '-ppt'); try { await downloadPptx(message.content); } finally { setExportingMsgId(null); } }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
+                                  {exportingMsgId === message.id + '-ppt' ? <svg className="w-3.5 h-3.5 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> : <FileDown className="w-3.5 h-3.5 text-orange-500" />}
+                                  {exportingMsgId === message.id + '-ppt' ? 'AI Designing…' : 'PowerPoint (.pptx)'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleChatInNewChat(message.content)}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <MessageSquarePlus className="w-3.5 h-3.5 text-zinc-500" /> New chat from this
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
+                        {/* Follow-up suggestions — only for latest AI message after done */}
+                        {isDone && isLatestAi && (
+                          <PCFollowUpSuggestions msgContent={message.content} onSelect={(q) => setInputValue(q)} />
+                        )}
+                        {/* Disclaimer */}
+                        {isDone && (
+                          <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ))}
             
