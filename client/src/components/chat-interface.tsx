@@ -1101,7 +1101,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     scheduleNomadNotif();
   }, [scheduleNomadNotif]);
 
-  const [aiOrder, setAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']);
+  const [aiOrder, setAiOrder] = useState(['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral']);
   const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
 
   useEffect(() => {
@@ -1338,8 +1338,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
   // Text-to-speech — Edge neural voices (Guy/Asad) via /api/tts, matching mobile
   const { speak: browserSpeak, stop: stopBrowserSpeaking } = useSpeechSynthesis();
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const speakAudioSrcRef = useRef<AudioBufferSourceNode | null>(null);
+  const speakRequestIdRef = useRef(0);
 
   // Module-scoped caches (defined outside component) survive component remounts.
   // Refs here just expose them with a stable identity for in-component reads.
@@ -2546,15 +2547,25 @@ IMPORTANT RULES:
     setFeedbackOpen(false);
   };
 
-  const handleSpeakMessage = async (content: string) => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      stopBrowserSpeaking();
-      if (speakAudioSrcRef.current) { try { speakAudioSrcRef.current.stop(); } catch {} speakAudioSrcRef.current = null; }
-      setIsSpeaking(false);
+  const stopSpeaking = () => {
+    speakRequestIdRef.current += 1;
+    window.speechSynthesis.cancel();
+    stopBrowserSpeaking();
+    if (speakAudioSrcRef.current) { try { speakAudioSrcRef.current.onended = null; speakAudioSrcRef.current.stop(); } catch {} speakAudioSrcRef.current = null; }
+    setSpeakingMessageId(null);
+  };
+
+  const handleSpeakMessage = async (content: string, messageId?: string) => {
+    const id = messageId ?? content;
+    // Toggle off if this exact message is already speaking
+    if (speakingMessageId === id) {
+      stopSpeaking();
       return;
     }
-    setIsSpeaking(true);
+    // Stop any currently playing audio before starting a new one
+    stopSpeaking();
+    const myRequestId = ++speakRequestIdRef.current;
+    setSpeakingMessageId(id);
     const voice = detectVoiceForText(content);
     try {
       const res = await fetch('/api/tts', {
@@ -2564,20 +2575,30 @@ IMPORTANT RULES:
       if (!res.ok) throw new Error('tts');
       const { audio } = await res.json();
       if (!audio) throw new Error('no-audio');
+      // A newer request superseded this one while we were fetching — abort
+      if (speakRequestIdRef.current !== myRequestId) return;
       const bin = atob(audio); const buf = new ArrayBuffer(bin.length); const view = new Uint8Array(buf);
       for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const decoded = await ctx.decodeAudioData(buf.slice(0));
+      if (speakRequestIdRef.current !== myRequestId) return;
       const src = ctx.createBufferSource(); src.buffer = decoded; src.connect(ctx.destination);
       speakAudioSrcRef.current = src;
-      src.onended = () => { setIsSpeaking(false); speakAudioSrcRef.current = null; };
+      src.onended = () => {
+        if (speakRequestIdRef.current === myRequestId) { setSpeakingMessageId(null); speakAudioSrcRef.current = null; }
+      };
       src.start(0);
     } catch {
+      if (speakRequestIdRef.current !== myRequestId) return;
       // Fallback to browser-native speech synthesis if the Edge TTS endpoint fails
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(content);
-      u.onend = () => setIsSpeaking(false);
-      u.onerror = () => setIsSpeaking(false);
+      const langInfo = detectVoiceForText(content);
+      if (langInfo && langInfo.startsWith('ur')) u.lang = 'ur-PK';
+      else if (langInfo && langInfo.startsWith('hi')) u.lang = 'hi-IN';
+      else u.lang = 'en-US';
+      u.onend = () => { if (speakRequestIdRef.current === myRequestId) setSpeakingMessageId(null); };
+      u.onerror = () => { if (speakRequestIdRef.current === myRequestId) setSpeakingMessageId(null); };
       window.speechSynthesis.speak(u);
     }
   };
@@ -3595,13 +3616,6 @@ Let's start the self-listen session!`;
                               </div>
                             </div>
                           )}
-                          {/* Speak — absolute top-right of bubble */}
-                          {isDone && (
-                            <button onClick={() => handleSpeakMessage(message.content)} data-testid={`button-speak-${message.id}`}
-                              className={`absolute top-2 right-2 h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 ${isSpeaking ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground/50 hover:text-foreground hover:bg-accent'}`}>
-                              {isSpeaking ? <Square className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-                            </button>
-                          )}
                         </div>
                         {/* Action row — only after done */}
                         {isDone && (
@@ -3639,10 +3653,10 @@ Let's start the self-listen session!`;
                                 <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
-                                <DropdownMenuItem onClick={() => handleSpeakMessage(message.content)}
+                                <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
-                                  {isSpeaking ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
-                                  {isSpeaking ? 'Stop reading' : 'Read aloud'}
+                                  {speakingMessageId === message.id ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
+                                  {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
@@ -4007,11 +4021,11 @@ Let's start the self-listen session!`;
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-200 ${isSpeaking ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => handleSpeakMessage(msg.content)}>
-                                        {isSpeaking ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-200 ${speakingMessageId === msg.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => handleSpeakMessage(msg.content, msg.id)}>
+                                        {speakingMessageId === msg.id ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent><p>{isSpeaking ? 'Stop' : 'Speak'}</p></TooltipContent>
+                                    <TooltipContent><p>{speakingMessageId === msg.id ? 'Stop' : 'Speak'}</p></TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>

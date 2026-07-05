@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { getVibrantColor } from "@/lib/utils";
 import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
 import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
 import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
@@ -285,6 +286,45 @@ function ScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLD
         disabled={atBottom}
         className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
         <ChevronDown className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+// ─── Settings scroll-to-top/bottom buttons (absolute, fades but never disappears) ──
+function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLDivElement | null> }) {
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
+  const [scrollable, setScrollable] = useState(false);
+  useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const update = () => {
+      setAtTop(el.scrollTop <= 8);
+      setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 8);
+      setScrollable(el.scrollHeight - el.clientHeight > 20);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, [scrollAreaRef]);
+  if (!scrollable) return null;
+  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90";
+  return (
+    <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 z-20">
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+        disabled={atTop}
+        className={`${btnBase} ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        <ChevronUp className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
+        disabled={atBottom}
+        className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        <ChevronDown className="w-4 h-4" />
       </button>
     </div>
   );
@@ -1478,6 +1518,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const picInputRef = useRef<HTMLInputElement>(null);
   const settingsTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const settingsNavRef = useRef<HTMLDivElement>(null);
+  const settingsContentScrollRef = useRef<HTMLDivElement | null>(null);
   const [settingsPill, setSettingsPill] = useState({ left: 0, width: 0, ready: false });
 
   // ── Dirty / exit-dialog state (mirrors PC CustomizeModal exactly) ──
@@ -1674,7 +1715,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
             </div>
           </div>
 
-          <div key={activeSection} className="flex-1 overflow-y-auto p-4" style={{ animation: "fadeSlideIn 0.18s cubic-bezier(0.23,1,0.32,1) both" }}>
+          <div ref={settingsContentScrollRef} key={activeSection} className="flex-1 overflow-y-auto p-4 relative" style={{ animation: "fadeSlideIn 0.18s cubic-bezier(0.23,1,0.32,1) both" }}>
+            <SettingsScrollButtons scrollAreaRef={settingsContentScrollRef} />
             {activeSection === "account" && (
               <div className="space-y-4">
                 {/* Hidden real file picker */}
@@ -1691,7 +1733,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-zinc-400 transition-all active:scale-95"
                       onClick={() => picInputRef.current?.click()}>
                       {(previewPic || profilePicture) ? <img src={previewPic || profilePicture} alt="" className="w-full h-full object-cover" />
-                        : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>{initials}</div>}
+                        : <div className="w-full h-full flex items-center justify-center font-bold text-xl text-white" style={{ background: `linear-gradient(45deg, ${getVibrantColor(user?.displayName || user?.username || user?.email || "?")}, ${getVibrantColor(user?.displayName || user?.username || user?.email || "?", true)})` }}>{initials}</div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">{user?.displayName || user?.username || "User"}</p>

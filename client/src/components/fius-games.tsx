@@ -1,15 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check, Layers, Zap, Car, HelpCircle, Shuffle } from "lucide-react";
-import imgTTT      from "@assets/unnamed_1780326509544.png";
+import imgTTT      from "@assets/tic_tac_toe_1783265385965.png";
 import imgHangman  from "@assets/png-clipart-hangman-ahorcado-hangman-word-guessing-game-hangma_1780326509544.png";
-import imgRPS      from "@assets/6727583_1780326509543.png";
+import imgRPS      from "@assets/rock_paper_scissors_1783265385964.png";
 import imgC4       from "@assets/3367465_1780326509543.png";
 import imgMM       from "@assets/images_1780326509542.jpg";
 import imgWC       from "@assets/classic-word-chain-087da1e5_1780326509541.png";
 import imgTF       from "@assets/png-clipart-true-or-false-quiz-trivia-questions-and-answers-ge_1780326509540.png";
 import imgSMR      from "@assets/math-speed-racing-series-200x200_1780326509539.png";
 import imgCoins    from "@assets/pngaaa.com-2802597_1780326509539.png";
+import logoMemory  from "@assets/memory_match_1783265385969.png";
+import logoMaths   from "@assets/speed_math_1783265385967.png";
+import logoWord    from "@assets/word_scramble_1783265385968.png";
+import logoQuiz    from "@assets/brain_quiz_1783265385967.png";
+import logoCar     from "@assets/car_dodge_1783265385966.png";
+import logoOddword from "@assets/odd_one_out_1783265385966.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
@@ -1888,17 +1894,17 @@ function addScore(gameId: string, gameName: string, rawScore: number, level: num
 interface FiusGamesProps { playerName: string; userId?: string; }
 
 type FreeGameIcon = { Icon: React.ComponentType<{className?: string}>; gradient: string; shadow: string };
-const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; desc: string; category: string}> = [
-  { id: 'memory',  label: 'Memory Match',  icon: { Icon: Layers,      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.5)'  }, desc: 'Match pairs before time runs out',   category: 'Solo'   },
-  { id: 'maths',   label: 'Speed Maths',   icon: { Icon: Calculator,  gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', shadow: 'rgba(59,130,246,0.5)'  }, desc: 'Solve arithmetic against the clock', category: 'Solo'   },
-  { id: 'word',    label: 'Word Scramble', icon: { Icon: BookOpen,    gradient: 'linear-gradient(135deg,#10b981,#34d399)', shadow: 'rgba(16,185,129,0.5)'  }, desc: 'Unscramble hidden words fast',       category: 'Solo'   },
-  { id: 'quiz',    label: 'Brain Quiz',    icon: { Icon: HelpCircle,  gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', shadow: 'rgba(245,158,11,0.5)'  }, desc: 'Test your general knowledge',        category: 'Solo'   },
-  { id: 'car',     label: 'Car Dodge',     icon: { Icon: Zap,         gradient: 'linear-gradient(135deg,#ef4444,#f43f5e)', shadow: 'rgba(239,68,68,0.5)'   }, desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
-  { id: 'oddword', label: 'Odd One Out',   icon: { Icon: Shuffle,     gradient: 'linear-gradient(135deg,#ec4899,#a855f7)', shadow: 'rgba(236,72,153,0.5)'  }, desc: "Find the word that doesn't fit",    category: 'Solo'   },
+const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; logo: string; desc: string; category: string}> = [
+  { id: 'memory',  label: 'Memory Match',  logo: logoMemory,  icon: { Icon: Layers,      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.5)'  }, desc: 'Match pairs before time runs out',   category: 'Solo'   },
+  { id: 'maths',   label: 'Speed Maths',   logo: logoMaths,   icon: { Icon: Calculator,  gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', shadow: 'rgba(59,130,246,0.5)'  }, desc: 'Solve arithmetic against the clock', category: 'Solo'   },
+  { id: 'word',    label: 'Word Scramble', logo: logoWord,    icon: { Icon: BookOpen,    gradient: 'linear-gradient(135deg,#10b981,#34d399)', shadow: 'rgba(16,185,129,0.5)'  }, desc: 'Unscramble hidden words fast',       category: 'Solo'   },
+  { id: 'quiz',    label: 'Brain Quiz',    logo: logoQuiz,    icon: { Icon: HelpCircle,  gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', shadow: 'rgba(245,158,11,0.5)'  }, desc: 'Test your general knowledge',        category: 'Solo'   },
+  { id: 'car',     label: 'Car Dodge',     logo: logoCar,     icon: { Icon: Zap,         gradient: 'linear-gradient(135deg,#ef4444,#f43f5e)', shadow: 'rgba(239,68,68,0.5)'   }, desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
+  { id: 'oddword', label: 'Odd One Out',   logo: logoOddword, icon: { Icon: Shuffle,     gradient: 'linear-gradient(135deg,#ec4899,#a855f7)', shadow: 'rgba(236,72,153,0.5)'  }, desc: "Find the word that doesn't fit",    category: 'Solo'   },
 ];
 
 export function FiusGames({ playerName, userId }: FiusGamesProps) {
-  const [tab] = useState<'games'>('games');
+  const [tab, setTab] = useState<'games' | 'store'>('games');
   const [screen, setScreen] = useState<'menu'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
   const [activeGameLabel, setActiveGameLabel] = useState('');
@@ -2063,6 +2069,19 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         <FragmentBadge count={fragments} />
       </div>
 
+      {/* ── Tab switcher: Games / Store ── */}
+      <div className="flex items-center gap-2 mb-4 flex-shrink-0">
+        <button onClick={() => setTab('games')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'games' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+          style={{ background: tab === 'games' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.05)', border: tab === 'games' ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
+          <Gamepad2 size={14} /> Games
+        </button>
+        <button onClick={() => setTab('store')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'store' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+          style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.05)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
+          <ShoppingBag size={14} /> Store
+        </button>
+      </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
@@ -2075,7 +2094,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {FREE_GAMES.map(g => {
                   const lv = getGameLevel(g.id);
-                  const { Icon, gradient, shadow } = g.icon;
+                  const { shadow } = g.icon;
                   return (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
@@ -2084,14 +2103,17 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       {/* Subtle gradient glow behind card */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                         style={{ background: `radial-gradient(ellipse at 30% 40%, ${shadow}22 0%, transparent 70%)` }} />
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
-                        style={{ background: gradient, boxShadow: `0 4px 16px ${shadow}` }}>
-                        <Icon className="w-5 h-5 text-white" />
+                      <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                        style={{ boxShadow: `0 4px 16px ${shadow}`, border: '1px solid rgba(255,255,255,0.12)' }}>
+                        <img src={g.logo} alt={g.label} className="w-full h-full object-cover" />
                       </div>
                       <div className="w-full">
                         <div className="text-white font-bold text-[12px] leading-tight mb-0.5">{g.label}</div>
                         <div className="text-zinc-500 text-[10px] leading-relaxed mb-1.5">{g.desc}</div>
-                        <LevelPill level={lv} />
+                        <div className="flex items-center gap-1.5">
+                          <LevelPill level={lv} />
+                          <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold" style={{ background: 'rgba(16,185,129,0.15)', color: '#4ade80' }}>Free</span>
+                        </div>
                       </div>
                     </button>
                   );
@@ -2146,7 +2168,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           const badges = ['🥇', '🥈', '🥉'];
           const topColors = ['linear-gradient(135deg,#b45309,#fbbf24)', 'linear-gradient(135deg,#6b7280,#d1d5db)', 'linear-gradient(135deg,#78350f,#fb923c)'];
           const scoreColors = ['#fbbf24', '#d1d5db', '#fb923c'];
-          const displayLeaders = globalLeaders.length > 0 ? globalLeaders : [];
+          const displayLeaders = globalLeaders.length > 0 ? globalLeaders.slice(0, 7) : [];
           return (
             <div className="rounded-2xl overflow-hidden"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.28)', boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 8px 32px rgba(0,0,0,0.4)' }}>
@@ -2218,8 +2240,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           );
         })()}
 
-        {/* ── STORE TAB (hidden — store removed) ── */}
-        {false && (
+        {/* ── STORE TAB ── */}
+        {tab === 'store' && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>

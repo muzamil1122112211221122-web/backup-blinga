@@ -1630,7 +1630,7 @@ Prompt to improve: ${originalPrompt}`;
           const maxTokens = attempt === 1 ? 150 : attempt === 2 ? 100 : 80;
           
           let response: Response;
-          
+
           if (apiKey.provider === 'groq') {
             // Use Groq API
             response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -1647,6 +1647,34 @@ Prompt to improve: ${originalPrompt}`;
                 stream: false,
               }),
             });
+          } else if (apiKey.provider === 'gemini') {
+            // Use Gemini API directly (different request/response shape than OpenAI-style APIs)
+            response = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.key}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ role: 'user', parts: [{ text: enhancementPrompt }] }],
+                  generationConfig: { temperature: 0.1, maxOutputTokens: maxTokens },
+                }),
+              }
+            );
+          } else if (apiKey.provider === 'openai') {
+            // Use OpenAI API directly
+            response = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey.key}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content: enhancementPrompt }],
+                temperature: 0.1,
+                max_tokens: maxTokens,
+              }),
+            });
           } else {
             // Use OpenRouter API
             response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -1658,7 +1686,7 @@ Prompt to improve: ${originalPrompt}`;
                 'X-Title': 'LineusAPI'
               },
               body: JSON.stringify({
-                model: 'anthropic/claude-3-haiku',
+                model: 'anthropic/claude-3.5-sonnet',
                 messages: [{ role: 'user', content: enhancementPrompt }],
                 temperature: 0.1,
                 max_tokens: maxTokens,
@@ -1667,15 +1695,15 @@ Prompt to improve: ${originalPrompt}`;
             });
           }
 
-          console.log(`Prompt enhancement response status: ${response.status}`);
+          console.log(`Prompt enhancement response status (${apiKey.provider}): ${response.status}`);
           
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            const errorMessage = `OpenRouter API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
+            const errorMessage = `${apiKey.provider} API error: ${response.status} ${errorData.error?.message || 'Unknown error'}`;
             
-            // Mark key as failed for credit/rate limit issues
-            if (response.status === 402 || response.status === 429) {
-              const reason = response.status === 402 ? 'Insufficient credits' : 'Rate limited';
+            // Mark key as failed for credit/rate limit/auth issues so we don't keep retrying a broken key
+            if (response.status === 402 || response.status === 429 || response.status === 401 || response.status === 403) {
+              const reason = response.status === 402 ? 'Insufficient credits' : response.status === 429 ? 'Rate limited' : 'Auth error';
               markKeyFailed(apiKey.key, reason);
               console.log(`Enhancement key failed with ${reason}, trying next key...`);
               
@@ -1688,7 +1716,9 @@ Prompt to improve: ${originalPrompt}`;
           
           const data = await response.json();
           console.log('Prompt enhancement API response received');
-          enhancedPrompt = data.choices?.[0]?.message?.content;
+          enhancedPrompt = apiKey.provider === 'gemini'
+            ? data.candidates?.[0]?.content?.parts?.[0]?.text
+            : data.choices?.[0]?.message?.content;
           
           if (enhancedPrompt) {
             console.log(`Successful prompt enhancement from ${apiKey.provider} key: ${apiKey.key.substring(0, 10)}...`);

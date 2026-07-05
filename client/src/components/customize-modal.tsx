@@ -10,6 +10,49 @@ import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, 
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
 
+// ─── Settings scroll-to-top/bottom buttons — fade (never disappear) at limits ──
+function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HTMLDivElement | null } }) {
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(false);
+  const [scrollable, setScrollable] = useState(false);
+
+  useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const check = () => {
+      setAtTop(el.scrollTop <= 4);
+      setAtBottom(el.scrollTop + el.clientHeight >= el.scrollHeight - 4);
+      setScrollable(el.scrollHeight - el.clientHeight > 20);
+    };
+    check();
+    el.addEventListener("scroll", check);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
+  });
+
+  if (!scrollable) return null;
+
+  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90";
+
+  return (
+    <div className="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+        disabled={atTop}
+        className={`${btnBase} ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
+        <ChevronUp className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: "smooth" })}
+        disabled={atBottom}
+        className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to bottom">
+        <ChevronDown className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 // ─── Learned Behaviors Section ─────────────────────────────────────────────────
 function LearnedBehaviorsSection() {
   const STORAGE_KEY = 'fius_learned_behaviors';
@@ -153,6 +196,8 @@ export function CustomizeModal({
     sidebarCloseTop: true,
     showFiusLogo: true
   });
+
+  const settingsContentRef = useRef<HTMLDivElement | null>(null);
 
   // Only reset local state when modal transitions from closed → open
   const prevIsOpen = useRef(false);
@@ -300,7 +345,8 @@ export function CustomizeModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-8 overflow-y-auto relative bg-white dark:bg-[#0d0d0d]">
+        <div ref={settingsContentRef} className="flex-1 p-8 overflow-y-auto relative bg-white dark:bg-[#0d0d0d]">
+          <SettingsScrollButtons scrollAreaRef={settingsContentRef} />
           {activeSection === 'appearance' && (
             <div className="space-y-8">
               <div className="grid grid-cols-3 gap-3">

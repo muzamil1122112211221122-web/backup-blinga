@@ -34,27 +34,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-
-function getVibrantColor(name: string, secondary = false): string {
-  const colors = [
-    ['#ef4444', '#dc2626'],
-    ['#f59e0b', '#d97706'],
-    ['#f97316', '#ea580c'],
-    ['#3b82f6', '#2563eb'],
-    ['#10b981', '#059669'],
-    ['#8b5cf6', '#7c3aed'],
-    ['#ec4899', '#db2777'],
-    ['#06b6d4', '#0891b2'],
-    ['#84cc16', '#65a30d'],
-    ['#f43f5e', '#e11d48'],
-  ];
-  const hash = name.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  const colorPair = colors[Math.abs(hash) % colors.length];
-  return secondary ? colorPair[1] : colorPair[0];
-}
+import { getVibrantColor } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
