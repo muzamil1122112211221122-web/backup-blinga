@@ -1,21 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check, Layers, Zap, Car, HelpCircle, Shuffle } from "lucide-react";
-import imgTTT      from "@assets/tic_tac_toe_1783265385965.png";
-import imgHangman  from "@assets/png-clipart-hangman-ahorcado-hangman-word-guessing-game-hangma_1780326509544.png";
-import imgRPS      from "@assets/rock_paper_scissors_1783265385964.png";
-import imgC4       from "@assets/3367465_1780326509543.png";
-import imgMM       from "@assets/images_1780326509542.jpg";
-import imgWC       from "@assets/classic-word-chain-087da1e5_1780326509541.png";
-import imgTF       from "@assets/png-clipart-true-or-false-quiz-trivia-questions-and-answers-ge_1780326509540.png";
-import imgSMR      from "@assets/math-speed-racing-series-200x200_1780326509539.png";
 import imgCoins    from "@assets/pngaaa.com-2802597_1780326509539.png";
-import logoMemory  from "@assets/memory_match_1783265385969.png";
-import logoMaths   from "@assets/speed_math_1783265385967.png";
-import logoWord    from "@assets/word_scramble_1783265385968.png";
-import logoQuiz    from "@assets/brain_quiz_1783265385967.png";
-import logoCar     from "@assets/car_dodge_1783265385966.png";
-import logoOddword from "@assets/odd_one_out_1783265385966.png";
+// Game logos — new high-quality versions
+const logoMemory  = '/game-memory-match.png';
+const logoMaths   = '/game-speed-math.png';
+const logoWord    = '/game-word-scramble.png';
+const logoQuiz    = '/game-brain-quiz.png';
+const logoCar     = '/game-car-dodge.png';
+const logoOddword = '/game-odd-one-out.png';
+const logoRPS     = '/game-rps.png';
+const logoTTT     = '/game-tictactoe.png';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
@@ -1862,14 +1857,8 @@ function SpeedMathRace({ gameLevel, onWin, onLose, onBack }: GameProps) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const STORE_CATALOG = [
-  { id: 'tictactoe' as GameId,   name: 'Tic-Tac-Toe',          img: imgTTT,     price: 30,  desc: 'Classic X vs O against AI',            category: 'vs AI' },
-  { id: 'hangman' as GameId,     name: 'Hangman',               img: imgHangman, price: 25,  desc: 'Guess the word letter by letter',       category: 'Solo' },
-  { id: 'rps' as GameId,         name: 'Rock Paper Scissors',   img: imgRPS,     price: 15,  desc: 'Best of rounds vs clever AI',           category: 'vs AI' },
-  { id: 'connectfour' as GameId, name: 'Connect Four',          img: imgC4,      price: 40,  desc: 'Drop pieces, connect four to win',      category: 'vs AI' },
-  { id: 'mastermind' as GameId,  name: 'Mastermind',            img: imgMM,      price: 35,  desc: 'Crack the secret color code',           category: 'Solo' },
-  { id: 'wordchain' as GameId,   name: 'Word Chain',            img: imgWC,      price: 25,  desc: 'Chain words with AI opponent',          category: 'vs AI' },
-  { id: 'truefalse' as GameId,   name: 'True or False Blitz',   img: imgTF,      price: 20,  desc: 'Lightning-fast T/F quiz rounds',        category: 'Solo' },
-  { id: 'speedmath' as GameId,   name: 'Speed Math Race',       img: imgSMR,     price: 30,  desc: 'Race AI to solve math problems',        category: 'vs AI' },
+  { id: 'tictactoe' as GameId, name: 'Tic-Tac-Toe',        img: logoTTT, price: 30, desc: 'Classic X vs O against AI',  category: 'vs AI' },
+  { id: 'rps' as GameId,       name: 'Rock Paper Scissors', img: logoRPS, price: 15, desc: 'Best of rounds vs clever AI', category: 'vs AI' },
 ];
 
 
@@ -1919,6 +1908,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
+  const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
+  const [lbGameFilter, setLbGameFilter] = useState<string>('All');
   const [globalLeaders, setGlobalLeaders] = useState<Array<{ name: string; totalScore: number; bestGame: any | null }>>([]);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
 
@@ -1934,10 +1925,16 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         setScores(data.scores);
       }
     });
-    // Fetch global leaderboard
-    fetch('/api/games/leaderboard').then(r => r.ok ? r.json() : []).then((board: any[]) => {
-      if (Array.isArray(board) && board.length > 0) setGlobalLeaders(board);
-    }).catch(() => {});
+    // Fetch global leaderboard + set up real-time polling
+    const fetchLeaderboard = () => {
+      fetch('/api/games/leaderboard', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then((board: any[]) => { if (Array.isArray(board)) setGlobalLeaders(board); })
+        .catch(() => {});
+    };
+    fetchLeaderboard();
+    const lbInterval = setInterval(fetchLeaderboard, 30000); // Refresh every 30 seconds
+    return () => clearInterval(lbInterval);
   }, []);
 
   // ── Sync helper ───────────────────────────────────────────────────────────
@@ -2081,6 +2078,13 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.05)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
           <ShoppingBag size={14} /> Store
         </button>
+        {tab === 'games' && (
+          <button onClick={() => setTab('store')}
+            className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold text-amber-400 hover:text-amber-300 transition-all"
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+            <ShoppingBag size={11} /> Store
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -2088,32 +2092,24 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
           <div className="flex flex-col gap-6">
-            {/* Free games — premium glassmorphism card grid */}
+            {/* Free games — logo-only grid */}
             <div>
               <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">Free Games</div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {FREE_GAMES.map(g => {
                   const lv = getGameLevel(g.id);
-                  const { shadow } = g.icon;
                   return (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
-                      className="flex flex-col items-start gap-3 p-3.5 rounded-2xl group transition-all duration-200 active:scale-[0.97] relative overflow-hidden text-left"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)' }}>
-                      {/* Subtle gradient glow behind card */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                        style={{ background: `radial-gradient(ellipse at 30% 40%, ${shadow}22 0%, transparent 70%)` }} />
-                      <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
-                        style={{ boxShadow: `0 4px 16px ${shadow}`, border: '1px solid rgba(255,255,255,0.12)' }}>
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl group transition-all duration-200 active:scale-[0.95]"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:brightness-110"
+                        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.12)' }}>
                         <img src={g.logo} alt={g.label} className="w-full h-full object-cover" />
                       </div>
-                      <div className="w-full">
-                        <div className="text-white font-bold text-[12px] leading-tight mb-0.5">{g.label}</div>
-                        <div className="text-zinc-500 text-[10px] leading-relaxed mb-1.5">{g.desc}</div>
-                        <div className="flex items-center gap-1.5">
-                          <LevelPill level={lv} />
-                          <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold" style={{ background: 'rgba(16,185,129,0.15)', color: '#4ade80' }}>Free</span>
-                        </div>
+                      <div className="text-center">
+                        <div className="text-white font-bold text-[11px] leading-tight mb-1">{g.label}</div>
+                        <LevelPill level={lv} />
                       </div>
                     </button>
                   );
@@ -2121,121 +2117,190 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               </div>
             </div>
 
-            {/* ── Bought / Owned Games shelf ── */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                  Owned Games
-                </span>
-                {myPurchased.length > 0 && (
+            {/* ── Bought / Owned Games shelf ── (only show if purchased) */}
+            {myPurchased.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Owned Games</span>
                   <span className="text-zinc-600 text-[9px]">{myPurchased.length} owned</span>
-                )}
-              </div>
-              {myPurchased.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                </div>
+                <div className="grid grid-cols-3 gap-3">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="flex flex-col items-start gap-3 p-3.5 rounded-2xl group transition-all duration-200 active:scale-[0.97] relative overflow-hidden text-left"
-                      style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.22)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
-                      <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl group transition-all duration-200 active:scale-[0.95]"
+                      style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.22)' }}>
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
                         style={{ border: '1.5px solid rgba(16,185,129,0.5)' }}>
                         <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </div>
-                      <div className="w-full">
-                        <div className="text-white font-bold text-[12px] leading-tight mb-0.5">{g.name}</div>
-                        <div className="text-zinc-500 text-[10px] leading-relaxed mb-1.5">{g.desc}</div>
-                        <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold w-fit"
+                      <div className="text-center">
+                        <div className="text-white font-bold text-[11px] leading-tight mb-1">{g.name}</div>
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold"
                           style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80' }}>✓ Owned</span>
                       </div>
                     </button>
                   ))}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center py-4 gap-1 text-center">
-                  <p className="text-zinc-600 text-xs">No games owned yet</p>
-                  <p className="text-zinc-700 text-[10px]">Win games to earn fragments</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── GLOBAL LEADERBOARD ── Premium gradient-tinted widget */}
+        {/* ── GLOBAL LEADERBOARD ── New podium-style design */}
         {tab === 'games' && (() => {
           const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
           const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
-          const badges = ['🥇', '🥈', '🥉'];
-          const topColors = ['linear-gradient(135deg,#b45309,#fbbf24)', 'linear-gradient(135deg,#6b7280,#d1d5db)', 'linear-gradient(135deg,#78350f,#fb923c)'];
-          const scoreColors = ['#fbbf24', '#d1d5db', '#fb923c'];
-          const displayLeaders = globalLeaders.length > 0 ? globalLeaders.slice(0, 7) : [];
+          // Category filtering
+          const GAME_CATEGORIES = ['All', 'Memory', 'Math', 'Car', 'Word', 'Quiz'];
+          const GAME_CAT_MAP: Record<string, string> = {
+            'Memory Match': 'Memory', 'Speed Maths': 'Math', 'Car Dodge': 'Car',
+            'Word Scramble': 'Word', 'Brain Quiz': 'Quiz', 'Odd One Out': 'Quiz',
+            'Tic-Tac-Toe': 'vs AI', 'Rock Paper Scissors': 'vs AI',
+          };
+          const filteredLeaders = (lbGameFilter === 'All' ? globalLeaders : globalLeaders.filter(l => {
+            const cat = l.bestGame ? (GAME_CAT_MAP[l.bestGame.game] || 'Other') : 'Other';
+            return cat === lbGameFilter;
+          })).slice(0, 10);
+          const top3 = filteredLeaders.slice(0, 3); // [0]=1st, [1]=2nd, [2]=3rd
+          const rest = filteredLeaders.slice(3, 7);
+          const TIME_TABS: { key: 'day'|'week'|'month'|'all', label: string }[] = [
+            { key: 'day', label: 'Day' },
+            { key: 'week', label: 'Week' },
+            { key: 'month', label: 'Month' },
+            { key: 'all', label: 'All Time' },
+          ];
+          // Podium visual layout: always [2nd-left, 1st-center, 3rd-right]
+          // Each slot is typed with its rank, color, height, medal
+          type PodiumSlot = { leader: typeof top3[0] | null; rank: number; color: string; height: number; medal: string };
+          const podiumSlots: PodiumSlot[] = [
+            { leader: top3[1] ?? null, rank: 2, color: '#94a3b8', height: 80, medal: '🥈' },
+            { leader: top3[0] ?? null, rank: 1, color: '#fbbf24', height: 100, medal: '🥇' },
+            { leader: top3[2] ?? null, rank: 3, color: '#f97316', height: 68, medal: '🥉' },
+          ];
+          const showPodium = top3.length >= 1;
+
           return (
             <div className="rounded-2xl overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.28)', boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 8px 32px rgba(0,0,0,0.4)' }}>
-              {/* Widget header */}
-              <div className="flex items-center justify-between px-4 py-3"
-                style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14) 0%, rgba(168,85,247,0.08) 100%)', borderBottom: '1px solid rgba(99,102,241,0.18)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-base" style={{ background: 'rgba(99,102,241,0.2)' }}>🏆</div>
-                  <span className="text-white text-[11px] font-extrabold uppercase tracking-widest">Global Leaderboard</span>
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.25)', boxShadow: '0 0 0 1px rgba(99,102,241,0.06), 0 8px 32px rgba(0,0,0,0.4)' }}>
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white text-[13px] font-extrabold tracking-wide">🏆 Leaderboard</span>
                 </div>
-                {globalLeaders.length === 0 && <span className="text-zinc-600 text-[9px]">Play to appear here</span>}
+                {/* Time filter tabs */}
+                <div className="flex gap-1.5 mb-3">
+                  {TIME_TABS.map(t => (
+                    <button key={t.key} onClick={() => setLbTimeFilter(t.key)}
+                      className="px-2.5 py-1 rounded-full text-[10px] font-bold transition-all"
+                      style={{ background: lbTimeFilter === t.key ? 'rgba(99,102,241,0.85)' : 'rgba(255,255,255,0.06)', color: lbTimeFilter === t.key ? '#fff' : '#71717a', border: lbTimeFilter === t.key ? '1px solid rgba(99,102,241,0.5)' : '1px solid rgba(255,255,255,0.07)' }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Category filter pills */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {GAME_CATEGORIES.map(cat => (
+                    <button key={cat} onClick={() => setLbGameFilter(cat)}
+                      className="px-2 py-0.5 rounded-full text-[9px] font-bold transition-all"
+                      style={{ background: lbGameFilter === cat ? 'rgba(168,85,247,0.8)' : 'rgba(255,255,255,0.05)', color: lbGameFilter === cat ? '#fff' : '#52525b', border: lbGameFilter === cat ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.06)' }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="p-3">
-              {displayLeaders.length === 0 ? (
-                <div className="text-center py-6">
+
+              {/* Podium + ranks */}
+              {filteredLeaders.length === 0 ? (
+                <div className="text-center py-8">
                   <div className="text-3xl mb-2">🏆</div>
                   <p className="text-zinc-500 text-xs font-bold">No scores yet</p>
-                  <p className="text-zinc-600 text-[10px] mt-0.5">Win games to climb the board!</p>
+                  <p className="text-zinc-600 text-[10px] mt-0.5">Play games to appear here!</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  {displayLeaders.map((leader, idx) => {
-                    const rank = idx + 1;
-                    const isTop3 = rank <= 3;
-                    const isCurrentUser = leader.name === playerName;
-                    return (
-                      <div key={idx} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all"
-                        style={{ background: isCurrentUser ? 'rgba(168,85,247,0.14)' : isTop3 ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.4)' : isTop3 ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.05)' }}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
-                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : isTop3 ? topColors[rank - 1] : 'rgba(255,255,255,0.07)', color: isTop3 || isCurrentUser ? '#fff' : '#52525b' }}>
-                          {isTop3 ? badges[rank - 1] : rank}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className={`text-[12px] font-extrabold truncate ${isCurrentUser ? 'text-purple-300' : 'text-white'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
-                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate mt-0.5">Best: {leader.bestGame.game} · Lv{leader.bestGame.level}</div>}
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-[13px] font-extrabold" style={{ color: isCurrentUser ? '#c084fc' : isTop3 ? scoreColors[rank - 1] : '#52525b' }}>{leader.totalScore.toLocaleString()}</div>
-                          <div className="text-[9px] text-zinc-700">pts</div>
-                        </div>
+                <>
+                  {/* === PODIUM — always correct rank mapping === */}
+                  {showPodium && (
+                    <div className="px-4 pb-2">
+                      <div className="flex items-end justify-center gap-2" style={{ height: 140 }}>
+                        {podiumSlots.map((slot) => {
+                          const { leader, rank, color, height: ht, medal } = slot;
+                          if (!leader) {
+                            // Empty slot placeholder (keeps layout stable with 1 or 2 leaders)
+                            return (
+                              <div key={`empty-${rank}`} className="flex flex-col items-center flex-1 max-w-[88px]">
+                                <div className="w-full rounded-t-xl mt-auto" style={{ height: ht, background: `${color}08`, border: `1px dashed ${color}20`, borderBottom: 'none' }} />
+                              </div>
+                            );
+                          }
+                          const isCurrentUser = leader.name === playerName;
+                          return (
+                            <div key={leader.name} className="flex flex-col items-center flex-1 max-w-[88px]">
+                              <div className="relative mb-1.5">
+                                <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-base flex-shrink-0"
+                                  style={{ background: `linear-gradient(135deg, ${color}99, ${color}55)`, border: `2.5px solid ${color}`, boxShadow: `0 0 16px ${color}55` }}>
+                                  {leader.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-base leading-none">{medal}</div>
+                              </div>
+                              <div className="text-[9px] font-bold text-white truncate max-w-full text-center mb-0.5 mt-1 px-1">
+                                {leader.name}{isCurrentUser ? ' (You)' : ''}
+                              </div>
+                              <div className="text-[10px] font-extrabold" style={{ color }}>{leader.totalScore.toLocaleString()}</div>
+                              <div className="w-full rounded-t-xl mt-1.5 flex items-center justify-center"
+                                style={{ height: ht, background: `linear-gradient(180deg, ${color}30, ${color}12)`, border: `1px solid ${color}40`, borderBottom: 'none' }}>
+                                <span className="text-[18px] font-extrabold" style={{ color: `${color}80` }}>#{rank}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                  {/* "You" row when not in the list */}
-                  {!displayLeaders.some(l => l.name === playerName) && (
-                    <>
-                      <div className="h-px my-1" style={{ background: 'rgba(99,102,241,0.15)' }} />
+                    </div>
+                  )}
+
+                  {/* === RANKS 4-7 === */}
+                  {rest.length > 0 && (
+                    <div className="px-3 pb-1 space-y-1">
+                      {rest.map((leader, idx) => {
+                        const rank = idx + 4;
+                        const isCurrentUser = leader.name === playerName;
+                        return (
+                          <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+                            style={{ background: isCurrentUser ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold flex-shrink-0"
+                              style={{ background: 'rgba(255,255,255,0.06)', color: '#52525b' }}>
+                              {rank}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-[11px] font-bold truncate ${isCurrentUser ? 'text-purple-300' : 'text-zinc-300'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
+                            </div>
+                            <div className="text-[11px] font-extrabold text-zinc-400">{leader.totalScore.toLocaleString()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* === YOU row (if not in top 7) === */}
+                  {!filteredLeaders.slice(0, 7).some(l => l.name === playerName) && (
+                    <div className="px-3 pb-3">
+                      <div className="h-px my-2" style={{ background: 'rgba(99,102,241,0.18)' }} />
                       <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.35)' }}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold flex-shrink-0"
+                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.4)' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold flex-shrink-0"
                           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
                           {playerName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-purple-300 text-[12px] font-extrabold truncate">{playerName} (You)</div>
-                          {userBestGame && <div className="text-zinc-600 text-[9px] mt-0.5">Best: {userBestGame.game} · Lv{userBestGame.level}</div>}
+                          <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} <span className="text-purple-500">(You)</span></div>
+                          {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game}</div>}
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-[13px] font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
-                          <div className="text-[9px] text-zinc-700">pts</div>
-                        </div>
+                        <div className="text-[11px] font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
                       </div>
-                    </>
+                    </div>
                   )}
-                </div>
+                </>
               )}
-              </div>
             </div>
           );
         })()}
@@ -2250,7 +2315,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                 <span className="text-blue-400 font-bold">{fragments}</span> fragments
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {STORE_CATALOG.map(game => {
                 const owned = ownedGames.includes(game.id);
                 const canAfford = fragments >= game.price;

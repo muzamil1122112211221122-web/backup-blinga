@@ -313,17 +313,17 @@ function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObje
   if (!scrollable) return null;
   const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90";
   return (
-    <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 z-20">
+    <div className="sticky bottom-3 float-right mr-1 flex flex-col gap-1.5 z-20">
       <button
         onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         disabled={atTop}
-        className={`${btnBase} ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        className={`${btnBase} ${atTop ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground"}`}>
         <ChevronUp className="w-4 h-4" />
       </button>
       <button
         onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
         disabled={atBottom}
-        className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground"}`}>
+        className={`${btnBase} ${atBottom ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground"}`}>
         <ChevronDown className="w-4 h-4" />
       </button>
     </div>

@@ -181,10 +181,28 @@ function ImageWithLoader({ src, alt, className, style }: { src: string; alt: str
   );
 }
 
+const IMAGINE_STORAGE_KEY = 'fius_my_images';
+
+function loadPersistedImages(): GenImage[] {
+  try {
+    const raw = localStorage.getItem(IMAGINE_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as GenImage[];
+  } catch { return []; }
+}
+
+function persistImages(imgs: GenImage[]) {
+  try {
+    // Only persist completed (non-loading) images, max 30
+    const toSave = imgs.filter(i => !i.loading && i.url).slice(0, 30);
+    localStorage.setItem(IMAGINE_STORAGE_KEY, JSON.stringify(toSave));
+  } catch {}
+}
+
 export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [prompt, setPrompt]                   = useState('');
   const [uploadedImage, setUploadedImage]     = useState<{ preview: string; name: string } | null>(null);
-  const [generatedImages, setGeneratedImages] = useState<GenImage[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<GenImage[]>(() => loadPersistedImages());
   const [isGenerating, setIsGenerating]       = useState(false);
   const [activeTemplate, setActiveTemplate]   = useState<typeof TEMPLATES[0] | null>(null);
   const [imageCount, setImageCount]           = useState(1);
@@ -276,11 +294,13 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     // Update each image as it resolves
     for (const p of promises) {
       p.then(({ id, url }) => {
-        setGeneratedImages(prev =>
-          prev.map(img =>
+        setGeneratedImages(prev => {
+          const updated = prev.map(img =>
             img.id === id ? { ...img, url, history: [url], loading: false } : img
-          )
-        );
+          );
+          persistImages(updated);
+          return updated;
+        });
       });
     }
 
@@ -480,78 +500,72 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   }
 
   /* ────────────────────────────────────────────────────
-     MAIN STUDIO
+     MAIN STUDIO — redesigned to show user's own images
   ──────────────────────────────────────────────────── */
   return (
     <div className="fixed inset-0 z-50 flex flex-col"
       style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
       {/* Header */}
-      <div className="flex items-center gap-1.5 px-3 pt-0.5 pb-1 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0"
+      <div className="flex items-center gap-3 px-4 pt-3 pb-2.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <Sparkles size={8} className="text-white" />
+          <Sparkles size={14} className="text-white" />
         </div>
-        <div>
-          <h2 className="text-white font-semibold text-[12px] leading-tight">Imagine Studio</h2>
-        </div>
+        <h2 className="text-white font-bold text-[15px] tracking-tight">Images</h2>
         <div className="flex-1" />
         <button onClick={onClose}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
-          <X size={15} />
+          className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
+          <X size={16} />
         </button>
       </div>
 
-      {/* Scrollable body — centered on desktop, full-width on mobile */}
+      {/* Scrollable body */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         <div className="max-w-2xl mx-auto w-full">
 
-        {/* ── Inspiration Gallery ── */}
-        <div className="px-5 pt-4">
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Inspiration</p>
-
-          {/* Anime template active → show shuffled local anime boy images */}
-          {activeTemplate?.id === 'anime' ? (
-            <div className="grid grid-cols-3 gap-2">
-              {shuffledAnime.map((src, i) => (
-                <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
-                  style={{ aspectRatio: '3/4' }}
-                  onClick={() => { setPrompt('cool anime boy'); textareaRef.current?.focus(); }}>
-                  <img
-                    src={src}
-                    alt={`anime boy ${i + 1}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                    <span className="text-white text-xs">Anime boy {i + 1}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {SHOWCASE_IMAGES.map((img, i) => (
-                <div key={i} className="relative group rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
-                  style={{ aspectRatio: '3/2' }}
-                  onClick={() => { setPrompt(img.prompt); textareaRef.current?.focus(); }}>
-                  <ImageWithLoader
-                    src={img.url}
-                    alt="showcase"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                    <span className="text-white text-xs line-clamp-2 leading-snug">{img.prompt}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* ── Create an image — Templates carousel ── */}
+        <div className="px-4 pt-4">
+          <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-widest mb-2.5">✦ Create an image</p>
+          <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+            {TEMPLATES.map(t => (
+              <button key={t.id} onClick={() => handleTemplateClick(t)}
+                className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl transition-all hover:scale-[1.04] active:scale-[0.97]"
+                style={activeTemplate?.id === t.id
+                  ? { background: 'linear-gradient(135deg,rgba(124,58,237,0.25),rgba(168,85,247,0.15))', border: '1px solid rgba(167,139,250,0.5)', minWidth: 80 }
+                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: 80 }}>
+                <span className="text-xl">{t.icon}</span>
+                <span className="text-white text-[10px] font-semibold text-center leading-tight" style={{ maxWidth: 72 }}>{t.name}</span>
+                <span className="text-zinc-500 text-[9px] text-center leading-tight">{t.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* ── Generated Images — responsive grid with hover overlays ── */}
-        {generatedImages.length > 0 && (
-          <div className="px-5 pt-5">
-            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Generated</p>
+        {/* ── My images ── */}
+        <div className="px-4 pt-5 pb-3">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-widest">✦ My images</p>
+            {generatedImages.filter(i => !i.loading && i.url).length > 0 && (
+              <button
+                onClick={() => { if (confirm('Clear all generated images?')) { setGeneratedImages([]); persistImages([]); } }}
+                className="text-zinc-600 hover:text-zinc-400 text-[9px] transition-colors">
+                Clear all
+              </button>
+            )}
+          </div>
+
+          {generatedImages.length === 0 ? (
+            <div className="flex flex-col items-center py-12 gap-3 text-center">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)' }}>
+                <Sparkles size={24} className="text-purple-400" />
+              </div>
+              <div>
+                <p className="text-zinc-400 text-sm font-semibold">No images yet</p>
+                <p className="text-zinc-600 text-[11px] mt-1">Describe an image below to get started</p>
+              </div>
+            </div>
+          ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {generatedImages.map((img, idx) => (
                 <div key={img.id} className="relative group rounded-2xl overflow-hidden bg-zinc-900"
@@ -564,36 +578,35 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                   ) : (
                     <>
                       <ImageWithLoader src={img.url} alt="generated" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
-                      {/* Hover overlay: prompt text + action buttons */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-250 flex flex-col justify-between p-2.5"
                         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 45%, rgba(0,0,0,0.18) 100%)' }}>
-                        {/* Top actions */}
                         <div className="flex justify-end gap-1.5">
                           <button onClick={() => handleDownload(img.url, `imagine-${idx + 1}`)}
                             className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
-                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}
-                            title="Save">
+                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }} title="Save">
                             <span className="text-sm">⬇️</span>
                           </button>
                           <button onClick={() => handleShare(img.url)}
                             className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
-                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}
-                            title="Share">
+                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }} title="Copy link">
                             <span className="text-sm">📤</span>
                           </button>
                         </div>
-                        {/* Bottom: prompt + edit/like */}
                         <div>
-                          <p className="text-white text-[10px] leading-snug line-clamp-3 mb-2">{img.prompt}</p>
-                          <div className="flex gap-1.5 flex-wrap">
-                            <button onClick={() => setGeneratedImages(prev => prev.map(x => x.id === img.id ? { ...x, liked: !x.liked, disliked: false } : x))}
-                              className={`flex items-center gap-0.5 px-2 py-1 rounded-full text-[10px] font-medium transition-all ${img.liked ? 'text-pink-200' : 'text-zinc-300 hover:text-pink-200'}`}
-                              style={{ background: img.liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)' }}>
+                          <p className="text-white text-[10px] leading-snug line-clamp-2 mb-2">{img.prompt}</p>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => {
+                              const updated = generatedImages.map(x => x.id === img.id ? { ...x, liked: !x.liked } : x);
+                              setGeneratedImages(updated);
+                              persistImages(updated);
+                            }}
+                              className={`flex items-center px-2 py-1 rounded-full text-[10px] font-medium transition-all ${img.liked ? 'text-pink-200' : 'text-zinc-300'}`}
+                              style={{ background: img.liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.12)' }}>
                               ❤️
                             </button>
                             <button onClick={() => !img.loading && openEdit(img)} disabled={img.loading}
                               className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-zinc-200 hover:text-purple-200 transition-all disabled:opacity-30"
-                              style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)' }}>
+                              style={{ background: 'rgba(255,255,255,0.12)' }}>
                               ✏️ Edit
                             </button>
                           </div>
@@ -604,31 +617,13 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ── Templates ── */}
-        <div className="px-5 pt-5 pb-3">
-          <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">✦ Templates</p>
-          <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {TEMPLATES.map(t => (
-              <button key={t.id} onClick={() => handleTemplateClick(t)}
-                className="flex-shrink-0 flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all hover:scale-[1.04] active:scale-[0.97]"
-                style={activeTemplate?.id === t.id
-                  ? { background: 'linear-gradient(135deg,rgba(124,58,237,0.2),rgba(168,85,247,0.12))', border: '1px solid rgba(167,139,250,0.45)', minWidth: 84 }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: 84 }}>
-                <span className="text-2xl">{t.icon}</span>
-                <span className="text-white text-[11px] font-medium text-center leading-tight" style={{ maxWidth: 76 }}>{t.name}</span>
-                <span className="text-zinc-500 text-[10px] text-center leading-tight">{t.desc}</span>
-              </button>
-            ))}
-          </div>
+          )}
         </div>
-        </div>{/* end max-w-2xl */}
+        </div>
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div className="px-4 pb-4 pt-2 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="px-4 pb-4 pt-2.5 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
         {/* Active hints */}
         {(uploadedImage || activeTemplate) && (
           <div className="flex items-center gap-3 mb-2 px-1">
@@ -652,42 +647,42 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         )}
 
         {/* Image count selector */}
-        <div className="flex items-center gap-2 mb-2 px-1">
-          <Images size={13} className="text-zinc-500 flex-shrink-0" />
-          <span className="text-zinc-500 text-[11px]">Images:</span>
+        <div className="flex items-center gap-2 mb-2 px-0.5">
+          <Images size={12} className="text-zinc-600 flex-shrink-0" />
+          <span className="text-zinc-600 text-[10px]">Count:</span>
           {[1, 2, 4].map(n => (
             <button key={n} onClick={() => setImageCount(n)}
               className="w-7 h-6 rounded-lg text-[11px] font-semibold transition-all"
               style={imageCount === n
                 ? { background: 'rgba(124,58,237,0.3)', border: '1px solid rgba(167,139,250,0.5)', color: 'white' }
-                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
+                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>
               {n}
             </button>
           ))}
         </div>
 
-        <div className="flex items-end gap-2 rounded-2xl px-3 py-3"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+        <div className="flex items-center gap-2 rounded-2xl px-3.5 py-3"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
           <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-          <button onClick={() => uploadRef.current?.click()}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-500 hover:text-white hover:bg-white/10 flex-shrink-0 mb-0.5 transition-all">
-            <Upload size={15} />
-          </button>
           <textarea
             ref={textareaRef}
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
-            placeholder="Describe your image… or pick a template below"
+            placeholder="Describe an image…"
             className="flex-1 bg-transparent text-white placeholder-zinc-600 resize-none focus:outline-none text-sm"
-            style={{ minHeight: 36, maxHeight: 100, lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none', border: 'none', outline: 'none', padding: 0 }}
+            style={{ minHeight: 24, maxHeight: 80, lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none', border: 'none', outline: 'none', padding: 0 }}
           />
+          <button onClick={() => uploadRef.current?.click()}
+            className="w-7 h-7 flex items-center justify-center rounded-xl text-zinc-500 hover:text-white hover:bg-white/10 flex-shrink-0 transition-all">
+            <Upload size={14} />
+          </button>
           <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating}
             className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30"
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', border: 'none' }}>
+            style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
             {isGenerating
-              ? <Loader2 size={15} className="text-white animate-spin" />
-              : <ArrowUp size={15} className="text-white" />}
+              ? <Loader2 size={14} className="text-white animate-spin" />
+              : <ArrowUp size={14} className="text-white" />}
           </button>
         </div>
       </div>

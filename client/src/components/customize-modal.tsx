@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { getVibrantColor } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -40,13 +41,13 @@ function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HT
       <button
         onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
         disabled={atTop}
-        className={`${btnBase} ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
+        className={`${btnBase} ${atTop ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
         <ChevronUp className="h-4 w-4" />
       </button>
       <button
         onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: "smooth" })}
         disabled={atBottom}
-        className={`${btnBase} ${atBottom ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to bottom">
+        className={`${btnBase} ${atBottom ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to bottom">
         <ChevronDown className="h-4 w-4" />
       </button>
     </div>
@@ -759,7 +760,8 @@ export function CustomizeModal({
                       {(previewPic || profilePicture) ? (
                         <img src={previewPic || profilePicture} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl">
+                        <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl"
+                          style={{ background: getVibrantColor(user?.displayName || user?.username || 'U') }}>
                           {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -801,7 +803,8 @@ export function CustomizeModal({
                           {(previewPic || profilePicture) ? (
                             <img src={previewPic || profilePicture} alt="Preview" className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm"
+                              style={{ background: getVibrantColor(user?.displayName || user?.username || 'U') }}>
                               {(user?.displayName || user?.username || 'U').charAt(0).toUpperCase()}
                             </div>
                           )}

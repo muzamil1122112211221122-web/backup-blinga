@@ -3074,6 +3074,7 @@ IMPORTANT RULES:
     try {
       const response = await fetch('/api/enhance-prompt', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ originalPrompt: originalValue }),
       });
@@ -4018,14 +4019,6 @@ Let's start the self-listen session!`;
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
-                                  </Tooltip>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-200 ${speakingMessageId === msg.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => handleSpeakMessage(msg.content, msg.id)}>
-                                        {speakingMessageId === msg.id ? <Square className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>{speakingMessageId === msg.id ? 'Stop' : 'Speak'}</p></TooltipContent>
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
