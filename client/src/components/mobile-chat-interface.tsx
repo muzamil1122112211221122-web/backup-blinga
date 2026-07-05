@@ -482,6 +482,13 @@ function FileChips({ files }: { files: Array<{name: string; size: string; conten
   );
 }
 
+function detectVoiceForText(text: string): string {
+  if (/[\u0600-\u06FF]/.test(text)) return 'ur-PK-AsadNeural';
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN-MadhurNeural';
+  if (/\b(hai|hain|kya|aap|mein|nahi|haan|bhi|toh|ab|jo|ke|ka|ki|ko|yeh|woh|tha|thi|theek|accha|lekin|phir|kaisa|matlab|bilkul|kyun|kaise|kab|kaun|kahan|aaj|agar|tum|hum)\b/i.test(text)) return 'ur-PK-AsadNeural';
+  return 'en-US-GuyNeural';
+}
+
 function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onSelect: (q: string) => void }) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -497,16 +504,16 @@ function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onS
   }, []);
 
   if (loading) return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
-      {[72, 96, 84].map((w, i) => <div key={i} className="h-7 rounded-full bg-accent animate-pulse" style={{ width: w }} />)}
+    <div className="mt-2.5 flex flex-col gap-1.5">
+      {[0, 1, 2].map((i) => <div key={i} className="h-7 w-full rounded-full bg-accent animate-pulse" />)}
     </div>
   );
   if (!suggestions.length) return null;
   return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
+    <div className="mt-2.5 flex flex-col gap-1.5">
       {suggestions.map((s, i) => (
         <button key={i} onClick={() => onSelect(s)}
-          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left max-w-[240px] truncate shadow-sm flex items-center gap-1.5">
+          className="px-3 py-1.5 rounded-full border border-border bg-background hover:bg-accent text-[11.5px] text-foreground font-medium transition-all active:scale-95 text-left shadow-sm flex items-center gap-1.5">
           <span className="text-muted-foreground text-[13px] leading-none">⤷</span>
           {s}
         </button>
@@ -525,6 +532,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const [feedbackSelected, setFeedbackSelected] = useState<Set<string>>(new Set());
   const [feedbackText, setFeedbackText] = useState("");
+  const audioSrcRef = useRef<AudioBufferSourceNode | null>(null);
 
   const { displayed, done } = useTypingAnimation(
     !isUser && isLatest ? msg.content : "",
@@ -536,11 +544,36 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
     navigator.clipboard.writeText(msg.content || msg.imageUrl || "");
     setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
-  const handleSpeak = () => {
-    if (speaking) { window.speechSynthesis.cancel(); setSpeaking(false); return; }
-    const u = new SpeechSynthesisUtterance(msg.content);
-    u.onend = () => setSpeaking(false); u.onerror = () => setSpeaking(false);
-    setSpeaking(true); window.speechSynthesis.speak(u);
+  const handleSpeak = async () => {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      if (audioSrcRef.current) { try { audioSrcRef.current.stop(); } catch {} audioSrcRef.current = null; }
+      setSpeaking(false); return;
+    }
+    setSpeaking(true);
+    const voice = detectVoiceForText(msg.content);
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text: msg.content.slice(0, 3000), voice }),
+      });
+      if (!res.ok) throw new Error('tts');
+      const { audio } = await res.json();
+      if (!audio) throw new Error('no-audio');
+      const bin = atob(audio); const buf = new ArrayBuffer(bin.length); const view = new Uint8Array(buf);
+      for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const decoded = await ctx.decodeAudioData(buf.slice(0));
+      const src = ctx.createBufferSource(); src.buffer = decoded; src.connect(ctx.destination);
+      audioSrcRef.current = src;
+      src.onended = () => { setSpeaking(false); audioSrcRef.current = null; };
+      src.start(0);
+    } catch {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(msg.content);
+      u.onend = () => setSpeaking(false); u.onerror = () => setSpeaking(false);
+      window.speechSynthesis.speak(u);
+    }
   };
   const handleExport = () => {
     const blob = new Blob([msg.content], { type: "text/plain" });
@@ -685,12 +718,6 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
           )}
 
           {!isUser && done && (
-            <button onClick={handleSpeak}
-              className={`absolute top-0 right-0 h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 ${speaking ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : "text-muted-foreground/50 hover:text-foreground hover:bg-accent"}`}>
-              {speaking ? <Square className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            </button>
-          )}
-          {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
                 <ThumbsUp className="w-4 h-4" />
@@ -706,6 +733,11 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                   <button className={ab}><MoreHorizontal className="w-4 h-4" /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
+                  <DropdownMenuItem onClick={handleSpeak}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    {speaking ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
+                    {speaking ? 'Stop reading' : 'Read aloud'}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={onRetry} disabled={!onRetry}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
                     <RefreshCw className="w-3.5 h-3.5 text-green-500" /> Regenerate

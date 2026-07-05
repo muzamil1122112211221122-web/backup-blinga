@@ -688,6 +688,14 @@ const IMAGINE_PROMPTS_BY_STYLE: Record<string, {label: string; prompt: string; i
   ],
 };
 
+// ─── Language auto-detection for TTS voices ──────────────────────────────────
+function detectVoiceForText(text: string): string {
+  if (/[\u0600-\u06FF]/.test(text)) return 'ur-PK-AsadNeural';
+  if (/[\u0900-\u097F]/.test(text)) return 'hi-IN-MadhurNeural';
+  if (/\b(hai|hain|kya|aap|mein|nahi|haan|bhi|toh|ab|jo|ke|ka|ki|ko|yeh|woh|tha|thi|theek|accha|lekin|phir|kaisa|matlab|bilkul|kyun|kaise|kab|kaun|kahan|aaj|agar|tum|hum)\b/i.test(text)) return 'ur-PK-AsadNeural';
+  return 'en-US-GuyNeural';
+}
+
 // ─── PC Follow-up Suggestions ────────────────────────────────────────────────
 function PCFollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onSelect: (q: string) => void }) {
   const [suggestions, setSuggestions] = React.useState<string[]>([]);
