@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { X, Sparkles, ArrowUp, Download, ChevronLeft, Wand2, Upload, Loader2, Images } from "lucide-react";
+import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic } from "lucide-react";
 import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
 import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
 import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
@@ -111,6 +111,20 @@ const SHOWCASE_IMAGES = [
   { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art village landscape sunset 16-bit SNES style isometric pixel art vibrant colors retro game')}?width=600&height=400&nologo=true&seed=42004&model=flux`, prompt: 'pixel art village at sunset' },
 ];
 
+// Visual templates with photo preview thumbnails (fixed seeds → stable images)
+const VISUAL_TEMPLATES = [
+  { id: 'portrait',  name: 'Realistic Portrait', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
+  { id: 'anime',     name: 'Anime Style',         prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art, no characters',             thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
+  { id: 'cinematic', name: 'Cinematic',            prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded, ARRI cinema',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
+  { id: '3d',        name: '3D Render',            prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination, studio HDRI lighting', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
+  { id: 'interior',  name: 'Interior Design',     prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',             thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
+  { id: 'cyberpunk', name: 'Cyberpunk',            prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
+  { id: 'oil',       name: 'Oil Painting',        prompt: 'classical oil painting, impressionist brushwork, rich warm colors, textured canvas, old master technique, museum quality',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('classical oil painting impressionist brushwork rich warm colors textured canvas old master')}?width=240&height=320&nologo=true&seed=77006&model=flux` },
+  { id: 'fantasy',   name: 'Fantasy Art',         prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
+  { id: 'nature',    name: 'Nature Photo',        prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',          thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
+  { id: 'pixel',     name: 'Pixel Art',           prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
+];
+
 function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number, model = 'flux'): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=${model}&negative_prompt=${SAFE_NEGATIVE}`;
@@ -214,8 +228,9 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [editHistory, setEditHistory]         = useState<string[]>([]);
   const [isEditGenerating, setIsEditGenerating] = useState(false);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const uploadRef   = useRef<HTMLInputElement>(null);
+  const textareaRef     = useRef<HTMLTextAreaElement>(null);
+  const uploadRef       = useRef<HTMLInputElement>(null);
+  const templateScrollRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
 
@@ -500,76 +515,157 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   }
 
   /* ────────────────────────────────────────────────────
-     MAIN STUDIO — redesigned to show user's own images
+     MAIN STUDIO — matches reference: prompt at top,
+     photo template thumbnails, edge-to-edge image grid
   ──────────────────────────────────────────────────── */
+  const scrollTemplates = (dir: 'left' | 'right') => {
+    const el = templateScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
+  };
+
+  const completedImages = generatedImages.filter(i => !i.loading && i.url);
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: 'linear-gradient(160deg, #07070f 0%, #0e0e1a 100%)', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
+      style={{ background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-3 pb-2.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <Sparkles size={14} className="text-white" />
-        </div>
-        <h2 className="text-white font-bold text-[15px] tracking-tight">Images</h2>
-        <div className="flex-1" />
+      {/* ── Header ── */}
+      <div className="flex items-center px-5 pt-5 pb-2 flex-shrink-0">
+        <h2 className="text-white font-semibold text-[22px] flex-1 tracking-tight">Images</h2>
         <button onClick={onClose}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all">
-          <X size={16} />
+          className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-white transition-all"
+          style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <X size={18} />
         </button>
       </div>
 
-      {/* Scrollable body */}
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-        <div className="max-w-2xl mx-auto w-full">
+      {/* ── Prompt bar (TOP, not bottom) ── */}
+      <div className="px-5 pt-3 pb-4 flex-shrink-0">
+        {/* Upload / template hint chips */}
+        {(uploadedImage || activeTemplate) && (
+          <div className="flex items-center gap-2 mb-2">
+            {uploadedImage && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <img src={uploadedImage.preview} alt="" className="w-4 h-4 rounded object-cover" />
+                <span className="text-zinc-300 text-[11px] max-w-[120px] truncate">{uploadedImage.name}</span>
+                <button onClick={() => setUploadedImage(null)} className="text-zinc-600 hover:text-white ml-0.5"><X size={10} /></button>
+              </div>
+            )}
+            {activeTemplate && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(167,139,250,0.3)' }}>
+                <span className="text-purple-300 text-[11px] font-medium">{(activeTemplate as any).name || activeTemplate.name}</span>
+                <button onClick={() => setActiveTemplate(null)} className="text-purple-600 hover:text-purple-300 ml-0.5"><X size={10} /></button>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* ── Create an image — Templates carousel ── */}
-        <div className="px-4 pt-4">
-          <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-widest mb-2.5">✦ Create an image</p>
-          <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {TEMPLATES.map(t => (
-              <button key={t.id} onClick={() => handleTemplateClick(t)}
-                className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl transition-all hover:scale-[1.04] active:scale-[0.97]"
-                style={activeTemplate?.id === t.id
-                  ? { background: 'linear-gradient(135deg,rgba(124,58,237,0.25),rgba(168,85,247,0.15))', border: '1px solid rgba(167,139,250,0.5)', minWidth: 80 }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', minWidth: 80 }}>
-                <span className="text-xl">{t.icon}</span>
-                <span className="text-white text-[10px] font-semibold text-center leading-tight" style={{ maxWidth: 72 }}>{t.name}</span>
-                <span className="text-zinc-500 text-[9px] text-center leading-tight">{t.desc}</span>
+        {/* Main input bar */}
+        <div className="flex items-center gap-3 rounded-full px-4 py-3"
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+          <button onClick={() => uploadRef.current?.click()} className="flex-shrink-0 transition-all active:scale-90">
+            <Mic size={17} className="text-zinc-500" />
+          </button>
+          <input
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerate(); } }}
+            placeholder="Describe a new image"
+            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px]"
+            style={{ border: 'none', outline: 'none' }}
+          />
+          {/* Count pill */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {[1, 2, 4].map(n => (
+              <button key={n} onClick={() => setImageCount(n)}
+                className="w-6 h-6 rounded-full text-[10px] font-bold transition-all flex items-center justify-center"
+                style={imageCount === n
+                  ? { background: 'rgba(124,58,237,0.6)', color: '#fff' }
+                  : { background: 'rgba(255,255,255,0.06)', color: '#52525b' }}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating}
+            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30"
+            style={{ background: 'rgba(255,255,255,0.14)' }}>
+            {isGenerating
+              ? <Loader2 size={14} className="text-white animate-spin" />
+              : <ArrowUp size={14} className="text-white" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+
+        {/* Create an image — photo thumbnail carousel */}
+        <div className="pb-6">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <span className="text-white text-[15px] font-semibold">Create an image</span>
+            <div className="flex gap-1">
+              <button onClick={() => scrollTemplates('left')}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <ChevronLeft size={15} />
+              </button>
+              <button onClick={() => scrollTemplates('right')}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all"
+                style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <ChevronRight size={15} />
+              </button>
+            </div>
+          </div>
+          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto px-5" style={{ scrollbarWidth: 'none' }}>
+            {VISUAL_TEMPLATES.map(t => (
+              <button key={t.id}
+                onClick={() => { setPrompt(t.prompt); setActiveTemplate({ id: t.id, icon: '', name: t.name, desc: '', prompt: t.prompt }); }}
+                className="flex-shrink-0 relative rounded-2xl overflow-hidden group transition-all active:scale-[0.97]"
+                style={{ width: 120, height: 165, border: activeTemplate?.id === t.id ? '2px solid rgba(167,139,250,0.8)' : '2px solid transparent' }}>
+                <ImageWithLoader src={t.thumb} alt={t.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]" />
+                <div className="absolute inset-0 flex items-end pb-2.5 px-2"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 40%, transparent 100%)' }}>
+                  <span className="text-white text-[11px] font-semibold leading-tight">{t.name}</span>
+                </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* ── My images ── */}
-        <div className="px-4 pt-5 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-widest">✦ My images</p>
-            {generatedImages.filter(i => !i.loading && i.url).length > 0 && (
+        {/* My images section */}
+        <div className="pb-6">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <span className="text-white text-[15px] font-semibold">My images</span>
+            {completedImages.length > 0 && (
               <button
                 onClick={() => { if (confirm('Clear all generated images?')) { setGeneratedImages([]); persistImages([]); } }}
-                className="text-zinc-600 hover:text-zinc-400 text-[9px] transition-colors">
+                className="text-zinc-600 hover:text-zinc-400 text-[11px] transition-colors">
                 Clear all
               </button>
             )}
           </div>
 
           {generatedImages.length === 0 ? (
-            <div className="flex flex-col items-center py-12 gap-3 text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)' }}>
-                <Sparkles size={24} className="text-purple-400" />
+            <div className="flex flex-col items-center py-14 gap-4 px-5">
+              <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <Sparkles size={26} className="text-zinc-600" />
               </div>
-              <div>
+              <div className="text-center">
                 <p className="text-zinc-400 text-sm font-semibold">No images yet</p>
-                <p className="text-zinc-600 text-[11px] mt-1">Describe an image below to get started</p>
+                <p className="text-zinc-600 text-[12px] mt-1">Describe an image above to get started</p>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            /* Edge-to-edge grid matching reference */
+            <div className="grid grid-cols-3 gap-[2px]">
               {generatedImages.map((img, idx) => (
-                <div key={img.id} className="relative group rounded-2xl overflow-hidden bg-zinc-900"
-                  style={{ aspectRatio: '1/1', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div key={img.id} className="relative group bg-zinc-900"
+                  style={{ aspectRatio: '1/1' }}>
                   {img.loading || !img.url ? (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                       <Loader2 size={20} className="animate-spin text-purple-400" />
@@ -577,37 +673,32 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                     </div>
                   ) : (
                     <>
-                      <ImageWithLoader src={img.url} alt="generated" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-250 flex flex-col justify-between p-2.5"
-                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 45%, rgba(0,0,0,0.18) 100%)' }}>
-                        <div className="flex justify-end gap-1.5">
-                          <button onClick={() => handleDownload(img.url, `imagine-${idx + 1}`)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
-                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }} title="Save">
-                            <span className="text-sm">⬇️</span>
-                          </button>
-                          <button onClick={() => handleShare(img.url)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
-                            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }} title="Copy link">
-                            <span className="text-sm">📤</span>
+                      <img src={img.url} alt="generated" className="w-full h-full object-cover" />
+                      {/* Tap overlay */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-2"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.2) 100%)' }}>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => handleDownload(img.url, `image-${idx + 1}`)}
+                            className="w-7 h-7 rounded-full flex items-center justify-center"
+                            style={{ background: 'rgba(255,255,255,0.15)' }} title="Save">
+                            <Download size={12} className="text-white" />
                           </button>
                         </div>
                         <div>
-                          <p className="text-white text-[10px] leading-snug line-clamp-2 mb-2">{img.prompt}</p>
-                          <div className="flex gap-1.5">
+                          <p className="text-white text-[9px] leading-snug line-clamp-2 mb-1.5">{img.prompt}</p>
+                          <div className="flex gap-1">
                             <button onClick={() => {
                               const updated = generatedImages.map(x => x.id === img.id ? { ...x, liked: !x.liked } : x);
-                              setGeneratedImages(updated);
-                              persistImages(updated);
+                              setGeneratedImages(updated); persistImages(updated);
                             }}
-                              className={`flex items-center px-2 py-1 rounded-full text-[10px] font-medium transition-all ${img.liked ? 'text-pink-200' : 'text-zinc-300'}`}
-                              style={{ background: img.liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.12)' }}>
+                              className={`flex items-center px-1.5 py-0.5 rounded-full text-[9px] transition-all ${img.liked ? 'text-pink-300' : 'text-zinc-400'}`}
+                              style={{ background: img.liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.1)' }}>
                               ❤️
                             </button>
                             <button onClick={() => !img.loading && openEdit(img)} disabled={img.loading}
-                              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-zinc-200 hover:text-purple-200 transition-all disabled:opacity-30"
-                              style={{ background: 'rgba(255,255,255,0.12)' }}>
-                              ✏️ Edit
+                              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] text-zinc-400 disabled:opacity-30"
+                              style={{ background: 'rgba(255,255,255,0.1)' }}>
+                              ✏️
                             </button>
                           </div>
                         </div>
@@ -618,72 +709,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
               ))}
             </div>
           )}
-        </div>
-        </div>
-      </div>
-
-      {/* ── Bottom Bar ── */}
-      <div className="px-4 pb-4 pt-2.5 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-        {/* Active hints */}
-        {(uploadedImage || activeTemplate) && (
-          <div className="flex items-center gap-3 mb-2 px-1">
-            {uploadedImage && (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.15)' }}>
-                  <img src={uploadedImage.preview} alt="ref" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-zinc-400 text-xs truncate">{uploadedImage.name}</span>
-                <button onClick={() => setUploadedImage(null)} className="text-zinc-600 hover:text-white transition-colors flex-shrink-0"><X size={12} /></button>
-              </div>
-            )}
-            {activeTemplate && (
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-base">{activeTemplate.icon}</span>
-                <span className="text-purple-300 text-xs">{activeTemplate.name}</span>
-                <button onClick={() => setActiveTemplate(null)} className="text-zinc-600 hover:text-white transition-colors ml-1"><X size={11} /></button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Image count selector */}
-        <div className="flex items-center gap-2 mb-2 px-0.5">
-          <Images size={12} className="text-zinc-600 flex-shrink-0" />
-          <span className="text-zinc-600 text-[10px]">Count:</span>
-          {[1, 2, 4].map(n => (
-            <button key={n} onClick={() => setImageCount(n)}
-              className="w-7 h-6 rounded-lg text-[11px] font-semibold transition-all"
-              style={imageCount === n
-                ? { background: 'rgba(124,58,237,0.3)', border: '1px solid rgba(167,139,250,0.5)', color: 'white' }
-                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.35)' }}>
-              {n}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 rounded-2xl px-3.5 py-3"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
-            placeholder="Describe an image…"
-            className="flex-1 bg-transparent text-white placeholder-zinc-600 resize-none focus:outline-none text-sm"
-            style={{ minHeight: 24, maxHeight: 80, lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none', border: 'none', outline: 'none', padding: 0 }}
-          />
-          <button onClick={() => uploadRef.current?.click()}
-            className="w-7 h-7 flex items-center justify-center rounded-xl text-zinc-500 hover:text-white hover:bg-white/10 flex-shrink-0 transition-all">
-            <Upload size={14} />
-          </button>
-          <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating}
-            className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30"
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-            {isGenerating
-              ? <Loader2 size={14} className="text-white animate-spin" />
-              : <ArrowUp size={14} className="text-white" />}
-          </button>
         </div>
       </div>
     </div>

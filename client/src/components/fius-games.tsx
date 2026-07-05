@@ -2226,10 +2226,12 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                         {podiumSlots.map((slot) => {
                           const { leader, rank, color, height: ht, medal } = slot;
                           if (!leader) {
-                            // Empty slot placeholder (keeps layout stable with 1 or 2 leaders)
                             return (
-                              <div key={`empty-${rank}`} className="flex flex-col items-center flex-1 max-w-[88px]">
-                                <div className="w-full rounded-t-xl mt-auto" style={{ height: ht, background: `${color}08`, border: `1px dashed ${color}20`, borderBottom: 'none' }} />
+                              <div key={`empty-${rank}`} className="flex flex-col items-center justify-end flex-1 max-w-[88px]">
+                                <div className="w-full rounded-t-xl flex items-center justify-center"
+                                  style={{ height: ht, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderBottom: 'none' }}>
+                                  <span className="text-[14px] font-extrabold text-zinc-700">#{rank}</span>
+                                </div>
                               </div>
                             );
                           }
