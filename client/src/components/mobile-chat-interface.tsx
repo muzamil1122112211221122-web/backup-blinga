@@ -33,9 +33,9 @@ import attachmentLight from "@assets/attachment_button_1766904971888.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 
-// ─── Minimal Mode context — consumed by PCHeader, MobileMessageBar, AskTab ────
+// ─── Minimal Mode context — kept for compatibility, always false ──────────────
 const MinimalModeCtx = React.createContext(false);
-const useMinimalMode = () => React.useContext(MinimalModeCtx);
+const useMinimalMode = () => false;
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -610,7 +610,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               )}
               {/* Text bubble (only if there's text) */}
               {msg.content && (
-                <div className={`bg-card ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : "rounded-3xl"} px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all`}>
+                <div className={`bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all`}>
                   {msg.content}
                   <div className="flex items-center justify-end gap-0.5 mt-1.5">
                     <button onClick={handleCopy}
@@ -690,7 +690,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               {speaking ? <Square className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
           )}
-          {!isUser && (
+          {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
                 <ThumbsUp className="w-4 h-4" />
@@ -739,7 +739,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
           {!isUser && done && isLatest && !isStreaming && msg.content && (
             <FollowUpSuggestions msgContent={msg.content} onSelect={q => onFollowUp?.(q)} />
           )}
-          {!isUser && (
+          {!isUser && done && (
             <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
           )}
         </div>
@@ -1155,7 +1155,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${localStorage.getItem("minimalMode") === "true" ? "rounded-md" : msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -1438,7 +1438,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [localToggles, setLocalToggles] = useState({
     autoScroll: true, richText: true, improveModel: true, personalize: true,
     nomadGrid: true, nomadNotification: true, philosopherNotification: true, fiusGamesNotification: true,
-    wrapLines: false, showPreviews: true, showFiusLogo: true, minimalMode: false,
+    wrapLines: false, showPreviews: true, showFiusLogo: true,
   });
   const [functionBarStyle, setFunctionBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
   const [messageBarStyle, setMessageBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
@@ -1463,7 +1463,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     togglesRaw: {} as Record<string, string>,
   });
 
-  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo","minimalMode"];
+  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
 
   const makeTogglesBool = () => ({
     autoScroll: localStorage.getItem("autoScroll") !== "false",
@@ -1477,7 +1477,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     wrapLines: localStorage.getItem("wrapLines") === "true",
     showPreviews: localStorage.getItem("showPreviews") !== "false",
     showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
-    minimalMode: localStorage.getItem("minimalMode") === "true",
   });
 
   useEffect(() => {
@@ -1757,7 +1756,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Display</p>
                   <div className="space-y-4">
                     {[
-                      { key: "minimalMode", label: "Minimal Mode", desc: "Clean squarish UI like Claude — no rounded excess" },
                       { key: "wrapLines", label: "Wrap Long Lines", desc: "Wrap code blocks by default" },
                       { key: "showPreviews", label: "Conversation Previews", desc: "Show previews in history sidebar" },
                       { key: "showFiusLogo", label: "Show Fius Logo in Responses", desc: "Display logo next to AI replies" },
@@ -1985,11 +1983,10 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 
   const cycleTheme = () => { if (theme === "light") setTheme("dark"); else if (theme === "dark") setTheme("system"); else setTheme("light"); };
 
-  const mm = useMinimalMode();
-  const navR = mm ? 8 : 14;
+  const navR = 14;
   return (
-    <header className={`flex-shrink-0 bg-card border border-border px-2 py-1.5 flex items-center gap-1 z-10 ${mm ? "rounded-none mx-0 mt-0 mb-0 border-x-0 border-t-0" : "rounded-full mx-3 mt-2 mb-1 glossy-outline"}`}>
-      <button onClick={onMenuClick} className={`w-8 h-8 flex items-center justify-center ${mm ? "rounded-md" : "rounded-2xl"} text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0`}>
+    <header className="flex-shrink-0 bg-card border border-border px-2 py-1.5 flex items-center gap-1 z-10 rounded-full mx-3 mt-2 mb-1 glossy-outline">
+      <button onClick={onMenuClick} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         <Menu className="w-4 h-4" />
       </button>
       <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
@@ -1999,13 +1996,13 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
           )}
           {TABS.map(({ id, label }, i) => (
             <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 ${mm ? "rounded-md" : "rounded-2xl"} font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
         </div>
       </div>
-      <button onClick={cycleTheme} className={`w-8 h-8 flex items-center justify-center ${mm ? "rounded-md" : "rounded-2xl"} text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0`}>
+      <button onClick={cycleTheme} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         {theme === "dark" ? <Moon className="w-3.5 h-3.5" /> : theme === "system" ? <Monitor className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
       </button>
     </header>
@@ -2050,7 +2047,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
             <div className="w-full flex flex-col gap-2.5">
               {SUGGESTION_CARDS.map((card, i) => (
                 <button key={i} onClick={() => setInput(card.prompt)}
-                  className={`flex items-center gap-3 px-4 py-3.5 ${localStorage.getItem("minimalMode") === "true" ? "rounded-lg" : "rounded-2xl"} border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800`}>
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800`}>
                   <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 border border-border/60">{card.icon}</div>
                   <div className="flex-1 min-w-0"><p className="text-[13.5px] font-semibold text-foreground">{card.title}</p><p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p></div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -2823,14 +2820,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const [tab, setTab] = useState<MobileTab>("ask");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // ── Minimal Mode — reactive: re-reads whenever settings are saved ─────────
-  const [minimalMode, setMinimalMode] = useState(() => localStorage.getItem("minimalMode") === "true");
-  useEffect(() => {
-    const sync = () => setMinimalMode(localStorage.getItem("minimalMode") === "true");
-    window.addEventListener("storage", sync);
-    window.addEventListener("settingsSaved", sync);
-    return () => { window.removeEventListener("storage", sync); window.removeEventListener("settingsSaved", sync); };
-  }, []);
+  const minimalMode = false;
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [educationOpen, setEducationOpen] = useState(false);

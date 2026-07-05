@@ -857,13 +857,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
-  const [minimalMode, setMinimalMode] = useState(() => localStorage.getItem("minimalMode") === "true");
-  useEffect(() => {
-    const sync = () => setMinimalMode(localStorage.getItem("minimalMode") === "true");
-    window.addEventListener("storage", sync);
-    window.addEventListener("settingsSaved", sync);
-    return () => { window.removeEventListener("storage", sync); window.removeEventListener("settingsSaved", sync); };
-  }, []);
   const [input, setInput] = useState("");
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
@@ -3084,7 +3077,7 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className={`bg-card border border-border backdrop-blur-lg px-4 sm:px-6 py-2.5 flex items-center justify-between mx-auto relative z-10 ${minimalMode ? "rounded-none w-full mt-0 mb-0 border-x-0 border-t-0 max-w-none" : "rounded-full max-w-4xl w-[calc(100%-1.5rem)] mt-2 mb-1 glossy-outline"}`}>
+      <header className={`bg-card border border-border backdrop-blur-lg px-4 sm:px-6 py-2.5 flex items-center justify-between mx-auto relative z-10 rounded-full max-w-4xl w-[calc(100%-1.5rem)] mt-2 mb-1 glossy-outline`}>
         <div className="flex items-center space-x-2 sm:space-x-3">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -3114,7 +3107,7 @@ Let's start the self-listen session!`;
               width: pillStyle.width,
               top: 2, bottom: 2,
               background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'white',
-              borderRadius: minimalMode ? 4 : 14,
+              borderRadius: 14,
               boxShadow: theme === 'dark' ? '0 1px 10px rgba(255,255,255,0.18)' : '0 1px 8px rgba(0,0,0,0.13)',
               transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
               pointerEvents: 'none',
@@ -3128,7 +3121,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 ${minimalMode ? "rounded-md" : "rounded-2xl"} transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-ask"
               >
                 Ask
@@ -3143,7 +3136,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 ${minimalMode ? "rounded-md" : "rounded-2xl"} transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -3158,7 +3151,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 ${minimalMode ? "rounded-md" : "rounded-2xl"} transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-imagine"
               >
                 Imagine Studio
@@ -3173,7 +3166,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 ${minimalMode ? "rounded-md" : "rounded-2xl"} transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-philosopher"
               >
                 <span className="hidden sm:inline">Philosophers & {user?.displayName || user?.username || 'You'}</span>
@@ -3189,7 +3182,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 ${minimalMode ? "rounded-md" : "rounded-2xl"} transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                 data-testid="tab-fius-games"
               >
                 <span className="hidden sm:inline">Fius Games</span>

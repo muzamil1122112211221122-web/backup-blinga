@@ -151,8 +151,7 @@ export function CustomizeModal({
     personalize: true,
     linkSharing: true,
     sidebarCloseTop: true,
-    showFiusLogo: true,
-    minimalMode: false
+    showFiusLogo: true
   });
 
   // Only reset local state when modal transitions from closed → open
@@ -332,13 +331,6 @@ export function CustomizeModal({
               </div>
 
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Minimal Mode</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Squarish, minimal Claude-style UI — message bar, top bar &amp; function bar</p>
-                  </div>
-                  <Switch checked={localToggles.minimalMode ?? false} onCheckedChange={() => handleToggle('minimalMode')} />
-                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Wrap Long Lines For Code Blocks By Default</span>
                   <Switch checked={localToggles.wrapLines} onCheckedChange={() => handleToggle('wrapLines')} />
