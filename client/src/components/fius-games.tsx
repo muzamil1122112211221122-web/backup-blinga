@@ -2406,12 +2406,11 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Game Info Modal ── */}
       {selectedGameInfo && (
         <>
-          {/* Invisible click-to-close layer — no visible overlay */}
-          <div className="absolute inset-0 z-40" onClick={() => setSelectedGameInfo(null)} />
-          {/* Card only — blur is applied directly on the card, not full screen */}
-          <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center border border-border shadow-2xl pointer-events-auto"
-            style={{ backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', background: 'var(--card)', boxShadow: '0 8px 48px rgba(0,0,0,0.18), 0 1.5px 8px rgba(0,0,0,0.10)' }}
+          {/* Full-screen blur overlay — fixed so it covers the entire page */}
+          <div className="fixed inset-0 z-[998] backdrop-blur-md bg-black/30" onClick={() => setSelectedGameInfo(null)} />
+          {/* Card centered over the full screen */}
+          <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none">
+          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center border border-border shadow-2xl pointer-events-auto bg-card"
             onClick={e => e.stopPropagation()}>
             <div className="pt-8 pb-0 flex flex-col items-center">
               {selectedGameInfo.icon ? (
