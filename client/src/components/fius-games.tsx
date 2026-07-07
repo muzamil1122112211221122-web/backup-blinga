@@ -2144,11 +2144,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <div className="relative w-full aspect-square">
                         <img src={g.img} alt={g.name}
                           className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all"
-                          style={{ outline: '2.5px solid rgba(16,185,129,0.65)', outlineOffset: '2px' }}
                           onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                        <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.9)' }}>
-                          <Check size={9} className="text-white" />
-                        </div>
                       </div>
                       <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
                     </button>
@@ -2201,7 +2197,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               ];
 
               return (
-                <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 10px 48px rgba(0,0,0,0.8)' }}>
+                <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)' }}>
 
                   {/* ── Header ── */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
