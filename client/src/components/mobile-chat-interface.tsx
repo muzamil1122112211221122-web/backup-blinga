@@ -2578,17 +2578,18 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   );
 }
 
-// ─── Studio template thumbnails (stable Pollinations seeds) ──────────────────
+// ─── Studio template thumbnails ───────────────────────────────────────────────
+// bg = placeholder gradient shown while the image loads
 const STUDIO_TEMPLATES = [
-  { id: 'portrait',  name: 'Realistic Portrait', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic',         thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
-  { id: 'anime',     name: 'Anime Style',         prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art',                        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
-  { id: 'cinematic', name: 'Cinematic',            prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded',              thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
-  { id: '3d',        name: '3D Render',            prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination',               thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
-  { id: 'interior',  name: 'Interior Design',      prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
-  { id: 'cyberpunk', name: 'Cyberpunk',             prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
-  { id: 'fantasy',   name: 'Fantasy Art',           prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
-  { id: 'nature',    name: 'Nature Photo',           prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
-  { id: 'pixel',     name: 'Pixel Art',              prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
+  { id: 'portrait',  name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)',                   prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic',         thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
+  { id: 'anime',     name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)',                   prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art',                        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
+  { id: 'cinematic', name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)',                   prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded',              thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
+  { id: '3d',        name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)',                   prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination',               thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
+  { id: 'interior',  name: 'Interior Design',      bg: 'linear-gradient(135deg,#1c1008,#2d1f0a)',                   prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
+  { id: 'cyberpunk', name: 'Cyberpunk',             bg: 'linear-gradient(135deg,#0a0a1a,#1a0a2e)',                   prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
+  { id: 'fantasy',   name: 'Fantasy Art',           bg: 'linear-gradient(135deg,#0a1628,#1a2a0a)',                   prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
+  { id: 'nature',    name: 'Nature Photo',           bg: 'linear-gradient(135deg,#0a1f0a,#1a3a10)',                   prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
+  { id: 'pixel',     name: 'Pixel Art',              bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)',                   prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
 ];
 
 // ─── Studio (Imagine) Tab ─────────────────────────────────────────────────────
@@ -2628,55 +2629,30 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
   }
 
   return (
-    <div className="flex flex-col h-full" style={{ background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
-
-      {/* ── Header ── */}
-      <div className="flex items-center px-5 pt-6 pb-0 flex-shrink-0">
-        <h1 className="text-white font-bold text-[26px] flex-1 tracking-tight">Images</h1>
+    <>
+      {/* ── Header (black) ── */}
+      <div className="flex-shrink-0 px-5 pt-6 pb-3" style={{ background: '#000' }}>
+        <h1 className="text-white font-bold text-[26px] tracking-tight">Images</h1>
       </div>
 
-      {/* ── Prompt bar ── */}
-      <div className="px-4 pt-4 pb-5 flex-shrink-0">
+      {/* ── Scrollable body (black) ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ background: '#000', scrollbarWidth: 'none' }}>
+
         {/* Active template chip */}
         {activeTemplate && (
-          <div className="flex items-center gap-2 mb-2.5">
+          <div className="flex items-center gap-2 px-5 pb-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
               style={{ background: 'rgba(139,92,246,0.18)', border: '1px solid rgba(167,139,250,0.35)' }}>
               <span className="text-purple-300 text-[11px] font-medium">
                 {STUDIO_TEMPLATES.find(t => t.id === activeTemplate)?.name}
               </span>
-              <button onClick={() => setActiveTemplate(null)} className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors">
+              <button onClick={() => { setActiveTemplate(null); setInput(''); }}
+                className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors">
                 <X className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
         )}
-        {/* Pill input */}
-        <div className="flex items-center gap-2.5 rounded-full px-4 py-3.5"
-          style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.13)' }}>
-          <Mic className="w-[18px] h-[18px] text-zinc-500 flex-shrink-0" />
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && input.trim()) { e.preventDefault(); onSend(); } }}
-            placeholder="Describe a new image"
-            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px] leading-none"
-            style={{ border: 'none', outline: 'none' }}
-          />
-          <button
-            onClick={() => { if (input.trim()) onSend(); }}
-            disabled={!input.trim() || isTyping}
-            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-25"
-            style={{ background: 'rgba(255,255,255,0.15)' }}>
-            {isTyping
-              ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
-              : <ArrowUp className="w-3.5 h-3.5 text-white" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Scrollable body ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
         {/* ── Create an image — template cards ── */}
         <div className="mb-7">
@@ -2699,28 +2675,29 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
           <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto pl-5 pr-3" style={{ scrollbarWidth: 'none' }}>
             {STUDIO_TEMPLATES.map(t => (
               <button key={t.id}
-                onClick={() => {
-                  setActiveTemplate(t.id);
-                  setInput(t.prompt);
-                }}
+                onClick={() => { setActiveTemplate(t.id); setInput(t.prompt); }}
                 className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.96]"
                 style={{
                   width: 130, height: 180, borderRadius: 16,
+                  background: t.bg,
                   border: activeTemplate === t.id
                     ? '2px solid rgba(167,139,250,0.9)'
                     : '2px solid rgba(255,255,255,0.07)',
                   boxShadow: activeTemplate === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
                 }}>
-                {/* Thumbnail */}
+                {/* Thumbnail — fades in over gradient bg */}
                 <img
                   src={t.thumb}
                   alt={t.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
                   loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.05]"
+                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+                  onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+                  style={{ opacity: 0, transition: 'opacity 0.4s ease, transform 0.3s ease' }}
                 />
                 {/* Label gradient */}
-                <div className="absolute inset-0 flex items-end"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 30%, transparent 70%)' }}>
+                <div className="absolute inset-0 flex flex-col justify-end"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 35%, transparent 70%)' }}>
                   <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
                 </div>
                 {/* Active tick */}
@@ -2735,7 +2712,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
           </div>
         </div>
 
-        {/* ── My images — 2-col large grid ── */}
+        {/* ── My images — 2-col grid ── */}
         <div className="pb-8">
           <div className="flex items-center justify-between px-5 mb-3.5">
             <span className="text-white text-base font-semibold tracking-tight">My images</span>
@@ -2752,43 +2729,31 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
               </div>
               <div className="text-center">
                 <p className="text-zinc-300 text-[15px] font-semibold">No images yet</p>
-                <p className="text-zinc-600 text-[12px] mt-1">Describe an image above to get started</p>
+                <p className="text-zinc-600 text-[12px] mt-1">Describe an image below to get started</p>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-[3px]">
-              {/* Loading card */}
               {isTyping && (
-                <div className="relative bg-zinc-950 flex flex-col items-center justify-center gap-3"
-                  style={{ aspectRatio: '1/1' }}>
+                <div className="relative flex flex-col items-center justify-center gap-3"
+                  style={{ aspectRatio: '1/1', background: '#111' }}>
                   <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
                   <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
                 </div>
               )}
-              {/* Generated images — newest first */}
               {[...aiImages].reverse().map((msg) => (
-                <div key={msg.id}
-                  className="relative group bg-zinc-950"
-                  style={{ aspectRatio: '1/1' }}>
+                <div key={msg.id} className="relative group" style={{ aspectRatio: '1/1', background: '#111' }}>
                   <img
                     src={msg.imageUrl}
                     alt="generated"
                     className="w-full h-full object-cover cursor-pointer"
                     onClick={() => setExpandImg(msg.imageUrl!)}
                   />
-                  {/* Hover overlay */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
                     style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
                     <div className="flex justify-end">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const a = document.createElement('a');
-                          a.href = msg.imageUrl!;
-                          a.download = 'fius-image.png';
-                          a.target = '_blank';
-                          a.click();
-                        }}
+                        onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-image.png'; a.target = '_blank'; a.click(); }}
                         className="w-8 h-8 rounded-full flex items-center justify-center"
                         style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
                         <Download className="w-3.5 h-3.5 text-white" />
@@ -2796,8 +2761,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
                     </div>
                     <div>
                       <p className="text-white/70 text-[10px] leading-snug line-clamp-2 mb-2">{msg.content}</p>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
+                      <button onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium"
                         style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)' }}>
                         <Maximize2 className="w-3 h-3" /> View
@@ -2811,7 +2775,13 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
           <div ref={endRef} />
         </div>
       </div>
-    </div>
+
+      {/* ── App message bar at bottom ── */}
+      <MobileMessageBar value={input} onChange={setInput} onSend={onSend} isTyping={isTyping}
+        placeholder="Describe a new image…" tab="imagine" showEnhance showModel={false}
+        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration}
+        onVoiceMode={onVoiceMode} onSettings={onSettings} />
+    </>
   );
 }
 

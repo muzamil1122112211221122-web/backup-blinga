@@ -4551,93 +4551,127 @@ Let's start the self-listen session!`;
             const ph1 = imagineGallery[1];
             const ph2 = imagineGallery[2];
 
-            return (
-              <div className="absolute inset-0 flex bg-background">
+            // ── PC Studio template cards (same set as mobile) ─────────────
+            const PC_STUDIO_TEMPLATES = [
+              { id: 'portrait',  name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)',  prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic',         thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
+              { id: 'anime',     name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)',  prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art',                        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
+              { id: 'cinematic', name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)',  prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded',              thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
+              { id: '3d',        name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)',  prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination',               thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
+              { id: 'interior',  name: 'Interior Design',      bg: 'linear-gradient(135deg,#1c1008,#2d1f0a)',  prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
+              { id: 'cyberpunk', name: 'Cyberpunk',             bg: 'linear-gradient(135deg,#0a0a1a,#1a0a2e)',  prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
+              { id: 'fantasy',   name: 'Fantasy Art',           bg: 'linear-gradient(135deg,#0a1628,#1a2a0a)',  prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
+              { id: 'nature',    name: 'Nature Photo',           bg: 'linear-gradient(135deg,#0a1f0a,#1a3a10)',  prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
+              { id: 'pixel',     name: 'Pixel Art',              bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)',  prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
+            ];
 
-                {/* ═══ LEFT: Discovery panel ═══ */}
-                <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+            const pcAiImages = imagineMessages.filter((m: any) => m.role === 'ai' && m.imageUrl);
+
+            return (
+              <div className="absolute inset-0 flex" style={{ background: '#000' }}>
+
+                {/* ═══ LEFT: Discovery panel (black) ═══ */}
+                <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/[0.07]">
 
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2 flex-shrink-0">
-                    <p className="text-sm font-bold text-foreground">✦ Imagination Studio</p>
-                    <button
-                      onClick={() => setImagineShuffleKey(k => k + 1)}
-                      disabled={imagineGalleryLoading}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-40">
-                      <RefreshCw className={`w-3.5 h-3.5 ${imagineGalleryLoading ? 'animate-spin' : ''}`} /> Refresh
-                    </button>
+                  <div className="flex-shrink-0 px-6 pt-7 pb-4">
+                    <h2 className="text-white font-bold text-[28px] tracking-tight">Images</h2>
                   </div>
 
-                  {/* ── Featured gallery: 3 equal images + logo ── */}
-                  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'none' }}>
-                    {imagineGalleryLoading ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-3 gap-3">
-                          {[0,1,2].map(i => (
-                            <div key={i} className="rounded-2xl bg-muted animate-pulse" style={{ height: 160 }} />
-                          ))}
-                        </div>
-                        <div className="flex items-center justify-center py-2">
-                          <div className="w-24 h-24 rounded-full bg-muted animate-pulse" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3 h-full">
-                        {/* 3 equal-sized photos in a row — stretched to fill */}
-                        <div className="grid grid-cols-3 gap-3 flex-1">
-                          {[ph0, ph1, ph2].filter(Boolean).map((item, i) => (
-                            <button key={i}
-                              className="group flex flex-col gap-1.5 text-left focus:outline-none"
-                              onClick={() => item && setInputValue(item.prompt)}>
-                              <div className="w-full rounded-2xl overflow-hidden border border-border flex-shrink-0"
-                                style={{ height: 280 }}>
-                                <img src={item!.url} alt={item!.label}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                                  style={imagineStyle === 'Pixel Art' ? { imageRendering: 'pixelated' } : undefined}
-                                  onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80'; }} />
-                              </div>
-                              <p className="text-[11px] font-semibold text-foreground leading-tight truncate px-0.5">{item!.label}</p>
-                            </button>
-                          ))}
-                        </div>
+                  {/* Scrollable body */}
+                  <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
-                        {/* Fius logo — centered with equal spacing */}
-                        <div className="w-full flex justify-center items-center pt-2 pb-5">
-                          <div style={{ transform: 'scale(1.025)', transformOrigin: 'center' }}>
-                            <Logo size="xl" className="opacity-60 hover:opacity-90 transition-opacity" />
-                          </div>
-                        </div>
+                    {/* Create an image — horizontal scroll template cards */}
+                    <div className="mb-8">
+                      <div className="px-6 mb-4">
+                        <span className="text-white text-[15px] font-semibold tracking-tight">Create an image</span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* ── Style Templates row (circular image thumbnails) ── */}
-                  <div className="flex-shrink-0 px-4 pt-3 pb-2 border-t border-border">
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Styles</p>
-                    <div className="flex gap-5 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-                      {(showAllTemplates ? STYLE_OPTIONS : STYLE_OPTIONS.slice(0, 7)).map((s) => (
-                        <button key={s.name}
-                          onClick={() => { setImagineStyle(s.name); setInputValue(s.firstPrompt); }}
-                          title={s.name}
-                          className="flex-shrink-0 flex flex-col items-center gap-2.5 group">
-                          <div className={`w-[100px] h-[100px] rounded-full overflow-hidden border-[3px] transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl ${imagineStyle === s.name ? 'border-primary shadow-md ring-2 ring-primary/30 ring-offset-2' : 'border-border'}`}>
-                            <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
-                              onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=150&q=80'; }} />
-                          </div>
-                          <span className={`text-[11px] font-semibold truncate w-[100px] text-center leading-tight ${imagineStyle === s.name ? 'text-primary font-bold' : 'text-muted-foreground'}`}>{s.name}</span>
-                        </button>
-                      ))}
+                      <div className="flex gap-3 overflow-x-auto pl-6 pr-4" style={{ scrollbarWidth: 'none' }}>
+                        {PC_STUDIO_TEMPLATES.map(t => (
+                          <button key={t.id}
+                            onClick={() => setInputValue(t.prompt)}
+                            className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.97] hover:scale-[1.02]"
+                            style={{
+                              width: 140, height: 195, borderRadius: 16,
+                              background: t.bg,
+                              border: '1.5px solid rgba(255,255,255,0.08)',
+                            }}>
+                            <img
+                              src={t.thumb}
+                              alt={t.name}
+                              loading="lazy"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
+                              onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+                              onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
+                              style={{ opacity: 0, transition: 'opacity 0.45s ease, transform 0.3s ease' }}
+                            />
+                            <div className="absolute inset-0 flex items-end"
+                              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 30%, transparent 70%)' }}>
+                              <span className="px-3 pb-3 text-white text-[12px] font-semibold block w-full leading-tight">{t.name}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    {/* Show all — pinned at bottom */}
-                    <button onClick={() => setShowAllTemplates(v => !v)}
-                      className="w-full mt-1 py-1.5 text-[11px] font-semibold text-primary hover:underline transition-all text-center">
-                      {showAllTemplates ? '← Show less' : 'Show all styles →'}
-                    </button>
+
+                    {/* My images — 3-col grid */}
+                    <div className="pb-8">
+                      <div className="flex items-center justify-between px-6 mb-4">
+                        <span className="text-white text-[15px] font-semibold tracking-tight">My images</span>
+                        {pcAiImages.length > 0 && (
+                          <span className="text-zinc-600 text-[11px]">{pcAiImages.length} image{pcAiImages.length !== 1 ? 's' : ''}</span>
+                        )}
+                      </div>
+
+                      {pcAiImages.length === 0 && !imagineMessages.some((m: any) => m.isGenerating) ? (
+                        <div className="flex flex-col items-center py-16 gap-4 px-6">
+                          <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
+                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                            <Sparkles className="w-7 h-7 text-zinc-700" />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-zinc-400 text-[14px] font-semibold">No images yet</p>
+                            <p className="text-zinc-700 text-[12px] mt-1">Pick a template or type a prompt to start</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-[3px]">
+                          {imagineMessages.some((m: any) => m.isGenerating) && (
+                            <div className="relative flex flex-col items-center justify-center gap-2"
+                              style={{ aspectRatio: '1/1', background: '#111' }}>
+                              <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                              <span className="text-zinc-600 text-[10px]">Generating…</span>
+                            </div>
+                          )}
+                          {[...pcAiImages].reverse().map((msg: any, idx: number) => (
+                            <div key={msg.id} className="relative group cursor-pointer"
+                              style={{ aspectRatio: '1/1', background: '#111' }}
+                              onClick={() => setFullscreenImg(msg.imageUrl)}>
+                              <img src={msg.imageUrl} alt="generated" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-2.5"
+                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.1) 100%)' }}>
+                                <div className="flex justify-end">
+                                  <button onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl; a.download = `fius-${idx+1}.png`; a.target='_blank'; a.click(); }}
+                                    className="w-7 h-7 rounded-full flex items-center justify-center"
+                                    style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
+                                    <Download className="w-3 h-3 text-white" />
+                                  </button>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content }); setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]); setImagineEditStyle(''); setImagineEditRes('1:1'); }}
+                                  className="flex items-center gap-1 self-start px-2 py-1 rounded-full text-[10px] font-medium"
+                                  style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>
+                                  <Edit className="w-2.5 h-2.5" /> Restyle
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* ═══ RIGHT: Results / Edit panel — always visible, narrow ═══ */}
-                <div className="flex flex-col w-[30%] flex-shrink-0 border-l border-border min-w-0 overflow-hidden">
+                <div className="flex flex-col w-[30%] flex-shrink-0 border-l border-white/[0.07] min-w-0 overflow-hidden">
                   {imagineEditTarget ? renderEditPanel() : renderRightPanel()}
                 </div>
               </div>
