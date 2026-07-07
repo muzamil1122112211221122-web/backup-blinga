@@ -1907,7 +1907,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [search, setSearch] = useState('');
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
-  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
+  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; logo?: string; icon?: FreeGameIcon; category: string} | null>(null);
   const [globalLeaders, setGlobalLeaders] = useState<Array<{ userId: string; name: string; totalScore: number; bestGame: any | null; gameLevels?: Record<string, number> }>>([]);
   const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
   const [lbCatFilter, setLbCatFilter] = useState<string>('All');
@@ -2123,9 +2123,9 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {FREE_GAMES.map(g => (
                   <button key={g.id}
-                    onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
+                    onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, logo: g.logo, icon: g.icon, category: g.category })}
                     className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
-                    <div className="w-full aspect-square max-w-[72px] mx-auto">
+                    <div className="w-full aspect-square max-w-[88px] mx-auto">
                       <img src={g.logo} alt={g.label}
                         className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all" />
                     </div>
@@ -2144,7 +2144,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
                       className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5 relative">
-                      <div className="relative w-full aspect-square max-w-[72px] mx-auto">
+                      <div className="relative w-full aspect-square max-w-[88px] mx-auto">
                         <img src={g.img} alt={g.name}
                           className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all"
                           onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
@@ -2413,16 +2413,13 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center border border-border shadow-2xl pointer-events-auto bg-card"
             onClick={e => e.stopPropagation()}>
             <div className="pt-8 pb-0 flex flex-col items-center">
-              {selectedGameInfo.icon ? (
-                <div className="w-28 h-28 rounded-full flex items-center justify-center"
-                  style={{ background: selectedGameInfo.icon.gradient }}>
-                  <selectedGameInfo.icon.Icon className="w-14 h-14 text-white" />
-                </div>
-              ) : (
-                <div className="w-28 h-28 rounded-full overflow-hidden">
-                  <img src={selectedGameInfo.img} alt={selectedGameInfo.label} className="w-full h-full object-cover" />
-                </div>
-              )}
+              <div className="w-28 h-28 rounded-full overflow-hidden">
+                <img
+                  src={selectedGameInfo.logo ?? selectedGameInfo.img}
+                  alt={selectedGameInfo.label}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
             <div className="px-6 pt-4 pb-6 w-full">
               <h3 className="text-xl font-black text-foreground mb-1 tracking-tight">{selectedGameInfo.label}</h3>
