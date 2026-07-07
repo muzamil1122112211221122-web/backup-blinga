@@ -2141,20 +2141,20 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                 { leader: top3[1] ?? null, rank: 2,
                   coinBg: 'linear-gradient(140deg,#d0d4de 0%,#eaecf4 45%,#9fa6b8 100%)',
                   coinGlow: '0 0 22px rgba(190,195,220,0.55), 0 3px 12px rgba(0,0,0,0.55)',
-                  platFront: 'linear-gradient(175deg,#b0b8c8 0%,#7a8494 100%)',
-                  platSide: '#606874', platTop: 'rgba(255,255,255,0.28)',
+                  platFront: 'linear-gradient(175deg,#c8d0e0 0%,#8a94a8 100%)',
+                  platSide: '#505866', platTop: '#d8dde8',
                   platH: 88, coinSz: 42, rankSz: 15, scoreSz: 11, nameSz: 8.5 },
                 { leader: top3[0] ?? null, rank: 1,
                   coinBg: 'linear-gradient(140deg,#fbbf24 0%,#fef3c7 45%,#d97706 100%)',
                   coinGlow: '0 0 30px rgba(251,191,36,0.85), 0 4px 18px rgba(0,0,0,0.6)',
                   platFront: 'linear-gradient(175deg,#f59e0b 0%,#b45309 100%)',
-                  platSide: '#92400e', platTop: 'rgba(255,255,255,0.32)',
+                  platSide: '#7c3409', platTop: '#fcd34d',
                   platH: 120, coinSz: 54, rankSz: 20, scoreSz: 14, nameSz: 9.5 },
                 { leader: top3[2] ?? null, rank: 3,
                   coinBg: 'linear-gradient(140deg,#e8a87c 0%,#f4c8a0 45%,#a0622a 100%)',
                   coinGlow: '0 0 22px rgba(205,127,50,0.6), 0 3px 12px rgba(0,0,0,0.55)',
-                  platFront: 'linear-gradient(175deg,#c97b35 0%,#7c4010 100%)',
-                  platSide: '#5c2e08', platTop: 'rgba(255,255,255,0.25)',
+                  platFront: 'linear-gradient(175deg,#cd8040 0%,#7c4010 100%)',
+                  platSide: '#4e2406', platTop: '#e8a870',
                   platH: 64, coinSz: 36, rankSz: 13, scoreSz: 10, nameSz: 8 },
               ] as const;
 
@@ -2217,7 +2217,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       background: 'radial-gradient(ellipse at 50% 90%, rgba(251,191,36,0.22) 0%, transparent 65%)', filter: 'blur(18px)' }} />
 
                     {/* Three columns */}
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 8, height: podAreaH }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 20, height: podAreaH }}>
                       {podSlots.map((slot, si) => {
                         const isCenter = si === 1;
                         const isMe = slot.leader?.userId === userId;
@@ -2238,37 +2238,64 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                             </div>
 
                             {/* 3D Platform block */}
-                            <div style={{ position: 'relative', width: '100%', height: slot.platH, flexShrink: 0 }}>
+                            {(() => {
+                              const D = 13; // depth in px for 3D faces
+                              return (
+                                <div style={{ position: 'relative', width: '100%', height: slot.platH, flexShrink: 0, overflow: 'visible' }}>
 
-                              {/* Right-side face (3-D depth shadow strip) */}
-                              <div style={{ position: 'absolute', right: -5, top: 5, bottom: 0, width: 5, background: slot.platSide, borderRadius: '0 4px 0 0', transform: 'skewY(-8deg)', transformOrigin: 'top', zIndex: 0 }} />
+                                  {/* Top face — parallelogram going back-right */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: -D,
+                                    width: `calc(100% + ${D}px)`,
+                                    height: D,
+                                    background: slot.platTop,
+                                    clipPath: `polygon(0 100%, ${D}px 0%, 100% 0%, calc(100% - ${D}px) 100%)`,
+                                    zIndex: 3,
+                                    borderRadius: '3px 3px 0 0',
+                                  }} />
 
-                              {/* Front face */}
-                              <div style={{
-                                position: 'absolute', inset: 0, borderRadius: '10px 10px 0 0',
-                                background: slot.platFront, zIndex: 1,
-                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                justifyContent: 'flex-start', paddingTop: 10, overflow: 'hidden',
-                              }}>
-                                {/* Top highlight edge */}
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderRadius: '10px 10px 0 0', background: slot.platTop }} />
-                                {/* Right-edge inner shadow */}
-                                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 7, background: 'rgba(0,0,0,0.18)', borderRadius: '0 10px 0 0' }} />
+                                  {/* Right side face — rectangle below top face */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    left: '100%',
+                                    top: 0,
+                                    bottom: 0,
+                                    width: D,
+                                    background: slot.platSide,
+                                    borderRadius: '0 4px 0 0',
+                                    zIndex: 0,
+                                  }} />
 
-                                {slot.leader ? (
-                                  <>
-                                    <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.45)', zIndex: 2 }}>
-                                      {slot.leader.totalScore.toLocaleString()}
-                                    </span>
-                                    <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 5px', lineHeight: 1.25, marginTop: 2, wordBreak: 'break-word', zIndex: 2 }}>
-                                      {slot.leader.name}{isMe ? ' ✦' : ''}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span style={{ color: 'rgba(255,255,255,0.18)', fontWeight: 900, fontSize: 11, marginTop: 6, zIndex: 2 }}>#{slot.rank}</span>
-                                )}
-                              </div>
-                            </div>
+                                  {/* Front face */}
+                                  <div style={{
+                                    position: 'absolute', inset: 0, borderRadius: '10px 10px 0 0',
+                                    background: slot.platFront, zIndex: 1,
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                    justifyContent: 'flex-start', paddingTop: 10, overflow: 'hidden',
+                                  }}>
+                                    {/* Left-edge highlight */}
+                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'rgba(255,255,255,0.12)', borderRadius: '10px 0 0 0' }} />
+                                    {/* Right-edge inner shadow */}
+                                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 7, background: 'rgba(0,0,0,0.22)', borderRadius: '0 10px 0 0' }} />
+
+                                    {slot.leader ? (
+                                      <>
+                                        <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.45)', zIndex: 2, position: 'relative' }}>
+                                          {slot.leader.totalScore.toLocaleString()}
+                                        </span>
+                                        <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 5px', lineHeight: 1.25, marginTop: 2, wordBreak: 'break-word', zIndex: 2, position: 'relative' }}>
+                                          {slot.leader.name}{isMe ? ' ✦' : ''}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span style={{ color: 'rgba(255,255,255,0.18)', fontWeight: 900, fontSize: 11, marginTop: 6, zIndex: 2, position: 'relative' }}>#{slot.rank}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
