@@ -15,7 +15,7 @@ import {
   Brain, Search, PenTool, Filter, ChevronUp, Database, Sliders,
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
-  MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal,
+  MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal, Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -2578,181 +2578,240 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   );
 }
 
+// ─── Studio template thumbnails (stable Pollinations seeds) ──────────────────
+const STUDIO_TEMPLATES = [
+  { id: 'portrait',  name: 'Realistic Portrait', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic',         thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
+  { id: 'anime',     name: 'Anime Style',         prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art',                        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
+  { id: 'cinematic', name: 'Cinematic',            prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded',              thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
+  { id: '3d',        name: '3D Render',            prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination',               thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
+  { id: 'interior',  name: 'Interior Design',      prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
+  { id: 'cyberpunk', name: 'Cyberpunk',             prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
+  { id: 'fantasy',   name: 'Fantasy Art',           prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
+  { id: 'nature',    name: 'Nature Photo',           prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
+  { id: 'pixel',     name: 'Pixel Art',              prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
+];
+
 // ─── Studio (Imagine) Tab ─────────────────────────────────────────────────────
 function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void; onSend: () => void;
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
 }) {
-  const imagineStyle = "Photorealistic";
-  const [showResults, setShowResults] = useState(false);
   const [expandImg, setExpandImg] = useState<string | null>(null);
-  const [galleryLoading, setGalleryLoading] = useState(false);
-  const [gallery, setGallery] = useState(GALLERY_PHOTOS);
-  const [shuffleKey, setShuffleKey] = useState(0);
-  const [activeStyle, setActiveStyle] = useState("Photorealistic");
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const templateScrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const STYLE_PRESETS = [
-    { label: "Photorealistic", emoji: "📸" },
-    { label: "Anime", emoji: "🎌" },
-    { label: "Oil Painting", emoji: "🖼️" },
-    { label: "Cyberpunk", emoji: "🌆" },
-    { label: "Watercolor", emoji: "🎨" },
-    { label: "3D Render", emoji: "💎" },
-  ];
-  const QUICK_PROMPTS = [
-    { label: "Neon city at night", icon: "🌃" },
-    { label: "Portrait of a samurai", icon: "⚔️" },
-    { label: "Ocean at golden hour", icon: "🌅" },
-    { label: "Futuristic spaceship", icon: "🚀" },
-    { label: "Mystical enchanted forest", icon: "🌲" },
-    { label: "Abstract colorful swirls", icon: "🌀" },
-    { label: "Ancient ruins at sunset", icon: "🏛️" },
-    { label: "Dragon over a mountain", icon: "🐉" },
-  ];
+  // All AI messages that have an image
+  const aiImages = messages.filter(m => m.role === "ai" && m.imageUrl);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
-
-  // Auto-switch to results when new AI message arrives
   useEffect(() => {
-    if (messages.some(m => m.role === "ai")) setShowResults(true);
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  const handleSend = () => { onSend(); };
-
-  const refreshGallery = async () => {
-    setGalleryLoading(true);
-    try {
-      const res = await fetch(`/api/imagine/gallery?style=${encodeURIComponent(imagineStyle)}&seed=${shuffleKey}`);
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setGallery(data.slice(0, 3).map((item: any) => ({ url: item.url, label: item.label, prompt: item.prompt })));
-      }
-    } catch { }
-    setGalleryLoading(false);
-    setShuffleKey(k => k + 1);
+  const scrollTemplates = (dir: 'left' | 'right') => {
+    templateScrollRef.current?.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
   };
 
+  // ── Fullscreen image viewer ──
   if (expandImg) {
     return (
-      <div className="fixed inset-0 z-[100] bg-black/96 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setExpandImg(null)}>
-        <img src={expandImg} alt="" className="max-w-full max-h-full rounded-2xl" />
-        <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
+      <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+        onClick={() => setExpandImg(null)}>
+        <img src={expandImg} alt="" className="max-w-full max-h-full" />
+        <button onClick={() => setExpandImg(null)}
+          className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+          <X className="w-5 h-5 text-white" />
+        </button>
       </div>
     );
   }
 
-  // Results panel (shown after prompt sent)
-  if (showResults) {
-    return (
-      <>
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/60 bg-card">
-          <button onClick={() => setShowResults(false)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Studio
-          </button>
-          <span className="text-sm font-semibold text-foreground">{messages.filter(m => m.role === "ai").length} image{messages.filter(m => m.role === "ai").length !== 1 ? "s" : ""} created</span>
-          <div className="w-7" />
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: "none" }}>
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
-              <Sparkles className="w-8 h-8 text-muted-foreground/40" />
-              <p className="text-sm font-semibold text-foreground">Ready to create</p>
-              <p className="text-xs text-muted-foreground">Type a prompt below</p>
+  return (
+    <div className="flex flex-col h-full" style={{ background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
+
+      {/* ── Header ── */}
+      <div className="flex items-center px-5 pt-6 pb-0 flex-shrink-0">
+        <h1 className="text-white font-bold text-[26px] flex-1 tracking-tight">Images</h1>
+      </div>
+
+      {/* ── Prompt bar ── */}
+      <div className="px-4 pt-4 pb-5 flex-shrink-0">
+        {/* Active template chip */}
+        {activeTemplate && (
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+              style={{ background: 'rgba(139,92,246,0.18)', border: '1px solid rgba(167,139,250,0.35)' }}>
+              <span className="text-purple-300 text-[11px] font-medium">
+                {STUDIO_TEMPLATES.find(t => t.id === activeTemplate)?.name}
+              </span>
+              <button onClick={() => setActiveTemplate(null)} className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors">
+                <X className="w-2.5 h-2.5" />
+              </button>
             </div>
-          )}
-          {messages.map((msg) => (
-            msg.role === "user" ? (
-              <div key={msg.id} className="flex justify-end">
-                <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 text-xs max-w-[90%]">{msg.content}</div>
-              </div>
-            ) : (
-              <MsgBubble key={msg.id} msg={msg} onExpandImg={s => setExpandImg(s)} />
-            )
-          ))}
-          {isTyping && (
-            <div className="rounded-2xl border border-border overflow-hidden bg-background">
-              <div className="flex flex-col items-center justify-center gap-3 py-10">
-                <div className="relative w-12 h-12">
-                  <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
-                  <div className="absolute inset-1 rounded-full border-2 border-t-primary border-primary/30 animate-spin" />
-                  <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-primary" />
+          </div>
+        )}
+        {/* Pill input */}
+        <div className="flex items-center gap-2.5 rounded-full px-4 py-3.5"
+          style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.13)' }}>
+          <Mic className="w-[18px] h-[18px] text-zinc-500 flex-shrink-0" />
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && input.trim()) { e.preventDefault(); onSend(); } }}
+            placeholder="Describe a new image"
+            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px] leading-none"
+            style={{ border: 'none', outline: 'none' }}
+          />
+          <button
+            onClick={() => { if (input.trim()) onSend(); }}
+            disabled={!input.trim() || isTyping}
+            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-25"
+            style={{ background: 'rgba(255,255,255,0.15)' }}>
+            {isTyping
+              ? <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+              : <ArrowUp className="w-3.5 h-3.5 text-white" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+
+        {/* ── Create an image — template cards ── */}
+        <div className="mb-7">
+          <div className="flex items-center justify-between px-5 mb-3.5">
+            <span className="text-white text-base font-semibold tracking-tight">Create an image</span>
+            <div className="flex gap-1.5">
+              <button onClick={() => scrollTemplates('left')}
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <ChevronLeft className="w-3.5 h-3.5 text-zinc-300" />
+              </button>
+              <button onClick={() => scrollTemplates('right')}
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
+              </button>
+            </div>
+          </div>
+
+          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto pl-5 pr-3" style={{ scrollbarWidth: 'none' }}>
+            {STUDIO_TEMPLATES.map(t => (
+              <button key={t.id}
+                onClick={() => {
+                  setActiveTemplate(t.id);
+                  setInput(t.prompt);
+                }}
+                className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.96]"
+                style={{
+                  width: 130, height: 180, borderRadius: 16,
+                  border: activeTemplate === t.id
+                    ? '2px solid rgba(167,139,250,0.9)'
+                    : '2px solid rgba(255,255,255,0.07)',
+                  boxShadow: activeTemplate === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
+                }}>
+                {/* Thumbnail */}
+                <img
+                  src={t.thumb}
+                  alt={t.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                  loading="lazy"
+                />
+                {/* Label gradient */}
+                <div className="absolute inset-0 flex items-end"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 30%, transparent 70%)' }}>
+                  <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
                 </div>
-                <span className="text-[11px] text-muted-foreground font-medium">Generating your image…</span>
+                {/* Active tick */}
+                {activeTemplate === t.id && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(139,92,246,0.9)' }}>
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── My images — 2-col large grid ── */}
+        <div className="pb-8">
+          <div className="flex items-center justify-between px-5 mb-3.5">
+            <span className="text-white text-base font-semibold tracking-tight">My images</span>
+            {aiImages.length > 0 && (
+              <span className="text-zinc-600 text-[11px]">{aiImages.length} image{aiImages.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+
+          {aiImages.length === 0 && !isTyping ? (
+            <div className="flex flex-col items-center py-16 gap-4 px-5">
+              <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <Sparkles className="w-7 h-7 text-zinc-700" />
               </div>
+              <div className="text-center">
+                <p className="text-zinc-300 text-[15px] font-semibold">No images yet</p>
+                <p className="text-zinc-600 text-[12px] mt-1">Describe an image above to get started</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-[3px]">
+              {/* Loading card */}
+              {isTyping && (
+                <div className="relative bg-zinc-950 flex flex-col items-center justify-center gap-3"
+                  style={{ aspectRatio: '1/1' }}>
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                  <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
+                </div>
+              )}
+              {/* Generated images — newest first */}
+              {[...aiImages].reverse().map((msg) => (
+                <div key={msg.id}
+                  className="relative group bg-zinc-950"
+                  style={{ aspectRatio: '1/1' }}>
+                  <img
+                    src={msg.imageUrl}
+                    alt="generated"
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setExpandImg(msg.imageUrl!)}
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
+                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const a = document.createElement('a');
+                          a.href = msg.imageUrl!;
+                          a.download = 'fius-image.png';
+                          a.target = '_blank';
+                          a.click();
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
+                        <Download className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-[10px] leading-snug line-clamp-2 mb-2">{msg.content}</p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium"
+                        style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)' }}>
+                        <Maximize2 className="w-3 h-3" /> View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
           <div ref={endRef} />
         </div>
-        <MobileMessageBar value={input} onChange={setInput} onSend={handleSend} isTyping={isTyping}
-          placeholder="Describe another image…" tab="imagine" showEnhance showModel={false}
-          fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
-      </>
-    );
-  }
-
-  // Discovery panel — redesigned studio
-  return (
-    <>
-      {/* Hero gradient header */}
-      <div className="flex-shrink-0 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)", minHeight: 120 }}>
-        <div className="absolute inset-0 opacity-30"
-          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #7c3aed33 0%, transparent 50%), radial-gradient(circle at 80% 20%, #ec489933 0%, transparent 50%)" }} />
-        <div className="relative px-4 pt-5 pb-4">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-white font-bold text-base tracking-tight">Fius Studio</span>
-          </div>
-          <p className="text-white/50 text-[11px] mb-3">Describe anything — AI will paint it</p>
-          {/* Style selector */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {STYLE_PRESETS.map(s => (
-              <button key={s.label} onClick={() => setActiveStyle(s.label)}
-                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-semibold transition-all active:scale-95"
-                style={activeStyle === s.label
-                  ? { background: "linear-gradient(135deg,#7c3aed,#ec4899)", color: "#fff", border: "1px solid transparent" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.14)" }}>
-                <span>{s.emoji}</span> {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
-
-      <div className="flex-1 min-h-0 overflow-y-auto bg-background" style={{ scrollbarWidth: "none" }}>
-        {/* Quick prompt grid */}
-        <div className="px-3 pt-3 pb-2">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">Quick Prompts</p>
-          <div className="grid grid-cols-2 gap-2">
-            {QUICK_PROMPTS.map(p => (
-              <button key={p.label} onClick={() => { setInput(`${p.label}, ${activeStyle} style`); }}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card hover:bg-accent hover:border-accent-foreground/20 text-left transition-all active:scale-[0.97] group">
-                <span className="text-base flex-shrink-0">{p.icon}</span>
-                <span className="text-[11px] font-medium text-foreground leading-tight line-clamp-2">{p.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tips */}
-        <div className="px-3 pb-4">
-          <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5 flex items-start gap-2">
-            <Wand2 className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-[10.5px] text-muted-foreground leading-relaxed">
-              <span className="font-semibold text-foreground">Pro tip:</span> Tap ✦ to enhance your prompt with AI before generating.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <MobileMessageBar value={input} onChange={setInput} onSend={handleSend} isTyping={isTyping}
-        placeholder={`A ${activeStyle.toLowerCase()} image of…`} tab="imagine" showEnhance showModel={false}
-        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
-    </>
+    </div>
   );
 }
 
