@@ -2058,8 +2058,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tight">Fius Game Zone</h2>
-          <p className="text-zinc-500 text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
+          <h2 className="text-xl font-black text-foreground tracking-tight">Fius Game Zone</h2>
+          <p className="text-muted-foreground text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
         </div>
         <FragmentBadge count={fragments} />
       </div>
@@ -2067,13 +2067,13 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Tab switcher: Games / Store ── */}
       <div className="flex items-center gap-2 mb-4 flex-shrink-0">
         <button onClick={() => setTab('games')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'games' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-          style={{ background: tab === 'games' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.05)', border: tab === 'games' ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'games' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          style={{ background: tab === 'games' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(128,128,128,0.12)', border: tab === 'games' ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(128,128,128,0.15)' }}>
           <Gamepad2 size={14} /> Games
         </button>
         <button onClick={() => setTab('store')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'store' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-          style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.05)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'store' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
+          style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(128,128,128,0.12)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(128,128,128,0.15)' }}>
           <ShoppingBag size={14} /> Store
         </button>
       </div>
@@ -2204,7 +2204,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   </div>
 
                   {/* ── Podium area ── */}
-                  <div style={{ position: 'relative', background: 'transparent', padding: '0 10px', overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', background: 'transparent', padding: '0 10px', overflow: 'hidden', marginBottom: 0, lineHeight: 0 }}>
 
                     {/* Light rays — fan out from bottom-centre behind platforms */}
                     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -2230,7 +2230,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <img
                         src="/podium-bars.png"
                         alt="podium"
-                        style={{ width: '100%', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
+                        style={{ width: '100%', display: 'block', userSelect: 'none', pointerEvents: 'none', marginBottom: 0, verticalAlign: 'bottom' }}
                       />
 
                       {/* Text overlays — score + name on each bar */}

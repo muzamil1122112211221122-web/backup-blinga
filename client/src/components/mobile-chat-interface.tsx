@@ -2819,7 +2819,7 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>
           {filtered.map((p, i) => (
             <button key={p.id} onClick={() => { setPersonality(p); }}
-              className={`w-full flex items-center gap-3.5 px-4 py-3 text-left transition-all active:scale-[0.98] hover:bg-accent/50 ${i > 0 ? "border-t border-border/40" : ""}`}>
+              className={`w-full flex items-center gap-3.5 px-4 py-3 text-left transition-all active:scale-[0.98] hover:bg-accent/50`}>
               <WikiFace name={p.name} wikiTitle={p.wikiTitle} size={44} />
               <div className="flex-1 min-w-0">
                 <p className="text-[13.5px] font-bold text-foreground">{p.name}</p>
@@ -3372,7 +3372,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 onSend={handlePhilSend} onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
                 personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 overflow-hidden bg-zinc-950 px-4 pt-4 pb-2" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
+            <div className="absolute inset-0 overflow-hidden bg-background px-4 pt-4 pb-2" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
             </div>
           </div>
