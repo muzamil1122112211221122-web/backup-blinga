@@ -1883,7 +1883,7 @@ Prompt to improve: ${originalPrompt}`;
           const totalLevel = Object.values(levels).reduce((sum: number, lv: any) => sum + (Number(lv) || 0), 0);
           const scores: any[] = (e.settings as any)?.gamesData?.scores || [];
           const bestGame = scores.length > 0 ? scores.reduce((a: any, b: any) => a.score > b.score ? a : b) : null;
-          return { userId: e.userId, name: e.displayName || e.username, totalScore: totalLevel, bestGame };
+          return { userId: e.userId, name: e.displayName || e.username, totalScore: totalLevel, bestGame, gameLevels: levels };
         })
         .filter(e => e.totalScore > 0)
         .sort((a, b) => b.totalScore - a.totalScore)

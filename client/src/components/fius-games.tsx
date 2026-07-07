@@ -1908,7 +1908,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
-  const [globalLeaders, setGlobalLeaders] = useState<Array<{ userId: string; name: string; totalScore: number; bestGame: any | null }>>([]);
+  const [globalLeaders, setGlobalLeaders] = useState<Array<{ userId: string; name: string; totalScore: number; bestGame: any | null; gameLevels?: Record<string, number> }>>([]);
   const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
   const [lbCatFilter, setLbCatFilter] = useState<string>('All');
 
@@ -2127,40 +2127,37 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
             {/* ── LEADERBOARD ── reference-match premium podium */}
             {(() => {
               const CAT_TABS = ['All', 'Memory', 'Math', 'Word', 'Quiz'];
-              const TIME_TABS: { key: 'day'|'week'|'month'|'all'; label: string }[] = [
-                { key: 'day', label: 'Day' }, { key: 'week', label: 'Week' },
-                { key: 'month', label: 'Month' }, { key: 'all', label: 'All Time' },
-              ];
-              const leaders = globalLeaders.slice(0, 10);
+              const CAT_TO_GAME: Record<string, string> = { Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz' };
+              const catIdx = CAT_TABS.indexOf(lbCatFilter);
+
+              // Compute per-leader score for active filter
+              const getScore = (l: typeof globalLeaders[0]) =>
+                lbCatFilter === 'All'
+                  ? l.totalScore
+                  : l.gameLevels?.[CAT_TO_GAME[lbCatFilter]] || 0;
+
+              // Filtered + re-sorted leaders
+              const leaders = [...globalLeaders]
+                .map(l => ({ ...l, filteredScore: getScore(l) }))
+                .filter(l => l.filteredScore > 0)
+                .sort((a, b) => b.filteredScore - a.filteredScore)
+                .slice(0, 10);
+
               const top3 = leaders.slice(0, 3);
-              // list: skip people already on podium if >3 players, show up to 7
-              const listPlayers = leaders.filter(l => l.userId !== userId).slice(0, 7);
 
               // slot[0]=silver(#2 left), slot[1]=gold(#1 center), slot[2]=bronze(#3 right)
               const podSlots = [
-                { leader: top3[1] ?? null, rank: 2,
-                  coinBg: 'linear-gradient(140deg,#d0d4de 0%,#eaecf4 45%,#9fa6b8 100%)',
-                  coinGlow: '0 0 22px rgba(190,195,220,0.55), 0 3px 12px rgba(0,0,0,0.55)',
-                  platFront: 'linear-gradient(175deg,#c8d0e0 0%,#8a94a8 100%)',
-                  platSide: '#505866', platTop: '#d8dde8',
-                  platH: 88, coinSz: 42, rankSz: 15, scoreSz: 11, nameSz: 8.5 },
-                { leader: top3[0] ?? null, rank: 1,
-                  coinBg: 'linear-gradient(140deg,#fbbf24 0%,#fef3c7 45%,#d97706 100%)',
-                  coinGlow: '0 0 30px rgba(251,191,36,0.85), 0 4px 18px rgba(0,0,0,0.6)',
-                  platFront: 'linear-gradient(175deg,#f59e0b 0%,#b45309 100%)',
-                  platSide: '#7c3409', platTop: '#fcd34d',
-                  platH: 120, coinSz: 54, rankSz: 20, scoreSz: 14, nameSz: 9.5 },
-                { leader: top3[2] ?? null, rank: 3,
-                  coinBg: 'linear-gradient(140deg,#e8a87c 0%,#f4c8a0 45%,#a0622a 100%)',
-                  coinGlow: '0 0 22px rgba(205,127,50,0.6), 0 3px 12px rgba(0,0,0,0.55)',
-                  platFront: 'linear-gradient(175deg,#cd8040 0%,#7c4010 100%)',
-                  platSide: '#4e2406', platTop: '#e8a870',
-                  platH: 64, coinSz: 36, rankSz: 13, scoreSz: 10, nameSz: 8 },
+                { leader: top3[1] ?? null, rank: 2 },
+                { leader: top3[0] ?? null, rank: 1 },
+                { leader: top3[2] ?? null, rank: 3 },
               ] as const;
 
               const meUserRank = leaders.findIndex(l => l.userId === userId);
               const meInTop    = meUserRank !== -1;
-              const myTotalLv  = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
+              const myLevels   = loadLevels();
+              const myFilteredScore = lbCatFilter === 'All'
+                ? Object.values(myLevels).reduce((s, v) => s + (Number(v) || 0), 0)
+                : myLevels[CAT_TO_GAME[lbCatFilter]] || 0;
 
               // Text overlay positions on the podium image (% of container width/height)
               // slot[0]=silver left, slot[1]=gold center, slot[2]=bronze right
@@ -2174,30 +2171,36 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                 <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 10px 48px rgba(0,0,0,0.8)' }}>
 
                   {/* ── Header ── */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
                     <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: -0.3 }}>Leaderboard</span>
-                    <div style={{ display: 'flex', gap: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 14, padding: '2px 3px' }}>
-                      {TIME_TABS.map(t => (
-                        <button key={t.key} onClick={() => setLbTimeFilter(t.key)} style={{
-                          padding: '3px 9px', borderRadius: 11, fontSize: 9, fontWeight: 700, border: 'none', cursor: 'pointer',
-                          background: lbTimeFilter === t.key ? '#4f46e5' : 'transparent',
-                          color: lbTimeFilter === t.key ? '#fff' : '#5a607a', transition: 'all 0.15s',
-                        }}>{t.label}</button>
-                      ))}
-                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>ALL TIME</span>
                   </div>
 
-                  {/* ── Category pills ── */}
-                  <div style={{ display: 'flex', gap: 7, padding: '0 16px 14px', overflowX: 'auto', scrollbarWidth: 'none' as const }}>
-                    {CAT_TABS.map(cat => (
-                      <button key={cat} onClick={() => setLbCatFilter(cat)} style={{
-                        flexShrink: 0, padding: '5px 13px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
-                        background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.07)',
-                        color: lbCatFilter === cat ? '#0e0c2e' : '#7a809a',
-                        border: lbCatFilter === cat ? '2px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.1)',
-                        transition: 'all 0.15s',
-                      }}>{cat}</button>
-                    ))}
+                  {/* ── Category segmented bar (unified + sliding animation) ── */}
+                  <div style={{ padding: '0 14px 14px' }}>
+                    <div style={{ position: 'relative', display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 3, overflow: 'hidden' }}>
+                      {/* Sliding active indicator */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 3, bottom: 3,
+                        left: `calc(${catIdx} * (100% / ${CAT_TABS.length}) + 3px)`,
+                        width: `calc(100% / ${CAT_TABS.length} - 6px)`,
+                        background: 'rgba(255,255,255,0.92)',
+                        borderRadius: 9,
+                        transition: 'left 0.28s cubic-bezier(0.23, 1, 0.32, 1)',
+                        pointerEvents: 'none',
+                      }} />
+                      {CAT_TABS.map((cat, i) => (
+                        <button key={cat} onClick={() => setLbCatFilter(cat)} style={{
+                          flex: 1, padding: '6px 0', border: 'none', cursor: 'pointer',
+                          background: 'transparent', borderRadius: 9,
+                          fontSize: 10, fontWeight: 700,
+                          color: lbCatFilter === cat ? '#111' : 'rgba(255,255,255,0.5)',
+                          position: 'relative', zIndex: 1,
+                          transition: 'color 0.2s',
+                        }}>{cat}</button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* ── Podium area ── */}
@@ -2251,7 +2254,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                                   lineHeight: 1.1, textShadow: '0 1px 6px rgba(0,0,0,0.8)',
                                   whiteSpace: 'nowrap',
                                 }}>
-                                  {slot.leader.totalScore.toLocaleString()}
+                                  {(slot.leader as any).filteredScore?.toLocaleString() ?? slot.leader.totalScore.toLocaleString()}
                                 </span>
                                 <span style={{
                                   color: 'rgba(255,255,255,0.92)', fontWeight: 700,
@@ -2275,20 +2278,20 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                     </div>
                   </div>
 
-                  {/* ── Your score row at the bottom ── */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'transparent' }}>
+                  {/* ── Your score row at the bottom — flush, no gap ── */}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px',
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px',
                       borderLeft: '3px solid #6366f1',
                     }}>
-                      <span style={{ color: '#818cf8', fontSize: 11, fontWeight: 800, width: 30, flexShrink: 0 }}>
+                      <span style={{ color: '#818cf8', fontSize: 11, fontWeight: 800, width: 26, flexShrink: 0 }}>
                         #{meInTop ? meUserRank + 1 : '—'}
                       </span>
                       <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 13, textTransform: 'uppercase' as const, letterSpacing: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                         {playerName}
                       </span>
-                      <span style={{ padding: '2px 9px', borderRadius: 20, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 900, flexShrink: 0, letterSpacing: 0.3 }}>You</span>
-                      <span style={{ color: '#818cf8', fontWeight: 800, fontSize: 13, flexShrink: 0, minWidth: 24, textAlign: 'right' as const }}>{myTotalLv}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 20, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 900, flexShrink: 0, letterSpacing: 0.3 }}>You</span>
+                      <span style={{ color: '#818cf8', fontWeight: 800, fontSize: 13, flexShrink: 0, minWidth: 24, textAlign: 'right' as const }}>{myFilteredScore}</span>
                     </div>
                   </div>
                 </div>
