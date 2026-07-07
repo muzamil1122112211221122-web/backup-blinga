@@ -515,13 +515,13 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   }
 
   /* ────────────────────────────────────────────────────
-     MAIN STUDIO — matches reference: prompt at top,
-     photo template thumbnails, edge-to-edge image grid
+     MAIN STUDIO — revamped: clean black, big prompt bar,
+     tall template cards, large 2-col image grid
   ──────────────────────────────────────────────────── */
   const scrollTemplates = (dir: 'left' | 'right') => {
     const el = templateScrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
+    el.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
   };
 
   const completedImages = generatedImages.filter(i => !i.loading && i.url);
@@ -531,68 +531,69 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       style={{ background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
       {/* ── Header ── */}
-      <div className="flex items-center px-5 pt-5 pb-2 flex-shrink-0">
-        <h2 className="text-white font-semibold text-[22px] flex-1 tracking-tight">Images</h2>
+      <div className="flex items-center px-5 pt-6 pb-1 flex-shrink-0">
+        <h2 className="text-white font-bold text-2xl flex-1 tracking-tight">Images</h2>
         <button onClick={onClose}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-white transition-all"
-          style={{ background: 'rgba(255,255,255,0.08)' }}>
-          <X size={18} />
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+          style={{ background: 'rgba(255,255,255,0.10)' }}>
+          <X size={17} className="text-zinc-300" />
         </button>
       </div>
 
-      {/* ── Prompt bar (TOP, not bottom) ── */}
-      <div className="px-5 pt-3 pb-4 flex-shrink-0">
-        {/* Upload / template hint chips */}
+      {/* ── Prompt bar ── */}
+      <div className="px-4 pt-4 pb-5 flex-shrink-0">
+        {/* Active chips */}
         {(uploadedImage || activeTemplate) && (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-2.5">
             {uploadedImage && (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <img src={uploadedImage.preview} alt="" className="w-4 h-4 rounded object-cover" />
                 <span className="text-zinc-300 text-[11px] max-w-[120px] truncate">{uploadedImage.name}</span>
-                <button onClick={() => setUploadedImage(null)} className="text-zinc-600 hover:text-white ml-0.5"><X size={10} /></button>
+                <button onClick={() => setUploadedImage(null)} className="text-zinc-500 hover:text-white ml-0.5 transition-colors"><X size={10} /></button>
               </div>
             )}
             {activeTemplate && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(167,139,250,0.3)' }}>
-                <span className="text-purple-300 text-[11px] font-medium">{(activeTemplate as any).name || activeTemplate.name}</span>
-                <button onClick={() => setActiveTemplate(null)} className="text-purple-600 hover:text-purple-300 ml-0.5"><X size={10} /></button>
+                style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(167,139,250,0.35)' }}>
+                <span className="text-purple-300 text-[11px] font-medium">{(activeTemplate as any).name}</span>
+                <button onClick={() => setActiveTemplate(null)} className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors"><X size={10} /></button>
               </div>
             )}
           </div>
         )}
 
-        {/* Main input bar */}
-        <div className="flex items-center gap-3 rounded-full px-4 py-3"
-          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        {/* Main pill input */}
+        <div className="flex items-center gap-2.5 rounded-full px-4 py-3.5"
+          style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.13)' }}>
           <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           <button onClick={() => uploadRef.current?.click()} className="flex-shrink-0 transition-all active:scale-90">
-            <Mic size={17} className="text-zinc-500" />
+            <Mic size={18} className="text-zinc-500" />
           </button>
           <input
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerate(); } }}
             placeholder="Describe a new image"
-            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px]"
+            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px] leading-none"
             style={{ border: 'none', outline: 'none' }}
           />
-          {/* Count pill */}
+          {/* Count selector */}
           <div className="flex items-center gap-1 flex-shrink-0">
             {[1, 2, 4].map(n => (
               <button key={n} onClick={() => setImageCount(n)}
-                className="w-6 h-6 rounded-full text-[10px] font-bold transition-all flex items-center justify-center"
+                className="w-[22px] h-[22px] rounded-full text-[10px] font-bold transition-all flex items-center justify-center"
                 style={imageCount === n
-                  ? { background: 'rgba(124,58,237,0.6)', color: '#fff' }
-                  : { background: 'rgba(255,255,255,0.06)', color: '#52525b' }}>
+                  ? { background: 'rgba(139,92,246,0.7)', color: '#fff' }
+                  : { background: 'rgba(255,255,255,0.07)', color: '#52525b' }}>
                 {n}
               </button>
             ))}
           </div>
+          {/* Send button */}
           <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating}
-            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.14)' }}>
+            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-25"
+            style={{ background: 'rgba(255,255,255,0.15)' }}>
             {isGenerating
               ? <Loader2 size={14} className="text-white animate-spin" />
               : <ArrowUp size={14} className="text-white" />}
@@ -603,43 +604,63 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       {/* ── Scrollable body ── */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
 
-        {/* Create an image — photo thumbnail carousel */}
-        <div className="pb-6">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <span className="text-white text-[15px] font-semibold">Create an image</span>
-            <div className="flex gap-1">
+        {/* ── Create an image — tall photo cards ── */}
+        <div className="mb-7">
+          <div className="flex items-center justify-between px-5 mb-3.5">
+            <span className="text-white text-base font-semibold tracking-tight">Create an image</span>
+            <div className="flex gap-1.5">
               <button onClick={() => scrollTemplates('left')}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all"
-                style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <ChevronLeft size={15} />
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <ChevronLeft size={14} className="text-zinc-300" />
               </button>
               <button onClick={() => scrollTemplates('right')}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-all"
-                style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <ChevronRight size={15} />
+                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <ChevronRight size={14} className="text-zinc-300" />
               </button>
             </div>
           </div>
-          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto px-5" style={{ scrollbarWidth: 'none' }}>
+
+          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto pl-5 pr-3" style={{ scrollbarWidth: 'none' }}>
             {VISUAL_TEMPLATES.map(t => (
               <button key={t.id}
                 onClick={() => { setPrompt(t.prompt); setActiveTemplate({ id: t.id, icon: '', name: t.name, desc: '', prompt: t.prompt }); }}
-                className="flex-shrink-0 relative rounded-2xl overflow-hidden group transition-all active:scale-[0.97]"
-                style={{ width: 120, height: 165, border: activeTemplate?.id === t.id ? '2px solid rgba(167,139,250,0.8)' : '2px solid transparent' }}>
-                <ImageWithLoader src={t.thumb} alt={t.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]" />
-                <div className="absolute inset-0 flex items-end pb-2.5 px-2"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 40%, transparent 100%)' }}>
-                  <span className="text-white text-[11px] font-semibold leading-tight">{t.name}</span>
+                className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.96]"
+                style={{
+                  width: 130, height: 180,
+                  borderRadius: 16,
+                  border: activeTemplate?.id === t.id
+                    ? '2px solid rgba(167,139,250,0.9)'
+                    : '2px solid rgba(255,255,255,0.06)',
+                  boxShadow: activeTemplate?.id === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
+                }}>
+                <ImageWithLoader
+                  src={t.thumb}
+                  alt={t.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                />
+                {/* Gradient label */}
+                <div className="absolute inset-0 flex items-end"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 35%, rgba(0,0,0,0.1) 70%, transparent 100%)' }}>
+                  <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
                 </div>
+                {/* Active checkmark */}
+                {activeTemplate?.id === t.id && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: 'rgba(139,92,246,0.9)' }}>
+                    <span className="text-white text-[9px] font-bold">✓</span>
+                  </div>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* My images section */}
-        <div className="pb-6">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <span className="text-white text-[15px] font-semibold">My images</span>
+        {/* ── My images — large 2-col grid ── */}
+        <div className="pb-8">
+          <div className="flex items-center justify-between px-5 mb-3.5">
+            <span className="text-white text-base font-semibold tracking-tight">My images</span>
             {completedImages.length > 0 && (
               <button
                 onClick={() => { if (confirm('Clear all generated images?')) { setGeneratedImages([]); persistImages([]); } }}
@@ -650,55 +671,57 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
           </div>
 
           {generatedImages.length === 0 ? (
-            <div className="flex flex-col items-center py-14 gap-4 px-5">
+            <div className="flex flex-col items-center py-16 gap-4 px-5">
               <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <Sparkles size={26} className="text-zinc-600" />
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <Sparkles size={26} className="text-zinc-700" />
               </div>
               <div className="text-center">
-                <p className="text-zinc-400 text-sm font-semibold">No images yet</p>
+                <p className="text-zinc-300 text-[15px] font-semibold">No images yet</p>
                 <p className="text-zinc-600 text-[12px] mt-1">Describe an image above to get started</p>
               </div>
             </div>
           ) : (
-            /* Edge-to-edge grid matching reference */
-            <div className="grid grid-cols-3 gap-[2px]">
+            /* 2-col large grid — edge-to-edge, no side padding */
+            <div className="grid grid-cols-2 gap-[3px]">
               {generatedImages.map((img, idx) => (
-                <div key={img.id} className="relative group bg-zinc-900"
+                <div key={img.id} className="relative group bg-zinc-950"
                   style={{ aspectRatio: '1/1' }}>
                   {img.loading || !img.url ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                      <Loader2 size={20} className="animate-spin text-purple-400" />
-                      <span className="text-zinc-600 text-[10px]">Generating…</span>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2.5">
+                      <Loader2 size={22} className="animate-spin text-purple-400" />
+                      <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
                     </div>
                   ) : (
                     <>
                       <img src={img.url} alt="generated" className="w-full h-full object-cover" />
-                      {/* Tap overlay */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-2"
-                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.2) 100%)' }}>
-                        <div className="flex justify-end gap-1">
+                      {/* Hover / tap overlay */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
+                        {/* Top actions */}
+                        <div className="flex justify-end">
                           <button onClick={() => handleDownload(img.url, `image-${idx + 1}`)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(255,255,255,0.15)' }} title="Save">
-                            <Download size={12} className="text-white" />
+                            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                            style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }} title="Save">
+                            <Download size={13} className="text-white" />
                           </button>
                         </div>
+                        {/* Bottom — prompt + actions */}
                         <div>
-                          <p className="text-white text-[9px] leading-snug line-clamp-2 mb-1.5">{img.prompt}</p>
-                          <div className="flex gap-1">
+                          <p className="text-white/80 text-[10px] leading-snug line-clamp-2 mb-2">{img.prompt}</p>
+                          <div className="flex gap-1.5">
                             <button onClick={() => {
                               const updated = generatedImages.map(x => x.id === img.id ? { ...x, liked: !x.liked } : x);
                               setGeneratedImages(updated); persistImages(updated);
                             }}
-                              className={`flex items-center px-1.5 py-0.5 rounded-full text-[9px] transition-all ${img.liked ? 'text-pink-300' : 'text-zinc-400'}`}
-                              style={{ background: img.liked ? 'rgba(236,72,153,0.3)' : 'rgba(255,255,255,0.1)' }}>
-                              ❤️
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
+                              style={{ background: img.liked ? 'rgba(236,72,153,0.35)' : 'rgba(255,255,255,0.12)', color: img.liked ? '#f9a8d4' : 'rgba(255,255,255,0.55)', backdropFilter: 'blur(6px)' }}>
+                              ❤️ {img.liked ? 'Liked' : 'Like'}
                             </button>
                             <button onClick={() => !img.loading && openEdit(img)} disabled={img.loading}
-                              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] text-zinc-400 disabled:opacity-30"
-                              style={{ background: 'rgba(255,255,255,0.1)' }}>
-                              ✏️
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-30"
+                              style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(6px)' }}>
+                              ✏️ Edit
                             </button>
                           </div>
                         </div>
