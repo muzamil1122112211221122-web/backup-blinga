@@ -2162,8 +2162,9 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               const meInTop    = meUserRank !== -1;
               const myTotalLv  = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
 
-              // podium area height = tallest column (coin + platform) + top breathing room
-              const podAreaH = podSlots[1].coinSz + podSlots[1].platH + 32;
+              const POD_D = 14; // 3D depth in px — shared by all faces
+              // podium area height = tallest column (coin + platform + 3D top depth) + breathing room
+              const podAreaH = podSlots[1].coinSz + podSlots[1].platH + POD_D + 36;
 
               return (
                 <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
@@ -2237,62 +2238,79 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                               {slot.rank}
                             </div>
 
-                            {/* 3D Platform block */}
+                            {/* 3D Platform block — proper isometric geometry */}
                             {(() => {
-                              const D = 13; // depth in px for 3D faces
+                              const D = POD_D;
+                              // Wrapper height = platH + D so top face lives INSIDE wrapper (no negative top)
+                              // Front face occupies bottom platH, top face occupies top D strip
+                              // Right face: from (100%, 0) to (100%+D, 0+D) forming a parallelogram
                               return (
-                                <div style={{ position: 'relative', width: '100%', height: slot.platH, flexShrink: 0, overflow: 'visible' }}>
+                                <div style={{ position: 'relative', width: '100%', height: slot.platH + D, flexShrink: 0, overflow: 'visible' }}>
 
-                                  {/* Top face — parallelogram going back-right */}
+                                  {/* ── TOP FACE: parallelogram across the top ── */}
+                                  {/* Points (in wrapper coords):
+                                      bottom-left  = (0,   D)   ← front-face top-left
+                                      top-left     = (D,   0)   ← back top-left
+                                      top-right    = (W+D, 0)   ← back top-right
+                                      bottom-right = (W,   D)   ← front-face top-right
+                                  */}
                                   <div style={{
                                     position: 'absolute',
-                                    left: 0,
-                                    top: -D,
+                                    top: 0, left: 0,
                                     width: `calc(100% + ${D}px)`,
                                     height: D,
                                     background: slot.platTop,
-                                    clipPath: `polygon(0 100%, ${D}px 0%, 100% 0%, calc(100% - ${D}px) 100%)`,
+                                    clipPath: `polygon(0px 100%, ${D}px 0px, 100% 0px, calc(100% - ${D}px) 100%)`,
                                     zIndex: 3,
-                                    borderRadius: '3px 3px 0 0',
                                   }} />
 
-                                  {/* Right side face — rectangle below top face */}
+                                  {/* ── RIGHT FACE: parallelogram on the right ── */}
+                                  {/* Div is at left=100%, top=0, width=D, height=platH+D
+                                      Points (in this div's coords):
+                                      top-left     = (0,  D)   ← front-face top-right
+                                      top-right    = (D,  0)   ← back top-right
+                                      bottom-right = (D,  H+D) ← back bottom-right
+                                      bottom-left  = (0,  H+D) ← front-face bottom-right
+                                  */}
                                   <div style={{
                                     position: 'absolute',
-                                    left: '100%',
-                                    top: 0,
-                                    bottom: 0,
+                                    top: 0, left: '100%',
                                     width: D,
+                                    height: '100%',
                                     background: slot.platSide,
-                                    borderRadius: '0 4px 0 0',
-                                    zIndex: 0,
+                                    clipPath: `polygon(0px ${D}px, ${D}px 0px, ${D}px 100%, 0px 100%)`,
+                                    zIndex: 1,
                                   }} />
 
-                                  {/* Front face */}
+                                  {/* ── FRONT FACE: main rectangle ── */}
                                   <div style={{
-                                    position: 'absolute', inset: 0, borderRadius: '10px 10px 0 0',
-                                    background: slot.platFront, zIndex: 1,
+                                    position: 'absolute',
+                                    top: D, left: 0, right: 0, bottom: 0,
+                                    borderRadius: '8px 8px 0 0',
+                                    background: slot.platFront,
+                                    zIndex: 2,
                                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                    justifyContent: 'flex-start', paddingTop: 10, overflow: 'hidden',
+                                    justifyContent: 'flex-start', paddingTop: 8, overflow: 'hidden',
                                   }}>
-                                    {/* Left-edge highlight */}
-                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'rgba(255,255,255,0.12)', borderRadius: '10px 0 0 0' }} />
-                                    {/* Right-edge inner shadow */}
-                                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 7, background: 'rgba(0,0,0,0.22)', borderRadius: '0 10px 0 0' }} />
+                                    {/* subtle left highlight */}
+                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: 'rgba(255,255,255,0.14)', borderRadius: '8px 0 0 0', pointerEvents: 'none' }} />
+                                    {/* subtle right shadow */}
+                                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 8, background: 'rgba(0,0,0,0.20)', borderRadius: '0 8px 0 0', pointerEvents: 'none' }} />
 
                                     {slot.leader ? (
                                       <>
-                                        <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.45)', zIndex: 2, position: 'relative' }}>
+                                        <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.5)', position: 'relative', zIndex: 1 }}>
                                           {slot.leader.totalScore.toLocaleString()}
                                         </span>
-                                        <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 5px', lineHeight: 1.25, marginTop: 2, wordBreak: 'break-word', zIndex: 2, position: 'relative' }}>
+                                        <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 6px', lineHeight: 1.3, marginTop: 2, wordBreak: 'break-word', position: 'relative', zIndex: 1 }}>
                                           {slot.leader.name}{isMe ? ' ✦' : ''}
                                         </span>
                                       </>
                                     ) : (
-                                      <span style={{ color: 'rgba(255,255,255,0.18)', fontWeight: 900, fontSize: 11, marginTop: 6, zIndex: 2, position: 'relative' }}>#{slot.rank}</span>
+                                      <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: 900, fontSize: 11, marginTop: 6, position: 'relative', zIndex: 1 }}>#{slot.rank}</span>
                                     )}
                                   </div>
+
                                 </div>
                               );
                             })()}
