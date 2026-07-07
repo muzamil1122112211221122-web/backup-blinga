@@ -2120,16 +2120,16 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
             {/* Free games — responsive grid */}
             <div>
               <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Free Games</div>
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                 {FREE_GAMES.map(g => (
                   <button key={g.id}
                     onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, logo: g.logo, icon: g.icon, category: g.category })}
-                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
-                    <div className="w-full aspect-square max-w-[88px] mx-auto">
+                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
+                    <div className="w-full aspect-square">
                       <img src={g.logo} alt={g.label}
-                        className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all" />
+                        className="w-full h-full rounded-2xl object-cover group-hover:brightness-110 transition-all" />
                     </div>
-                    <span className="text-muted-foreground text-[9px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
+                    <span className="text-muted-foreground text-[10px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
                   </button>
                 ))}
               </div>
@@ -2139,17 +2139,17 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
             {myPurchased.length > 0 && (
               <div>
                 <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Owned Games</div>
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5 relative">
-                      <div className="relative w-full aspect-square max-w-[88px] mx-auto">
+                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2 relative">
+                      <div className="relative w-full aspect-square">
                         <img src={g.img} alt={g.name}
-                          className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all"
+                          className="w-full h-full rounded-2xl object-cover group-hover:brightness-110 transition-all"
                           onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </div>
-                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
+                      <span className="text-muted-foreground text-[10px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
                     </button>
                   ))}
                 </div>
