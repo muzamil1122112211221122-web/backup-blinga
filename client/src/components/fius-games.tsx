@@ -397,7 +397,7 @@ function ContinueModal({ nextLevel, onYes, onNo }: { nextLevel: number; onYes: (
 function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 12);
+  const Q_TIME = getTimer(gameLevel, 6);
   const cfg = { easy: { maxA: 20, maxB: 20, ops: ['+','-'] }, medium: { maxA: 50, maxB: 50, ops: ['+','-','×','÷'] }, hard: { maxA: 100, maxB: 100, ops: ['+','-','×','÷'] } }[diff];
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(0);
@@ -497,7 +497,7 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
 function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 12);
+  const Q_TIME = getTimer(gameLevel, 6);
   const wordList = { easy: WORD_EASY, medium: WORD_MEDIUM, hard: WORD_HARD }[diff];
   const noHints = diff === 'hard';
   const [round, setRound] = useState(0);
@@ -592,7 +592,7 @@ function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
 interface MemoryCard { id: number; emoji: string; flipped: boolean; matched: boolean; }
 function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const pairCount = Math.min(4 + Math.floor(gameLevel * 0.8), 10);
-  const totalTime = Math.max(30, 90 - gameLevel * 5);
+  const totalTime = Math.max(15, 45 - gameLevel * 3);
   const cols = pairCount >= 8 ? 5 : 4;
   const [emojis] = useState(() => shuffleArray(ALL_EMOJIS).slice(0, pairCount));
   const [cards, setCards] = useState<MemoryCard[]>([]);
@@ -679,7 +679,7 @@ function FiusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const pool = { easy: QUIZ_EASY, medium: QUIZ_MEDIUM, hard: QUIZ_HARD }[diff];
   const total = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 12);
+  const Q_TIME = getTimer(gameLevel, 6);
   const [questions] = useState(() => shuffleArray(pool).slice(0, total));
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -758,7 +758,7 @@ function FiusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const pool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[diff];
   const ROUNDS = getRounds(gameLevel, 5);
-  const ROUND_TIME = getTimer(gameLevel, 16);
+  const ROUND_TIME = getTimer(gameLevel, 8);
   const [questions] = useState<OddWordQ[]>(() => shuffleArray(pool).slice(0, ROUNDS));
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<number|null>(null);
@@ -1669,7 +1669,7 @@ function WordChain({ gameLevel, onWin, onLose, onBack }: GameProps) {
 // ─── TRUE OR FALSE BLITZ ──────────────────────────────────────────────────────
 function TrueFalseBlitz({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const total = getRounds(gameLevel, 8);
-  const Q_TIME = getTimer(gameLevel, 8);
+  const Q_TIME = getTimer(gameLevel, 5);
   const [questions] = useState(() => shuffleArray(TF_QUESTIONS).slice(0, total));
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -2056,7 +2056,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   return (
     <div className="relative flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0 max-w-2xl w-full mx-auto">
         <div>
           <h2 className="text-xl font-black text-foreground tracking-tight">Fius Game Zone</h2>
           <p className="text-muted-foreground text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
@@ -2065,7 +2065,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       </div>
 
       {/* ── Tab switcher: Games / Store — unified sliding bar ── */}
-      <div className="mb-4 flex-shrink-0">
+      <div className="mb-4 flex-shrink-0 max-w-2xl w-full mx-auto">
         <div style={{ position: 'relative', display: 'flex', background: 'rgba(128,128,128,0.12)', borderRadius: 14, padding: 3 }}>
           <div style={{
             position: 'absolute', top: 3, bottom: 3,
@@ -2099,6 +2099,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        <div className="max-w-2xl mx-auto w-full">
 
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
@@ -2116,37 +2117,39 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </div>
 
-            {/* Free games — 3-col circular grid */}
+            {/* Free games — responsive grid */}
             <div>
               <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Free Games</div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                 {FREE_GAMES.map(g => (
                   <button key={g.id}
                     onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
-                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
-                    <img src={g.logo} alt={g.label}
-                      className="w-full aspect-square rounded-full object-cover group-hover:brightness-110 transition-all" />
-                    <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
+                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
+                    <div className="w-full aspect-square max-w-[72px] mx-auto">
+                      <img src={g.logo} alt={g.label}
+                        className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all" />
+                    </div>
+                    <span className="text-muted-foreground text-[9px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Owned Games — 3-col circular (only if purchased) */}
+            {/* Owned Games — responsive grid (only if purchased) */}
             {myPurchased.length > 0 && (
               <div>
                 <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Owned Games</div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2 relative">
-                      <div className="relative w-full aspect-square">
+                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5 relative">
+                      <div className="relative w-full aspect-square max-w-[72px] mx-auto">
                         <img src={g.img} alt={g.name}
                           className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all"
                           onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                       </div>
-                      <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
+                      <span className="text-muted-foreground text-[9px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
                     </button>
                   ))}
                 </div>
@@ -2397,49 +2400,46 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
+        </div>{/* end max-w-2xl wrapper */}
       </div>
 
       {/* ── Game Info Modal ── */}
       {selectedGameInfo && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md"
           onClick={() => setSelectedGameInfo(null)}>
-          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center"
-            onClick={e => e.stopPropagation()}
-            style={{ background: 'linear-gradient(160deg,rgba(15,15,28,0.99),rgba(32,14,52,0.99))', border: '1px solid rgba(255,255,255,0.13)', boxShadow: '0 32px 80px rgba(0,0,0,0.85)' }}>
+          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center bg-card border border-border shadow-2xl"
+            onClick={e => e.stopPropagation()}>
             <div className="pt-8 pb-0 flex flex-col items-center">
               {selectedGameInfo.icon ? (
-                <div className="w-28 h-28 rounded-full flex items-center justify-center shadow-2xl"
-                  style={{ background: selectedGameInfo.icon.gradient, boxShadow: `0 0 40px ${selectedGameInfo.icon.shadow}`, border: '3px solid rgba(255,255,255,0.22)' }}>
+                <div className="w-28 h-28 rounded-full flex items-center justify-center"
+                  style={{ background: selectedGameInfo.icon.gradient }}>
                   <selectedGameInfo.icon.Icon className="w-14 h-14 text-white" />
                 </div>
               ) : (
-                <div className="w-28 h-28 rounded-full overflow-hidden shadow-2xl"
-                  style={{ border: '3px solid rgba(255,255,255,0.22)', boxShadow: '0 0 40px rgba(99,102,241,0.45)' }}>
+                <div className="w-28 h-28 rounded-full overflow-hidden">
                   <img src={selectedGameInfo.img} alt={selectedGameInfo.label} className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
             <div className="px-6 pt-4 pb-6 w-full">
-              <h3 className="text-xl font-black text-white mb-1 tracking-tight">{selectedGameInfo.label}</h3>
-              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-3"
-                style={{ background: 'rgba(99,102,241,0.18)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+              <h3 className="text-xl font-black text-foreground mb-1 tracking-tight">{selectedGameInfo.label}</h3>
+              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-3 bg-accent text-accent-foreground">
                 {selectedGameInfo.category}
               </div>
-              <p className="text-zinc-400 text-sm leading-relaxed mb-4">{selectedGameInfo.desc}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed mb-4">{selectedGameInfo.desc}</p>
               <div className="flex items-center justify-center gap-2 mb-5">
-                <span className="text-zinc-500 text-xs">Your level:</span>
+                <span className="text-muted-foreground text-xs">Your level:</span>
                 <LevelBadge level={getGameLevel(selectedGameInfo.id)} />
               </div>
               <button
                 onClick={() => { onStartGame(selectedGameInfo.id, selectedGameInfo.label); setSelectedGameInfo(null); }}
                 className="w-full py-3.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.97] mb-2"
-                style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', boxShadow: '0 6px 24px rgba(99,102,241,0.5)' }}>
+                style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)' }}>
                 ▶ Play Game
               </button>
               <button
                 onClick={() => setSelectedGameInfo(null)}
-                className="w-full py-2.5 rounded-2xl text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>
+                className="w-full py-2.5 rounded-2xl text-sm text-muted-foreground hover:text-foreground transition-colors bg-accent/50">
                 Close
               </button>
             </div>
