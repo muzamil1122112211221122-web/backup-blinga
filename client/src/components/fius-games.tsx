@@ -2124,7 +2124,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               </div>
             )}
 
-            {/* ── LEADERBOARD ── premium podium */}
+            {/* ── LEADERBOARD ── reference-match premium podium */}
             {(() => {
               const CAT_TABS = ['All', 'Memory', 'Math', 'Word', 'Quiz'];
               const TIME_TABS: { key: 'day'|'week'|'month'|'all'; label: string }[] = [
@@ -2133,129 +2133,184 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               ];
               const leaders = globalLeaders.slice(0, 10);
               const top3 = leaders.slice(0, 3);
+              // list: skip people already on podium if >3 players, show up to 7
+              const listPlayers = leaders.filter(l => l.userId !== userId).slice(0, 7);
 
-              /* Podium: always [silver-left, gold-center, bronze-right] but empty slots are invisible */
-              type PodSlot = { leader: typeof top3[0]|null; rank: 1|2|3; coinBg: string; glow: string; platformBg: string; platformH: number; coinSize: string; fontSize: string };
-              const podSlots: PodSlot[] = [
-                { leader: top3[1] ?? null, rank: 2, coinBg: 'linear-gradient(145deg,#c8c8d0,#e8e8f0,#9a9aaa)', glow: 'rgba(200,200,210,0.5)', platformBg: 'linear-gradient(180deg,#adb5bd,#6c757d)', platformH: 80,  coinSize: 'w-10 h-10', fontSize: 'text-[14px]' },
-                { leader: top3[0] ?? null, rank: 1, coinBg: 'linear-gradient(145deg,#f59e0b,#fde68a,#d97706)', glow: 'rgba(251,191,36,0.8)',  platformBg: 'linear-gradient(180deg,#f59e0b,#b45309)', platformH: 112, coinSize: 'w-14 h-14', fontSize: 'text-[20px]' },
-                { leader: top3[2] ?? null, rank: 3, coinBg: 'linear-gradient(145deg,#cd7f32,#f4a460,#8b4513)', glow: 'rgba(205,127,50,0.55)', platformBg: 'linear-gradient(180deg,#cd7f32,#7c4a1e)', platformH: 56,  coinSize: 'w-9 h-9',   fontSize: 'text-[13px]' },
-              ];
+              // slot[0]=silver(#2 left), slot[1]=gold(#1 center), slot[2]=bronze(#3 right)
+              const podSlots = [
+                { leader: top3[1] ?? null, rank: 2,
+                  coinBg: 'linear-gradient(140deg,#d0d4de 0%,#eaecf4 45%,#9fa6b8 100%)',
+                  coinGlow: '0 0 22px rgba(190,195,220,0.55), 0 3px 12px rgba(0,0,0,0.55)',
+                  platFront: 'linear-gradient(175deg,#b0b8c8 0%,#7a8494 100%)',
+                  platSide: '#606874', platTop: 'rgba(255,255,255,0.28)',
+                  platH: 88, coinSz: 42, rankSz: 15, scoreSz: 11, nameSz: 8.5 },
+                { leader: top3[0] ?? null, rank: 1,
+                  coinBg: 'linear-gradient(140deg,#fbbf24 0%,#fef3c7 45%,#d97706 100%)',
+                  coinGlow: '0 0 30px rgba(251,191,36,0.85), 0 4px 18px rgba(0,0,0,0.6)',
+                  platFront: 'linear-gradient(175deg,#f59e0b 0%,#b45309 100%)',
+                  platSide: '#92400e', platTop: 'rgba(255,255,255,0.32)',
+                  platH: 120, coinSz: 54, rankSz: 20, scoreSz: 14, nameSz: 9.5 },
+                { leader: top3[2] ?? null, rank: 3,
+                  coinBg: 'linear-gradient(140deg,#e8a87c 0%,#f4c8a0 45%,#a0622a 100%)',
+                  coinGlow: '0 0 22px rgba(205,127,50,0.6), 0 3px 12px rgba(0,0,0,0.55)',
+                  platFront: 'linear-gradient(175deg,#c97b35 0%,#7c4010 100%)',
+                  platSide: '#5c2e08', platTop: 'rgba(255,255,255,0.25)',
+                  platH: 64, coinSz: 36, rankSz: 13, scoreSz: 10, nameSz: 8 },
+              ] as const;
 
               const meUserRank = leaders.findIndex(l => l.userId === userId);
               const meInTop    = meUserRank !== -1;
               const myTotalLv  = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
 
+              // podium area height = tallest column (coin + platform) + top breathing room
+              const podAreaH = podSlots[1].coinSz + podSlots[1].platH + 32;
+
               return (
-                <div className="rounded-3xl overflow-hidden" style={{ background: 'linear-gradient(175deg,#1a1a3e 0%,#0f0f28 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}>
+                <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
 
                   {/* ── Header ── */}
-                  <div className="flex items-center justify-between px-4 pt-4 pb-3">
-                    <span className="text-white font-black text-[16px] tracking-tight">Leaderboard</span>
-                    <div className="flex items-center gap-0.5 rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 10px' }}>
+                    <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: -0.3 }}>Leaderboard</span>
+                    <div style={{ display: 'flex', gap: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 14, padding: '2px 3px' }}>
                       {TIME_TABS.map(t => (
-                        <button key={t.key} onClick={() => setLbTimeFilter(t.key)}
-                          className="px-2.5 py-1 text-[9px] font-bold transition-all"
-                          style={{ background: lbTimeFilter === t.key ? '#4f46e5' : 'transparent', color: lbTimeFilter === t.key ? '#fff' : '#6b7280', borderRadius: 10 }}>
-                          {t.label}
-                        </button>
+                        <button key={t.key} onClick={() => setLbTimeFilter(t.key)} style={{
+                          padding: '3px 9px', borderRadius: 11, fontSize: 9, fontWeight: 700, border: 'none', cursor: 'pointer',
+                          background: lbTimeFilter === t.key ? '#4f46e5' : 'transparent',
+                          color: lbTimeFilter === t.key ? '#fff' : '#5a607a', transition: 'all 0.15s',
+                        }}>{t.label}</button>
                       ))}
                     </div>
                   </div>
 
                   {/* ── Category pills ── */}
-                  <div className="flex gap-2 px-4 pb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  <div style={{ display: 'flex', gap: 7, padding: '0 16px 14px', overflowX: 'auto', scrollbarWidth: 'none' as const }}>
                     {CAT_TABS.map(cat => (
-                      <button key={cat} onClick={() => setLbCatFilter(cat)}
-                        className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[10px] font-bold transition-all"
-                        style={{ background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.08)', color: lbCatFilter === cat ? '#0f0f28' : '#6b7280', border: 'none' }}>
-                        {cat}
-                      </button>
+                      <button key={cat} onClick={() => setLbCatFilter(cat)} style={{
+                        flexShrink: 0, padding: '5px 13px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
+                        background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.07)',
+                        color: lbCatFilter === cat ? '#0e0c2e' : '#7a809a',
+                        border: lbCatFilter === cat ? '2px solid rgba(255,255,255,0.9)' : '1.5px solid rgba(255,255,255,0.1)',
+                        transition: 'all 0.15s',
+                      }}>{cat}</button>
                     ))}
                   </div>
 
-                  {/* ── Podium ── */}
-                  {leaders.length === 0 ? (
-                    <div className="text-center py-10 px-4">
-                      <div className="text-4xl mb-3">🏆</div>
-                      <p className="text-zinc-400 text-sm font-bold">No scores yet</p>
-                      <p className="text-zinc-600 text-xs mt-1">Play games to appear here!</p>
+                  {/* ── Podium area ── */}
+                  <div style={{ position: 'relative', background: 'linear-gradient(180deg,rgba(22,18,60,0.5) 0%,rgba(8,6,22,0.7) 100%)', padding: '0 10px', overflow: 'hidden' }}>
+
+                    {/* Light rays — fan out from bottom-centre behind platforms */}
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                      {[-75,-57,-40,-24,-10,0,10,24,40,57,75].map((angle, ri) => (
+                        <div key={ri} style={{
+                          position: 'absolute', bottom: 0, left: '50%', width: Math.abs(angle) < 15 ? 4 : 2,
+                          height: '130%', transformOrigin: 'bottom center',
+                          transform: `translateX(-50%) rotate(${angle}deg)`,
+                          background: Math.abs(angle) < 12
+                            ? 'linear-gradient(to top, rgba(251,191,36,0.22), rgba(251,191,36,0.04), transparent)'
+                            : 'linear-gradient(to top, rgba(251,191,36,0.10), rgba(251,191,36,0.02), transparent)',
+                        }} />
+                      ))}
                     </div>
-                  ) : (
-                    <div className="relative px-3 pb-0">
-                      {/* Gold glow */}
-                      {top3[0] && (
-                        <div className="absolute left-1/2 top-0 -translate-x-1/2 pointer-events-none"
-                          style={{ width: 140, height: 140, background: 'radial-gradient(circle,rgba(251,191,36,0.18) 0%,transparent 70%)', filter: 'blur(20px)' }} />
-                      )}
-                      <div className="flex items-end justify-center gap-2" style={{ height: 190 }}>
-                        {podSlots.map((slot, si) => {
-                          /* Empty slot = invisible flex spacer to preserve layout */
-                          if (!slot.leader) {
-                            return <div key={`spc-${slot.rank}`} className="flex-1 max-w-[110px]" />;
-                          }
-                          const isCenter = si === 1;
-                          const isMe = slot.leader.userId === userId;
-                          return (
-                            <div key={slot.leader.userId} className="flex flex-col items-center justify-end flex-1 max-w-[110px]">
-                              {/* Coin */}
-                              <div className={`${slot.coinSize} rounded-full flex items-center justify-center ${slot.fontSize} font-black text-white flex-shrink-0`}
-                                style={{ background: slot.coinBg, boxShadow: `0 0 20px ${slot.glow}, 0 4px 14px rgba(0,0,0,0.6)`, border: '2.5px solid rgba(255,255,255,0.35)', marginBottom: 6 }}>
-                                {slot.rank}
-                              </div>
-                              {/* Score */}
-                              <div className={`font-black text-white leading-none ${isCenter ? 'text-[15px]' : 'text-[12px]'}`}>
-                                {slot.leader.totalScore.toLocaleString()}
-                              </div>
-                              {/* Name */}
-                              <div className={`text-center leading-tight mt-0.5 mb-2 px-1 ${isCenter ? 'text-[11px] text-white font-bold' : 'text-[9px] text-zinc-300 font-semibold'}`}
-                                style={{ maxWidth: 100, wordBreak: 'break-word' }}>
-                                {slot.leader.name}{isMe ? ' (You)' : ''}
-                              </div>
-                              {/* Platform */}
-                              <div className="w-full rounded-t-2xl"
-                                style={{ height: slot.platformH, background: slot.platformBg, boxShadow: `inset 0 2px 0 rgba(255,255,255,0.2)` }} />
+
+                    {/* Radial glow behind #1 */}
+                    <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 200, height: 200, pointerEvents: 'none',
+                      background: 'radial-gradient(ellipse at 50% 90%, rgba(251,191,36,0.22) 0%, transparent 65%)', filter: 'blur(18px)' }} />
+
+                    {/* Three columns */}
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 8, height: podAreaH }}>
+                      {podSlots.map((slot, si) => {
+                        const isCenter = si === 1;
+                        const isMe = slot.leader?.userId === userId;
+                        return (
+                          <div key={`pod-${slot.rank}`} style={{ flex: 1, maxWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+
+                            {/* Coin medal */}
+                            <div style={{
+                              width: slot.coinSz, height: slot.coinSz, borderRadius: '50%', flexShrink: 0,
+                              background: slot.coinBg, border: '2.5px solid rgba(255,255,255,0.42)',
+                              boxShadow: slot.coinGlow, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: slot.rankSz, fontWeight: 900, color: '#fff',
+                              textShadow: '0 1px 4px rgba(0,0,0,0.55)',
+                              marginBottom: -1, // slight overlap onto platform top
+                              zIndex: 2, position: 'relative',
+                            }}>
+                              {slot.rank}
                             </div>
-                          );
-                        })}
-                      </div>
+
+                            {/* 3D Platform block */}
+                            <div style={{ position: 'relative', width: '100%', height: slot.platH, flexShrink: 0 }}>
+
+                              {/* Right-side face (3-D depth shadow strip) */}
+                              <div style={{ position: 'absolute', right: -5, top: 5, bottom: 0, width: 5, background: slot.platSide, borderRadius: '0 4px 0 0', transform: 'skewY(-8deg)', transformOrigin: 'top', zIndex: 0 }} />
+
+                              {/* Front face */}
+                              <div style={{
+                                position: 'absolute', inset: 0, borderRadius: '10px 10px 0 0',
+                                background: slot.platFront, zIndex: 1,
+                                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                justifyContent: 'flex-start', paddingTop: 10, overflow: 'hidden',
+                              }}>
+                                {/* Top highlight edge */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderRadius: '10px 10px 0 0', background: slot.platTop }} />
+                                {/* Right-edge inner shadow */}
+                                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 7, background: 'rgba(0,0,0,0.18)', borderRadius: '0 10px 0 0' }} />
+
+                                {slot.leader ? (
+                                  <>
+                                    <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.45)', zIndex: 2 }}>
+                                      {slot.leader.totalScore.toLocaleString()}
+                                    </span>
+                                    <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 5px', lineHeight: 1.25, marginTop: 2, wordBreak: 'break-word', zIndex: 2 }}>
+                                      {slot.leader.name}{isMe ? ' ✦' : ''}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{ color: 'rgba(255,255,255,0.18)', fontWeight: 900, fontSize: 11, marginTop: 6, zIndex: 2 }}>#{slot.rank}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
 
                   {/* ── List ── */}
-                  <div style={{ background: 'rgba(5,4,20,0.65)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                    {/* Your row — always pinned first */}
-                    <div className="flex items-center gap-3 px-4 py-3"
-                      style={{ background: 'rgba(79,70,229,0.2)', borderBottom: '1px solid rgba(79,70,229,0.25)' }}>
-                      <span className="text-indigo-300 text-[11px] font-extrabold w-6 flex-shrink-0 text-center">
+                  <div style={{ background: 'rgba(4,3,16,0.72)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+
+                    {/* YOUR row — pinned, with left accent + outline */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px',
+                      background: 'rgba(79,70,229,0.16)',
+                      borderBottom: '1px solid rgba(99,91,255,0.22)',
+                      borderLeft: '3px solid #6366f1',
+                      margin: '0 0 0 0',
+                    }}>
+                      <span style={{ color: '#818cf8', fontSize: 11, fontWeight: 800, width: 30, flexShrink: 0 }}>
                         #{meInTop ? meUserRank + 1 : '—'}
                       </span>
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[11px] flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
-                        {playerName.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="flex-1 text-white font-black text-[12px] uppercase tracking-wide truncate">{playerName}</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black" style={{ background: '#4f46e5', color: '#fff' }}>You</span>
-                      <span className="text-indigo-300 font-extrabold text-[12px] flex-shrink-0">{myTotalLv}</span>
+                      <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 13, textTransform: 'uppercase' as const, letterSpacing: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                        {playerName}
+                      </span>
+                      <span style={{ padding: '2px 9px', borderRadius: 20, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 900, flexShrink: 0, letterSpacing: 0.3 }}>You</span>
+                      <span style={{ color: '#818cf8', fontWeight: 800, fontSize: 13, flexShrink: 0, minWidth: 24, textAlign: 'right' as const }}>{myTotalLv}</span>
                     </div>
 
-                    {/* Other players */}
-                    {leaders.filter(l => l.userId !== userId).slice(0, 5).map((l, i) => {
+                    {/* Other players — up to 7, no avatar circles */}
+                    {listPlayers.map((l, i) => {
                       const rank = leaders.findIndex(x => x.userId === l.userId) + 1;
                       return (
-                        <div key={l.userId} className="flex items-center gap-3 px-4 py-2.5"
-                          style={{ borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                          <span className="text-zinc-600 text-[11px] font-extrabold w-6 text-center flex-shrink-0">#{rank}</span>
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-300 font-bold text-[11px] flex-shrink-0"
-                            style={{ background: 'rgba(255,255,255,0.07)' }}>
-                            {l.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="flex-1 text-zinc-200 font-semibold text-[12px] truncate">{l.name}</span>
-                          <span className="text-zinc-400 font-bold text-[12px] flex-shrink-0">{l.totalScore.toLocaleString()}</span>
+                        <div key={l.userId} style={{
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px',
+                          borderBottom: i < listPlayers.length - 1 ? '1px solid rgba(255,255,255,0.045)' : 'none',
+                        }}>
+                          <span style={{ color: '#374151', fontSize: 11, fontWeight: 800, width: 30, flexShrink: 0 }}>#{rank}</span>
+                          <span style={{ flex: 1, color: '#c9cedd', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{l.name}</span>
+                          <span style={{ color: '#8b93a8', fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>{l.totalScore.toLocaleString()}</span>
                         </div>
                       );
                     })}
-                    <div className="h-4" />
+                    <div style={{ height: 14 }} />
                   </div>
                 </div>
               );
