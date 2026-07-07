@@ -1907,8 +1907,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [search, setSearch] = useState('');
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
-  const [lbFilter, setLbFilter] = useState<string>('All');
-  const [globalLeaders, setGlobalLeaders] = useState<Array<{ name: string; totalScore: number; bestGame: any | null }>>([]);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
 
   // ── Load from server on mount ──────────────────────────────────────────────
@@ -1923,16 +1921,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         setScores(data.scores);
       }
     });
-    // Fetch global leaderboard + set up real-time polling
-    const fetchLeaderboard = () => {
-      fetch('/api/games/leaderboard', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : [])
-        .then((board: any[]) => { if (Array.isArray(board)) setGlobalLeaders(board); })
-        .catch(() => {});
-    };
-    fetchLeaderboard();
-    const lbInterval = setInterval(fetchLeaderboard, 30000); // Refresh every 30 seconds
-    return () => clearInterval(lbInterval);
   }, []);
 
   // ── Sync helper ───────────────────────────────────────────────────────────
@@ -2126,80 +2114,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
-        {/* ── LEADERBOARD ── clean ranked list */}
-        {tab === 'games' && (() => {
-          const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
-          const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
-          const leaders = globalLeaders.slice(0, 10);
-          const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
-
-          return (
-            <div className="rounded-2xl overflow-hidden mb-4"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-                <span className="text-white text-[13px] font-extrabold tracking-wide">🏆 Leaderboard</span>
-                <span className="text-zinc-600 text-[10px]">All time</span>
-              </div>
-
-              {leaders.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-zinc-500 text-xs font-bold">No scores yet</p>
-                  <p className="text-zinc-600 text-[10px] mt-0.5">Win games to appear here!</p>
-                </div>
-              ) : (
-                <div className="px-3 pb-3 space-y-1">
-                  {leaders.map((leader, idx) => {
-                    const rank = idx + 1;
-                    const isCurrentUser = leader.name === playerName;
-                    const medal = RANK_MEDAL[rank] ?? '';
-                    return (
-                      <div key={leader.name} className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                        style={{ background: isCurrentUser ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(99,102,241,0.35)' : '1px solid transparent' }}>
-                        <div className="w-6 text-center text-[11px] font-extrabold flex-shrink-0"
-                          style={{ color: rank === 1 ? '#fbbf24' : rank === 2 ? '#94a3b8' : rank === 3 ? '#f97316' : '#3f3f46' }}>
-                          {medal || `#${rank}`}
-                        </div>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0"
-                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.08)' }}>
-                          {leader.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className={`text-[12px] font-bold truncate ${isCurrentUser ? 'text-indigo-300' : 'text-zinc-200'}`}>
-                            {leader.name}{isCurrentUser ? ' (You)' : ''}
-                          </div>
-                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate">{leader.bestGame.game}</div>}
-                        </div>
-                        <div className="text-[12px] font-extrabold" style={{ color: isCurrentUser ? '#818cf8' : '#52525b' }}>
-                          {leader.totalScore.toLocaleString()}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* YOU row — if not in top 10 */}
-                  {!leaders.some(l => l.name === playerName) && (
-                    <>
-                      <div className="h-px my-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                        style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                        <div className="w-6 text-center text-[11px] font-extrabold text-zinc-600 flex-shrink-0">—</div>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0"
-                          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                          {playerName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-indigo-300 text-[12px] font-bold truncate">{playerName} <span className="text-indigo-600">(You)</span></div>
-                          {userBestGame && <div className="text-zinc-600 text-[9px] truncate">{userBestGame.game}</div>}
-                        </div>
-                        <div className="text-[12px] font-extrabold text-indigo-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })()}
 
         {/* ── STORE TAB ── */}
         {tab === 'store' && (
@@ -2268,103 +2182,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
-        {/* ── LEADERBOARD TAB (hidden — merged into global leaderboard above) ── */}
-        {false && (
-          <div>
-            {/* Game filter pills */}
-            <div className="flex gap-1 overflow-x-auto mb-3 pb-1" style={{ scrollbarWidth: 'none' }}>
-              {(['All', ...FREE_GAMES.map(g => g.label), ...STORE_CATALOG.map(g => g.name)]).map(g => (
-                <button key={g} onClick={() => setLbFilter(g)}
-                  className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${lbFilter === g ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
-                  style={{ background: lbFilter === g ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : 'rgba(39,39,42,0.8)', border: lbFilter === g ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(63,63,70,0.5)' }}>
-                  {g}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                🏆 Rankings{lbFilter !== 'All' ? ` · ${lbFilter}` : ''}
-              </span>
-              {scores.length > 0 && (
-                <button onClick={() => { localStorage.removeItem(SCORES_KEY); setScores([]); setLbFilter('All'); }}
-                  className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors">Clear all</button>
-              )}
-            </div>
-            {(() => {
-              const displayed = (lbFilter === 'All' ? scores : scores.filter(s => s.game === lbFilter)).slice(0, 20);
-              if (displayed.length === 0) return (
-                <div className="text-center py-12">
-                  <div className="text-5xl mb-3">🏆</div>
-                  <p className="text-zinc-500 text-sm font-bold">{scores.length === 0 ? 'No scores yet' : `No scores for ${lbFilter}`}</p>
-                  <p className="text-zinc-700 text-xs mt-1">{scores.length === 0 ? 'Win games to claim your spot!' : 'Play this game to get on the board'}</p>
-                </div>
-              );
-              const maxScore = displayed[0]?.score || 1;
-              /* Podium for top 3 */
-              const podiumColors = [
-                { bg: 'linear-gradient(135deg,#b45309,#fbbf24)', glow: 'rgba(251,191,36,0.4)', rank: '🥇', label: '1st', h: 72 },
-                { bg: 'linear-gradient(135deg,#6b7280,#d1d5db)', glow: 'rgba(209,213,219,0.3)', rank: '🥈', label: '2nd', h: 52 },
-                { bg: 'linear-gradient(135deg,#92400e,#f97316)', glow: 'rgba(249,115,22,0.3)', rank: '🥉', label: '3rd', h: 40 },
-              ];
-              const top3 = displayed.slice(0, 3);
-              /* Reorder podium: 2nd left, 1st center, 3rd right */
-              const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
-              return (
-                <div>
-                  {/* Podium display */}
-                  {top3.length > 0 && (
-                    <div className="flex items-end justify-center gap-2 mb-5 px-2" style={{ height: 130 }}>
-                      {podiumOrder.map((s, pi) => {
-                        const realIdx = top3.indexOf(s);
-                        const pc = podiumColors[realIdx];
-                        return (
-                          <div key={pi} className="flex flex-col items-center flex-1 max-w-[100px]">
-                            <div className="text-lg mb-0.5">{pc.rank}</div>
-                            <div className="text-white font-bold text-[10px] text-center truncate w-full px-1 mb-1">{s.game}</div>
-                            <div className="text-[11px] font-extrabold mb-1" style={{ color: realIdx === 0 ? '#fbbf24' : realIdx === 1 ? '#d1d5db' : '#f97316' }}>{s.score}</div>
-                            <div className="w-full rounded-t-xl flex items-center justify-center text-white font-black text-xs"
-                              style={{ height: pc.h, background: pc.bg, boxShadow: `0 0 16px ${pc.glow}`, minWidth: 60 }}>
-                              {pc.label}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {/* Rest of scores */}
-                  {displayed.length > 3 && (
-                    <div className="space-y-1.5">
-                      {displayed.slice(3).map((s, i) => {
-                        const rank = i + 4;
-                        const barW = Math.max(8, Math.round((s.score / maxScore) * 100));
-                        return (
-                          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold flex-shrink-0"
-                              style={{ background: 'rgba(255,255,255,0.08)', color: '#71717a' }}>{rank}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-white text-[11px] font-bold truncate mb-0.5">{s.game}</div>
-                              <div className="flex items-center gap-1.5">
-                                <div className="flex-1 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                                  <div className="h-full rounded-full" style={{ width: `${barW}%`, background: 'linear-gradient(90deg,#3b82f6,#a855f7)', transition: 'width 0.6s ease' }} />
-                                </div>
-                                <span className="text-[9px] text-zinc-600 flex-shrink-0">Lv{s.level}</span>
-                              </div>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <div className="text-sm font-extrabold text-white">{s.score}</div>
-                              <div className="text-[9px] text-zinc-700">pts</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
       </div>
 
       {/* ── Game Info Modal ── */}
