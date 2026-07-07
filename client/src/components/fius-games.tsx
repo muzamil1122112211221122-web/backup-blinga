@@ -2171,7 +2171,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               ];
 
               return (
-                <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
+                <div style={{ backgroundImage: 'url(/leaderboard-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
 
                   {/* ── Header ── */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 10px' }}>
@@ -2263,23 +2263,23 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                                   {slot.leader.name}{isMe ? ' ✦' : ''}
                                 </span>
                               </>
-                            ) : null}
+                            ) : (
+                              <span style={{
+                                color: 'rgba(255,255,255,0.55)', fontWeight: 900,
+                                fontSize: pos.scoreSz, textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                              }}>—</span>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* ── List ── */}
-                  <div style={{ background: 'rgba(4,3,16,0.72)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-
-                    {/* YOUR row — pinned, with left accent + outline */}
+                  {/* ── Your score row at the bottom ── */}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)' }}>
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px',
-                      background: 'rgba(79,70,229,0.16)',
-                      borderBottom: '1px solid rgba(99,91,255,0.22)',
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px',
                       borderLeft: '3px solid #6366f1',
-                      margin: '0 0 0 0',
                     }}>
                       <span style={{ color: '#818cf8', fontSize: 11, fontWeight: 800, width: 30, flexShrink: 0 }}>
                         #{meInTop ? meUserRank + 1 : '—'}
@@ -2290,22 +2290,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                       <span style={{ padding: '2px 9px', borderRadius: 20, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 900, flexShrink: 0, letterSpacing: 0.3 }}>You</span>
                       <span style={{ color: '#818cf8', fontWeight: 800, fontSize: 13, flexShrink: 0, minWidth: 24, textAlign: 'right' as const }}>{myTotalLv}</span>
                     </div>
-
-                    {/* Other players — up to 7, no avatar circles */}
-                    {listPlayers.map((l, i) => {
-                      const rank = leaders.findIndex(x => x.userId === l.userId) + 1;
-                      return (
-                        <div key={l.userId} style={{
-                          display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px',
-                          borderBottom: i < listPlayers.length - 1 ? '1px solid rgba(255,255,255,0.045)' : 'none',
-                        }}>
-                          <span style={{ color: '#374151', fontSize: 11, fontWeight: 800, width: 30, flexShrink: 0 }}>#{rank}</span>
-                          <span style={{ flex: 1, color: '#c9cedd', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{l.name}</span>
-                          <span style={{ color: '#8b93a8', fontWeight: 700, fontSize: 12.5, flexShrink: 0 }}>{l.totalScore.toLocaleString()}</span>
-                        </div>
-                      );
-                    })}
-                    <div style={{ height: 14 }} />
                   </div>
                 </div>
               );
