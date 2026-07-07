@@ -2171,7 +2171,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               ];
 
               return (
-                <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
+                <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 10px 48px rgba(0,0,0,0.8)' }}>
 
                   {/* ── Header ── */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 10px' }}>
@@ -2201,7 +2201,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   </div>
 
                   {/* ── Podium area ── */}
-                  <div style={{ position: 'relative', backgroundImage: 'url(/leaderboard-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center top', padding: '0 10px', overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', background: 'transparent', padding: '0 10px', overflow: 'hidden' }}>
 
                     {/* Light rays — fan out from bottom-centre behind platforms */}
                     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -2276,7 +2276,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   </div>
 
                   {/* ── Your score row at the bottom ── */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)' }}>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'transparent' }}>
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px',
                       borderLeft: '3px solid #6366f1',
