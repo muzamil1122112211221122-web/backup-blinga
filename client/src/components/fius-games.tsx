@@ -2124,17 +2124,15 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   <button key={g.id}
                     onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
                     className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
-                    <div className="w-full aspect-square rounded-full overflow-hidden"
-                      style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.15)' }}>
-                      <img src={g.logo} alt={g.label} className="w-full h-full object-cover group-hover:brightness-110 transition-all" />
-                    </div>
+                    <img src={g.logo} alt={g.label}
+                      className="w-full aspect-square rounded-full object-cover group-hover:brightness-110 transition-all" />
                     <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Owned Games — 3-col circular grid (only if purchased) */}
+            {/* Owned Games — 3-col circular (only if purchased) */}
             {myPurchased.length > 0 && (
               <div>
                 <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Owned Games</div>
@@ -2142,10 +2140,12 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
-                      <div className="w-full aspect-square rounded-full overflow-hidden relative"
-                        style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.15)', outline: '2.5px solid rgba(16,185,129,0.65)', outlineOffset: '2px' }}>
-                        <img src={g.img} alt={g.name} className="w-full h-full object-cover group-hover:brightness-110 transition-all" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2 relative">
+                      <div className="relative w-full aspect-square">
+                        <img src={g.img} alt={g.name}
+                          className="w-full h-full rounded-full object-cover group-hover:brightness-110 transition-all"
+                          style={{ outline: '2.5px solid rgba(16,185,129,0.65)', outlineOffset: '2px' }}
+                          onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.9)' }}>
                           <Check size={9} className="text-white" />
                         </div>
