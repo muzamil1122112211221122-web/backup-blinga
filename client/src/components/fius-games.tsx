@@ -1908,8 +1908,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [lbFilter, setLbFilter] = useState<string>('All');
-  const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
-  const [lbGameFilter, setLbGameFilter] = useState<string>('All');
   const [globalLeaders, setGlobalLeaders] = useState<Array<{ name: string; totalScore: number; bestGame: any | null }>>([]);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
 
@@ -2078,13 +2076,6 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.05)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.08)' }}>
           <ShoppingBag size={14} /> Store
         </button>
-        {tab === 'games' && (
-          <button onClick={() => setTab('store')}
-            className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold text-amber-400 hover:text-amber-300 transition-all"
-            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
-            <ShoppingBag size={11} /> Store
-          </button>
-        )}
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
@@ -2092,53 +2083,41 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
           <div className="flex flex-col gap-6">
-            {/* Free games — logo-only grid */}
+            {/* Free games — icon-only grid */}
             <div>
-              <div className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">Free Games</div>
-              <div className="grid grid-cols-3 gap-3">
-                {FREE_GAMES.map(g => {
-                  const lv = getGameLevel(g.id);
-                  return (
-                    <button key={g.id}
-                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
-                      className="flex flex-col items-center gap-2 p-3 rounded-2xl group transition-all duration-200 active:scale-[0.95]"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:brightness-110"
-                        style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                        <img src={g.logo} alt={g.label} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold text-[11px] leading-tight mb-1">{g.label}</div>
-                        <LevelPill level={lv} />
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free Games</div>
+              <div className="grid grid-cols-4 gap-3">
+                {FREE_GAMES.map(g => (
+                  <button key={g.id}
+                    onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
+                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
+                    <div className="w-full aspect-square rounded-2xl overflow-hidden"
+                      style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.5)' }}>
+                      <img src={g.logo} alt={g.label} className="w-full h-full object-cover group-hover:brightness-110 transition-all" />
+                    </div>
+                    <span className="text-zinc-400 text-[9px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* ── Bought / Owned Games shelf ── (only show if purchased) */}
+            {/* Owned Games — icon-only grid (only if purchased) */}
             {myPurchased.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Owned Games</span>
-                  <span className="text-zinc-600 text-[9px]">{myPurchased.length} owned</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Owned Games</div>
+                <div className="grid grid-cols-4 gap-3">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="flex flex-col items-center gap-2 p-3 rounded-2xl group transition-all duration-200 active:scale-[0.95]"
-                      style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.22)' }}>
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-200 group-hover:scale-110"
-                        style={{ border: '1.5px solid rgba(16,185,129,0.5)' }}>
-                        <img src={g.img} alt={g.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
+                      <div className="w-full aspect-square rounded-2xl overflow-hidden relative"
+                        style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.5)', border: '2px solid rgba(16,185,129,0.55)' }}>
+                        <img src={g.img} alt={g.name} className="w-full h-full object-cover group-hover:brightness-110 transition-all" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                        <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.9)' }}>
+                          <Check size={9} className="text-white" />
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-white font-bold text-[11px] leading-tight mb-1">{g.name}</div>
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold"
-                          style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80' }}>✓ Owned</span>
-                      </div>
+                      <span className="text-zinc-400 text-[9px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
                     </button>
                   ))}
                 </div>
@@ -2147,161 +2126,76 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
           </div>
         )}
 
-        {/* ── GLOBAL LEADERBOARD ── New podium-style design */}
+        {/* ── LEADERBOARD ── clean ranked list */}
         {tab === 'games' && (() => {
           const userTotalScore = scores.reduce((sum, s) => sum + s.score, 0);
           const userBestGame = scores.length > 0 ? scores.reduce((a, b) => a.score > b.score ? a : b) : null;
-          // Category filtering
-          const GAME_CATEGORIES = ['All', 'Memory', 'Math', 'Car', 'Word', 'Quiz'];
-          const GAME_CAT_MAP: Record<string, string> = {
-            'Memory Match': 'Memory', 'Speed Maths': 'Math', 'Car Dodge': 'Car',
-            'Word Scramble': 'Word', 'Brain Quiz': 'Quiz', 'Odd One Out': 'Quiz',
-            'Tic-Tac-Toe': 'vs AI', 'Rock Paper Scissors': 'vs AI',
-          };
-          const filteredLeaders = (lbGameFilter === 'All' ? globalLeaders : globalLeaders.filter(l => {
-            const cat = l.bestGame ? (GAME_CAT_MAP[l.bestGame.game] || 'Other') : 'Other';
-            return cat === lbGameFilter;
-          })).slice(0, 10);
-          const top3 = filteredLeaders.slice(0, 3); // [0]=1st, [1]=2nd, [2]=3rd
-          const rest = filteredLeaders.slice(3, 7);
-          const TIME_TABS: { key: 'day'|'week'|'month'|'all', label: string }[] = [
-            { key: 'day', label: 'Day' },
-            { key: 'week', label: 'Week' },
-            { key: 'month', label: 'Month' },
-            { key: 'all', label: 'All Time' },
-          ];
-          // Podium visual layout: always [2nd-left, 1st-center, 3rd-right]
-          // Each slot is typed with its rank, color, height, medal
-          type PodiumSlot = { leader: typeof top3[0] | null; rank: number; color: string; height: number; medal: string };
-          const podiumSlots: PodiumSlot[] = [
-            { leader: top3[1] ?? null, rank: 2, color: '#94a3b8', height: 80, medal: '🥈' },
-            { leader: top3[0] ?? null, rank: 1, color: '#fbbf24', height: 100, medal: '🥇' },
-            { leader: top3[2] ?? null, rank: 3, color: '#f97316', height: 68, medal: '🥉' },
-          ];
-          const showPodium = top3.length >= 1;
+          const leaders = globalLeaders.slice(0, 10);
+          const RANK_MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
           return (
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99,102,241,0.25)', boxShadow: '0 0 0 1px rgba(99,102,241,0.06), 0 8px 32px rgba(0,0,0,0.4)' }}>
-              {/* Header */}
-              <div className="px-4 pt-4 pb-3">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-white text-[13px] font-extrabold tracking-wide">🏆 Leaderboard</span>
-                </div>
-                {/* Time filter tabs */}
-                <div className="flex gap-1.5 mb-3">
-                  {TIME_TABS.map(t => (
-                    <button key={t.key} onClick={() => setLbTimeFilter(t.key)}
-                      className="px-2.5 py-1 rounded-full text-[10px] font-bold transition-all"
-                      style={{ background: lbTimeFilter === t.key ? 'rgba(99,102,241,0.85)' : 'rgba(255,255,255,0.06)', color: lbTimeFilter === t.key ? '#fff' : '#71717a', border: lbTimeFilter === t.key ? '1px solid rgba(99,102,241,0.5)' : '1px solid rgba(255,255,255,0.07)' }}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-                {/* Category filter pills */}
-                <div className="flex gap-1.5 flex-wrap">
-                  {GAME_CATEGORIES.map(cat => (
-                    <button key={cat} onClick={() => setLbGameFilter(cat)}
-                      className="px-2 py-0.5 rounded-full text-[9px] font-bold transition-all"
-                      style={{ background: lbGameFilter === cat ? 'rgba(168,85,247,0.8)' : 'rgba(255,255,255,0.05)', color: lbGameFilter === cat ? '#fff' : '#52525b', border: lbGameFilter === cat ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.06)' }}>
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+            <div className="rounded-2xl overflow-hidden mb-4"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+                <span className="text-white text-[13px] font-extrabold tracking-wide">🏆 Leaderboard</span>
+                <span className="text-zinc-600 text-[10px]">All time</span>
               </div>
 
-              {/* Podium + ranks */}
-              {filteredLeaders.length === 0 ? (
+              {leaders.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-3xl mb-2">🏆</div>
                   <p className="text-zinc-500 text-xs font-bold">No scores yet</p>
-                  <p className="text-zinc-600 text-[10px] mt-0.5">Play games to appear here!</p>
+                  <p className="text-zinc-600 text-[10px] mt-0.5">Win games to appear here!</p>
                 </div>
               ) : (
-                <>
-                  {/* === PODIUM — always correct rank mapping === */}
-                  {showPodium && (
-                    <div className="px-4 pb-2">
-                      <div className="flex items-end justify-center gap-2" style={{ height: 140 }}>
-                        {podiumSlots.map((slot) => {
-                          const { leader, rank, color, height: ht, medal } = slot;
-                          if (!leader) {
-                            return (
-                              <div key={`empty-${rank}`} className="flex flex-col items-center justify-end flex-1 max-w-[88px]">
-                                <div className="w-full rounded-t-xl flex items-center justify-center"
-                                  style={{ height: ht, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderBottom: 'none' }}>
-                                  <span className="text-[14px] font-extrabold text-zinc-700">#{rank}</span>
-                                </div>
-                              </div>
-                            );
-                          }
-                          const isCurrentUser = leader.name === playerName;
-                          return (
-                            <div key={leader.name} className="flex flex-col items-center flex-1 max-w-[88px]">
-                              <div className="relative mb-1.5">
-                                <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-extrabold text-base flex-shrink-0"
-                                  style={{ background: `linear-gradient(135deg, ${color}99, ${color}55)`, border: `2.5px solid ${color}`, boxShadow: `0 0 16px ${color}55` }}>
-                                  {leader.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-base leading-none">{medal}</div>
-                              </div>
-                              <div className="text-[9px] font-bold text-white truncate max-w-full text-center mb-0.5 mt-1 px-1">
-                                {leader.name}{isCurrentUser ? ' (You)' : ''}
-                              </div>
-                              <div className="text-[10px] font-extrabold" style={{ color }}>{leader.totalScore.toLocaleString()}</div>
-                              <div className="w-full rounded-t-xl mt-1.5 flex items-center justify-center"
-                                style={{ height: ht, background: `linear-gradient(180deg, ${color}30, ${color}12)`, border: `1px solid ${color}40`, borderBottom: 'none' }}>
-                                <span className="text-[18px] font-extrabold" style={{ color: `${color}80` }}>#{rank}</span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* === RANKS 4-7 === */}
-                  {rest.length > 0 && (
-                    <div className="px-3 pb-1 space-y-1">
-                      {rest.map((leader, idx) => {
-                        const rank = idx + 4;
-                        const isCurrentUser = leader.name === playerName;
-                        return (
-                          <div key={idx} className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
-                            style={{ background: isCurrentUser ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)', border: isCurrentUser ? '1px solid rgba(168,85,247,0.35)' : '1px solid rgba(255,255,255,0.05)' }}>
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold flex-shrink-0"
-                              style={{ background: 'rgba(255,255,255,0.06)', color: '#52525b' }}>
-                              {rank}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-[11px] font-bold truncate ${isCurrentUser ? 'text-purple-300' : 'text-zinc-300'}`}>{leader.name}{isCurrentUser ? ' (You)' : ''}</div>
-                            </div>
-                            <div className="text-[11px] font-extrabold text-zinc-400">{leader.totalScore.toLocaleString()}</div>
+                <div className="px-3 pb-3 space-y-1">
+                  {leaders.map((leader, idx) => {
+                    const rank = idx + 1;
+                    const isCurrentUser = leader.name === playerName;
+                    const medal = RANK_MEDAL[rank] ?? '';
+                    return (
+                      <div key={leader.name} className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
+                        style={{ background: isCurrentUser ? 'rgba(99,102,241,0.14)' : 'rgba(255,255,255,0.02)', border: isCurrentUser ? '1px solid rgba(99,102,241,0.35)' : '1px solid transparent' }}>
+                        <div className="w-6 text-center text-[11px] font-extrabold flex-shrink-0"
+                          style={{ color: rank === 1 ? '#fbbf24' : rank === 2 ? '#94a3b8' : rank === 3 ? '#f97316' : '#3f3f46' }}>
+                          {medal || `#${rank}`}
+                        </div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0"
+                          style={{ background: isCurrentUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.08)' }}>
+                          {leader.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-[12px] font-bold truncate ${isCurrentUser ? 'text-indigo-300' : 'text-zinc-200'}`}>
+                            {leader.name}{isCurrentUser ? ' (You)' : ''}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          {leader.bestGame && <div className="text-zinc-600 text-[9px] truncate">{leader.bestGame.game}</div>}
+                        </div>
+                        <div className="text-[12px] font-extrabold" style={{ color: isCurrentUser ? '#818cf8' : '#52525b' }}>
+                          {leader.totalScore.toLocaleString()}
+                        </div>
+                      </div>
+                    );
+                  })}
 
-                  {/* === YOU row (if not in top 7) === */}
-                  {!filteredLeaders.slice(0, 7).some(l => l.name === playerName) && (
-                    <div className="px-3 pb-3">
-                      <div className="h-px my-2" style={{ background: 'rgba(99,102,241,0.18)' }} />
-                      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                        style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.4)' }}>
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold flex-shrink-0"
-                          style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff' }}>
+                  {/* YOU row — if not in top 10 */}
+                  {!leaders.some(l => l.name === playerName) && (
+                    <>
+                      <div className="h-px my-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                        style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                        <div className="w-6 text-center text-[11px] font-extrabold text-zinc-600 flex-shrink-0">—</div>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0"
+                          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                           {playerName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-purple-300 text-[11px] font-bold truncate">{playerName} <span className="text-purple-500">(You)</span></div>
-                          {userBestGame && <div className="text-zinc-600 text-[9px]">Best: {userBestGame.game}</div>}
+                          <div className="text-indigo-300 text-[12px] font-bold truncate">{playerName} <span className="text-indigo-600">(You)</span></div>
+                          {userBestGame && <div className="text-zinc-600 text-[9px] truncate">{userBestGame.game}</div>}
                         </div>
-                        <div className="text-[11px] font-extrabold text-purple-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
+                        <div className="text-[12px] font-extrabold text-indigo-400">{userTotalScore > 0 ? userTotalScore.toLocaleString() : '—'}</div>
                       </div>
-                    </div>
+                    </>
                   )}
-                </>
+                </div>
               )}
             </div>
           );
