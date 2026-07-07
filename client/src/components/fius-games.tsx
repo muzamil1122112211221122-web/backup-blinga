@@ -2064,60 +2064,93 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         <FragmentBadge count={fragments} />
       </div>
 
-      {/* ── Tab switcher: Games / Store ── */}
-      <div className="flex items-center gap-2 mb-4 flex-shrink-0">
-        <button onClick={() => setTab('games')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'games' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
-          style={{ background: tab === 'games' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(128,128,128,0.12)', border: tab === 'games' ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(128,128,128,0.15)' }}>
-          <Gamepad2 size={14} /> Games
-        </button>
-        <button onClick={() => setTab('store')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${tab === 'store' ? 'text-white' : 'text-muted-foreground hover:text-foreground'}`}
-          style={{ background: tab === 'store' ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(128,128,128,0.12)', border: tab === 'store' ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(128,128,128,0.15)' }}>
-          <ShoppingBag size={14} /> Store
-        </button>
+      {/* ── Tab switcher: Games / Store — unified sliding bar ── */}
+      <div className="mb-4 flex-shrink-0">
+        <div style={{ position: 'relative', display: 'flex', background: 'rgba(128,128,128,0.12)', borderRadius: 14, padding: 3 }}>
+          <div style={{
+            position: 'absolute', top: 3, bottom: 3,
+            left: `calc(${tab === 'store' ? 1 : 0} * (100% / 2) + 3px)`,
+            width: 'calc(100% / 2 - 6px)',
+            background: '#fff',
+            borderRadius: 11,
+            boxShadow: '0 1px 6px rgba(0,0,0,0.13)',
+            transition: 'left 0.28s cubic-bezier(0.23, 1, 0.32, 1)',
+            pointerEvents: 'none',
+          }} />
+          <button onClick={() => setTab('games')} style={{
+            flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
+            background: 'transparent', borderRadius: 11, fontSize: 12, fontWeight: 700,
+            color: tab === 'games' ? '#111' : 'rgba(128,128,128,0.65)',
+            position: 'relative', zIndex: 1, transition: 'color 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+          }}>
+            <Gamepad2 size={13} />Games
+          </button>
+          <button onClick={() => setTab('store')} style={{
+            flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
+            background: 'transparent', borderRadius: 11, fontSize: 12, fontWeight: 700,
+            color: tab === 'store' ? '#111' : 'rgba(128,128,128,0.65)',
+            position: 'relative', zIndex: 1, transition: 'color 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+          }}>
+            <ShoppingBag size={13} />Store
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
         {/* ── GAMES TAB ── */}
         {tab === 'games' && (
-          <div className="flex flex-col gap-6">
-            {/* Free games — icon-only grid */}
+          <div className="flex flex-col gap-5">
+            {/* Search bar */}
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search games…"
+                className="w-full pl-9 pr-4 py-2 rounded-full text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+                style={{ background: 'rgba(128,128,128,0.10)', border: '1px solid rgba(128,128,128,0.18)' }}
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+
+            {/* Free games — 3-col circular grid */}
             <div>
-              <div className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Free Games</div>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Free Games</div>
+              <div className="grid grid-cols-3 gap-4">
                 {FREE_GAMES.map(g => (
                   <button key={g.id}
                     onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, icon: g.icon, category: g.category })}
-                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
-                    <div className="w-full aspect-square rounded-2xl overflow-hidden"
-                      style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.5)' }}>
+                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
+                    <div className="w-full aspect-square rounded-full overflow-hidden"
+                      style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.15)' }}>
                       <img src={g.logo} alt={g.label} className="w-full h-full object-cover group-hover:brightness-110 transition-all" />
                     </div>
-                    <span className="text-zinc-400 text-[9px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
+                    <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Owned Games — icon-only grid (only if purchased) */}
+            {/* Owned Games — 3-col circular grid (only if purchased) */}
             {myPurchased.length > 0 && (
               <div>
-                <div className="text-zinc-600 text-[10px] font-bold uppercase tracking-widest mb-2">Owned Games</div>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Owned Games</div>
+                <div className="grid grid-cols-3 gap-4">
                   {myPurchased.map(g => (
                     <button key={g.id}
                       onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-1.5">
-                      <div className="w-full aspect-square rounded-2xl overflow-hidden relative"
-                        style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.5)', border: '2px solid rgba(16,185,129,0.55)' }}>
+                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
+                      <div className="w-full aspect-square rounded-full overflow-hidden relative"
+                        style={{ boxShadow: '0 2px 10px rgba(0,0,0,0.15)', outline: '2.5px solid rgba(16,185,129,0.65)', outlineOffset: '2px' }}>
                         <img src={g.img} alt={g.name} className="w-full h-full object-cover group-hover:brightness-110 transition-all" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                         <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.9)' }}>
                           <Check size={9} className="text-white" />
                         </div>
                       </div>
-                      <span className="text-zinc-400 text-[9px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
+                      <span className="text-muted-foreground text-[9.5px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
                     </button>
                   ))}
                 </div>
@@ -2126,8 +2159,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
 
             {/* ── LEADERBOARD ── reference-match premium podium */}
             {(() => {
-              const CAT_TABS = ['All', 'Memory', 'Math', 'Word', 'Quiz'];
-              const CAT_TO_GAME: Record<string, string> = { Memory: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz' };
+              const CAT_TABS = ['All', 'Mem', 'Math', 'Word', 'Quiz', 'Car', 'Odd', 'TTT', 'RPS'];
+              const CAT_TO_GAME: Record<string, string> = { Mem: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz', Car: 'car', Odd: 'oddword', TTT: 'tictactoe', RPS: 'rps' };
               const catIdx = CAT_TABS.indexOf(lbCatFilter);
 
               // Compute per-leader score for active filter
