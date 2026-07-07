@@ -2578,18 +2578,16 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   );
 }
 
-// ─── Studio template thumbnails ───────────────────────────────────────────────
-// bg = placeholder gradient shown while the image loads
+// ─── Studio template thumbnails — use local public assets (no rate limits) ────
 const STUDIO_TEMPLATES = [
-  { id: 'portrait',  name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)',                   prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic',         thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
-  { id: 'anime',     name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)',                   prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art',                        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
-  { id: 'cinematic', name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)',                   prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded',              thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
-  { id: '3d',        name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)',                   prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination',               thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
-  { id: 'interior',  name: 'Interior Design',      bg: 'linear-gradient(135deg,#1c1008,#2d1f0a)',                   prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
-  { id: 'cyberpunk', name: 'Cyberpunk',             bg: 'linear-gradient(135deg,#0a0a1a,#1a0a2e)',                   prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
-  { id: 'fantasy',   name: 'Fantasy Art',           bg: 'linear-gradient(135deg,#0a1628,#1a2a0a)',                   prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
-  { id: 'nature',    name: 'Nature Photo',           bg: 'linear-gradient(135deg,#0a1f0a,#1a3a10)',                   prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
-  { id: 'pixel',     name: 'Pixel Art',              bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)',                   prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
+  { id: 'portrait',  name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)', thumb: '/style-photo.jpg',     prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic' },
+  { id: 'anime',     name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)', thumb: '/style-anime.png',     prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art' },
+  { id: 'cinematic', name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)', thumb: '/style-cinematic.jpg', prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded' },
+  { id: '3d',        name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', thumb: '/style-3d.jpg',        prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination' },
+  { id: 'watercolor',name: 'Watercolor',           bg: 'linear-gradient(135deg,#0a1820,#0d2a38)', thumb: '/style-watercolor.jpg',prompt: 'delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork, painterly' },
+  { id: 'oil',       name: 'Oil Painting',         bg: 'linear-gradient(135deg,#1c0a0a,#2d0f0f)', thumb: '/style-oil.jpg',       prompt: 'classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly masterpiece' },
+  { id: 'sketch',    name: 'Pencil Sketch',        bg: 'linear-gradient(135deg,#111,#222)',        thumb: '/style-sketch.jpg',    prompt: 'detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn art' },
+  { id: 'pixel',     name: 'Pixel Art',            bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)', thumb: '/style-pixel.jpg',     prompt: 'pixel art style, 8-bit retro video game art, pixelated aesthetic, vibrant flat colors, NES SNES era art' },
 ];
 
 // ─── Studio (Imagine) Tab ─────────────────────────────────────────────────────
@@ -2600,14 +2598,19 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
   const [expandImg, setExpandImg] = useState<string | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
   const templateScrollRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const myImagesRef = useRef<HTMLDivElement>(null);
+  const prevImageCount = useRef(0);
 
-  // All AI messages that have an image
-  const aiImages = messages.filter(m => m.role === "ai" && m.imageUrl);
+  // All AI messages that have a real image URL (not empty / generating)
+  const aiImages = messages.filter(m => m.role === "ai" && m.imageUrl && !m.isGenerating);
 
+  // Auto-scroll to My images whenever a new image appears
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    if (aiImages.length > prevImageCount.current) {
+      prevImageCount.current = aiImages.length;
+      setTimeout(() => myImagesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }, [aiImages.length]);
 
   const scrollTemplates = (dir: 'left' | 'right') => {
     templateScrollRef.current?.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
@@ -2638,6 +2641,59 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
       {/* ── Scrollable body (black) ── */}
       <div className="flex-1 min-h-0 overflow-y-auto" style={{ background: '#000', scrollbarWidth: 'none' }}>
 
+        {/* ── My images — shown FIRST so generated images are always visible at top ── */}
+        <div ref={myImagesRef} className={aiImages.length > 0 || isTyping ? "mb-8" : "mb-0"}>
+          {(aiImages.length > 0 || isTyping) && (
+            <div className="flex items-center justify-between px-5 pt-1 pb-3.5">
+              <span className="text-white text-base font-semibold tracking-tight">My images</span>
+              {aiImages.length > 0 && (
+                <span className="text-zinc-600 text-[11px]">{aiImages.length} image{aiImages.length !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+          )}
+          {(aiImages.length > 0 || isTyping) && (
+            <div className="grid grid-cols-2 gap-[3px]">
+              {/* Generating placeholder */}
+              {isTyping && (
+                <div className="relative flex flex-col items-center justify-center gap-3"
+                  style={{ aspectRatio: '1/1', background: '#111' }}>
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                  <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
+                </div>
+              )}
+              {/* Generated images — newest first */}
+              {[...aiImages].reverse().map((msg) => (
+                <div key={msg.id} className="relative group" style={{ aspectRatio: '1/1', background: '#111' }}>
+                  <img
+                    src={msg.imageUrl}
+                    alt="generated"
+                    className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setExpandImg(msg.imageUrl!)}
+                  />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
+                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
+                    <div className="flex justify-end">
+                      <button onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-image.png'; a.target = '_blank'; a.click(); }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
+                        <Download className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-[10px] leading-snug line-clamp-2 mb-2">{msg.content}</p>
+                      <button onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium"
+                        style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)' }}>
+                        <Maximize2 className="w-3 h-3" /> View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Active template chip */}
         {activeTemplate && (
           <div className="flex items-center gap-2 px-5 pb-3">
@@ -2655,7 +2711,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
         )}
 
         {/* ── Create an image — template cards ── */}
-        <div className="mb-7">
+        <div className="pb-10">
           <div className="flex items-center justify-between px-5 mb-3.5">
             <span className="text-white text-base font-semibold tracking-tight">Create an image</span>
             <div className="flex gap-1.5">
@@ -2685,22 +2741,14 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
                     : '2px solid rgba(255,255,255,0.07)',
                   boxShadow: activeTemplate === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
                 }}>
-                {/* Thumbnail — fades in over gradient bg */}
-                <img
-                  src={t.thumb}
-                  alt={t.name}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.05]"
-                  onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-                  onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                  style={{ opacity: 0, transition: 'opacity 0.4s ease, transform 0.3s ease' }}
-                />
+                {/* Local thumbnail — loads immediately */}
+                <img src={t.thumb} alt={t.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]" />
                 {/* Label gradient */}
                 <div className="absolute inset-0 flex flex-col justify-end"
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 35%, transparent 70%)' }}>
                   <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
                 </div>
-                {/* Active tick */}
                 {activeTemplate === t.id && (
                   <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
                     style={{ background: 'rgba(139,92,246,0.9)' }}>
@@ -2710,69 +2758,6 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, o
               </button>
             ))}
           </div>
-        </div>
-
-        {/* ── My images — 2-col grid ── */}
-        <div className="pb-8">
-          <div className="flex items-center justify-between px-5 mb-3.5">
-            <span className="text-white text-base font-semibold tracking-tight">My images</span>
-            {aiImages.length > 0 && (
-              <span className="text-zinc-600 text-[11px]">{aiImages.length} image{aiImages.length !== 1 ? 's' : ''}</span>
-            )}
-          </div>
-
-          {aiImages.length === 0 && !isTyping ? (
-            <div className="flex flex-col items-center py-16 gap-4 px-5">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <Sparkles className="w-7 h-7 text-zinc-700" />
-              </div>
-              <div className="text-center">
-                <p className="text-zinc-300 text-[15px] font-semibold">No images yet</p>
-                <p className="text-zinc-600 text-[12px] mt-1">Describe an image below to get started</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-[3px]">
-              {isTyping && (
-                <div className="relative flex flex-col items-center justify-center gap-3"
-                  style={{ aspectRatio: '1/1', background: '#111' }}>
-                  <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-                  <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
-                </div>
-              )}
-              {[...aiImages].reverse().map((msg) => (
-                <div key={msg.id} className="relative group" style={{ aspectRatio: '1/1', background: '#111' }}>
-                  <img
-                    src={msg.imageUrl}
-                    alt="generated"
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => setExpandImg(msg.imageUrl!)}
-                  />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
-                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-image.png'; a.target = '_blank'; a.click(); }}
-                        className="w-8 h-8 rounded-full flex items-center justify-center"
-                        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
-                        <Download className="w-3.5 h-3.5 text-white" />
-                      </button>
-                    </div>
-                    <div>
-                      <p className="text-white/70 text-[10px] leading-snug line-clamp-2 mb-2">{msg.content}</p>
-                      <button onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium"
-                        style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)' }}>
-                        <Maximize2 className="w-3 h-3" /> View
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div ref={endRef} />
         </div>
       </div>
 
