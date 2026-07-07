@@ -2167,11 +2167,11 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               const podTextPos = [
                 { cx: '17%', cy: '74%', scoreSz: 11, nameSz: 8.5 },  // silver #2 — moved down
                 { cx: '50%', cy: '54%', scoreSz: 14, nameSz: 9.5 },  // gold #1
-                { cx: '81%', cy: '68%', scoreSz: 10, nameSz: 8 },    // bronze #3 — repositioned
+                { cx: '81%', cy: '73%', scoreSz: 10, nameSz: 8 },    // bronze #3 — moved down
               ];
 
               return (
-                <div style={{ backgroundImage: 'url(/leaderboard-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
+                <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
 
                   {/* ── Header ── */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 10px' }}>
@@ -2201,7 +2201,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                   </div>
 
                   {/* ── Podium area ── */}
-                  <div style={{ position: 'relative', background: 'linear-gradient(180deg,rgba(22,18,60,0.5) 0%,rgba(8,6,22,0.7) 100%)', padding: '0 10px', overflow: 'hidden' }}>
+                  <div style={{ position: 'relative', backgroundImage: 'url(/leaderboard-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center top', padding: '0 10px', overflow: 'hidden' }}>
 
                     {/* Light rays — fan out from bottom-centre behind platforms */}
                     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
