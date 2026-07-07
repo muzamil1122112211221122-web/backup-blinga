@@ -1878,10 +1878,12 @@ Prompt to improve: ${originalPrompt}`;
       const entries = await storage.getAllUsersWithSettings();
       const board = entries
         .map(e => {
+          const levels: Record<string, number> = (e.settings as any)?.gamesData?.levels || {};
+          // Combined level = sum of all individual game levels (the user's progress metric)
+          const totalLevel = Object.values(levels).reduce((sum: number, lv: any) => sum + (Number(lv) || 0), 0);
           const scores: any[] = (e.settings as any)?.gamesData?.scores || [];
-          const totalScore = scores.reduce((sum: number, s: any) => sum + (s.score || 0), 0);
           const bestGame = scores.length > 0 ? scores.reduce((a: any, b: any) => a.score > b.score ? a : b) : null;
-          return { userId: e.userId, name: e.displayName || e.username, totalScore, bestGame };
+          return { userId: e.userId, name: e.displayName || e.username, totalScore: totalLevel, bestGame };
         })
         .filter(e => e.totalScore > 0)
         .sort((a, b) => b.totalScore - a.totalScore)

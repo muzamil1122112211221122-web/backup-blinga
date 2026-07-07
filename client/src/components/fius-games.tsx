@@ -1908,8 +1908,11 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
   const [exitConfirm, setExitConfirm] = useState(false);
   const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; icon?: FreeGameIcon; category: string} | null>(null);
+  const [globalLeaders, setGlobalLeaders] = useState<Array<{ userId: string; name: string; totalScore: number; bestGame: any | null }>>([]);
+  const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
+  const [lbCatFilter, setLbCatFilter] = useState<string>('All');
 
-  // ── Load from server on mount ──────────────────────────────────────────────
+  // ── Load from server on mount + leaderboard polling ───────────────────────
   useEffect(() => {
     loadGamesFromServer().then(data => {
       if (!data) return;
@@ -1921,6 +1924,15 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         setScores(data.scores);
       }
     });
+    const fetchLb = () => {
+      fetch('/api/games/leaderboard', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then((board: any[]) => { if (Array.isArray(board)) setGlobalLeaders(board); })
+        .catch(() => {});
+    };
+    fetchLb();
+    const lbTimer = setInterval(fetchLb, 30000);
+    return () => clearInterval(lbTimer);
   }, []);
 
   // ── Sync helper ───────────────────────────────────────────────────────────
@@ -2111,6 +2123,149 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                 </div>
               </div>
             )}
+
+            {/* ── LEADERBOARD ── reference-style podium */}
+            {(() => {
+              const CAT_TABS = ['All', 'Memory', 'Math', 'Word', 'Quiz'];
+              const TIME_TABS: { key: 'day'|'week'|'month'|'all'; label: string }[] = [
+                { key: 'day', label: 'Day' }, { key: 'week', label: 'Week' },
+                { key: 'month', label: 'Month' }, { key: 'all', label: 'All Time' },
+              ];
+              const leaders = globalLeaders.slice(0, 10);
+              const top3 = leaders.slice(0, 3);
+              const rest = leaders.slice(3, 7);
+              // Podium layout: slot[0]=2nd(left), slot[1]=1st(center), slot[2]=3rd(right)
+              type PodSlot = { leader: typeof top3[0]|null; rank: number; coinBg: string; coinShadow: string; platformH: number };
+              const podSlots: PodSlot[] = [
+                { leader: top3[1] ?? null, rank: 2, coinBg: 'linear-gradient(135deg,#9ca3af,#d1d5db)', coinShadow: 'rgba(209,213,219,0.55)', platformH: 78 },
+                { leader: top3[0] ?? null, rank: 1, coinBg: 'linear-gradient(135deg,#f59e0b,#fde68a,#f59e0b)', coinShadow: 'rgba(251,191,36,0.7)',  platformH: 110 },
+                { leader: top3[2] ?? null, rank: 3, coinBg: 'linear-gradient(135deg,#c2773a,#fb923c)',         coinShadow: 'rgba(249,115,22,0.55)',  platformH: 58 },
+              ];
+              const platformColors = [
+                'linear-gradient(180deg,#c0c0c0,#8a8a8a)',
+                'linear-gradient(180deg,#fbbf24,#d97706)',
+                'linear-gradient(180deg,#f97316,#c2410c)',
+              ];
+              const meUserRank = leaders.findIndex(l => l.userId === userId);
+              const meInTop = meUserRank !== -1;
+
+              return (
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg,#1e1b4b,#16143a)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                    <span className="text-white font-black text-[15px] tracking-tight">Leaderboard</span>
+                    <div className="flex items-center gap-1">
+                      {TIME_TABS.map(t => (
+                        <button key={t.key} onClick={() => setLbTimeFilter(t.key)}
+                          className="px-2 py-0.5 rounded-full text-[9px] font-bold transition-all"
+                          style={{ background: lbTimeFilter === t.key ? 'rgba(99,102,241,0.9)' : 'transparent', color: lbTimeFilter === t.key ? '#fff' : '#6b7280' }}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category pills */}
+                  <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                    {CAT_TABS.map(cat => (
+                      <button key={cat} onClick={() => setLbCatFilter(cat)}
+                        className="flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-bold transition-all"
+                        style={{
+                          background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.07)',
+                          color: lbCatFilter === cat ? '#1e1b4b' : '#9ca3af',
+                          border: lbCatFilter === cat ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                        }}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Podium */}
+                  <div className="relative px-2 pb-0" style={{ background: 'linear-gradient(180deg,rgba(30,27,75,0) 0%,rgba(15,12,50,0.6) 100%)' }}>
+                    {/* Glow behind #1 */}
+                    <div className="absolute left-1/2 top-6 -translate-x-1/2 w-24 h-24 rounded-full pointer-events-none"
+                      style={{ background: 'radial-gradient(circle,rgba(251,191,36,0.25) 0%,transparent 70%)', filter: 'blur(16px)' }} />
+
+                    {leaders.length === 0 ? (
+                      <div className="text-center py-10">
+                        <div className="text-3xl mb-2">🏆</div>
+                        <p className="text-zinc-500 text-xs font-bold">No scores yet — play games!</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-end justify-center gap-1" style={{ height: 172 }}>
+                        {podSlots.map((slot, si) => {
+                          const isCenter = si === 1;
+                          if (!slot.leader) {
+                            return (
+                              <div key={`empty-${slot.rank}`} className="flex flex-col items-center justify-end flex-1 max-w-[100px]">
+                                <div className="w-full rounded-t-lg" style={{ height: slot.platformH, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
+                                  <div className="flex items-center justify-center h-full text-zinc-700 text-[10px] font-extrabold">#{slot.rank}</div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          const isMe = slot.leader.userId === userId;
+                          return (
+                            <div key={slot.leader.userId} className="flex flex-col items-center justify-end flex-1 max-w-[100px]">
+                              {/* Coin medal */}
+                              <div className={`rounded-full flex items-center justify-center text-white font-black shadow-lg mb-1 flex-shrink-0 ${isCenter ? 'w-12 h-12 text-[18px]' : 'w-9 h-9 text-[13px]'}`}
+                                style={{ background: slot.coinBg, boxShadow: `0 0 18px ${slot.coinShadow}, 0 4px 12px rgba(0,0,0,0.5)`, border: '2px solid rgba(255,255,255,0.3)' }}>
+                                {slot.rank}
+                              </div>
+                              {/* Score */}
+                              <div className={`font-extrabold text-white leading-tight ${isCenter ? 'text-[13px]' : 'text-[11px]'}`}>
+                                {slot.leader.totalScore.toLocaleString()}
+                              </div>
+                              {/* Name */}
+                              <div className={`text-center px-1 leading-tight mb-1.5 ${isCenter ? 'text-[10px] text-white font-bold' : 'text-[9px] text-zinc-300 font-semibold'}`}
+                                style={{ maxWidth: 90, wordBreak: 'break-word' }}>
+                                {slot.leader.name}{isMe ? ' (You)' : ''}
+                              </div>
+                              {/* Platform */}
+                              <div className="w-full rounded-t-xl" style={{ height: slot.platformH, background: platformColors[si] }} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ranked list */}
+                  <div style={{ background: 'rgba(10,8,35,0.7)' }}>
+                    {/* Current user row (always shown at top of list) */}
+                    {(() => {
+                      const myTotalLevel = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
+                      return (
+                        <div className="flex items-center gap-3 px-4 py-3"
+                          style={{ background: 'rgba(99,102,241,0.18)', borderTop: '1px solid rgba(99,102,241,0.4)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
+                          <span className="text-zinc-300 text-[11px] font-extrabold w-7 flex-shrink-0">
+                            #{meInTop ? meUserRank + 1 : '—'}
+                          </span>
+                          <span className="flex-1 text-white font-black text-[12px] uppercase tracking-wide truncate">{playerName}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black flex-shrink-0"
+                            style={{ background: 'rgba(99,102,241,0.9)', color: '#fff' }}>You</span>
+                          <span className="text-white font-extrabold text-[12px] flex-shrink-0">{myTotalLevel}</span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Other players (skip current user, show up to 4) */}
+                    {leaders.filter(l => l.userId !== userId).slice(0, 4).map((l, i) => {
+                      const rank = leaders.findIndex(x => x.userId === l.userId) + 1;
+                      return (
+                        <div key={l.userId} className="flex items-center gap-3 px-4 py-2.5"
+                          style={{ borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                          <span className="text-zinc-500 text-[11px] font-extrabold w-7 flex-shrink-0">#{rank}</span>
+                          <span className="flex-1 text-zinc-200 font-bold text-[12px] truncate">{l.name}</span>
+                          <span className="text-zinc-300 font-extrabold text-[12px] flex-shrink-0">{l.totalScore.toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                    <div className="h-3" />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
