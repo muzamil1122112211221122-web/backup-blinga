@@ -291,7 +291,7 @@ function ScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLD
   );
 }
 
-// ─── Settings scroll-to-top/bottom buttons (absolute, fades but never disappears) ──
+// ─── Settings scroll-to-top/bottom buttons — hide completely at limits ────────
 function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTMLDivElement | null> }) {
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
@@ -310,22 +310,20 @@ function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObje
     ro.observe(el);
     return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
   }, [scrollAreaRef]);
-  if (!scrollable) return null;
-  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90";
+  if (!scrollable || (atTop && atBottom)) return null;
+  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-lg flex items-center justify-center transition-all duration-200 active:scale-90 text-muted-foreground hover:text-foreground";
   return (
     <div className="sticky bottom-3 float-right mr-1 flex flex-col gap-1.5 z-20">
-      <button
-        onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-        disabled={atTop}
-        className={`${btnBase} ${atTop ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        <ChevronUp className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' })}
-        disabled={atBottom}
-        className={`${btnBase} ${atBottom ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        <ChevronDown className="w-4 h-4" />
-      </button>
+      {!atTop && (
+        <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} className={btnBase}>
+          <ChevronUp className="w-4 h-4" />
+        </button>
+      )}
+      {!atBottom && (
+        <button onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current!.scrollHeight, behavior: 'smooth' })} className={btnBase}>
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }

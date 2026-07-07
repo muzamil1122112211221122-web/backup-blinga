@@ -2124,7 +2124,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               </div>
             )}
 
-            {/* ── LEADERBOARD ── reference-style podium */}
+            {/* ── LEADERBOARD ── premium podium */}
             {(() => {
               const CAT_TABS = ['All', 'Memory', 'Math', 'Word', 'Quiz'];
               const TIME_TABS: { key: 'day'|'week'|'month'|'all'; label: string }[] = [
@@ -2133,135 +2133,129 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               ];
               const leaders = globalLeaders.slice(0, 10);
               const top3 = leaders.slice(0, 3);
-              const rest = leaders.slice(3, 7);
-              // Podium layout: slot[0]=2nd(left), slot[1]=1st(center), slot[2]=3rd(right)
-              type PodSlot = { leader: typeof top3[0]|null; rank: number; coinBg: string; coinShadow: string; platformH: number };
+
+              /* Podium: always [silver-left, gold-center, bronze-right] but empty slots are invisible */
+              type PodSlot = { leader: typeof top3[0]|null; rank: 1|2|3; coinBg: string; glow: string; platformBg: string; platformH: number; coinSize: string; fontSize: string };
               const podSlots: PodSlot[] = [
-                { leader: top3[1] ?? null, rank: 2, coinBg: 'linear-gradient(135deg,#9ca3af,#d1d5db)', coinShadow: 'rgba(209,213,219,0.55)', platformH: 78 },
-                { leader: top3[0] ?? null, rank: 1, coinBg: 'linear-gradient(135deg,#f59e0b,#fde68a,#f59e0b)', coinShadow: 'rgba(251,191,36,0.7)',  platformH: 110 },
-                { leader: top3[2] ?? null, rank: 3, coinBg: 'linear-gradient(135deg,#c2773a,#fb923c)',         coinShadow: 'rgba(249,115,22,0.55)',  platformH: 58 },
+                { leader: top3[1] ?? null, rank: 2, coinBg: 'linear-gradient(145deg,#c8c8d0,#e8e8f0,#9a9aaa)', glow: 'rgba(200,200,210,0.5)', platformBg: 'linear-gradient(180deg,#adb5bd,#6c757d)', platformH: 80,  coinSize: 'w-10 h-10', fontSize: 'text-[14px]' },
+                { leader: top3[0] ?? null, rank: 1, coinBg: 'linear-gradient(145deg,#f59e0b,#fde68a,#d97706)', glow: 'rgba(251,191,36,0.8)',  platformBg: 'linear-gradient(180deg,#f59e0b,#b45309)', platformH: 112, coinSize: 'w-14 h-14', fontSize: 'text-[20px]' },
+                { leader: top3[2] ?? null, rank: 3, coinBg: 'linear-gradient(145deg,#cd7f32,#f4a460,#8b4513)', glow: 'rgba(205,127,50,0.55)', platformBg: 'linear-gradient(180deg,#cd7f32,#7c4a1e)', platformH: 56,  coinSize: 'w-9 h-9',   fontSize: 'text-[13px]' },
               ];
-              const platformColors = [
-                'linear-gradient(180deg,#c0c0c0,#8a8a8a)',
-                'linear-gradient(180deg,#fbbf24,#d97706)',
-                'linear-gradient(180deg,#f97316,#c2410c)',
-              ];
+
               const meUserRank = leaders.findIndex(l => l.userId === userId);
-              const meInTop = meUserRank !== -1;
+              const meInTop    = meUserRank !== -1;
+              const myTotalLv  = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
 
               return (
-                <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg,#1e1b4b,#16143a)', border: '1px solid rgba(99,102,241,0.3)' }}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                    <span className="text-white font-black text-[15px] tracking-tight">Leaderboard</span>
-                    <div className="flex items-center gap-1">
+                <div className="rounded-3xl overflow-hidden" style={{ background: 'linear-gradient(175deg,#1a1a3e 0%,#0f0f28 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}>
+
+                  {/* ── Header ── */}
+                  <div className="flex items-center justify-between px-4 pt-4 pb-3">
+                    <span className="text-white font-black text-[16px] tracking-tight">Leaderboard</span>
+                    <div className="flex items-center gap-0.5 rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       {TIME_TABS.map(t => (
                         <button key={t.key} onClick={() => setLbTimeFilter(t.key)}
-                          className="px-2 py-0.5 rounded-full text-[9px] font-bold transition-all"
-                          style={{ background: lbTimeFilter === t.key ? 'rgba(99,102,241,0.9)' : 'transparent', color: lbTimeFilter === t.key ? '#fff' : '#6b7280' }}>
+                          className="px-2.5 py-1 text-[9px] font-bold transition-all"
+                          style={{ background: lbTimeFilter === t.key ? '#4f46e5' : 'transparent', color: lbTimeFilter === t.key ? '#fff' : '#6b7280', borderRadius: 10 }}>
                           {t.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Category pills */}
-                  <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                  {/* ── Category pills ── */}
+                  <div className="flex gap-2 px-4 pb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     {CAT_TABS.map(cat => (
                       <button key={cat} onClick={() => setLbCatFilter(cat)}
-                        className="flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-bold transition-all"
-                        style={{
-                          background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.07)',
-                          color: lbCatFilter === cat ? '#1e1b4b' : '#9ca3af',
-                          border: lbCatFilter === cat ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                        }}>
+                        className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[10px] font-bold transition-all"
+                        style={{ background: lbCatFilter === cat ? '#fff' : 'rgba(255,255,255,0.08)', color: lbCatFilter === cat ? '#0f0f28' : '#6b7280', border: 'none' }}>
                         {cat}
                       </button>
                     ))}
                   </div>
 
-                  {/* Podium */}
-                  <div className="relative px-2 pb-0" style={{ background: 'linear-gradient(180deg,rgba(30,27,75,0) 0%,rgba(15,12,50,0.6) 100%)' }}>
-                    {/* Glow behind #1 */}
-                    <div className="absolute left-1/2 top-6 -translate-x-1/2 w-24 h-24 rounded-full pointer-events-none"
-                      style={{ background: 'radial-gradient(circle,rgba(251,191,36,0.25) 0%,transparent 70%)', filter: 'blur(16px)' }} />
-
-                    {leaders.length === 0 ? (
-                      <div className="text-center py-10">
-                        <div className="text-3xl mb-2">🏆</div>
-                        <p className="text-zinc-500 text-xs font-bold">No scores yet — play games!</p>
-                      </div>
-                    ) : (
-                      <div className="flex items-end justify-center gap-1" style={{ height: 172 }}>
+                  {/* ── Podium ── */}
+                  {leaders.length === 0 ? (
+                    <div className="text-center py-10 px-4">
+                      <div className="text-4xl mb-3">🏆</div>
+                      <p className="text-zinc-400 text-sm font-bold">No scores yet</p>
+                      <p className="text-zinc-600 text-xs mt-1">Play games to appear here!</p>
+                    </div>
+                  ) : (
+                    <div className="relative px-3 pb-0">
+                      {/* Gold glow */}
+                      {top3[0] && (
+                        <div className="absolute left-1/2 top-0 -translate-x-1/2 pointer-events-none"
+                          style={{ width: 140, height: 140, background: 'radial-gradient(circle,rgba(251,191,36,0.18) 0%,transparent 70%)', filter: 'blur(20px)' }} />
+                      )}
+                      <div className="flex items-end justify-center gap-2" style={{ height: 190 }}>
                         {podSlots.map((slot, si) => {
-                          const isCenter = si === 1;
+                          /* Empty slot = invisible flex spacer to preserve layout */
                           if (!slot.leader) {
-                            return (
-                              <div key={`empty-${slot.rank}`} className="flex flex-col items-center justify-end flex-1 max-w-[100px]">
-                                <div className="w-full rounded-t-lg" style={{ height: slot.platformH, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
-                                  <div className="flex items-center justify-center h-full text-zinc-700 text-[10px] font-extrabold">#{slot.rank}</div>
-                                </div>
-                              </div>
-                            );
+                            return <div key={`spc-${slot.rank}`} className="flex-1 max-w-[110px]" />;
                           }
+                          const isCenter = si === 1;
                           const isMe = slot.leader.userId === userId;
                           return (
-                            <div key={slot.leader.userId} className="flex flex-col items-center justify-end flex-1 max-w-[100px]">
-                              {/* Coin medal */}
-                              <div className={`rounded-full flex items-center justify-center text-white font-black shadow-lg mb-1 flex-shrink-0 ${isCenter ? 'w-12 h-12 text-[18px]' : 'w-9 h-9 text-[13px]'}`}
-                                style={{ background: slot.coinBg, boxShadow: `0 0 18px ${slot.coinShadow}, 0 4px 12px rgba(0,0,0,0.5)`, border: '2px solid rgba(255,255,255,0.3)' }}>
+                            <div key={slot.leader.userId} className="flex flex-col items-center justify-end flex-1 max-w-[110px]">
+                              {/* Coin */}
+                              <div className={`${slot.coinSize} rounded-full flex items-center justify-center ${slot.fontSize} font-black text-white flex-shrink-0`}
+                                style={{ background: slot.coinBg, boxShadow: `0 0 20px ${slot.glow}, 0 4px 14px rgba(0,0,0,0.6)`, border: '2.5px solid rgba(255,255,255,0.35)', marginBottom: 6 }}>
                                 {slot.rank}
                               </div>
                               {/* Score */}
-                              <div className={`font-extrabold text-white leading-tight ${isCenter ? 'text-[13px]' : 'text-[11px]'}`}>
+                              <div className={`font-black text-white leading-none ${isCenter ? 'text-[15px]' : 'text-[12px]'}`}>
                                 {slot.leader.totalScore.toLocaleString()}
                               </div>
                               {/* Name */}
-                              <div className={`text-center px-1 leading-tight mb-1.5 ${isCenter ? 'text-[10px] text-white font-bold' : 'text-[9px] text-zinc-300 font-semibold'}`}
-                                style={{ maxWidth: 90, wordBreak: 'break-word' }}>
+                              <div className={`text-center leading-tight mt-0.5 mb-2 px-1 ${isCenter ? 'text-[11px] text-white font-bold' : 'text-[9px] text-zinc-300 font-semibold'}`}
+                                style={{ maxWidth: 100, wordBreak: 'break-word' }}>
                                 {slot.leader.name}{isMe ? ' (You)' : ''}
                               </div>
                               {/* Platform */}
-                              <div className="w-full rounded-t-xl" style={{ height: slot.platformH, background: platformColors[si] }} />
+                              <div className="w-full rounded-t-2xl"
+                                style={{ height: slot.platformH, background: slot.platformBg, boxShadow: `inset 0 2px 0 rgba(255,255,255,0.2)` }} />
                             </div>
                           );
                         })}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  {/* Ranked list */}
-                  <div style={{ background: 'rgba(10,8,35,0.7)' }}>
-                    {/* Current user row (always shown at top of list) */}
-                    {(() => {
-                      const myTotalLevel = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
-                      return (
-                        <div className="flex items-center gap-3 px-4 py-3"
-                          style={{ background: 'rgba(99,102,241,0.18)', borderTop: '1px solid rgba(99,102,241,0.4)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
-                          <span className="text-zinc-300 text-[11px] font-extrabold w-7 flex-shrink-0">
-                            #{meInTop ? meUserRank + 1 : '—'}
-                          </span>
-                          <span className="flex-1 text-white font-black text-[12px] uppercase tracking-wide truncate">{playerName}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black flex-shrink-0"
-                            style={{ background: 'rgba(99,102,241,0.9)', color: '#fff' }}>You</span>
-                          <span className="text-white font-extrabold text-[12px] flex-shrink-0">{myTotalLevel}</span>
-                        </div>
-                      );
-                    })()}
+                  {/* ── List ── */}
+                  <div style={{ background: 'rgba(5,4,20,0.65)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    {/* Your row — always pinned first */}
+                    <div className="flex items-center gap-3 px-4 py-3"
+                      style={{ background: 'rgba(79,70,229,0.2)', borderBottom: '1px solid rgba(79,70,229,0.25)' }}>
+                      <span className="text-indigo-300 text-[11px] font-extrabold w-6 flex-shrink-0 text-center">
+                        #{meInTop ? meUserRank + 1 : '—'}
+                      </span>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[11px] flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+                        {playerName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="flex-1 text-white font-black text-[12px] uppercase tracking-wide truncate">{playerName}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black" style={{ background: '#4f46e5', color: '#fff' }}>You</span>
+                      <span className="text-indigo-300 font-extrabold text-[12px] flex-shrink-0">{myTotalLv}</span>
+                    </div>
 
-                    {/* Other players (skip current user, show up to 4) */}
-                    {leaders.filter(l => l.userId !== userId).slice(0, 4).map((l, i) => {
+                    {/* Other players */}
+                    {leaders.filter(l => l.userId !== userId).slice(0, 5).map((l, i) => {
                       const rank = leaders.findIndex(x => x.userId === l.userId) + 1;
                       return (
                         <div key={l.userId} className="flex items-center gap-3 px-4 py-2.5"
-                          style={{ borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                          <span className="text-zinc-500 text-[11px] font-extrabold w-7 flex-shrink-0">#{rank}</span>
-                          <span className="flex-1 text-zinc-200 font-bold text-[12px] truncate">{l.name}</span>
-                          <span className="text-zinc-300 font-extrabold text-[12px] flex-shrink-0">{l.totalScore.toLocaleString()}</span>
+                          style={{ borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                          <span className="text-zinc-600 text-[11px] font-extrabold w-6 text-center flex-shrink-0">#{rank}</span>
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-zinc-300 font-bold text-[11px] flex-shrink-0"
+                            style={{ background: 'rgba(255,255,255,0.07)' }}>
+                            {l.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="flex-1 text-zinc-200 font-semibold text-[12px] truncate">{l.name}</span>
+                          <span className="text-zinc-400 font-bold text-[12px] flex-shrink-0">{l.totalScore.toLocaleString()}</span>
                         </div>
                       );
                     })}
-                    <div className="h-3" />
+                    <div className="h-4" />
                   </div>
                 </div>
               );

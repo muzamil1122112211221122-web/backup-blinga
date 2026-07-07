@@ -11,7 +11,7 @@ import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, 
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
 
-// ─── Settings scroll-to-top/bottom buttons — fade (never disappear) at limits ──
+// ─── Settings scroll-to-top/bottom buttons — hide completely at limits ──────
 function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HTMLDivElement | null } }) {
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
@@ -32,24 +32,22 @@ function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HT
     return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
   });
 
-  if (!scrollable) return null;
+  if (!scrollable || (atTop && atBottom)) return null;
 
-  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90";
+  const btnBase = "w-8 h-8 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90 text-muted-foreground hover:text-foreground hover:bg-accent";
 
   return (
     <div className="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
-      <button
-        onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-        disabled={atTop}
-        className={`${btnBase} ${atTop ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
-        <ChevronUp className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: "smooth" })}
-        disabled={atBottom}
-        className={`${btnBase} ${atBottom ? "opacity-40 cursor-default text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to bottom">
-        <ChevronDown className="h-4 w-4" />
-      </button>
+      {!atTop && (
+        <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: "smooth" })} className={btnBase} title="Scroll to top">
+          <ChevronUp className="h-4 w-4" />
+        </button>
+      )}
+      {!atBottom && (
+        <button onClick={() => scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current!.scrollHeight, behavior: "smooth" })} className={btnBase} title="Scroll to bottom">
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -240,6 +238,9 @@ export function CustomizeModal({
   const handleChatBgChange = (val: string) => {
     setChatBg(val);
     setIsDirty(true);
+    // Apply immediately so user sees the change without hitting Save
+    localStorage.setItem('chatBg', val);
+    window.dispatchEvent(new Event('chatBgChanged'));
   };
 
   const moveOrder = (index: number, direction: 'up' | 'down') => {
