@@ -2162,9 +2162,13 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
               const meInTop    = meUserRank !== -1;
               const myTotalLv  = Object.values(loadLevels()).reduce((s, v) => s + (Number(v) || 0), 0);
 
-              const POD_D = 14; // 3D depth in px — shared by all faces
-              // podium area height = tallest column (coin + platform + 3D top depth) + breathing room
-              const podAreaH = podSlots[1].coinSz + podSlots[1].platH + POD_D + 36;
+              // Text overlay positions on the podium image (% of container width/height)
+              // slot[0]=silver left, slot[1]=gold center, slot[2]=bronze right
+              const podTextPos = [
+                { cx: '17%', cy: '74%', scoreSz: 11, nameSz: 8.5 },  // silver #2 — moved down
+                { cx: '50%', cy: '54%', scoreSz: 14, nameSz: 9.5 },  // gold #1
+                { cx: '81%', cy: '68%', scoreSz: 10, nameSz: 8 },    // bronze #3 — repositioned
+              ];
 
               return (
                 <div style={{ background: 'linear-gradient(175deg,#1c1a4a 0%,#0e0c2e 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 48px rgba(0,0,0,0.7)' }}>
@@ -2217,103 +2221,49 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
                     <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 200, height: 200, pointerEvents: 'none',
                       background: 'radial-gradient(ellipse at 50% 90%, rgba(251,191,36,0.22) 0%, transparent 65%)', filter: 'blur(18px)' }} />
 
-                    {/* Three columns */}
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 20, height: podAreaH }}>
+                    {/* Podium image + text overlays */}
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      {/* The 3D podium image */}
+                      <img
+                        src="/podium-bars.png"
+                        alt="podium"
+                        style={{ width: '100%', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
+                      />
+
+                      {/* Text overlays — score + name on each bar */}
                       {podSlots.map((slot, si) => {
-                        const isCenter = si === 1;
+                        const pos = podTextPos[si];
                         const isMe = slot.leader?.userId === userId;
                         return (
-                          <div key={`pod-${slot.rank}`} style={{ flex: 1, maxWidth: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
-
-                            {/* Coin medal */}
-                            <div style={{
-                              width: slot.coinSz, height: slot.coinSz, borderRadius: '50%', flexShrink: 0,
-                              background: slot.coinBg, border: '2.5px solid rgba(255,255,255,0.42)',
-                              boxShadow: slot.coinGlow, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: slot.rankSz, fontWeight: 900, color: '#fff',
-                              textShadow: '0 1px 4px rgba(0,0,0,0.55)',
-                              marginBottom: -1, // slight overlap onto platform top
-                              zIndex: 2, position: 'relative',
-                            }}>
-                              {slot.rank}
-                            </div>
-
-                            {/* 3D Platform block — proper isometric geometry */}
-                            {(() => {
-                              const D = POD_D;
-                              // Wrapper height = platH + D so top face lives INSIDE wrapper (no negative top)
-                              // Front face occupies bottom platH, top face occupies top D strip
-                              // Right face: from (100%, 0) to (100%+D, 0+D) forming a parallelogram
-                              return (
-                                <div style={{ position: 'relative', width: '100%', height: slot.platH + D, flexShrink: 0, overflow: 'visible' }}>
-
-                                  {/* ── TOP FACE: parallelogram across the top ── */}
-                                  {/* Points (in wrapper coords):
-                                      bottom-left  = (0,   D)   ← front-face top-left
-                                      top-left     = (D,   0)   ← back top-left
-                                      top-right    = (W+D, 0)   ← back top-right
-                                      bottom-right = (W,   D)   ← front-face top-right
-                                  */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: 0, left: 0,
-                                    width: `calc(100% + ${D}px)`,
-                                    height: D,
-                                    background: slot.platTop,
-                                    clipPath: `polygon(0px 100%, ${D}px 0px, 100% 0px, calc(100% - ${D}px) 100%)`,
-                                    zIndex: 3,
-                                  }} />
-
-                                  {/* ── RIGHT FACE: parallelogram on the right ── */}
-                                  {/* Div is at left=100%, top=0, width=D, height=platH+D
-                                      Points (in this div's coords):
-                                      top-left     = (0,  D)   ← front-face top-right
-                                      top-right    = (D,  0)   ← back top-right
-                                      bottom-right = (D,  H+D) ← back bottom-right
-                                      bottom-left  = (0,  H+D) ← front-face bottom-right
-                                  */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: 0, left: '100%',
-                                    width: D,
-                                    height: '100%',
-                                    background: slot.platSide,
-                                    clipPath: `polygon(0px ${D}px, ${D}px 0px, ${D}px 100%, 0px 100%)`,
-                                    zIndex: 1,
-                                  }} />
-
-                                  {/* ── FRONT FACE: main rectangle ── */}
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: D, left: 0, right: 0, bottom: 0,
-                                    borderRadius: '8px 8px 0 0',
-                                    background: slot.platFront,
-                                    zIndex: 2,
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                    justifyContent: 'flex-start', paddingTop: 8, overflow: 'hidden',
-                                  }}>
-                                    {/* subtle left highlight */}
-                                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, background: 'rgba(255,255,255,0.14)', borderRadius: '8px 0 0 0', pointerEvents: 'none' }} />
-                                    {/* subtle right shadow */}
-                                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 8, background: 'rgba(0,0,0,0.20)', borderRadius: '0 8px 0 0', pointerEvents: 'none' }} />
-
-                                    {slot.leader ? (
-                                      <>
-                                        <span style={{ color: '#fff', fontWeight: 900, fontSize: slot.scoreSz, lineHeight: 1.1, textShadow: '0 1px 5px rgba(0,0,0,0.5)', position: 'relative', zIndex: 1 }}>
-                                          {slot.leader.totalScore.toLocaleString()}
-                                        </span>
-                                        <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600, fontSize: slot.nameSz, textAlign: 'center', padding: '0 6px', lineHeight: 1.3, marginTop: 2, wordBreak: 'break-word', position: 'relative', zIndex: 1 }}>
-                                          {slot.leader.name}{isMe ? ' ✦' : ''}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: 900, fontSize: 11, marginTop: 6, position: 'relative', zIndex: 1 }}>#{slot.rank}</span>
-                                    )}
-                                  </div>
-
-                                </div>
-                              );
-                            })()}
+                          <div key={`pod-txt-${slot.rank}`} style={{
+                            position: 'absolute',
+                            left: pos.cx,
+                            top: pos.cy,
+                            transform: 'translateX(-50%)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                            pointerEvents: 'none',
+                            zIndex: 10,
+                          }}>
+                            {slot.leader ? (
+                              <>
+                                <span style={{
+                                  color: '#fff', fontWeight: 900, fontSize: pos.scoreSz,
+                                  lineHeight: 1.1, textShadow: '0 1px 6px rgba(0,0,0,0.8)',
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  {slot.leader.totalScore.toLocaleString()}
+                                </span>
+                                <span style={{
+                                  color: 'rgba(255,255,255,0.92)', fontWeight: 700,
+                                  fontSize: pos.nameSz, textAlign: 'center',
+                                  lineHeight: 1.25, marginTop: 2,
+                                  textShadow: '0 1px 5px rgba(0,0,0,0.8)',
+                                  maxWidth: 70, wordBreak: 'break-word',
+                                }}>
+                                  {slot.leader.name}{isMe ? ' ✦' : ''}
+                                </span>
+                              </>
+                            ) : null}
                           </div>
                         );
                       })}
