@@ -6,9 +6,20 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
-import { queryClient } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabaseClient";
 
 type Mode = "login" | "register" | "verify-sent" | "forgot";
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.64v3h3.88c2.27-2.09 3.57-5.17 3.57-8.83Z"/>
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3c-1.08.73-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11A12 12 0 0 0 12 24Z"/>
+      <path fill="#FBBC05" d="M5.27 14.29a7.2 7.2 0 0 1 0-4.58V6.6H1.27a12 12 0 0 0 0 10.8l4-3.11Z"/>
+      <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.27 6.6l4 3.11C6.22 6.88 8.87 4.77 12 4.77Z"/>
+    </svg>
+  );
+}
 
 export default function UserInfo() {
   const [location, setLocation] = useLocation();
@@ -52,24 +63,29 @@ export default function UserInfo() {
     setIsLoading(true);
     clearForm();
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-        credentials: "include",
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
       });
-      const data = await res.json();
-      if (res.ok) {
-        queryClient.setQueryData(["/api/auth/user"], data.user || data);
-        setLocation("/chat");
+      if (signInError) {
+        setError(signInError.message || "Login failed.");
       } else {
-        setError(data.message || "Login failed.");
+        setLocation("/chat");
       }
     } catch {
       setError("Connection failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/chat` },
+    });
+    if (oauthError) setError(oauthError.message || "Google sign-in failed.");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -94,18 +110,22 @@ export default function UserInfo() {
     setIsLoading(true);
     clearForm();
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password, birthDate }),
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { full_name: name.trim(), birth_date: birthDate },
+          emailRedirectTo: `${window.location.origin}/start?verified=1`,
+        },
       });
-      const data = await res.json();
-      if (res.ok) {
-        setRegisteredEmail(email.trim().toLowerCase());
-        if (data.devVerifyUrl) setDevVerifyUrl(data.devVerifyUrl);
-        setMode("verify-sent");
+      if (signUpError) {
+        setError(signUpError.message || "Registration failed.");
+      } else if (data.session) {
+        // Email confirmation disabled on this Supabase project — user is signed in immediately.
+        setLocation("/chat");
       } else {
-        setError(data.message || "Registration failed.");
+        setRegisteredEmail(email.trim().toLowerCase());
+        setMode("verify-sent");
       }
     } catch {
       setError("Connection failed. Please try again.");
@@ -118,14 +138,12 @@ export default function UserInfo() {
     setIsLoading(true);
     clearForm();
     try {
-      const res = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: registeredEmail }),
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: registeredEmail,
+        options: { emailRedirectTo: `${window.location.origin}/start?verified=1` },
       });
-      const data = await res.json();
-      setInfo(data.message || "Verification email sent.");
-      if (data.devVerifyUrl) setDevVerifyUrl(data.devVerifyUrl);
+      setInfo(resendError ? resendError.message : "Verification email sent.");
     } catch {
       setError("Failed to resend. Please try again.");
     } finally {
@@ -267,6 +285,22 @@ export default function UserInfo() {
                     {isLoading ? "Logging in..." : "Log In"}
                   </Button>
                 </form>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-white/10" />
+                  <span className="text-xs text-gray-500">or</span>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  variant="outline"
+                  className="w-full h-11 bg-white/5 border-white/20 text-white hover:bg-white/10 flex items-center justify-center gap-2"
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </Button>
 
                 <div className="text-center text-sm text-gray-400">
                   Don't have an account?{" "}

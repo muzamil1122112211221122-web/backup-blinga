@@ -4,6 +4,12 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
+  // Inline Supabase public config at build/dev time so the client bundle can
+  // reach Supabase Auth without needing a VITE_-prefixed secret.
+  define: {
+    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(process.env.SUPABASE_URL || ""),
+    "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(process.env.SUPABASE_ANON_KEY || ""),
+  },
   plugins: [
     react(),
     runtimeErrorOverlay(),

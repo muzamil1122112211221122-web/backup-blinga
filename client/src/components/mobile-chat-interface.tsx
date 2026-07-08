@@ -18,6 +18,7 @@ import {
   MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal, Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -3026,7 +3027,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [currentConvId, handleNewChat]);
 
   const handleLogout = useCallback(async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/"; } catch { onShowAuth(); }
+    try { await supabase.auth.signOut(); window.location.href = "/"; } catch { onShowAuth(); }
   }, [onShowAuth]);
 
   const ensureConv = useCallback(async (firstMsg?: string): Promise<string> => {

@@ -3,25 +3,14 @@ import { pgTable, text, varchar, timestamp, jsonb, boolean } from "drizzle-orm/p
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Profile row synced from Supabase Auth. `id` IS the Supabase auth user UUID —
+// authentication itself (passwords, OAuth, email verification) is handled by Supabase.
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id").primaryKey(),
   username: text("username").notNull(),
   email: text("email").notNull().unique(),
-  password: text("password"),
-  passwordHash: text("password_hash"),
-  emailVerified: boolean("email_verified").default(false).notNull(),
-  provider: text("provider"),
-  providerId: text("provider_id"),
   displayName: text("display_name"),
-  birthDate: text("birth_date"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const emailVerificationTokens = pgTable("email_verification_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
+  avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -55,9 +44,7 @@ export const userSettings = pgTable("user_settings", {
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
   createdAt: true,
-  emailVerified: true,
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({

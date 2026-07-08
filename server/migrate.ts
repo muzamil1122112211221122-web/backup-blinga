@@ -9,22 +9,12 @@ export async function runMigrations() {
   }
 
   try {
-    // Users table - add missing columns
+    // Users table doubles as the Supabase Auth profile table — id is the
+    // Supabase auth user UUID, so it must not auto-generate its own default.
     await d.execute(sql`
       ALTER TABLE users
-        ADD COLUMN IF NOT EXISTS password_hash TEXT,
-        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
-    `);
-
-    // Email verification tokens
-    await d.execute(sql`
-      CREATE TABLE IF NOT EXISTS email_verification_tokens (
-        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        token TEXT NOT NULL UNIQUE,
-        expires_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      );
+        ALTER COLUMN id DROP DEFAULT,
+        ADD COLUMN IF NOT EXISTS avatar_url TEXT;
     `);
 
     // User settings
@@ -35,18 +25,6 @@ export async function runMigrations() {
         settings JSONB NOT NULL DEFAULT '{}',
         updated_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
-    `);
-
-    // Session table for connect-pg-simple
-    await d.execute(sql`
-      CREATE TABLE IF NOT EXISTS session (
-        sid VARCHAR NOT NULL PRIMARY KEY,
-        sess JSONB NOT NULL,
-        expire TIMESTAMP(6) NOT NULL
-      );
-    `);
-    await d.execute(sql`
-      CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
     `);
 
     console.log("✓ Database migrations complete.");

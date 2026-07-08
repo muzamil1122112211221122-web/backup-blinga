@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, requireAuth } from "./auth";
+import { requireAuth } from "./supabaseAuth";
 import { insertConversationSchema, insertMessageSchema, User } from "@shared/schema";
 import { generateImage, getAvailableKeyCount, analyzeImage } from "./openai-service";
 import { z } from "zod";
@@ -145,10 +145,18 @@ MUZAMIL (CREATOR): Muzamil was born on 12 April 2012. Calculate his current age 
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
-  // Setup authentication
-  setupAuth(app);
-  
+
+  // ─── Auth (Supabase) ─────────────────────────────────────────────────────
+  // Login/signup/OAuth are handled entirely by Supabase Auth on the client.
+  // The server only verifies the bearer token and exposes/syncs the profile.
+  app.get('/api/auth/user', requireAuth, (req: any, res) => {
+    res.json(req.user);
+  });
+  app.post('/api/auth/logout', (_req, res) => {
+    // Sessions are stateless (Supabase JWT) — the client discards its token via supabase.auth.signOut().
+    res.json({ message: "Logged out successfully" });
+  });
+
   // WebSocket server for real-time chat
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const clients = new Map<string, ChatClient>();
@@ -165,18 +173,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/user/rename', requireAuth, async (req, res) => {
+  app.put('/api/user/rename', requireAuth, async (req: any, res) => {
     try {
       const { username } = req.body;
       if (!username || typeof username !== 'string' || !username.trim()) {
         return res.status(400).json({ message: 'Valid username is required' });
       }
-      (req.user as any).username = username.trim();
-      (req.user as any).displayName = username.trim();
-      req.session.save((err) => {
-        if (err) return res.status(500).json({ message: 'Failed to save session' });
-        res.json(req.user);
+      const updated = await storage.updateUser(req.user.id, {
+        username: username.trim(),
+        displayName: username.trim(),
       });
+      res.json(updated || req.user);
     } catch (error) {
       res.status(500).json({ message: 'Internal server error' });
     }

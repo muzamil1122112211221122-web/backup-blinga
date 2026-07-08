@@ -13,6 +13,7 @@ import pixelArt2 from "@assets/a1b857df7f3bd73ec2ff9f2ee45b0b67_1780675830866.jp
 import pixelArt3 from "@assets/3367465_1780675830867.png";
 import pixelArt4 from "@assets/images_(1)_1780675830868.jpg";
 import pixelArt5 from "@assets/Pixel-art-Creez-un-adorable-cochon-en-quelques-pixels_1780675830868.jpeg";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -2990,7 +2991,7 @@ IMPORTANT RULES:
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -4553,14 +4554,14 @@ Let's start the self-listen session!`;
 
             // ── PC Studio template cards — use local /public style images ──
             const PC_STUDIO_TEMPLATES = [
-              { id: 'portrait',   name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)', thumb: '/style-photo.jpg',      prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic' },
-              { id: 'anime',      name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)', thumb: '/style-anime.png',      prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art' },
-              { id: 'cinematic',  name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)', thumb: '/style-cinematic.jpg',  prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded' },
-              { id: '3d',         name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', thumb: '/style-3d.jpg',         prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination' },
-              { id: 'watercolor', name: 'Watercolor',           bg: 'linear-gradient(135deg,#0a1820,#0d2a38)', thumb: '/style-watercolor.jpg', prompt: 'delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork, painterly' },
-              { id: 'oil',        name: 'Oil Painting',         bg: 'linear-gradient(135deg,#1c0a0a,#2d0f0f)', thumb: '/style-oil.jpg',        prompt: 'classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly masterpiece' },
-              { id: 'sketch',     name: 'Pencil Sketch',        bg: 'linear-gradient(135deg,#111,#222)',        thumb: '/style-sketch.jpg',     prompt: 'detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn art' },
-              { id: 'pixel',      name: 'Pixel Art',            bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)', thumb: '/style-pixel.jpg',      prompt: 'pixel art style, 8-bit retro video game art, pixelated aesthetic, vibrant flat colors, NES SNES era art' },
+              { id: 'portrait',   name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)', thumb: '/style-photo.jpg',      prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic', style: 'Photorealistic' },
+              { id: 'anime',      name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)', thumb: '/style-anime.png',      prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art', style: 'Anime' },
+              { id: 'cinematic',  name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)', thumb: '/style-cinematic.jpg',  prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded', style: 'Cinematic' },
+              { id: '3d',         name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', thumb: '/style-3d.jpg',         prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination', style: '3D Render' },
+              { id: 'watercolor', name: 'Watercolor',           bg: 'linear-gradient(135deg,#0a1820,#0d2a38)', thumb: '/style-watercolor.jpg', prompt: 'delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork, painterly', style: 'Watercolor' },
+              { id: 'oil',        name: 'Oil Painting',         bg: 'linear-gradient(135deg,#1c0a0a,#2d0f0f)', thumb: '/style-oil.jpg',        prompt: 'classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly masterpiece', style: 'Oil Painting' },
+              { id: 'sketch',     name: 'Pencil Sketch',        bg: 'linear-gradient(135deg,#111,#222)',        thumb: '/style-sketch.jpg',     prompt: 'detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn art', style: 'Sketch' },
+              { id: 'pixel',      name: 'Pixel Art',            bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)', thumb: '/style-pixel.jpg',      prompt: 'pixel art style, 8-bit retro video game art, pixelated aesthetic, vibrant flat colors, NES SNES era art', style: 'Pixel Art' },
             ];
 
             const pcAiImages = imagineMessages.filter((m: any) => m.role === 'ai' && m.imageUrl);
@@ -4587,7 +4588,7 @@ Let's start the self-listen session!`;
                       <div className="flex gap-3 overflow-x-auto pl-6 pr-4" style={{ scrollbarWidth: 'none' }}>
                         {PC_STUDIO_TEMPLATES.map(t => (
                           <button key={t.id}
-                            onClick={() => setInputValue(t.prompt)}
+                            onClick={() => { setInputValue(t.prompt); setImagineStyle(t.style); }}
                             className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.97] hover:scale-[1.02]"
                             style={{
                               width: 140, height: 195, borderRadius: 16,

@@ -1,23 +1,17 @@
-import { type User, type InsertUser, type Conversation, type InsertConversation, type Message, type InsertMessage, users, conversations, messages, emailVerificationTokens, userSettings } from "@shared/schema";
+import { type User, type InsertUser, type Conversation, type InsertConversation, type Message, type InsertMessage, users, conversations, messages, userSettings } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 export interface IStorage {
-  // User operations
+  // User operations — `id` is the Supabase auth user UUID
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByProviderId(providerId: string): Promise<User | undefined>;
-  getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
-
-  // Email verification
-  createVerificationToken(userId: string, token: string, expiresAt: Date): Promise<void>;
-  getVerificationToken(token: string): Promise<{ userId: string; expiresAt: Date } | undefined>;
-  deleteVerificationToken(token: string): Promise<void>;
+  upsertUser(profile: InsertUser): Promise<User>;
 
   // Conversation operations
   getConversation(id: string): Promise<Conversation | undefined>;
@@ -41,18 +35,13 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private conversations: Map<string, Conversation> = new Map();
   private messages: Map<string, Message> = new Map();
-  private verificationTokens: Map<string, { userId: string; expiresAt: Date }> = new Map();
   private settings: Map<string, Record<string, any>> = new Map();
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByEmail(email: string) { return Array.from(this.users.values()).find(u => u.email === email); }
-  async getUserByProviderId(providerId: string) { return Array.from(this.users.values()).find(u => u.providerId === providerId); }
-  async getUsersByNameAndBirthDate(displayName: string, birthDate: string) {
-    return Array.from(this.users.values()).filter(u => u.displayName === displayName && u.birthDate === birthDate);
-  }
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, password: insertUser.password || null, passwordHash: insertUser.passwordHash || null, emailVerified: false, provider: insertUser.provider || null, providerId: insertUser.providerId || null, displayName: insertUser.displayName || null, birthDate: insertUser.birthDate || null, id, createdAt: new Date() };
+    const id = insertUser.id || randomUUID();
+    const user: User = { displayName: null, avatarUrl: null, ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
   }
@@ -63,11 +52,11 @@ export class MemStorage implements IStorage {
     this.users.set(id, updated);
     return updated;
   }
-  async createVerificationToken(userId: string, token: string, expiresAt: Date) {
-    this.verificationTokens.set(token, { userId, expiresAt });
+  async upsertUser(profile: InsertUser): Promise<User> {
+    const existing = this.users.get(profile.id!);
+    if (existing) return (await this.updateUser(profile.id!, profile))!;
+    return this.createUser(profile);
   }
-  async getVerificationToken(token: string) { return this.verificationTokens.get(token); }
-  async deleteVerificationToken(token: string) { this.verificationTokens.delete(token); }
 
   async getConversation(id: string) { return this.conversations.get(id); }
   async getUserConversations(userId: string) {
@@ -129,19 +118,6 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByProviderId(providerId: string): Promise<User | undefined> {
-    const d = db();
-    if (!d) return undefined;
-    const [user] = await d.select().from(users).where(eq(users.providerId, providerId));
-    return user || undefined;
-  }
-
-  async getUsersByNameAndBirthDate(displayName: string, birthDate: string): Promise<User[]> {
-    const d = db();
-    if (!d) return [];
-    return await d.select().from(users).where(and(eq(users.displayName, displayName), eq(users.birthDate, birthDate)));
-  }
-
   async createUser(insertUser: InsertUser): Promise<User> {
     const d = db();
     if (!d) throw new Error("No database connection");
@@ -156,24 +132,14 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createVerificationToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+  async upsertUser(profile: InsertUser): Promise<User> {
     const d = db();
-    if (!d) return;
-    await d.insert(emailVerificationTokens).values({ userId, token, expiresAt });
-  }
-
-  async getVerificationToken(token: string): Promise<{ userId: string; expiresAt: Date } | undefined> {
-    const d = db();
-    if (!d) return undefined;
-    const [row] = await d.select().from(emailVerificationTokens).where(eq(emailVerificationTokens.token, token));
-    if (!row) return undefined;
-    return { userId: row.userId, expiresAt: row.expiresAt };
-  }
-
-  async deleteVerificationToken(token: string): Promise<void> {
-    const d = db();
-    if (!d) return;
-    await d.delete(emailVerificationTokens).where(eq(emailVerificationTokens.token, token));
+    if (!d) throw new Error("No database connection");
+    const [user] = await d.insert(users).values(profile).onConflictDoUpdate({
+      target: users.id,
+      set: { username: profile.username, email: profile.email, displayName: profile.displayName, avatarUrl: profile.avatarUrl },
+    }).returning();
+    return user;
   }
 
   async getConversation(id: string): Promise<Conversation | undefined> {
@@ -266,7 +232,6 @@ interface PersistedData {
   users: [string, User][];
   conversations: [string, Conversation][];
   messages: [string, Message][];
-  verificationTokens: [string, { userId: string; expiresAt: string }][];
   settings: [string, Record<string, any>][];
 }
 
@@ -300,11 +265,6 @@ export class PersistentStorage extends MemStorage {
           (this as any).messages.set(k, { ...v, createdAt: new Date(v.createdAt) });
         }
       }
-      if (data.verificationTokens) {
-        for (const [k, v] of data.verificationTokens) {
-          (this as any).verificationTokens.set(k, { ...v, expiresAt: new Date(v.expiresAt) });
-        }
-      }
       if (data.settings) {
         for (const [k, v] of data.settings) {
           (this as any).settings.set(k, v);
@@ -328,7 +288,6 @@ export class PersistentStorage extends MemStorage {
         users: Array.from((this as any).users.entries()),
         conversations: Array.from((this as any).conversations.entries()),
         messages: Array.from((this as any).messages.entries()),
-        verificationTokens: Array.from((this as any).verificationTokens.entries()).map(([k, v]: [string, any]) => [k, { ...v, expiresAt: v.expiresAt.toISOString() }]),
         settings: Array.from((this as any).settings.entries()),
       };
       writeFileSync(DATA_FILE, JSON.stringify(data), "utf-8");
@@ -349,14 +308,10 @@ export class PersistentStorage extends MemStorage {
     return user;
   }
 
-  async createVerificationToken(userId: string, token: string, expiresAt: Date) {
-    await super.createVerificationToken(userId, token, expiresAt);
+  async upsertUser(profile: InsertUser) {
+    const user = await super.upsertUser(profile);
     this.scheduleSave();
-  }
-
-  async deleteVerificationToken(token: string) {
-    await super.deleteVerificationToken(token);
-    this.scheduleSave();
+    return user;
   }
 
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
