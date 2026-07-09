@@ -2,3 +2,4 @@
 - [Post-login invalidateQueries race](post-login-invalidate-race.md) — calling invalidateQueries after login triggers immediate refetch that races cookie storage, causes 401 redirect loop.
 - [Fius games architecture](fius-games-architecture.md) — game logos use /public/ string paths (not webpack imports); STORE_CATALOG has 2 premium games (tictactoe, rps); 6 free games always show; leaderboard polls every 30s; podium uses explicit slot mapping to avoid rank ordering bugs with <3 entries.
 - [Imagine Studio persistence](imagine-studio-persistence.md) — generated images persist to localStorage under key fius_my_images; max 30 images saved; studio now shows My Images section, templates carousel at top.
+- [Supabase OAuth bearer token wiring](supabase-oauth-bearer-token.md) — Google OAuth session lives in localStorage/URL hash, not cookies; fetch calls must attach it as Authorization header or backend always 401s.

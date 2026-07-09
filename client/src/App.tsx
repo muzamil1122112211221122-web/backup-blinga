@@ -10,16 +10,29 @@ import UserInfo from "@/pages/user-info";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 
 function Router() {
   const [location, navigate] = useLocation();
-  
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Wait for Supabase to restore/parse the session (handles OAuth redirect
+  // hash tokens) before trusting the /api/auth/user query result.
+  useEffect(() => {
+    supabase.auth.getSession().then(() => setSessionReady(true));
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
   // Check authentication status
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
+    enabled: sessionReady,
   });
 
   useEffect(() => {
@@ -46,7 +59,7 @@ function Router() {
     }
   }, [user, isLoading, location, navigate]);
 
-  if (isLoading) {
+  if (isLoading || !sessionReady) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
