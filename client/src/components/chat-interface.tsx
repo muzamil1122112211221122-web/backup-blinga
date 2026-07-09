@@ -23,6 +23,9 @@ import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient } from "@/lib/queryClient";
 import { FiusGames } from "./fius-games";
+import { useUsage } from "@/hooks/use-usage";
+import { Lock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 // Module-scope animation caches — survive component remounts and parent re-renders.
@@ -765,6 +768,11 @@ function PCScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTM
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+  const { usage: planUsage } = useUsage();
+  const isFreePlan = !planUsage || planUsage.plan === "free";
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["gpt-4o", "gemini-pro", "fius-ai"];
+  const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
   const resolvedTheme = theme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : theme;
@@ -4098,6 +4106,10 @@ Let's start the self-listen session!`;
                             <div className="flex items-center gap-2 mt-0.5">
                               <button
                                 onClick={() => {
+                                  if (!isActive && isNomadModelLocked(model)) {
+                                    toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                                    return;
+                                  }
                                   const newActive = new Set(activeAIModels);
                                   if (newActive.has(model)) {
                                     newActive.delete(model);
@@ -4112,6 +4124,9 @@ Let's start the self-listen session!`;
                               >
                                 <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                               </button>
+                              {!isActive && isNomadModelLocked(model) && (
+                                <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                              )}
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button

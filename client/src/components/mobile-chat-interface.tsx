@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useUsage } from "@/hooks/use-usage";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
 import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
@@ -2901,7 +2902,11 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) {
-  useToast();
+  const { toast } = useToast();
+  const { usage: planUsage } = useUsage();
+  const isFreePlan = !planUsage || planUsage.plan === "free";
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["gpt-4o", "gemini-pro", "fius-ai"];
+  const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
   const { data: user } = useQuery<{ username: string; email: string; id: string; displayName?: string }>({ queryKey: ["/api/auth/user"], retry: false });
   const { data: convList = [] } = useQuery<Conv[]>({ queryKey: ["/api/conversations"], enabled: !!user });
 
@@ -3229,11 +3234,16 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         n.delete(id);
         setNomadMessages(prev2 => { const u = { ...prev2 }; delete u[id]; return u; });
         setNomadSoloModel(prev2 => prev2 === id ? null : prev2);
+      } else {
+        if (isNomadModelLocked(id)) {
+          toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+          return prev;
+        }
+        n.add(id);
       }
-      else n.add(id);
       return n;
     });
-  }, []);
+  }, [isNomadModelLocked, toast]);
 
   // background handled by overlay components, not inline style
   const getChatBgStyle = (): React.CSSProperties => ({});

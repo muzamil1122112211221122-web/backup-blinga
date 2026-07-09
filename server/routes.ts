@@ -15,6 +15,21 @@ const groq = new Groq({
 });
 
 import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-manager';
+import {
+  getUsage,
+  getUsageSummary,
+  checkMessageLimit,
+  checkImageLimit,
+  recordMessageUsage,
+  recordImageUsage,
+  isNomadModelAllowed,
+  activateUltimatePlan,
+  cancelUltimatePlan,
+  FREE_NOMAD_MODELS,
+  FREE_NOMAD_MODEL_LABELS,
+  FREE_NOMAD_IDENTITY_PROMPTS,
+  ULTIMATE_PRICE_USD,
+} from './usage';
 
 // Model mapping for different AI models - Updated to latest versions
 const MODEL_MAPPING = {
@@ -658,6 +673,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Message is required' });
       }
 
+      const userId = (user as any)?.id;
+      let userPlan: "free" | "ultimate" = "free";
+      if (userId && conversationId !== 'nomad-summary' && conversationId !== 'nomad-summary-mobile') {
+        const usage = await getUsage(userId);
+        userPlan = usage.plan;
+
+        // Free plan: Nomad is restricted to 3 branded models.
+        if (isNomad && model && !isNomadModelAllowed(usage.plan, model)) {
+          return res.status(403).json({
+            error: `This model requires Fius Ultimate. On the free plan, Nomad only supports ${Object.values(FREE_NOMAD_MODEL_LABELS).join(', ')}.`,
+            limitReached: true,
+            plan: usage.plan,
+          });
+        }
+
+        const limitError = await checkMessageLimit(userId);
+        if (limitError) {
+          return res.status(403).json({ error: limitError, limitReached: true, plan: usage.plan });
+        }
+      }
+
       // Check for image generation request BEFORE routing to any LLM
       const imageRequestKeywords = [
         'generate image', 'create image', 'make image', 'draw me', 'draw a',
@@ -676,6 +712,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (isImageRequest) {
         try {
+          if (userId) {
+            const imgLimitError = await checkImageLimit(userId);
+            if (imgLimitError) {
+              return res.status(403).json({ error: imgLimitError, limitReached: true });
+            }
+          }
           console.log('Image request detected in chat, generating image...');
           let imagePrompt = cleanMessage;
           const prefixesToRemove = [
@@ -725,6 +767,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.createMessage({ conversationId, role: 'assistant', content: aiResponse.content, metadata: aiResponse.metadata });
             }
           }
+          if (userId && generatedImage) {
+            await recordImageUsage(userId);
+          }
           return res.json({ success: true, response: aiResponse.content, metadata: aiResponse.metadata });
         } catch (imgErr) {
           console.error('Image generation error in chat:', imgErr);
@@ -766,7 +811,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let aiResponse;
 
-        const systemPrompt = (customSystemPrompt || getModelPersonality(model || '')) + getLanguageInstruction();
+        const freeIdentityOverride = isNomad && model && userPlan === "free" ? FREE_NOMAD_IDENTITY_PROMPTS[model] : undefined;
+        const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(model || '')) + getLanguageInstruction();
 
         // Build conversation history
         let historyMessages: { role: string; content: string }[] = [];
@@ -930,6 +976,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        if (userId) {
+          const approxTokens = Math.ceil((systemPrompt.length + message.length + aiResponse.content.length) / 4);
+          await recordMessageUsage(userId, aiResponse.metadata?.usage?.total_tokens || approxTokens);
+        }
+
         res.json({ 
           success: true, 
           response: aiResponse.content,
@@ -1175,9 +1226,19 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
         });
       }
 
+      const userId = (req.user as any)?.id;
+      if (userId) {
+        const imgLimitError = await checkImageLimit(userId);
+        if (imgLimitError) {
+          return res.status(403).json({ success: false, message: imgLimitError, limitReached: true });
+        }
+      }
+
       console.log('Generating image with prompt:', prompt.trim());
       
       const result = await generateImage(prompt.trim(), size, quality);
+
+      if (userId) await recordImageUsage(userId);
       
       res.json({
         success: true,
@@ -1924,6 +1985,49 @@ Prompt to improve: ${originalPrompt}`;
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // ─── Fius Plans & Usage ────────────────────────────────────────────────
+  app.get('/api/usage', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const usage = await getUsage(userId);
+      res.json({
+        ...getUsageSummary(usage),
+        priceUsd: ULTIMATE_PRICE_USD,
+        freeNomadModels: FREE_NOMAD_MODELS,
+        freeNomadModelLabels: FREE_NOMAD_MODEL_LABELS,
+      });
+    } catch (error) {
+      console.error('Usage fetch error:', error);
+      res.status(500).json({ message: 'Failed to load usage' });
+    }
+  });
+
+  // Mock upgrade — real payment (Stripe/etc) to be wired in later.
+  app.post('/api/usage/upgrade', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const usage = await activateUltimatePlan(userId);
+      res.json({ success: true, ...getUsageSummary(usage) });
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      res.status(500).json({ message: 'Failed to activate plan' });
+    }
+  });
+
+  app.post('/api/usage/downgrade', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+      const usage = await cancelUltimatePlan(userId);
+      res.json({ success: true, ...getUsageSummary(usage) });
+    } catch (error) {
+      console.error('Downgrade error:', error);
+      res.status(500).json({ message: 'Failed to update plan' });
     }
   });
 

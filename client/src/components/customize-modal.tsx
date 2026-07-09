@@ -10,6 +10,9 @@ import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../t
 import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check, Plus, Brain, Trash2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
+import { useUsage } from "@/hooks/use-usage";
+import { Crown, Sparkles as SparklesIcon, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // ─── Settings scroll-to-top/bottom buttons — hide completely at limits ──────
 function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HTMLDivElement | null } }) {
@@ -117,6 +120,112 @@ function LearnedBehaviorsSection() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Plan & Usage Section — shown at the bottom of Account settings ────────
+function PlanUsageSection() {
+  const { usage, isLoading, upgrade } = useUsage();
+  const { toast } = useToast();
+
+  if (isLoading || !usage) {
+    return (
+      <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center py-8">
+        <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  const isUltimate = usage.plan === "ultimate";
+
+  const handleUpgrade = async () => {
+    try {
+      await upgrade.mutateAsync();
+      toast({ title: "Fius Ultimate activated", description: "You now have 3M tokens and 250 images this month." });
+    } catch {
+      toast({ title: "Couldn't activate plan", description: "Please try again in a moment.", variant: "destructive" });
+    }
+  };
+
+  const Bar = ({ used, limit }: { used: number; limit: number }) => {
+    const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+    return (
+      <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+        <div className="h-full rounded-full bg-zinc-900 dark:bg-white transition-all" style={{ width: `${pct}%` }} />
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {isUltimate ? <Crown className="w-4 h-4 text-amber-500" /> : <SparklesIcon className="w-4 h-4 text-zinc-400" />}
+          <span className="text-sm font-bold text-zinc-900 dark:text-white">
+            {isUltimate ? "Fius Ultimate" : "Fius Free"}
+          </span>
+        </div>
+        {!isUltimate && (
+          <Button
+            size="sm"
+            disabled={upgrade.isPending}
+            onClick={handleUpgrade}
+            className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold flex items-center gap-1.5"
+          >
+            {upgrade.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
+            Upgrade — ${usage.priceUsd}/mo
+          </Button>
+        )}
+      </div>
+
+      {isUltimate ? (
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500">Tokens remaining</span>
+              <span className="font-medium text-zinc-900 dark:text-white">
+                {(usage.tokensRemaining ?? 0).toLocaleString()} / {(usage.tokensLimit ?? 0).toLocaleString()}
+              </span>
+            </div>
+            <Bar used={usage.tokensUsed ?? 0} limit={usage.tokensLimit ?? 1} />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500">Images remaining</span>
+              <span className="font-medium text-zinc-900 dark:text-white">
+                {usage.imagesRemaining} / {usage.imagesLimit}
+              </span>
+            </div>
+            <Bar used={usage.imagesUsed} limit={usage.imagesLimit} />
+          </div>
+          <p className="text-[10px] text-zinc-400">Resets monthly. Full access to all Nomad models.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500">Messages remaining</span>
+              <span className="font-medium text-zinc-900 dark:text-white">
+                {usage.messagesRemaining} / {usage.messagesLimit}
+              </span>
+            </div>
+            <Bar used={usage.messagesUsed ?? 0} limit={usage.messagesLimit ?? 1} />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-500">Images remaining</span>
+              <span className="font-medium text-zinc-900 dark:text-white">
+                {usage.imagesRemaining} / {usage.imagesLimit}
+              </span>
+            </div>
+            <Bar used={usage.imagesUsed} limit={usage.imagesLimit} />
+          </div>
+          <p className="text-[10px] text-zinc-400">
+            Nomad is limited to {Object.values(usage.freeNomadModelLabels).join(", ")}. Upgrade for all models, 3M tokens & 250 images/mo.
+          </p>
         </div>
       )}
     </div>
@@ -859,6 +968,8 @@ export function CustomizeModal({
                   </div>
                 )}
               </div>
+
+              <PlanUsageSection />
             </div>
           )}
         </div>
