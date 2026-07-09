@@ -21,8 +21,12 @@ function Router() {
   // Wait for Supabase to restore/parse the session (handles OAuth redirect
   // hash tokens) before trusting the /api/auth/user query result.
   useEffect(() => {
-    supabase.auth.getSession().then(() => setSessionReady(true));
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    supabase.auth.getSession().then(({ data, error }) => {
+      console.log("[auth-debug] initial getSession:", { hasSession: !!data?.session, error });
+      setSessionReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[auth-debug] onAuthStateChange:", event, "hasSession:", !!session);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     });
     return () => listener.subscription.unsubscribe();
