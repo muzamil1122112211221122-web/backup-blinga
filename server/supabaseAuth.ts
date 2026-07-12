@@ -1,37 +1,27 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { Request, Response, NextFunction } from "express";
-import WebSocket from "ws";
 import { storage } from "./storage";
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabaseAdmin: SupabaseClient | null =
-  supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-        // Node 20 lacks a native WebSocket global; supabase-js's realtime
-        // client needs one injected even though we never use realtime here.
-        realtime: { transport: WebSocket as any },
-      })
-    : null;
-
-if (!supabaseAdmin) {
-  console.warn("⚠️  SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — Supabase auth is disabled.");
+if (!supabaseUrl) {
+  console.warn("⚠️  SUPABASE_URL not set — Supabase auth is disabled.");
 }
+
+// Public JWKS endpoint — no API key needed
+const JWKS = supabaseUrl
+  ? createRemoteJWKSet(new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`))
+  : null;
+
+const ISSUER = supabaseUrl ? `${supabaseUrl}/auth/v1` : null;
 
 export interface AuthedRequest extends Request {
   user?: any;
 }
 
-/**
- * Verifies the Supabase access token sent as `Authorization: Bearer <token>`,
- * then loads (auto-provisioning on first sight) the matching app-side profile
- * row keyed by the Supabase auth user's UUID.
- */
 export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   try {
-    if (!supabaseAdmin) {
+    if (!JWKS || !ISSUER) {
       return res.status(500).json({ message: "Supabase auth is not configured on the server." });
     }
 
@@ -39,37 +29,30 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
     const token = header.startsWith("Bearer ") ? header.slice(7).trim() : null;
     if (!token) return res.status(401).json({ message: "Authentication required" });
 
-    const { data, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !data?.user) {
-      const supabaseUrl = process.env.SUPABASE_URL || "NOT SET";
-      const projectRef = supabaseUrl.split("//")[1]?.split(".")[0] || "unknown";
-      console.log("[requireAuth] getUser failed:", {
-        error: error?.message,
-        status: error?.status,
-        code: (error as any)?.code,
-        serverProject: projectRef,
-        tokenPrefix: token.slice(0, 20),
+    let payload: any;
+    try {
+      const result = await jwtVerify(token, JWKS, {
+        issuer: ISSUER,
+        audience: "authenticated",
       });
-      return res.status(401).json({
-        message: "Authentication required",
-        debug_supabase_error: error?.message,
-        debug_server_project: projectRef,
-      });
+      payload = result.payload;
+    } catch (jwtErr: any) {
+      console.log("[requireAuth] JWT verify failed:", jwtErr?.message);
+      return res.status(401).json({ message: "Authentication required" });
     }
 
-    const authUser = data.user;
-    let profile = await storage.getUser(authUser.id);
+    const userId = payload.sub as string;
+    const email = payload.email as string | undefined;
+    const meta = (payload.user_metadata as any) || {};
+
+    let profile = await storage.getUser(userId);
     if (!profile) {
       profile = await storage.upsertUser({
-        id: authUser.id,
-        username:
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          authUser.email?.split("@")[0] ||
-          "user",
-        email: authUser.email || "",
-        displayName: authUser.user_metadata?.full_name || authUser.user_metadata?.name || null,
-        avatarUrl: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+        id: userId,
+        username: meta.full_name || meta.name || email?.split("@")[0] || "user",
+        email: email || "",
+        displayName: meta.full_name || meta.name || null,
+        avatarUrl: meta.avatar_url || meta.picture || null,
       });
     }
 
