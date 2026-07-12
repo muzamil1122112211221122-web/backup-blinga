@@ -41,7 +41,20 @@ export async function requireAuth(req: AuthedRequest, res: Response, next: NextF
 
     const { data, error } = await supabaseAdmin.auth.getUser(token);
     if (error || !data?.user) {
-      return res.status(401).json({ message: "Authentication required" });
+      const supabaseUrl = process.env.SUPABASE_URL || "NOT SET";
+      const projectRef = supabaseUrl.split("//")[1]?.split(".")[0] || "unknown";
+      console.log("[requireAuth] getUser failed:", {
+        error: error?.message,
+        status: error?.status,
+        code: (error as any)?.code,
+        serverProject: projectRef,
+        tokenPrefix: token.slice(0, 20),
+      });
+      return res.status(401).json({
+        message: "Authentication required",
+        debug_supabase_error: error?.message,
+        debug_server_project: projectRef,
+      });
     }
 
     const authUser = data.user;
