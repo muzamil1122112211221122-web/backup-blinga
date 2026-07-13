@@ -45,6 +45,7 @@ function SidebarUsage() {
   const isUltimate = usage.plan === "ultimate";
 
   // Compute reset date (1st of next month)
+  // 30-day rolling plan — show "resets in Xd"
   const now = new Date();
   const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const daysLeft = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -68,7 +69,7 @@ function SidebarUsage() {
         </div>
         <div className="flex items-center gap-1.5 min-w-0">
           <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{daysLeft}d reset</span>
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">resets {daysLeft}d</span>
         </div>
       </div>
     </div>

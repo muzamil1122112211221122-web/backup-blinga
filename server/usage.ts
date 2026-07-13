@@ -1,10 +1,10 @@
 // Fius Plans & Usage Limits
-// Free plan: 10 total messages, 1 image, Nomad limited to 3 free models.
-// Fius Ultimate ($11/mo, mock activation for now): 3,000,000 tokens/mo, 250 images/mo, all Nomad models.
+// Free plan: 5 total messages per 30 days, 1 image, Nomad limited to 3 free models.
+// Fius Ultimate ($11/30 days, mock activation for now): 3,000,000 tokens/30 days, 250 images, all Nomad models.
 
 import { storage } from "./storage";
 
-export const FREE_MESSAGE_LIMIT = 10;
+export const FREE_MESSAGE_LIMIT = 5;
 export const FREE_IMAGE_LIMIT = 1;
 export const ULTIMATE_TOKEN_LIMIT = 3_000_000;
 export const ULTIMATE_IMAGE_LIMIT = 250;
@@ -95,7 +95,7 @@ export async function checkMessageLimit(userId: string): Promise<string | null> 
     return null;
   }
   if (usage.messagesUsed >= FREE_MESSAGE_LIMIT) {
-    return `You've used all ${FREE_MESSAGE_LIMIT} free messages. Upgrade to Fius Ultimate ($${ULTIMATE_PRICE_USD}/mo) for 3M tokens across all models plus 250 images.`;
+    return `You've used all ${FREE_MESSAGE_LIMIT} free messages (30-day limit). Upgrade to Fius Ultimate (${ULTIMATE_PRICE_USD}/30 days) for 3M tokens across all models plus 250 images.`;
   }
   return null;
 }
