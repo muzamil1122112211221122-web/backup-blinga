@@ -7,6 +7,9 @@ import { ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabaseClient";
+import { startGuestSession } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { User as UserIcon } from "lucide-react";
 
 type Mode = "login" | "register" | "verify-sent" | "forgot";
 
@@ -89,6 +92,14 @@ export default function UserInfo() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // TEMPORARY: Guest mode for testing — bypasses real auth entirely.
+  // Remove this handler + button once testing is done (see server/supabaseAuth.ts).
+  const handleGuestLogin = () => {
+    startGuestSession();
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    setLocation("/chat");
   };
 
   const handleGoogleLogin = async () => {
@@ -320,6 +331,18 @@ export default function UserInfo() {
                 >
                   <GoogleIcon />
                   Continue with Google
+                </Button>
+
+                {/* TEMPORARY — testing only, remove before launch */}
+                <Button
+                  type="button"
+                  onClick={handleGuestLogin}
+                  variant="outline"
+                  className="w-full h-11 bg-white/5 border-white/10 border-dashed text-gray-300 hover:bg-white/10 flex items-center justify-center gap-2"
+                  data-testid="button-guest-login"
+                >
+                  <UserIcon className="w-4 h-4" />
+                  Continue as Guest (testing)
                 </Button>
 
                 <div className="text-center text-sm text-gray-400">

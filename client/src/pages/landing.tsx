@@ -26,7 +26,7 @@ export default function Landing() {
     {
       icon: <Bot className="w-8 h-8 text-green-500" />,
       title: "Multiple AI Models",
-      description: "Access Claude Sonnet 4, ChatGPT 5, Gemini 2.5 Pro, Llama 3.3 70B, plus our exclusive Fius models"
+      description: "Access Claude Sonnet 4, ChatGPT 5, Gemini 3.1 Pro, Llama 3.3 70B, plus our exclusive Fius models"
     },
     {
       icon: <Zap className="w-8 h-8 text-yellow-500" />,
@@ -154,7 +154,7 @@ export default function Landing() {
             {[
               { name: "Claude Sonnet 4", sub: "Anthropic", desc: "Superior reasoning, coding, and creative writing capabilities", gradient: "from-orange-900/40 to-gray-800/60", accent: "#f97316" },
               { name: "ChatGPT 5", sub: "OpenAI", desc: "Multimodal AI with vision, reasoning, and code generation", gradient: "from-emerald-900/30 to-gray-800/60", accent: "#10a37f" },
-              { name: "Gemini 2.5 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
+              { name: "Gemini 3.1 Pro", sub: "Google", desc: "Advanced multimodal reasoning and deep understanding", gradient: "from-blue-900/30 to-gray-800/60", accent: "#4285f4" },
               { name: "Grok 4", sub: "xAI", desc: "Witty, curious, and unfiltered reasoning with real-time data", gradient: "from-gray-700/50 to-gray-800/60", accent: "#9ca3af" },
               { name: "DeepSeek v3", sub: "DeepSeek", desc: "Open-source reasoning powerhouse for coding and logic", gradient: "from-blue-900/40 to-gray-800/50", accent: "#3b82f6" },
               { name: "Perplexity Sonar Pro", sub: "Perplexity", desc: "Real-time web search with cited and accurate answers", gradient: "from-sky-900/30 to-gray-800/50", accent: "#38bdf8" },

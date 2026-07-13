@@ -313,6 +313,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a conversation — title rename, model change, and the per-chat "AI role"
+  // (sent by the client as `aiRole`, persisted to the `customInstructions` column).
+  app.patch('/api/conversations/:id', requireAuth, async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+      if (conversation.userId !== (req.user as any)?.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const { title, aiRole, customInstructions, model, preset } = req.body || {};
+      const updates: Record<string, any> = {};
+      if (typeof title === 'string') updates.title = title;
+      if (typeof model === 'string') updates.model = model;
+      if (typeof preset === 'string') updates.preset = preset;
+      // `aiRole` is the client-side name for this field; the DB column is `customInstructions`.
+      if (typeof aiRole === 'string') updates.customInstructions = aiRole;
+      else if (typeof customInstructions === 'string') updates.customInstructions = customInstructions;
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: 'No valid fields to update' });
+      }
+
+      const updated = await storage.updateConversation(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error('Failed to update conversation:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Vision chat — capture a frame from camera/screen and ask AI about it
   app.post('/api/vision-chat', requireAuth, async (req, res) => {
     try {
@@ -663,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/test-ai', requireAuth, async (req, res) => {
     try {
       console.log('Test AI endpoint called with:', req.body);
-      const { message, originalMessage, conversationId, model, provider, systemPrompt: customSystemPrompt, history, activeTab } = req.body;
+      const { message, originalMessage, conversationId, model, provider, systemPrompt: customSystemPrompt, history, activeTab, documentMode, documentTitle } = req.body;
       const isNomad = activeTab === 'nomad';
       const user = req.user;
       // cleanMessage is the user's original query without any web-search context wrapper
@@ -812,7 +848,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let aiResponse;
 
         const freeIdentityOverride = isNomad && model && userPlan === "free" ? FREE_NOMAD_IDENTITY_PROMPTS[model] : undefined;
-        const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(model || '')) + getLanguageInstruction();
+        const DOCUMENT_MODE_INSTRUCTION = `
+
+You are now in DOCUMENT WRITING MODE. The user wants a complete, polished, standalone document about the given topic (not a short chat reply). Write it in rich Markdown following these rules:
+- Start with a single "# Title" line that is a strong, specific title for the document (not generic).
+- Organize the body with "##" section headings and "###" sub-section headings — use as many sections as the topic warrants for a thorough treatment.
+- Use **bold** for key terms, names, dates and figures.
+- Use bullet or numbered lists for enumerable content.
+- Use a Markdown table (with a header row) whenever the content involves comparisons, specs, timelines, categories, or structured data — e.g. for scientific/technical topics prefer short-form symbols/abbreviations in tables (like using element symbols for chemistry, units for measurements, acronyms with a legend) instead of long repeated text, to keep tables compact and scannable.
+- Include a short concluding section ("## Summary" or "## Conclusion").
+- Do not include any meta-commentary like "As an AI" or "Here is your document" — output only the document itself, starting directly with the title.
+- Aim for real depth and completeness — this document may be exported and read standalone, so it must be self-contained and well-organized, not a short paragraph.`;
+        // Per-conversation "AI role" (custom instructions set in chat settings) is stored on the
+        // conversation record — always fold it in so it actually affects responses, not just at creation time.
+        const conversationCustomInstructions = (conversation as any)?.customInstructions
+          ? `\n\nAdditional instructions for this conversation: ${(conversation as any).customInstructions}`
+          : '';
+        const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(model || '')) + getLanguageInstruction() + conversationCustomInstructions + (documentMode ? DOCUMENT_MODE_INSTRUCTION : '');
+        const chatMaxTokens = documentMode ? 6000 : 2000;
 
         // Build conversation history
         let historyMessages: { role: string; content: string }[] = [];
@@ -853,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
               const geminiBody: any = {
                 contents: geminiContents,
-                generationConfig: { maxOutputTokens: 2000, temperature: 0.7 },
+                generationConfig: { maxOutputTokens: chatMaxTokens, temperature: 0.7 },
                 systemInstruction: { parts: [{ text: systemPrompt }] },
               };
               const geminiRes = await fetch(
@@ -876,7 +929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: allMessages, temperature: 0.7, max_tokens: 2000 }),
+                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: allMessages, temperature: 0.7, max_tokens: chatMaxTokens }),
               });
               if (groqRes.ok) {
                 const data = await groqRes.json();
@@ -910,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       'HTTP-Referer': 'https://fius.app',
                       'X-Title': 'Fius AI',
                     },
-                    body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: 1500 }),
+                    body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: documentMode ? 4000 : 1500 }),
                   });
                   if (orRes.ok) {
                     const data = await orRes.json();
@@ -960,7 +1013,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log('AI response received:', aiResponse.content.substring(0, 100));
-        
+
+        if (documentMode && aiResponse?.metadata) {
+          const titleMatch = aiResponse.content.match(/^#\s+(.+)$/m);
+          (aiResponse.metadata as any).isDocument = true;
+          (aiResponse.metadata as any).documentTitle = (titleMatch ? titleMatch[1].trim() : (documentTitle || cleanMessage)).slice(0, 120);
+        }
+
         // Save AI response to storage
         if (conversationId) {
           await storage.createMessage({

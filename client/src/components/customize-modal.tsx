@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CHAT_PRESETS, ChatPreset, AVAILABLE_MODELS, AvailableModel } from "../types/chat";
-import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check, Plus, Brain, Trash2 } from "lucide-react";
+import { Settings, X, User, Palette, Zap, Sliders, Database, Laptop, Sun, Moon, ChevronUp, ChevronDown, Pencil, Camera, Check, Plus, Brain, Trash2, GripVertical } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Input } from "@/components/ui/input";
 import { useUsage } from "@/hooks/use-usage";
@@ -361,6 +361,66 @@ export function CustomizeModal({
     }
     setLocalAiOrder(newOrder);
     setIsDirty(true);
+  };
+
+  // Drag-and-drop reordering for the Nomad order list — swaps the dragged
+  // item to the drop target's position. Kept alongside the up/down buttons
+  // (not a replacement) so keyboard/accessibility use still works.
+  // Uses Pointer Events (not native HTML5 draggable) — native drag requires
+  // dataTransfer wiring and is unreliable inside Radix Dialog overlays, and
+  // Pointer Events also unify mouse + touch for free.
+  const dragIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const orderRowRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const handleOrderPointerDown = (index: number) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    dragIndexRef.current = index;
+    setDraggingIndex(index);
+    setDragOverIndex(index);
+    setDragOffsetY(0);
+    const startY = e.clientY;
+
+    const findIndexAtY = (clientY: number): number => {
+      let best = index;
+      let bestDist = Infinity;
+      orderRowRefs.current.forEach((el, idx) => {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        const dist = Math.abs(clientY - mid);
+        if (dist < bestDist) { bestDist = dist; best = idx; }
+      });
+      return best;
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      setDragOffsetY(ev.clientY - startY);
+      const idx = findIndexAtY(ev.clientY);
+      setDragOverIndex(prev => (prev === idx ? prev : idx));
+    };
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      const from = dragIndexRef.current;
+      const to = findIndexAtY(ev.clientY);
+      dragIndexRef.current = null;
+      setDraggingIndex(null);
+      setDragOverIndex(null);
+      setDragOffsetY(0);
+      if (from === null || from === to) return;
+      const newOrder = [...localAiOrder];
+      const [moved] = newOrder.splice(from, 1);
+      newOrder.splice(to, 0, moved);
+      setLocalAiOrder(newOrder);
+      setIsDirty(true);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   };
 
   const handleCloseAttempt = () => {
@@ -792,15 +852,29 @@ export function CustomizeModal({
                     const modelDisplayNames: Record<string, string> = {
                       'gpt-4o': 'ChatGPT 5',
                       'claude-3.5-sonnet': 'Claude Sonnet 4',
-                      'gemini-pro': 'Gemini 2.5 Pro',
+                      'gemini-pro': 'Gemini 3.1 Pro',
                       'perplexity': 'Perplexity Sonar Pro',
                       'grok-4': 'Grok 4',
                       'deepseek-r1': 'Deepseek v3',
                       'fius-ai': 'Fius Pro',
                     };
                     return (
-                    <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border border-zinc-200 dark:border-zinc-800">
-                      <span className="text-sm text-zinc-900 dark:text-white capitalize">{modelDisplayNames[name] || name.replace(/-/g, ' ')}</span>
+                    <div
+                      key={name}
+                      ref={el => { orderRowRefs.current[index] = el; }}
+                      className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border ${draggingIndex === index ? '' : 'transition-all'} ${dragOverIndex === index && draggingIndex !== index ? 'border-indigo-400 dark:border-indigo-500' : 'border-zinc-200 dark:border-zinc-800'} ${draggingIndex === index ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10 cursor-grabbing' : ''}`}
+                      style={draggingIndex === index ? { transform: `translateY(${dragOffsetY}px)` } : undefined}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          onPointerDown={handleOrderPointerDown(index)}
+                          style={{ touchAction: 'none' }}
+                          className="cursor-grab active:cursor-grabbing text-zinc-400 dark:text-zinc-600 p-1 -m-1"
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <span className="text-sm text-zinc-900 dark:text-white capitalize">{modelDisplayNames[name] || name.replace(/-/g, ' ')}</span>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <Button 
                           variant="ghost" 

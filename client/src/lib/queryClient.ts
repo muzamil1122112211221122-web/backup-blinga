@@ -8,14 +8,31 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// TEMPORARY: Guest mode for testing — see server/supabaseAuth.ts for the
+// matching server-side bypass. Remove both sides once testing is done.
+const GUEST_ID_KEY = "fius_guest_id";
+export function getGuestId(): string | null {
+  return localStorage.getItem(GUEST_ID_KEY);
+}
+export function startGuestSession(): string {
+  const id = `guest-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+  localStorage.setItem(GUEST_ID_KEY, id);
+  return id;
+}
+export function endGuestSession() {
+  localStorage.removeItem(GUEST_ID_KEY);
+}
+
 async function getAuthHeaders(): Promise<Record<string, string>> {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    if (token) return { Authorization: `Bearer ${token}` };
   } catch {
-    return {};
+    // fall through to guest check
   }
+  const guestId = getGuestId();
+  return guestId ? { "X-Guest-Id": guestId } : {};
 }
 
 export async function apiRequest(

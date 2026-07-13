@@ -7,6 +7,10 @@ export interface ChatMessage {
     model?: string;
     usage?: any;
     provider?: string;
+    webSources?: Array<{ title: string; url: string; snippet?: string }>;
+    cached?: boolean;
+    isDocument?: boolean;
+    documentTitle?: string;
   };
   imageUrl?: string; // For multimodal support (ChatGPT/Gemini-like image uploads)
   createdAt: Date;
@@ -76,7 +80,7 @@ export const MODEL_OPTIONS = [
   },
   { 
     id: 'gemini-pro', 
-    name: 'Gemini 2.5 Pro', 
+    name: 'Gemini 3.1 Pro', 
     description: 'Google\'s most advanced reasoning model', 
     provider: 'google',
     speed: 'fast',

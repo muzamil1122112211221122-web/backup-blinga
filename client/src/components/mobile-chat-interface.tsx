@@ -16,23 +16,23 @@ import {
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
   MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal, Loader2,
+  GripVertical, Plus, Paperclip, FileSignature,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
+import { downloadTxt, downloadPdf } from "@/lib/document-export";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useUsage } from "@/hooks/use-usage";
-import { queryClient, apiRequest, authFetch } from "@/lib/queryClient";
+import { queryClient, apiRequest, authFetch, endGuestSession } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
 import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
 import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
-import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
-import attachmentLight from "@assets/attachment_button_1766904971888.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 
@@ -60,7 +60,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: Er
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MobileTab = "ask" | "imagine" | "philosopher" | "nomad" | "games";
 
-interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; images?: string[]; attachedFiles?: Array<{name: string; size: string; content?: string}>; }
+interface Msg { id: string; role: "user" | "ai"; content: string; imageUrl?: string; timestamp: Date; isGenerating?: boolean; images?: string[]; attachedFiles?: Array<{name: string; size: string; content?: string}>; isDocument?: boolean; documentTitle?: string; }
 interface Conv { id: string; title: string; createdAt: string | Date; updatedAt?: string | Date; aiRole?: string; isProject?: boolean; }
 interface Personality { id: string; name: string; era: string; role: string; category: string; style: string; wikiTitle?: string; }
 
@@ -91,7 +91,7 @@ const GALLERY_PHOTOS = [
 const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; description: string }> = {
   "gpt-4o":          { name: "GPT-5.5 Pro",           logo: "/chatgpt-logo.png",    color: "#10a37f", description: "Advanced reasoning & multimodal AI by OpenAI" },
   "claude-3.5-sonnet":{ name: "Claude Fable 5",       logo: "/claude-logo.png",     color: "#f97316", description: "Nuanced writing, analysis & coding" },
-  "gemini-pro":      { name: "Gemini 3.1 Ultra",       logo: "/gemini-logo.png",     color: "#14b8a6", description: "Google's multimodal reasoning model" },
+  "gemini-pro":      { name: "Gemini 3.1 Pro",       logo: "/gemini-logo.png",     color: "#14b8a6", description: "Google's multimodal reasoning model" },
   "perplexity":      { name: "Perplexity Sonar Pro",   logo: "/kimi-logo.png",       color: "#38bdf8", description: "Real-time web search & cited answers" },
   "grok-4":          { name: "Grok 4.3",               logo: "/grok-logo.png",       color: "#6b7280", description: "xAI's witty, curious & unfiltered model" },
   "deepseek-r1":     { name: "DeepSeek-V4-Pro",        logo: "/deepseek-logo.png",   color: "#3b82f6", description: "Open-source reasoning & coding" },
@@ -757,6 +757,18 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             </>
           )}
 
+          {!isUser && done && msg.isDocument && (
+            <div className="flex items-center gap-2 mt-2 mb-0.5 flex-wrap">
+              <button onClick={() => downloadTxt(msg.content, msg.documentTitle || 'document')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all">
+                <FileDown className="w-3.5 h-3.5 text-blue-500" /> TXT
+              </button>
+              <button onClick={() => downloadPdf(msg.content, msg.documentTitle || 'document')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all">
+                <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF
+              </button>
+            </div>
+          )}
           {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
@@ -968,9 +980,11 @@ interface MsgBarProps {
   showEnhance?: boolean; showModel?: boolean; onCameraRef?: () => void;
   hidden?: boolean;
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
+  onDocumentMode?: () => void;
+  documentModeActive?: boolean;
 }
 
-function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend }: MsgBarProps) {
+function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false }: MsgBarProps) {
   const { theme: _mbTheme } = useTheme();
   const _mbResolved = _mbTheme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -1259,16 +1273,30 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className={iconBtnCls}>
-                      <img src={attachmentLight} alt="Attach" className={imgCls} />
+                      <Plus className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]" side="top" align="start">
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
-                      <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
-                      <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
-                    </DropdownMenuItem>
+                  <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                        <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
+                            <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                            <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    {onDocumentMode && (
+                      <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={onDocumentMode}>
+                        <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 {showModel && tab !== "nomad" && model && onModelChange && (
@@ -1338,16 +1366,30 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={`${iconBtnCls} flex-shrink-0`}>
-                    <img src={attachmentLight} alt="Attach" className={imgCls} />
+                    <Plus className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]" side="top" align="start">
-                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
-                    <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
-                    <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
-                  </DropdownMenuItem>
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                      <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                        <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
+                          <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                          <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  {onDocumentMode && (
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={onDocumentMode}>
+                      <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <div className="relative flex-1">
@@ -1635,9 +1677,66 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     if (dir === "up" && i > 0) [n[i], n[i-1]] = [n[i-1], n[i]];
     else if (dir === "down" && i < n.length - 1) [n[i], n[i+1]] = [n[i+1], n[i]];
     setLocalAiOrder(n);
+    markDirty();
   };
 
-  const MODEL_NAMES: Record<string, string> = { "gpt-4o": "ChatGPT 5", "claude-3.5-sonnet": "Claude Sonnet 4", "gemini-pro": "Gemini 2.5 Pro", "perplexity": "Perplexity Sonar Pro", "grok-4": "Grok 4", "deepseek-r1": "Deepseek v3", "fius-ai": "Fius Pro" };
+  // Drag-and-drop reordering — Pointer Events unify mouse + touch, unlike
+  // native HTML5 draggable which does not fire on touch devices at all.
+  const dragIndexRef = useRef<number | null>(null);
+  const [orderDragOverIndex, setOrderDragOverIndex] = useState<number | null>(null);
+  const [orderDraggingIndex, setOrderDraggingIndex] = useState<number | null>(null);
+  const [orderDragOffsetY, setOrderDragOffsetY] = useState(0);
+  const orderRowRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const handleOrderPointerDown = (i: number) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    dragIndexRef.current = i;
+    setOrderDraggingIndex(i);
+    setOrderDragOverIndex(i);
+    setOrderDragOffsetY(0);
+    const startY = e.clientY;
+
+    const findIndexAtY = (clientY: number): number => {
+      let best = i;
+      let bestDist = Infinity;
+      orderRowRefs.current.forEach((el, idx) => {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+        const dist = Math.abs(clientY - mid);
+        if (dist < bestDist) { bestDist = dist; best = idx; }
+      });
+      return best;
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      setOrderDragOffsetY(ev.clientY - startY);
+      const idx = findIndexAtY(ev.clientY);
+      setOrderDragOverIndex(prev => (prev === idx ? prev : idx));
+    };
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      const from = dragIndexRef.current;
+      const to = findIndexAtY(ev.clientY);
+      dragIndexRef.current = null;
+      setOrderDraggingIndex(null);
+      setOrderDragOverIndex(null);
+      setOrderDragOffsetY(0);
+      if (from === null || from === to) return;
+      const n = [...localAiOrder];
+      const [moved] = n.splice(from, 1);
+      n.splice(to, 0, moved);
+      setLocalAiOrder(n);
+      markDirty();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
+  const MODEL_NAMES: Record<string, string> = { "gpt-4o": "ChatGPT 5", "claude-3.5-sonnet": "Claude Sonnet 4", "gemini-pro": "Gemini 3.1 Pro", "perplexity": "Perplexity Sonar Pro", "grok-4": "Grok 4", "deepseek-r1": "Deepseek v3", "fius-ai": "Fius Pro" };
   const initials = (user?.displayName || user?.username || "?").charAt(0).toUpperCase();
 
   const menuItems: { id: SettingsSection; label: string; icon: React.ComponentType<any> }[] = [
@@ -1933,8 +2032,22 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Nomad AI Order</p>
                   <div className="space-y-2">
                     {localAiOrder.map((name, i) => (
-                      <div key={name} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border border-border/50">
-                        <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
+                      <div
+                        key={name}
+                        ref={el => { orderRowRefs.current[i] = el; }}
+                        className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border ${orderDraggingIndex === i ? '' : 'transition-all'} ${orderDragOverIndex === i && orderDraggingIndex !== i ? 'border-indigo-400 dark:border-indigo-500' : 'border-border/50'} ${orderDraggingIndex === i ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10' : ''}`}
+                        style={orderDraggingIndex === i ? { transform: `translateY(${orderDragOffsetY}px)` } : undefined}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            onPointerDown={handleOrderPointerDown(i)}
+                            style={{ touchAction: 'none' }}
+                            className="cursor-grab active:cursor-grabbing text-muted-foreground p-1 -m-1"
+                          >
+                            <GripVertical className="w-4 h-4" />
+                          </span>
+                          <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
+                        </div>
                         <div className="flex items-center gap-1">
                           <button onClick={() => moveOrder(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
                           <button onClick={() => moveOrder(i, "down")} disabled={i === localAiOrder.length - 1} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
@@ -2084,13 +2197,14 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 }
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
+  onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -2143,11 +2257,20 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           </>
         )}
       </div>
+      {documentModeActive && (
+        <div className="flex items-center gap-2 mx-3 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 w-fit">
+          <FileSignature className="w-3.5 h-3.5" />
+          Document mode — type a topic
+          <button onClick={onCancelDocumentMode} className="ml-1 hover:text-red-500 transition-colors" data-testid="button-cancel-document-mode-mobile">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
-        placeholder="Ask anything…" tab="ask" model={model} onModelChange={setModel}
+        placeholder={documentModeActive ? "e.g. Elon Musk — I'll write the full document…" : "Ask anything…"} tab="ask" model={model} onModelChange={setModel}
         fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
         onSettings={onSettings} onEducation={onEducation} showEnhance showModel
-        onAttachmentSend={onAttachmentSend} />
+        onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive} />
     </>
   );
 }
@@ -2928,6 +3051,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [askMsgs, setAskMsgs] = useState<Msg[]>([]);
   const [askInput, setAskInput] = useState("");
   const [askTyping, setAskTyping] = useState(false);
+  const [askDocumentMode, setAskDocumentMode] = useState(false);
   const [askModel, setAskModel] = useState("fius-lite");
   const [topModelSheetOpen, setTopModelSheetOpen] = useState(false);
   const [currentConvId, setCurrentConvId] = useState<string | undefined>(() => localStorage.getItem('currentProjectId') || undefined);
@@ -3032,7 +3156,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [currentConvId, handleNewChat]);
 
   const handleLogout = useCallback(async () => {
-    try { await supabase.auth.signOut(); window.location.href = "/"; } catch { onShowAuth(); }
+    try { endGuestSession(); await supabase.auth.signOut(); window.location.href = "/"; } catch { onShowAuth(); }
   }, [onShowAuth]);
 
   const ensureConv = useCallback(async (firstMsg?: string): Promise<string> => {
@@ -3105,7 +3229,9 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const handleAskSend = useCallback(async () => {
     if (tab !== "ask") return;
     const text = askInput.trim(); if (!text || askTyping) return;
+    const isDocRequest = askDocumentMode;
     setAskInput(""); setAskTyping(true);
+    if (isDocRequest) setAskDocumentMode(false);
     setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
     try {
       const convId = await ensureConv(text);
@@ -3114,7 +3240,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       // DuckDuckGo web search — same as PC
       let messageToSend = text;
       let sources: Array<{title: string; url: string; snippet: string}> = [];
-      const skipSearch = /^(hi|hello|hey|how are you|thanks|bye|ok|yes|no|lol|haha)[\s!?.]*$/i.test(text.trim()) || text.trim().split(/\s+/).length <= 2;
+      const skipSearch = isDocRequest || /^(hi|hello|hey|how are you|thanks|bye|ok|yes|no|lol|haha)[\s!?.]*$/i.test(text.trim()) || text.trim().split(/\s+/).length <= 2;
       if (!skipSearch) {
         try {
           const searchData = await Promise.race([
@@ -3144,20 +3270,20 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           }
         } catch { }
       }
-      const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: messageToSend, conversationId: convId, activeTab: "ask" }), signal: ctrl.signal });
+      const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: messageToSend, conversationId: convId, activeTab: "ask", documentMode: isDocRequest, documentTitle: text }), signal: ctrl.signal });
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
       let content = data.response || data.message || "I couldn't generate a response.";
       // Deduplicate sources once more by URL before appending
       const uniqueSrcs = sources.filter((s, i, a) => a.findIndex(x => x.url === s.url) === i).slice(0, 4);
-      if (uniqueSrcs.length > 0) {
+      if (uniqueSrcs.length > 0 && !isDocRequest) {
         content += '\n\n---\n**Sources:**\n' + uniqueSrcs.map((s: {title: string; url: string}) => `• [${s.title}](${s.url})`).join('\n');
       }
-      setAskMsgs(p => [...p, { id: uid(), role: "ai", content, timestamp: new Date() }]);
+      setAskMsgs(p => [...p, { id: uid(), role: "ai", content, timestamp: new Date(), isDocument: !!data.metadata?.isDocument, documentTitle: data.metadata?.documentTitle }]);
     } catch (e: any) {
       if (e?.name !== "AbortError") setAskMsgs(p => [...p, { id: uid(), role: "ai", content: "Something went wrong. Please try again.", timestamp: new Date() }]);
     } finally { setAskTyping(false); }
-  }, [askInput, askTyping, ensureConv]);
+  }, [askInput, askTyping, askDocumentMode, ensureConv]);
 
   const handleImagSend = useCallback(async () => {
     const text = imagInput.trim(); if (!text || imagTyping) return;
@@ -3380,6 +3506,9 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 }}
                 model={askModel} setModel={setAskModel} user={user}
                 onAttachmentSend={handleAskAttachmentSend}
+                onDocumentMode={() => { setAskDocumentMode(true); toast({ title: "Document mode: type a topic and I'll write the full document." }); }}
+                documentModeActive={askDocumentMode}
+                onCancelDocumentMode={() => setAskDocumentMode(false)}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>

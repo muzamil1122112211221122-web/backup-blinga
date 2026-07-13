@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
-import { queryClient, authFetch } from "@/lib/queryClient";
+import { queryClient, authFetch, endGuestSession } from "@/lib/queryClient";
 import { FiusGames } from "./fius-games";
 import { useUsage } from "@/hooks/use-usage";
 import { Lock } from "lucide-react";
@@ -170,6 +170,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import {
   CommandDialog,
@@ -233,8 +237,11 @@ import {
   AlignLeft,
   ChevronUp,
   ChevronDown,
-  MoreHorizontal
+  MoreHorizontal,
+  Plus,
+  FileSignature,
 } from "lucide-react";
+import { downloadTxt, downloadPdf } from "@/lib/document-export";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 interface ChatInterfaceProps {
@@ -243,8 +250,6 @@ interface ChatInterfaceProps {
 
 import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
 import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
-import attachmentLight from "@assets/attachment_button_1766904971888.png";
-import attachmentDark from "@assets/attachment_button_-_Copy_1766904971886.png";
 import micLight from "@assets/mic_button_1766904971887.png";
 import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
 
@@ -967,6 +972,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [exportingMsgId, setExportingMsgId] = useState<string | null>(null);
+  const [docPdfExportingId, setDocPdfExportingId] = useState<string | null>(null);
+  const [documentMode, setDocumentMode] = useState(false);
   const [promptFullscreen, setPromptFullscreen] = useState(false);
   const [longPromptMode, setLongPromptMode] = useState(false);
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
@@ -1118,7 +1125,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
       'gpt-4o': { name: 'GPT-5.5 Pro', provider: 'openai', id: 'gpt-4o' },
       'claude-3.5-sonnet': { name: 'Claude Fable 5', provider: 'anthropic', id: 'claude-3.5-sonnet' },
-      'gemini-pro': { name: 'Gemini 3.1 Ultra', provider: 'google', id: 'gemini-pro' },
+      'gemini-pro': { name: 'Gemini 3.1 Pro', provider: 'google', id: 'gemini-pro' },
       'perplexity': { name: 'Perplexity Sonar Pro', provider: 'perplexity', id: 'perplexity' },
       'grok-4': { name: 'Grok 4.3', provider: 'x-ai', id: 'grok-4' },
       'deepseek-r1': { name: 'DeepSeek-V4-Pro', provider: 'deepseek', id: 'deepseek-r1' },
@@ -1505,7 +1512,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     if (/write|story|essay|poem|creative|novel|blog|article|letter|email|caption|describe|explain.*deeply|paragraph|narrative/.test(p))
       return { model: 'claude-3.5-sonnet', modelName: 'Claude Fable 5', logo: '/claude-logo.png', color: '#f97316' };
     if (/math|calcul|equation|graph|chart|data|statistic|analyz|percent|probability|formula|number|solve|integral|derivative/.test(p))
-      return { model: 'gemini-pro', modelName: 'Gemini 3.1 Ultra', logo: '/gemini-logo.png', color: '#14b8a6' };
+      return { model: 'gemini-pro', modelName: 'Gemini 3.1 Pro', logo: '/gemini-logo.png', color: '#14b8a6' };
     if (/urdu|hindi|arabic|chinese|translate|pakistan|india|desi|aap|kya|hai|karo|bato/.test(p))
       return { model: 'qwen', modelName: 'Qwen 3.7 Max', logo: '/mistral-logo.png', color: '#6366f1' };
     return { model: 'gpt-4o', modelName: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f' };
@@ -1527,7 +1534,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const nomadSystemPrompts: {[id: string]: string} = {
       'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.' + fiusCtx,
       'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing.' + fiusCtx,
-      'gemini-pro': 'You are Gemini 3.1 Ultra by Google — a powerful AI with deep reasoning across all domains.' + fiusCtx,
+      'gemini-pro': 'You are Gemini 3.1 Pro by Google — a powerful AI with deep reasoning across all domains.' + fiusCtx,
       'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers.' + fiusCtx,
       'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful reasoning model. Excel at step-by-step logic, coding, and math.' + fiusCtx,
       'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally aware.' + fiusCtx,
@@ -1738,7 +1745,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     const nomadSystemPrompts: {[id: string]: string} = {
       'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.' + fiusNote,
       'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.' + fiusNote,
-      'gemini-pro': 'You are Gemini 3.1 Ultra by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.' + fiusNote,
+      'gemini-pro': 'You are Gemini 3.1 Pro by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.' + fiusNote,
       'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.' + fiusNote,
       'grok-4': 'You are Grok 4.3 by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.' + fiusNote,
       'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.' + fiusNote,
@@ -2316,6 +2323,8 @@ IMPORTANT RULES:
   const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    const isDocRequest = documentMode;
+    if (isDocRequest) setDocumentMode(false);
     try {
       // Always enrich with DuckDuckGo web search context — fires concurrently, 3-second cap
       let enrichedContent = content;
@@ -2323,7 +2332,10 @@ IMPORTANT RULES:
       // Skip web search for simple greetings and very short conversational messages
       const skipSearchPatterns = /^(hi|hello|hey|hiya|howdy|sup|yo|greetings|good morning|good afternoon|good evening|good night|how are you|how r u|how's it going|what's up|whats up|wassup|hows it|bye|goodbye|ok|okay|thanks|thank you|lol|lmao|haha|cool|nice|great|wow|awesome|sure|yes|no|nope|yep|yeah)[\s!?.]*$/i;
       const isShortConversational = content.trim().split(/\s+/).length <= 3 && content.trim().length <= 20;
-      const shouldSkipSearch = skipSearchPatterns.test(content.trim()) || isShortConversational;
+      // Document-mode requests are a topic, not a question to look up — skip web-search
+      // wrapping entirely so the AI sees the clean topic and the DOCUMENT_MODE system
+      // instruction isn't diluted by injected search snippets.
+      const shouldSkipSearch = isDocRequest || skipSearchPatterns.test(content.trim()) || isShortConversational;
       try {
         const searchPromise = shouldSkipSearch ? Promise.resolve(null) : authFetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
@@ -2357,8 +2369,8 @@ IMPORTANT RULES:
       } catch {
         // proceed without search if it fails
       }
-      // ── Answer cache lookup (skip for greetings/short msgs) ──
-      const skipCacheable = skipSearchPatterns.test(content.trim()) || isShortConversational;
+      // ── Answer cache lookup (skip for greetings/short msgs/document requests) ──
+      const skipCacheable = isDocRequest || skipSearchPatterns.test(content.trim()) || isShortConversational;
       if (!skipCacheable) {
         try {
           const cache: Array<{q: string; a: string; t: number}> = JSON.parse(localStorage.getItem(ANSWER_CACHE_KEY) || '[]');
@@ -2394,6 +2406,8 @@ IMPORTANT RULES:
           originalMessage: content,
           conversationId: conversationId,
           activeTab: currentTab || activeTab,
+          documentMode: isDocRequest,
+          documentTitle: content,
         }),
         signal: controller.signal,
       });
@@ -2694,6 +2708,64 @@ IMPORTANT RULES:
     }
     if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
     event.target.value = '';
+  };
+
+  // Desktop-only drag-and-drop onto the compose bar — mirrors handleFileUpload/handleImageUpload
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const dragCounterRef = useRef(0);
+  // Safety net: without this, dropping a file anywhere the drop handlers don't
+  // cover (or slightly missing the target) makes the browser navigate to/open
+  // the file instead of doing nothing — which looked like "drag-and-drop just
+  // doesn't work" on desktop. Block the default everywhere in the window.
+  useEffect(() => {
+    const preventDefault = (e: DragEvent) => e.preventDefault();
+    window.addEventListener('dragover', preventDefault);
+    window.addEventListener('drop', preventDefault);
+    return () => {
+      window.removeEventListener('dragover', preventDefault);
+      window.removeEventListener('drop', preventDefault);
+    };
+  }, []);
+  const handleComposeDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDraggingFiles(true);
+  };
+  const handleComposeDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleComposeDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setIsDraggingFiles(false);
+  };
+  const handleComposeDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDraggingFiles(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (!files.length) return;
+
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const otherFiles = files.filter(f => !f.type.startsWith('image/'));
+
+    if (imageFiles.length) {
+      const remaining = MAX_IMAGES - attachedImages.length;
+      const toProcess = imageFiles.slice(0, Math.max(remaining, 0));
+      if (imageFiles.length > toProcess.length) showToast(`Only ${remaining} more image(s) allowed.`);
+      const newImages: Array<{file: File, preview: string}> = [];
+      for (const file of toProcess) {
+        const preview = await readFileAsDataURL(file);
+        newImages.push({ file, preview });
+      }
+      if (newImages.length) setAttachedImages(prev => [...prev, ...newImages]);
+    }
+    if (otherFiles.length) {
+      const remaining = MAX_FILES - attachedFiles.length;
+      const toProcess = otherFiles.slice(0, Math.max(remaining, 0));
+      if (otherFiles.length > toProcess.length) showToast(`Only ${remaining} more file(s) allowed.`);
+      const newFiles = toProcess.map(file => ({ file, name: file.name, size: formatFileSize(file.size), type: file.type || 'unknown' }));
+      if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
+    }
+    if (!imageFiles.length && !otherFiles.length) showToast('Could not read dropped files.');
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -3003,6 +3075,7 @@ IMPORTANT RULES:
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
+      endGuestSession();
       queryClient.setQueryData(["/api/auth/user"], null);
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       // Reset settings to defaults on logout so the next user gets their own settings
@@ -3190,7 +3263,20 @@ Let's start the self-listen session!`;
 
   return (
     <TooltipProvider delayDuration={400}>
-    <div className={`h-screen overflow-hidden flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}>
+    <div
+      onDragEnter={handleComposeDragEnter}
+      onDragOver={handleComposeDragOver}
+      onDragLeave={handleComposeDragLeave}
+      onDrop={handleComposeDrop}
+      className={`h-screen overflow-hidden flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}
+    >
+      {isDraggingFiles && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-indigo-500/10 border-4 border-dashed border-indigo-500 pointer-events-none">
+          <span className="text-base font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-2 bg-background/90 px-5 py-3 rounded-2xl shadow-xl">
+            <Upload className="w-5 h-5" /> Drop files anywhere to attach
+          </span>
+        </div>
+      )}
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
@@ -3627,6 +3713,29 @@ Let's start the self-listen session!`;
                             </div>
                           )}
                         </div>
+                        {/* Document mode — prominent download buttons directly in the response */}
+                        {isDone && message.metadata?.isDocument && (
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <button
+                              onClick={() => downloadTxt(message.content, message.metadata?.documentTitle || 'document')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all active:scale-95"
+                              data-testid={`button-download-txt-${message.id}`}
+                            >
+                              <FileDown className="w-3.5 h-3.5 text-blue-500" /> Download TXT
+                            </button>
+                            <button
+                              onClick={async () => { setDocPdfExportingId(message.id); try { await downloadPdf(message.content, message.metadata?.documentTitle || 'document'); } finally { setDocPdfExportingId(null); } }}
+                              disabled={docPdfExportingId === message.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+                              data-testid={`button-download-pdf-${message.id}`}
+                            >
+                              {docPdfExportingId === message.id
+                                ? <svg className="w-3.5 h-3.5 text-red-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                : <FileDown className="w-3.5 h-3.5 text-red-500" />}
+                              {docPdfExportingId === message.id ? 'Preparing PDF…' : 'Download PDF'}
+                            </button>
+                          </div>
+                        )}
                         {/* Action row — only after done */}
                         {isDone && (
                           <div className="flex items-center gap-0.5 mt-1">
@@ -3788,7 +3897,7 @@ Let's start the self-listen session!`;
             const nomadConfigMap: {[key: string]: {name: string, logo: string, color: string, description: string}} = {
               'gpt-4o': { name: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
               'claude-3.5-sonnet': { name: 'Claude Fable 5', logo: '/claude-logo.png', color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
-              'gemini-pro': { name: 'Gemini 3.1 Ultra', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
+              'gemini-pro': { name: 'Gemini 3.1 Pro', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
               'perplexity': { name: 'Perplexity Sonar Pro', logo: '/kimi-logo.png', color: '#38bdf8', description: 'Real-time web search & cited answers' },
               'grok-4': { name: 'Grok 4.3', logo: '/grok-logo.png', color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
               'deepseek-r1': { name: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
@@ -5040,7 +5149,26 @@ Let's start the self-listen session!`;
           </div>
         )}
 
-        <div className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
+        {documentMode && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-xs font-medium text-indigo-600 dark:text-indigo-300 w-fit">
+            <FileSignature className="w-3.5 h-3.5" />
+            Document mode — type a topic, I'll write the full document
+            <button onClick={() => setDocumentMode(false)} className="ml-1 hover:text-red-500 transition-colors" data-testid="button-cancel-document-mode">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div
+          className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'} ${isDraggingFiles ? 'ring-2 ring-indigo-500' : ''}`}
+        >
+          {isDraggingFiles && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[1.5rem] bg-indigo-500/10 border-2 border-dashed border-indigo-500 pointer-events-none">
+              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Drop files to attach
+              </span>
+            </div>
+          )}
 
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
@@ -5072,16 +5200,28 @@ Let's start the self-listen session!`;
                         className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
-                        <img src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight} alt="Attachment" className="w-4 h-4 brightness-200 contrast-150" />
+                        <Plus className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => fileInputRef.current?.click()}>
-                      <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => imageInputRef.current?.click()}>
-                      <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                        <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => fileInputRef.current?.click()}>
+                            <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => imageInputRef.current?.click()}>
+                            <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I\u2019ll write a full document.'); }}>
+                      <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -5334,32 +5474,44 @@ Let's start the self-listen session!`;
                             className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                             data-testid="button-attachment"
                           >
-                            <img
-                              src={resolvedTheme === 'dark' ? attachmentDark : attachmentLight}
-                              alt="Attachment"
-                              className="w-5 h-5 brightness-200 contrast-150"
-                            />
+                            <Plus className="w-5 h-5" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
-                      <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                      <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                            <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                              <DropdownMenuItem
+                                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <FileText className="w-4 h-4 text-zinc-400" />
+                                <span>Upload File</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
+                                onClick={() => imageInputRef.current?.click()}
+                              >
+                                <Image className="w-4 h-4 text-zinc-400" />
+                                <span>Upload Image</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
                         <DropdownMenuItem
                           className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I\u2019ll write a full document.'); }}
                         >
-                          <FileText className="w-4 h-4 text-zinc-400" />
-                          <span>Upload File</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                          onClick={() => imageInputRef.current?.click()}
-                        >
-                          <Image className="w-4 h-4 text-zinc-400" />
-                          <span>Upload Image</span>
+                          <FileSignature className="w-4 h-4 text-purple-400" />
+                          <span>Create Document</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <TooltipContent>Add Attachment</TooltipContent>
+                    <TooltipContent>Tools</TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
