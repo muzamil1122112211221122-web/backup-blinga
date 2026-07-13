@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, authFetch } from "@/lib/queryClient";
 import { FiusGames } from "./fius-games";
 import { useUsage } from "@/hooks/use-usage";
 import { Lock } from "lucide-react";
@@ -706,7 +706,7 @@ function PCFollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; o
   const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
     let cancelled = false;
-    fetch('/api/suggest-followups', {
+    authFetch('/api/suggest-followups', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: msgContent.slice(0, 700) }),
     }).then(r => r.json()).then(d => {
@@ -1038,7 +1038,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
 
     // All other styles: fetch varied images from the gallery API, fall back to curated
     setImagineGalleryLoading(true);
-    fetch(`/api/imagine/gallery?style=${encodeURIComponent(imagineStyle)}&seed=${imagineShuffleKey}`, { credentials: 'include' })
+    authFetch(`/api/imagine/gallery?style=${encodeURIComponent(imagineStyle)}&seed=${imagineShuffleKey}`, { credentials: 'include' })
       .then(r => r.json())
       .then((data: any) => {
         if (data.success && data.images?.length >= 3) {
@@ -1278,7 +1278,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   useEffect(() => {
     const loadUserAndConversations = async () => {
       try {
-        const userResponse = await fetch('/api/auth/user');
+        const userResponse = await authFetch('/api/auth/user');
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
@@ -1533,7 +1533,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally aware.' + fiusCtx,
     };
     try {
-      const res = await fetch('/api/test-ai', {
+      const res = await authFetch('/api/test-ai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: content, conversationId: 'nomad-auto-tab', model: picked.model, provider: 'openai', systemPrompt: nomadSystemPrompts[picked.model] || `You are ${picked.modelName}, a helpful AI assistant.` }),
       });
@@ -1702,7 +1702,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     });
     const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\nUse exact AI names from the summary section. Be concise and clear.`;
     try {
-      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary' }) });
+      const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary' }) });
       if (res.ok) { const data = await res.json(); setNomadSummary(data.response || 'Could not generate summary.'); }
       else setNomadSummary('Failed to generate summary.');
     } catch { setNomadSummary('Failed to generate summary. Please try again.'); }
@@ -1762,7 +1762,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       }
       
       try {
-        const response = await fetch('/api/test-ai', {
+        const response = await authFetch('/api/test-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1838,7 +1838,7 @@ IMPORTANT RULES:
 - If asked about things after your death, react with curiosity or shock as appropriate.
 - CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. If the user writes in Arabic, reply in Arabic. Match the user's language perfectly every time.`;
     try {
-      const response = await fetch('/api/test-ai', {
+      const response = await authFetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1868,7 +1868,7 @@ IMPORTANT RULES:
     try {
       const langRule = " CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. Match the user's language perfectly every time.";
       const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Fius Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
-      const response = await fetch('/api/test-ai', {
+      const response = await authFetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1997,7 +1997,7 @@ IMPORTANT RULES:
         ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
         : 'New Chat';
         
-      const response = await fetch('/api/conversations', {
+      const response = await authFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2044,7 +2044,7 @@ IMPORTANT RULES:
       setQuizLoading(true);
       setIsQuizOpen(true);
       setInputValue("");
-      fetch('/api/education/generate-quiz', {
+      authFetch('/api/education/generate-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, examClass: '', school: '', country: '', educationSystem: '' }),
@@ -2149,7 +2149,7 @@ IMPORTANT RULES:
       let fallbackUrls: string[] = [];
       let imageError = '';
       try {
-        const res = await fetch('/api/generate-image', {
+        const res = await authFetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -2222,7 +2222,7 @@ IMPORTANT RULES:
             ? `Image ${i + 1} of ${imagesToAnalyze.length}: ${content || "Analyze this image in detail."}`
             : content || "Analyze this image in detail. What do you see?";
 
-          const response = await fetch('/api/analyze-image', {
+          const response = await authFetch('/api/analyze-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageData: img.preview, prompt }),
@@ -2325,7 +2325,7 @@ IMPORTANT RULES:
       const isShortConversational = content.trim().split(/\s+/).length <= 3 && content.trim().length <= 20;
       const shouldSkipSearch = skipSearchPatterns.test(content.trim()) || isShortConversational;
       try {
-        const searchPromise = shouldSkipSearch ? Promise.resolve(null) : fetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
+        const searchPromise = shouldSkipSearch ? Promise.resolve(null) : authFetch(`/api/search?q=${encodeURIComponent(content)}`, { signal: controller.signal })
           .then(r => r.ok ? r.json() : null)
           .catch(() => null);
         const timeoutPromise = new Promise<null>(res => setTimeout(() => res(null), 3000));
@@ -2384,7 +2384,7 @@ IMPORTANT RULES:
       }
 
       console.log('Making direct API call...');
-      const response = await fetch('/api/test-ai', {
+      const response = await authFetch('/api/test-ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2499,7 +2499,7 @@ IMPORTANT RULES:
 
   const handleChatInNewChat = async (content: string) => {
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await authFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Continued Chat', model: selectedModel }),
@@ -2577,7 +2577,7 @@ IMPORTANT RULES:
     setSpeakingMessageId(id);
     const voice = detectVoiceForText(content);
     try {
-      const res = await fetch('/api/tts', {
+      const res = await authFetch('/api/tts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ text: content.slice(0, 3000), voice }),
       });
@@ -2748,7 +2748,7 @@ IMPORTANT RULES:
       setMessages(prev => [...prev, imageMessage]);
       
       // Send to AI for analysis
-      const response = await fetch('/api/analyze-image', {
+      const response = await authFetch('/api/analyze-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2900,7 +2900,7 @@ IMPORTANT RULES:
 
   const handleNewProject = async () => {
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await authFetch('/api/conversations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2938,7 +2938,7 @@ IMPORTANT RULES:
 
   const handleDeleteProject = async (id: string) => {
     try {
-      const response = await fetch(`/api/conversations/${id}`, {
+      const response = await authFetch(`/api/conversations/${id}`, {
         method: 'DELETE',
       });
 
@@ -2958,7 +2958,7 @@ IMPORTANT RULES:
 
   const handleEditProject = async (id: string, newTitle: string) => {
     try {
-      const response = await fetch(`/api/conversations/${id}`, {
+      const response = await authFetch(`/api/conversations/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -2978,7 +2978,7 @@ IMPORTANT RULES:
 
   const handleUpdateAiRole = async (id: string, aiRole: string) => {
     try {
-      const response = await fetch(`/api/conversations/${id}`, {
+      const response = await authFetch(`/api/conversations/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3023,7 +3023,7 @@ IMPORTANT RULES:
     setIsQuizOpen(true);
 
     try {
-      const response = await fetch('/api/education/generate-quiz', {
+      const response = await authFetch('/api/education/generate-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3081,7 +3081,7 @@ IMPORTANT RULES:
     
     // Fire AI enhancement without waiting (async)
     try {
-      const response = await fetch('/api/enhance-prompt', {
+      const response = await authFetch('/api/enhance-prompt', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -3104,7 +3104,7 @@ IMPORTANT RULES:
     setEducationMode("self-listen");
     
     // Create a new conversation for self-listen
-    const response = await fetch('/api/conversations', {
+    const response = await authFetch('/api/conversations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -3138,7 +3138,7 @@ Let's start the self-listen session!`;
 
   const loadProjects = async () => {
     try {
-      const response = await fetch('/api/conversations');
+      const response = await authFetch('/api/conversations');
       if (response.ok) {
         const projectsData = await response.json();
         const projectsWithDates = projectsData.map((project: any) => ({
@@ -3154,7 +3154,7 @@ Let's start the self-listen session!`;
 
   const loadProjectMessages = async (projectId: string) => {
     try {
-      const response = await fetch(`/api/conversations/${projectId}/messages`);
+      const response = await authFetch(`/api/conversations/${projectId}/messages`);
       if (response.ok) {
         const messagesData = await response.json();
         const messagesWithDates = messagesData.map((msg: any) => ({
@@ -4329,7 +4329,7 @@ Let's start the self-listen session!`;
               const seed = Math.floor(Math.random() * 9999999);
               let newUrl = '';
               try {
-                const res = await fetch('/api/generate-image', {
+                const res = await authFetch('/api/generate-image', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
                   body: JSON.stringify({ prompt: p, size: apiSize }),
                 });

@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useUsage } from "@/hooks/use-usage";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, authFetch } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
 import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
 import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
@@ -534,7 +534,7 @@ function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onS
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/suggest-followups', {
+    authFetch('/api/suggest-followups', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: msgContent.slice(0, 700) }),
     }).then(r => r.json()).then(d => {
@@ -593,7 +593,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
     setSpeaking(true);
     const voice = detectVoiceForText(msg.content);
     try {
-      const res = await fetch('/api/tts', {
+      const res = await authFetch('/api/tts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ text: msg.content.slice(0, 3000), voice }),
       });
@@ -1042,7 +1042,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     if (!value.trim() || isEnhancing) return;
     setIsEnhancing(true);
     try {
-      const res = await fetch("/api/enhance-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ originalPrompt: value }) });
+      const res = await authFetch("/api/enhance-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ originalPrompt: value }) });
       const data = await res.json();
       if (data.enhancedPrompt) onChange(data.enhancedPrompt);
     } catch { } finally { setIsEnhancing(false); }
@@ -2208,7 +2208,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
   // Sync Nomad history from server on mount
   useEffect(() => {
-    fetch('/api/nomad/history').then(r => r.ok ? r.json() : null).then(data => {
+    authFetch('/api/nomad/history').then(r => r.ok ? r.json() : null).then(data => {
       if (Array.isArray(data) && data.length > 0) {
         setNomadHistSessions(data);
         try { localStorage.setItem('fius-nomad-history', JSON.stringify(data)); } catch {}
@@ -2259,12 +2259,12 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha). Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
     const history = autoMessages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     try {
-      const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx, history }) });
+      const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx, history }) });
       const data = res.ok ? await res.json() : null;
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
         const sess: MNomadSess = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } fetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
         return updated;
       });
     } catch {
@@ -2295,7 +2295,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                   + New Chat
                 </button>
                 {nomadHistSessions.length > 0 && (
-                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); fetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: [] }) }).catch(() => {}); }}
+                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: [] }) }).catch(() => {}); }}
                     className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
                     Clear
                   </button>
@@ -2560,7 +2560,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
             setSummaryText('');
             try {
               const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\nUse exact AI names. Be concise and clear.`;
-              const res = await fetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary-mobile' }) });
+              const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary-mobile' }) });
               if (res.ok) { const data = await res.json(); setSummaryText(data.response || 'Could not generate summary.'); }
               else setSummaryText('Failed to generate summary.');
             } catch { setSummaryText('Failed to generate summary. Please try again.'); }
@@ -2985,7 +2985,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const loadConv = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/conversations/${id}/messages`);
+      const res = await authFetch(`/api/conversations/${id}/messages`);
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) setAskMsgs(data.map((m: any) => ({ id: m.id || uid(), role: m.role === "assistant" ? "ai" : m.role, content: m.content, timestamp: new Date(m.createdAt || Date.now()) })));
@@ -3003,7 +3003,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const handleChatInNewChat = useCallback(async (content: string) => {
     try {
-      const res = await fetch("/api/conversations", {
+      const res = await authFetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: content.slice(0, 50) || "Continued Chat", model: askModel }),
@@ -3013,7 +3013,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       const newId = data.id || data.conversation?.id;
       if (!newId) return;
       // Save the AI message to the backend so it appears in history
-      await fetch("/api/test-ai", {
+      await authFetch("/api/test-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: "[Continued from previous chat]", conversationId: newId, model: askModel, systemPrompt: `You previously said: "${content.slice(0, 300)}". The user wants to continue this conversation. Greet them and continue naturally.` }),
@@ -3028,7 +3028,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [askModel]);
 
   const handleDeleteConv = useCallback(async (id: string) => {
-    try { await fetch(`/api/conversations/${id}`, { method: "DELETE" }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); if (id === currentConvId) handleNewChat(); } catch { }
+    try { await authFetch(`/api/conversations/${id}`, { method: "DELETE" }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); if (id === currentConvId) handleNewChat(); } catch { }
   }, [currentConvId, handleNewChat]);
 
   const handleLogout = useCallback(async () => {
@@ -3038,7 +3038,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const ensureConv = useCallback(async (firstMsg?: string): Promise<string> => {
     if (currentConvId) return currentConvId;
     const title = firstMsg ? firstMsg.slice(0, 50) : "New Chat";
-    const res = await fetch("/api/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, model: askModel }) });
+    const res = await authFetch("/api/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, model: askModel }) });
     if (!res.ok) throw new Error("Could not create conversation");
     const data = await res.json();
     const newId = data.id || data.conversation?.id;
@@ -3061,7 +3061,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       if (images.length > 0) {
         // Analyze images — backend expects `imageData` field
         const imgDataUrl = images[0].preview;
-        const res = await fetch('/api/analyze-image', {
+        const res = await authFetch('/api/analyze-image', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageData: imgDataUrl, prompt: text || "What is in this image? Describe it in detail." })
         });
@@ -3088,12 +3088,12 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         ));
         const fileContext = files.map((f, i) => `--- File: ${f.name} ---\n${(contents[i] || "[binary file]").slice(0, 4000)}`).join('\n\n');
         const message = text ? `${text}\n\n${fileContext}` : `Please analyze the following file(s):\n\n${fileContext}`;
-        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, conversationId: convId, activeTab: "ask" }) });
+        const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, conversationId: convId, activeTab: "ask" }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't process the file.", timestamp: new Date() }]);
       } else if (text) {
-        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: convId, activeTab: "ask" }) });
+        const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, conversationId: convId, activeTab: "ask" }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         setAskMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || "I couldn't generate a response.", timestamp: new Date() }]);
@@ -3118,7 +3118,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       if (!skipSearch) {
         try {
           const searchData = await Promise.race([
-            fetch(`/api/search?q=${encodeURIComponent(text)}`, { signal: ctrl.signal }).then(r => r.ok ? r.json() : null).catch(() => null),
+            authFetch(`/api/search?q=${encodeURIComponent(text)}`, { signal: ctrl.signal }).then(r => r.ok ? r.json() : null).catch(() => null),
             new Promise<null>(res2 => setTimeout(() => res2(null), 3000))
           ]);
           if (searchData) {
@@ -3144,7 +3144,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           }
         } catch { }
       }
-      const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: messageToSend, conversationId: convId, activeTab: "ask" }), signal: ctrl.signal });
+      const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: messageToSend, conversationId: convId, activeTab: "ask" }), signal: ctrl.signal });
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
       let content = data.response || data.message || "I couldn't generate a response.";
@@ -3166,7 +3166,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     const aiMsgId = uid();
     setImagMsgs(p => [...p, { id: userMsgId, role: "user", content: text, timestamp: new Date() }, { id: aiMsgId, role: "ai", content: "", imageUrl: "", isGenerating: true, timestamp: new Date() }]);
     try {
-      const res = await fetch("/api/generate-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text, size: "1024x1024" }) });
+      const res = await authFetch("/api/generate-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text, size: "1024x1024" }) });
       const data = await res.json();
       setImagMsgs(p => p.map(m => m.id === aiMsgId ? { ...m, imageUrl: data.success && data.url ? data.url : undefined, content: data.success && data.url ? "" : "Image generation failed.", isGenerating: false } : m));
     } catch {
@@ -3182,7 +3182,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       philAbortRef.current?.abort();
       const ctrl = new AbortController(); philAbortRef.current = ctrl;
       const systemMsg = `You are ${philPerson.name} (${philPerson.era}), the ${philPerson.role}. Style: ${philPerson.style}. Stay in character at all times. User: ${text}`;
-      const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: systemMsg, activeTab: "philosopher" }), signal: ctrl.signal });
+      const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: systemMsg, activeTab: "philosopher" }), signal: ctrl.signal });
       if (!res.ok) throw new Error("API error");
       const data = await res.json();
       setPhilMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || data.message || "…", timestamp: new Date() }]);
@@ -3214,7 +3214,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           role: m.role === "ai" ? "assistant" : "user",
           content: m.content,
         }));
-        const res = await fetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, activeTab: "nomad", history: prevMsgs }) });
+        const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, activeTab: "nomad", history: prevMsgs }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         setNomadMessages(prev => ({ ...prev, [modelId]: [...(prev[modelId] || []), { id: uid(), role: "ai" as const, content: data.response || data.message || "No response" }] }));
@@ -3285,7 +3285,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 setQuizLoading(true);
                 setQuizOpen(true);
                 try {
-                  const res = await fetch("/api/education/generate-quiz", {
+                  const res = await authFetch("/api/education/generate-quiz", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

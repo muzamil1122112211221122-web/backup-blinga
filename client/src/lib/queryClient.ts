@@ -38,6 +38,24 @@ export async function apiRequest(
   return res;
 }
 
+// Drop-in replacement for the raw `fetch()` calls scattered across the chat
+// UI. Those calls hit our own `/api/...` routes but were never updated to
+// attach the Supabase access token, so the server (which only trusts the
+// `Authorization: Bearer ...` header, not cookies) always rejected them with
+// 401 once real login replaced the old cookie-based auth — even though the
+// user was successfully signed in.
+export async function authFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const authHeaders = await getAuthHeaders();
+  return fetch(url, {
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      ...authHeaders,
+    },
+    credentials: init.credentials ?? "include",
+  });
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
