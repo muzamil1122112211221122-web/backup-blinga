@@ -45,7 +45,7 @@ export default function AuthCallback() {
           }
           sessionStorage.setItem(consumedKey, "1");
 
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(url);
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             console.error("[auth-callback] exchangeCodeForSession failed:", exchangeError);
             setError(exchangeError.message);
