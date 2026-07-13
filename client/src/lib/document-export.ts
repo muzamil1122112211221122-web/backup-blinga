@@ -128,33 +128,46 @@ function sanitizeFilename(s: string): string {
   return (s || 'document').replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'document';
 }
 
+/**
+ * Downloads the markdown as a PDF by:
+ * 1. Building a polished HTML page
+ * 2. Opening it in a new tab where the user can Ctrl+P → Save as PDF
+ *
+ * This is more reliable than html2pdf.js-based capture which can produce
+ * blank output when the container is off-screen.
+ */
 export async function downloadPdf(markdown: string, title: string) {
-  const { html2pdf } = await loadHtml2Pdf();
-  const { bodyHtml, title: docTitle } = markdownToPolishedHtml(markdown, title);
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '700px';
-  container.style.background = '#ffffff';
-  container.style.fontFamily = "'Segoe UI', system-ui, -apple-system, sans-serif";
-  container.style.padding = '36px 40px';
-  container.innerHTML = bodyHtml;
-  document.body.appendChild(container);
-  try {
-    await html2pdf()
-      .set({
-        margin: 0,
-        filename: `${sanitizeFilename(docTitle)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      })
-      .from(container)
-      .save();
-  } finally {
-    document.body.removeChild(container);
+  const { html, title: docTitle } = markdownToPolishedHtml(markdown, title);
+
+  // Augment with print-specific styles that auto-trigger print dialog
+  const printHtml = html.replace(
+    '</head>',
+    `<style>
+      @media print { body { margin: 0; } }
+      @page { margin: 20mm 18mm; size: A4; }
+    </style>
+    <script>
+      window.onload = function() {
+        document.title = ${JSON.stringify(docTitle)};
+        setTimeout(function() { window.print(); }, 400);
+      };
+    </script>
+    </head>`
+  );
+
+  const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (win) {
+    // Cleanup after a delay so the window has time to load
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } else {
+    // Fallback: direct download of the HTML file
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sanitizeFilename(docTitle)}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 }
 

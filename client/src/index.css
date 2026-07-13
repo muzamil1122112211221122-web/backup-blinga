@@ -780,22 +780,9 @@
   100% { translate: 0px 0px; }
 }
 
-/* Place the blinking cursor INSIDE the last text element so it sits right after
-   the last visible word, not at the bottom of the entire message block.
-   We walk: outer div -> last child (e.g. <p>) -> last descendant text. The
-   simplest CSS approximation is to attach ::after to the last child of the
-   typing container. ReactMarkdown wraps text in <p>, so the cursor will land
-   inline at the end of the last paragraph. */
-.typing-message > *:last-child::after,
-.typing-message:not(:has(*))::after {
-  content: '▋';
-  display: inline-block;
-  animation: blink-cursor 0.9s step-start infinite;
-  font-size: 0.85em;
-  font-weight: normal;
-  line-height: 1;
-  vertical-align: baseline;
-  margin-left: 2px;
+/* Typing message — no blinking cursor; words appear smoothly word-by-word */
+.typing-message {
+  /* intentionally empty — cursor removed for clean streaming appearance */
 }
 
 
@@ -1029,6 +1016,21 @@ body.voice-mode-active [data-message-bar] {
   background-clip: text;
   animation: text-shimmer 1.8s linear infinite;
   animation-delay: 0.7s;
+}
+
+/* ── Preload icon suppression ─────────────────────────────────────────────
+   While html.preload is present (before preload-images.ts resolves),
+   images that are AI logos / UI icons are hidden to avoid a flash of
+   broken icons. Once the Promise resolves, the class is removed and
+   images fade in with a quick transition.                                  */
+html.preload img[src$=".png"],
+html.preload img[src$=".jpg"],
+html.preload img[src$=".svg"] {
+  opacity: 0;
+  transition: none;
+}
+html:not(.preload) img {
+  transition: opacity 0.25s ease;
 }
 
 /* Light mode: dark shimmer on light cloud */

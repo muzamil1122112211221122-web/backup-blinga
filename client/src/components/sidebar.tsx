@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff } from "lucide-react";
+import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Zap, Image as ImageIcon, Clock } from "lucide-react";
+import { useUsage } from "@/hooks/use-usage";
 import searchIcon from "@assets/search_1780877151956.png";
 import chatIcon from "@assets/chat-bubble_1780877151955.png";
 import imagineIcon from "@assets/creativity_1780877151954.png";
@@ -35,6 +36,44 @@ import { Logo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getVibrantColor } from "@/lib/utils";
+
+// ── Sidebar usage strip ────────────────────────────────────────────────────
+function SidebarUsage() {
+  const { usage, isLoading } = useUsage();
+  if (isLoading || !usage) return null;
+
+  const isUltimate = usage.plan === "ultimate";
+
+  // Compute reset date (1st of next month)
+  const now = new Date();
+  const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const daysLeft = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  const tokensLeft = isUltimate ? (usage.tokensRemaining ?? 0) : (usage.messagesRemaining ?? 0);
+  const tokensLabel = isUltimate ? "tokens" : "msgs";
+  const imagesLeft = usage.imagesRemaining ?? 0;
+
+  const fmtNum = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : `${n}`;
+
+  return (
+    <div className="mx-3 mb-2 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Zap className="w-3 h-3 text-amber-500 flex-shrink-0" />
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{fmtNum(tokensLeft)} {tokensLabel}</span>
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <ImageIcon className="w-3 h-3 text-pink-500 flex-shrink-0" />
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{imagesLeft} imgs</span>
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{daysLeft}d reset</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -508,6 +547,9 @@ export function Sidebar({
             ))}
           </div>
         </div>
+
+        {/* ── Usage stats ── */}
+        <SidebarUsage />
 
         <div className="p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30">
           {user && (

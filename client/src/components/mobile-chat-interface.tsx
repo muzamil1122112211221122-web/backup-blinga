@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from "@/components/ui/dropdown-menu";
 import { downloadTxt, downloadPdf } from "@/lib/document-export";
+import { downloadWordDoc } from "@/lib/docx-export";
+import { downloadPptx } from "@/lib/pptx-export";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
@@ -572,10 +574,15 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const [feedbackSelected, setFeedbackSelected] = useState<Set<string>>(new Set());
   const [feedbackText, setFeedbackText] = useState("");
+  const [docExportingId, setDocExportingId] = useState<string | null>(null);
   const audioSrcRef = useRef<AudioBufferSourceNode | null>(null);
 
+  // Document-mode messages never render the animated text (they show a compact
+  // download card instead), so skip the typing animation for them entirely —
+  // otherwise "done" (and the download button) would stay hidden until a full
+  // word-by-word reveal of content nobody sees finishes.
   const { displayed, done } = useTypingAnimation(
-    !isUser && isLatest ? msg.content : "",
+    !isUser && isLatest && !msg.isDocument ? msg.content : "",
     msg.id
   );
   const shownText = (!isUser && isLatest) ? displayed : msg.content;
@@ -717,6 +724,17 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                 const parsedSrcs = sourceLines.map(l => { const m = l.match(/• \[(.+?)\]\((.+?)\)/); return m ? { title: m[1], url: m[2] } : null; }).filter(Boolean) as {title: string; url: string}[];
                 return (
                   <>
+                    {!isUser && msg.isDocument ? (
+                      <div className="rounded-2xl px-3.5 py-3 border border-border bg-card flex items-center gap-3 max-w-[280px]">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4.5 h-4.5 text-indigo-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground truncate">{msg.documentTitle || 'Document'}</p>
+                          <p className="text-[11px] text-muted-foreground">Document ready</p>
+                        </div>
+                      </div>
+                    ) : (
                     <div className={`${!done ? "typing-message" : ""}`}>
                       {isUser ? (
                         <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground py-1">
@@ -727,6 +745,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                       )}
                       {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
                     </div>
+                    )}
                     {!isUser && parsedSrcs.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-border/40">
                         <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1 font-medium">
@@ -759,14 +778,39 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
 
           {!isUser && done && msg.isDocument && (
             <div className="flex items-center gap-2 mt-2 mb-0.5 flex-wrap">
-              <button onClick={() => downloadTxt(msg.content, msg.documentTitle || 'document')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all">
-                <FileDown className="w-3.5 h-3.5 text-blue-500" /> TXT
-              </button>
-              <button onClick={() => downloadPdf(msg.content, msg.documentTitle || 'document')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 active:scale-95 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all">
-                <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button disabled={!!docExportingId}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-500 active:scale-95 text-xs font-semibold text-white transition-all disabled:opacity-60">
+                    {docExportingId
+                      ? <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                      : <Download className="w-3.5 h-3.5" />}
+                    Download
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
+                  <DropdownMenuItem onClick={async () => { setDocExportingId('pdf'); try { await downloadPdf(msg.content, msg.documentTitle || 'document'); } finally { setDocExportingId(null); } }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF (.pdf)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadTxt(msg.content, msg.documentTitle || 'document')}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-blue-500" /> Text (.txt)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(msg.documentTitle || 'document').replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '-') || 'document'}.md`; a.click(); URL.revokeObjectURL(a.href); }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-purple-500" /> Markdown (.md)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={async () => { setDocExportingId('docx'); try { await downloadWordDoc(msg.content, msg.documentTitle || 'document'); } finally { setDocExportingId(null); } }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-blue-600" /> Word (.docx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={async () => { setDocExportingId('pptx'); try { await downloadPptx(msg.content, msg.documentTitle || 'document'); } finally { setDocExportingId(null); } }}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                    <FileDown className="w-3.5 h-3.5 text-orange-500" /> PowerPoint (.pptx)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
           {!isUser && done && (
@@ -3231,7 +3275,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     const text = askInput.trim(); if (!text || askTyping) return;
     const isDocRequest = askDocumentMode;
     setAskInput(""); setAskTyping(true);
-    if (isDocRequest) setAskDocumentMode(false);
+    // Document mode now stays on across messages — user must cancel it manually
+    // instead of it silently switching off after one message.
     setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
     try {
       const convId = await ensureConv(text);

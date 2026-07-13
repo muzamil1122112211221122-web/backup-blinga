@@ -953,6 +953,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
+  const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackMsgId, setFeedbackMsgId] = useState('');
   const [feedbackType, setFeedbackType] = useState<'like' | 'dislike'>('like');
@@ -2280,18 +2281,33 @@ IMPORTANT RULES:
   };
 
   const handleStopResponse = () => {
+    const wasTyping = isTyping;
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setIsTyping(false);
-    // Force any in-progress typing animation to "complete" — copy current
-    // progress text into completed cache so the cursor disappears immediately.
+    // Force any in-progress typing animation to "complete"
     pendingAnimationIds.forEach(id => {
       const progress = globalProgressTextsModule.get(id);
       if (progress) globalCompletedTextsModule.set(id, progress);
     });
     setPendingAnimationIds(new Set());
+
+    // Add a "stopped" indicator message so user sees feedback
+    if (wasTyping) {
+      const stoppedId = `stopped-${Date.now()}`;
+      const stoppedMsg: ChatMessage = {
+        id: stoppedId,
+        conversationId: currentProjectId || '',
+        role: 'assistant',
+        content: `__STOPPED_BY__${user?.displayName || user?.username || 'you'}`,
+        createdAt: new Date(),
+        metadata: { stoppedByUser: true },
+      } as ChatMessage;
+      setMessages(prev => [...prev, stoppedMsg]);
+      setStoppedMessageIds(prev => new Set([...prev, stoppedId]));
+    }
   };
 
   /* ── Answer cache helpers ── */
@@ -2324,7 +2340,8 @@ IMPORTANT RULES:
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const isDocRequest = documentMode;
-    if (isDocRequest) setDocumentMode(false);
+    // Document mode now stays on across messages — user must cancel it manually
+    // via the "X" on the pill instead of it silently switching off after one message.
     try {
       // Always enrich with DuckDuckGo web search context — fires concurrently, 3-second cap
       let enrichedContent = content;
@@ -2568,6 +2585,7 @@ IMPORTANT RULES:
 
   const submitFeedback = () => {
     setFeedbackOpen(false);
+    toast({ title: "Thank you for your feedback!", description: "Your input helps us improve Fius." });
   };
 
   const stopSpeaking = () => {
@@ -3681,13 +3699,33 @@ Let's start the self-listen session!`;
                   // "being streamed" = this is the latest AI msg AND isTyping AND the last message in array is AI
                   // (if last msg is user, no AI response exists yet → don't block the previous completed AI msg)
                   const isBeingStreamed = isLatestAi && isTyping && messages[messages.length - 1]?.role !== 'user';
-                  const isDone = !isBeingStreamed && !pendingAnimationIds.has(message.id);
+                  // Document-mode messages never mount TypingText, so they'd never fire
+                  // onAnimationComplete — treat them as done immediately once the network call finishes.
+                  const isDone = message.metadata?.isDocument ? !isBeingStreamed : (!isBeingStreamed && !pendingAnimationIds.has(message.id));
                   const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
                   return (
                     <div className="flex space-x-3 max-w-4xl">
                       {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
                       <div className="flex-1 min-w-0">
                         {/* Bubble — relative for speak button */}
+                        {message.metadata?.isDocument ? (
+                          <div className="rounded-2xl px-4 py-3.5 chat-bubble border border-border bg-card flex items-center gap-3 max-w-sm">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground truncate">{message.metadata?.documentTitle || 'Document'}</p>
+                              <p className="text-xs text-muted-foreground">Document ready</p>
+                            </div>
+                          </div>
+                        ) : message.content.startsWith('__STOPPED_BY__') ? (
+                          <div className="flex items-center gap-2 py-2 px-3 rounded-2xl bg-red-500/10 border border-red-400/30">
+                            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                            <span className="text-sm text-red-500 font-medium">
+                              Response stopped by {message.content.replace('__STOPPED_BY__', '')}
+                            </span>
+                          </div>
+                        ) : (
                         <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${message.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
                           <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
                           {/* Source credits */}
@@ -3713,27 +3751,46 @@ Let's start the self-listen session!`;
                             </div>
                           )}
                         </div>
-                        {/* Document mode — prominent download buttons directly in the response */}
-                        {isDone && message.metadata?.isDocument && (
+                        )}
+                        {/* Document mode — single Download button with a format picker */}
+                        {message.metadata?.isDocument && (
                           <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <button
-                              onClick={() => downloadTxt(message.content, message.metadata?.documentTitle || 'document')}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all active:scale-95"
-                              data-testid={`button-download-txt-${message.id}`}
-                            >
-                              <FileDown className="w-3.5 h-3.5 text-blue-500" /> Download TXT
-                            </button>
-                            <button
-                              onClick={async () => { setDocPdfExportingId(message.id); try { await downloadPdf(message.content, message.metadata?.documentTitle || 'document'); } finally { setDocPdfExportingId(null); } }}
-                              disabled={docPdfExportingId === message.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-all active:scale-95 disabled:opacity-50"
-                              data-testid={`button-download-pdf-${message.id}`}
-                            >
-                              {docPdfExportingId === message.id
-                                ? <svg className="w-3.5 h-3.5 text-red-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                                : <FileDown className="w-3.5 h-3.5 text-red-500" />}
-                              {docPdfExportingId === message.id ? 'Preparing PDF…' : 'Download PDF'}
-                            </button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  disabled={docPdfExportingId === message.id || exportingMsgId === message.id + '-doc' || exportingMsgId === message.id + '-ppt'}
+                                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold transition-all active:scale-95 disabled:opacity-60"
+                                  data-testid={`button-download-${message.id}`}
+                                >
+                                  {(docPdfExportingId === message.id || exportingMsgId === message.id + '-doc' || exportingMsgId === message.id + '-ppt')
+                                    ? <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                                    : <Download className="w-3.5 h-3.5" />}
+                                  Download
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
+                                <DropdownMenuItem onClick={async () => { setDocPdfExportingId(message.id); try { await downloadPdf(message.content, message.metadata?.documentTitle || 'document'); } finally { setDocPdfExportingId(null); } }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF (.pdf)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => downloadTxt(message.content, message.metadata?.documentTitle || 'document')}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-blue-500" /> Text (.txt)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(message.metadata?.documentTitle || 'document').replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '-') || 'document'}.md`; a.click(); URL.revokeObjectURL(a.href); }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-purple-500" /> Markdown (.md)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={async () => { setExportingMsgId(message.id + '-doc'); try { await downloadWordDoc(message.content, message.metadata?.documentTitle || 'document'); } finally { setExportingMsgId(null); } }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-blue-600" /> Word (.docx)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={async () => { setExportingMsgId(message.id + '-ppt'); try { await downloadPptx(message.content, message.metadata?.documentTitle || 'document'); } finally { setExportingMsgId(null); } }}
+                                  className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                  <FileDown className="w-3.5 h-3.5 text-orange-500" /> PowerPoint (.pptx)
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         )}
                         {/* Action row — only after done */}
@@ -5197,7 +5254,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                        className="w-8 h-8 text-violet-500 dark:text-violet-400 bg-violet-500/10 dark:bg-violet-400/10 hover:bg-violet-500/20 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
                         <Plus className="w-4 h-4" />
@@ -5316,7 +5373,7 @@ Let's start the self-listen session!`;
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
+                    className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${inputValue.trim() ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
                     onClick={handleEnhancePrompt}
                     disabled={!inputValue.trim() || isEnhancing}
                     data-testid="button-enhance"
@@ -5324,7 +5381,7 @@ Let's start the self-listen session!`;
                     {isEnhancing ? (
                       <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
                     ) : (
-                      <img src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 brightness-200 contrast-150" />
+                      <img src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={`w-4 h-4 ${inputValue.trim() ? '' : 'brightness-200 contrast-150'}`} />
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -5471,7 +5528,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            className="w-9 h-9 text-violet-500 dark:text-violet-400 bg-violet-500/10 dark:bg-violet-400/10 hover:bg-violet-500/20 rounded-full transition-all"
                             data-testid="button-attachment"
                           >
                             <Plus className="w-5 h-5" />
@@ -5538,7 +5595,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                        className={`w-9 h-9 rounded-full transition-all ${inputValue.trim() ? "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20" : "text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10"}`}
                         onClick={handleEnhancePrompt}
                         disabled={!inputValue.trim() || isEnhancing}
                         data-testid="button-enhance"

@@ -517,7 +517,7 @@ export function CustomizeModal({
 
         {/* Content */}
         <div ref={settingsContentRef} className="flex-1 p-8 overflow-y-auto relative bg-white dark:bg-[#0d0d0d]">
-          <SettingsScrollButtons scrollAreaRef={settingsContentRef} />
+          {/* SettingsScrollButtons removed — max-up/max-down disabled */}
           {activeSection === 'appearance' && (
             <div className="space-y-8">
               <div className="grid grid-cols-3 gap-3">
