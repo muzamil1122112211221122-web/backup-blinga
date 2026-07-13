@@ -1,23 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 
-const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const envAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const isSupabaseConfigured = Boolean(envUrl && envAnonKey);
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 if (!isSupabaseConfigured) {
-  console.error("Supabase is not configured — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are missing.");
+  // Throwing here (instead of silently falling back to a placeholder) makes
+  // misconfiguration impossible to miss — a broken login page is much easier
+  // to debug than requests that silently 401 forever.
+  console.error(
+    "[supabase] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are missing. " +
+      "Google/email login will not work until these are set."
+  );
 }
 
-// Fall back to a harmless placeholder so createClient never throws at module
-// load time when Supabase env vars are missing (e.g. demo-login-only setups).
-const supabaseUrl = envUrl || "https://placeholder.supabase.co";
-const supabaseAnonKey = envAnonKey || "placeholder-anon-key";
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-anon-key",
+  {
+    auth: {
+      // PKCE is the modern, secure flow Supabase recommends for SPAs. It
+      // requires a dedicated callback route that calls
+      // `supabase.auth.exchangeCodeForSession()` — see /auth/callback.
+      flowType: "pkce",
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  }
+);

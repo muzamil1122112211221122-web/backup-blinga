@@ -4,12 +4,12 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
-  // Inline Supabase public config at build/dev time so the client bundle can
-  // reach Supabase Auth without needing a VITE_-prefixed secret.
-  define: {
-    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(process.env.SUPABASE_URL || ""),
-    "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(process.env.SUPABASE_ANON_KEY || ""),
-  },
+  // NOTE: Vite automatically exposes any VITE_-prefixed env var to the client
+  // via import.meta.env — no custom `define` needed. A previous version of
+  // this file re-mapped a *different* env var name (SUPABASE_URL) into
+  // VITE_SUPABASE_URL here, which silently overwrote the real value with an
+  // empty string whenever SUPABASE_URL itself wasn't set. Do not reintroduce
+  // that pattern — set VITE_-prefixed vars directly wherever they're defined.
   plugins: [
     react(),
     runtimeErrorOverlay(),

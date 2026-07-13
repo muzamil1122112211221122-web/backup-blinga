@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Landing from "@/pages/landing";
 import Chat from "@/pages/chat";
 import UserInfo from "@/pages/user-info";
+import AuthCallback from "@/pages/auth-callback";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
@@ -18,8 +19,9 @@ function Router() {
   const [location, navigate] = useLocation();
   const [sessionReady, setSessionReady] = useState(false);
 
-  // Wait for Supabase to restore/parse the session (handles OAuth redirect
-  // hash tokens) before trusting the /api/auth/user query result.
+  // Wait for Supabase to restore the session from storage before trusting
+  // the /api/auth/user query result. The OAuth redirect itself is handled
+  // by the dedicated /auth/callback route, not here.
   useEffect(() => {
     supabase.auth.getSession().then(({ data, error }) => {
       console.log("[auth-debug] initial getSession:", { hasSession: !!data?.session, error });
@@ -79,6 +81,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/chat" component={Chat} />
       <Route path="/start" component={UserInfo} />
+      <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
       <Route component={NotFound} />

@@ -3,3 +3,4 @@
 - [Fius games architecture](fius-games-architecture.md) — game logos use /public/ string paths (not webpack imports); STORE_CATALOG has 2 premium games (tictactoe, rps); 6 free games always show; leaderboard polls every 30s; podium uses explicit slot mapping to avoid rank ordering bugs with <3 entries.
 - [Imagine Studio persistence](imagine-studio-persistence.md) — generated images persist to localStorage under key fius_my_images; max 30 images saved; studio now shows My Images section, templates carousel at top.
 - [Supabase OAuth bearer token wiring](supabase-oauth-bearer-token.md) — Google OAuth session lives in localStorage/URL hash, not cookies; fetch calls must attach it as Authorization header or backend always 401s.
+- [Supabase Google OAuth env var mismatch](supabase-google-oauth-env-mismatch.md) — a vite `define` remapping SUPABASE_URL→VITE_SUPABASE_URL silently blanked real client config; caused repeated "works with no credentials" failures.

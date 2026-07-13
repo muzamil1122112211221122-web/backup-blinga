@@ -2,10 +2,13 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 
-const supabaseUrl = process.env.SUPABASE_URL;
+// Accept either the plain server-side name or the VITE_-prefixed one, since
+// this project currently only defines the VITE_-prefixed vars. Keeping both
+// here avoids the client and server silently pointing at different values.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 
 if (!supabaseUrl) {
-  console.warn("⚠️  SUPABASE_URL not set — Supabase auth is disabled.");
+  console.warn("⚠️  SUPABASE_URL / VITE_SUPABASE_URL not set — Supabase auth is disabled.");
 }
 
 // Public JWKS endpoint — no API key needed

@@ -83,9 +83,17 @@ export default function UserInfo() {
     setError("");
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/chat` },
+      options: {
+        // Must land on the dedicated callback route so the PKCE `code`
+        // param can be exchanged for a session before we redirect on.
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
     });
-    if (oauthError) setError(oauthError.message || "Google sign-in failed.");
+    if (oauthError) {
+      console.error("[google-login] signInWithOAuth failed:", oauthError);
+      setError(oauthError.message || "Google sign-in failed.");
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
