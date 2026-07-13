@@ -49,6 +49,18 @@ export default function UserInfo() {
       setMode("login");
       setInfo("Email verified! You can now log in.");
     }
+
+    // Surface any OAuth error the App-level router caught and stashed
+    // (e.g. a Google sign-in that failed or a reused login link).
+    const storedError = sessionStorage.getItem("fius_auth_error");
+    if (storedError) {
+      setError(
+        storedError.includes("already been used")
+          ? "That sign-in link was already used. Please click 'Continue with Google' again."
+          : storedError
+      );
+      sessionStorage.removeItem("fius_auth_error");
+    }
   }, []);
 
   const clearForm = () => {

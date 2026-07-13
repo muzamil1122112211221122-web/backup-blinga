@@ -19,6 +19,21 @@ function Router() {
   const [location, navigate] = useLocation();
   const [sessionReady, setSessionReady] = useState(false);
 
+  // Supabase redirects OAuth errors to the Site URL (this app's root), not
+  // to our /auth/callback route — e.g. `/?error=...&error_description=...`
+  // if a login attempt fails or a code gets reused. Catch that here on any
+  // path and bounce to the login page with a readable message instead of
+  // silently landing on a blank/unrelated screen.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorDescription = params.get("error_description") || params.get("error");
+    if (errorDescription && location !== "/start") {
+      const message = decodeURIComponent(errorDescription.replace(/\+/g, " "));
+      sessionStorage.setItem("fius_auth_error", message);
+      navigate("/start", { replace: true });
+    }
+  }, [location, navigate]);
+
   // Wait for Supabase to restore the session from storage before trusting
   // the /api/auth/user query result. The OAuth redirect itself is handled
   // by the dedicated /auth/callback route, not here.

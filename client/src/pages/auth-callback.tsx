@@ -27,6 +27,24 @@ export default function AuthCallback() {
 
         const code = params.get("code");
         if (code) {
+          // Guard against the code being exchanged twice for the same login
+          // attempt — e.g. a page refresh, browser back/forward, or a
+          // duplicate effect run replaying the same `?code=`. Supabase
+          // rejects a reused code with "flow_state_already_used".
+          const consumedKey = `fius_oauth_code_consumed:${code}`;
+          if (sessionStorage.getItem(consumedKey)) {
+            // Already handled in this browser — just move on, the session
+            // (if it succeeded) is already in localStorage.
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+              setLocation("/chat", { replace: true });
+            } else {
+              setLocation("/start", { replace: true });
+            }
+            return;
+          }
+          sessionStorage.setItem(consumedKey, "1");
+
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(url);
           if (exchangeError) {
             console.error("[auth-callback] exchangeCodeForSession failed:", exchangeError);
