@@ -190,13 +190,18 @@ function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: st
 const _completedMsgs = new Map<string, boolean>();
 const _progressMsgs = new Map<string, string>();
 
-function useTypingAnimation(text: string, msgId: string, speed = 35) {
+function useTypingAnimation(text: string, msgId: string) {
+  // Time-based reveal (not frame-count based) — speed stays identical on a 60Hz
+  // or 120Hz+ display, which is what actually reads as "buttery" vs "jerky".
+  // ~150 words/sec: fast, but every word is reached via a continuous ramp
+  // instead of hard 3-word jumps, so the eye perceives a smooth flow.
+  const WORDS_PER_SEC = 150;
   const [displayed, setDisplayed] = useState(() =>
     _completedMsgs.has(msgId) ? text : (_progressMsgs.get(msgId) ?? "")
   );
   const [done, setDone] = useState(() => _completedMsgs.has(msgId));
   const init = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
   useEffect(() => {
     if (_completedMsgs.has(msgId)) { setDisplayed(text); setDone(true); return; }
     if (init.current) return;
@@ -206,17 +211,31 @@ function useTypingAnimation(text: string, msgId: string, speed = 35) {
     const words = text.split(" ").filter(w => w.trim());
     const existing = _progressMsgs.get(msgId) ?? "";
     let idx = existing ? existing.split(" ").filter(w => w.trim()).length : 0;
-    const step = () => {
+    // fractional accumulator lets us advance by a stable wall-clock rate even
+    // when frames are skipped/throttled, instead of always jumping a fixed word count
+    let carry = 0;
+    let last: number | null = null;
+    const step = (now: number) => {
+      if (last === null) last = now;
+      const dt = now - last;
+      last = now;
+      carry += (dt / 1000) * WORDS_PER_SEC;
+      const advance = Math.floor(carry);
+      if (advance > 0) {
+        carry -= advance;
+        idx = Math.min(idx + advance, words.length);
+      }
       if (idx < words.length) {
-        const next = words.slice(0, idx + 1).join(" ");
-        setDisplayed(next); _progressMsgs.set(msgId, next); idx++;
-        timer.current = setTimeout(step, speed);
+        const next = words.slice(0, idx).join(" ");
+        setDisplayed(next); _progressMsgs.set(msgId, next);
+        rafRef.current = requestAnimationFrame(step);
       } else {
-        setDone(true); _completedMsgs.set(msgId, true); _progressMsgs.delete(msgId);
+        setDisplayed(text); _progressMsgs.delete(msgId);
+        setDone(true); _completedMsgs.set(msgId, true);
       }
     };
-    timer.current = setTimeout(step, idx === 0 ? 50 : 0);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
   }, []); // eslint-disable-line
   return { displayed, done };
 }

@@ -1365,8 +1365,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const globalProgressTexts = useRef<Map<string, string>>(globalProgressTextsModule);
 
   // Typing animation hook - survives remounts by resuming from last known progress
-  const useTypingAnimation = (text: string, messageId: string, speed: number = 35) => {
-    const cacheKey = messageId; // key by messageId only, not text
+  const useTypingAnimation = (text: string, messageId: string) => {
+    const cacheKey = messageId;
+    // 3 words per rAF frame @ 60 fps ≈ 180 words/sec — perfectly display-synced
+    const WORDS_PER_FRAME = 3;
 
     const [displayedText, setDisplayedText] = useState(() => {
       if (globalCompletedTexts.current.has(cacheKey)) return text;
@@ -1376,40 +1378,32 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       globalCompletedTexts.current.has(cacheKey)
     );
     const hasInitialized = useRef(false);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const rafRef = useRef<number | null>(null);
 
     useEffect(() => {
-      // Already done — just show full text
       if (globalCompletedTexts.current.has(cacheKey)) {
         setDisplayedText(text);
         setIsTypingComplete(true);
         return;
       }
-
-      // Only start the animation loop once per mount
       if (hasInitialized.current) return;
       hasInitialized.current = true;
-
-      if (!text) {
-        setIsTypingComplete(true);
-        return;
-      }
+      if (!text) { setIsTypingComplete(true); return; }
 
       setIsTypingComplete(false);
 
       const words = text.split(' ').filter(w => w.trim());
-      // Resume from wherever we left off
       const existingProgress = globalProgressTexts.current.get(cacheKey) ?? '';
       const existingWordCount = existingProgress ? existingProgress.split(' ').filter(w => w.trim()).length : 0;
       let currentIndex = existingWordCount;
 
-      const typeWords = () => {
+      const step = () => {
         if (currentIndex < words.length) {
-          const next = words.slice(0, currentIndex + 1).join(' ');
+          currentIndex = Math.min(currentIndex + WORDS_PER_FRAME, words.length);
+          const next = words.slice(0, currentIndex).join(' ');
           setDisplayedText(next);
-          globalProgressTexts.current.set(cacheKey, next); // persist progress
-          currentIndex++;
-          timeoutRef.current = setTimeout(typeWords, speed);
+          globalProgressTexts.current.set(cacheKey, next);
+          rafRef.current = requestAnimationFrame(step);
         } else {
           setIsTypingComplete(true);
           globalCompletedTexts.current.set(cacheKey, text);
@@ -1417,13 +1411,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
         }
       };
 
-      timeoutRef.current = setTimeout(typeWords, currentIndex === 0 ? 50 : 0);
+      rafRef.current = requestAnimationFrame(step);
 
       return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
+        if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
