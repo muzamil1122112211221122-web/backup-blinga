@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "rnK2EmoPaH71L6Cx6Ify-"
+uri = "file://custom-pngs.zip"
+type = "unspecified"
+title = "Custom PNGs"
+
+[[outputs]]
+id = "d3CC6jkJuGPI1xnc1YIWM"
+uri = "file://attached_assets/%7B95767A84-EF64-4329-819E-68044CBA370C%7D_1784493638723.png"
+type = "image"
+title = "Uploaded PNG"

@@ -1,10 +1,20 @@
 import { cn } from "@/lib/utils";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { useTheme } from "./theme-provider";
+import {
+  getLogoStyleForConversation,
+  type LogoStyle,
+} from "@/lib/appearance-settings";
+import ringLogoLight from "@assets/fius_logo_2_white_theme_1785057130970.png";
+import ringLogoDark from "@assets/fius_logo_2_dark_theme__1785057130968.png";
 
 interface LogoProps {
   className?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   lineOnly?: boolean;
+  ringColor?: string;
+  ringOpacity?: number;
+  letterColor?: string;
 }
 
 /**
@@ -34,7 +44,7 @@ function makeWavyPath(cx: number, cy: number, R: number, waves: number, amp: num
   return d + "Z";
 }
 
-export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
+export function Logo({ className, size = "md", lineOnly = false, ringColor, ringOpacity, letterColor }: LogoProps) {
   const px    = { sm: 36, md: 46, lg: 70, xl: 86, '2xl': 130, '3xl': 190, '4xl': 260 }[size];
   const font  = { sm: 19, md: 24, lg: 36, xl: 44, '2xl': 62,  '3xl': 90,  '4xl': 124 }[size];
   const sw    = { sm: 1.6, md: 2.0, lg: 2.6, xl: 3.2, '2xl': 4.0, '3xl': 5.0, '4xl': 6.0 }[size];
@@ -47,8 +57,8 @@ export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
   const wavyPath   = useMemo(() => makeWavyPath(cx, cy, R, waves, amp), [cx, cy, R, waves, amp]);
   const circlePath = useMemo(() => makeWavyPath(cx, cy, R, waves, 0),   [cx, cy, R, waves]);
 
-  const morphValues     = [circlePath, circlePath, wavyPath, wavyPath, circlePath, circlePath].join(";");
-  const morphKeyTimes   = "0; 0.44; 0.62; 0.76; 0.94; 1";
+  const morphValues     = [circlePath, wavyPath, wavyPath, circlePath, circlePath, wavyPath].join(";");
+  const morphKeyTimes   = "0; 0.18; 0.42; 0.58; 0.82; 1";
   const morphKeySplines = "0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1; 0.25 0 0.25 1; 0.42 0 0.58 1";
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,11 +92,13 @@ export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
         >
           <path
             fill="none"
-            stroke="currentColor"
+            stroke={ringColor ?? "currentColor"}
             strokeWidth={sw}
             strokeLinejoin="round"
             strokeLinecap="round"
-            strokeOpacity={0.58}
+            className="fius-logo-ring"
+            style={ringOpacity !== undefined ? { strokeOpacity: ringOpacity } : undefined}
+            d={circlePath}
           >
             <animate
               attributeName="d"
@@ -118,13 +130,122 @@ export function Logo({ className, size = "md", lineOnly = false }: LogoProps) {
               fontSize={font}
               fontWeight="400"
               fontFamily="Georgia, 'Times New Roman', serif"
-              fill="currentColor"
+              fill={letterColor ?? "currentColor"}
+              className="fius-logo-letter"
               style={{ userSelect: "none" }}
             >
               ƒ
             </text>
           )}
         </svg>
+      </div>
+    </>
+  );
+}
+
+interface FiusLogoProps extends LogoProps {
+  conversationId?: string;
+  styleOverride?: LogoStyle;
+  /** When set, wraps the SVG logo in a scale transform — ignored for rings style */
+  scaleWhenCurrent?: string;
+}
+
+/**
+ * The app-wide Fius mark. "current" keeps the original SVG logo, while
+ * "rings" uses the supplied light/dark PNG pair with a gentle continuous spin.
+ */
+export function FiusLogo({
+  conversationId,
+  styleOverride,
+  className,
+  size = "md",
+  scaleWhenCurrent,
+  ...props
+}: FiusLogoProps) {
+  const { theme } = useTheme();
+  const [style, setStyle] = useState<LogoStyle>(() =>
+    styleOverride || getLogoStyleForConversation(conversationId)
+  );
+
+  useEffect(() => {
+    const refresh = () => {
+      setStyle(styleOverride || getLogoStyleForConversation(conversationId));
+    };
+    window.addEventListener("logoStyleChanged", refresh);
+    window.addEventListener("settingsSaved", refresh);
+    return () => {
+      window.removeEventListener("logoStyleChanged", refresh);
+      window.removeEventListener("settingsSaved", refresh);
+    };
+  }, [conversationId, styleOverride]);
+
+  useEffect(() => {
+    setStyle(styleOverride || getLogoStyleForConversation(conversationId));
+  }, [conversationId, styleOverride]);
+
+  if (style !== "rings") {
+    const svgLogo = <Logo {...props} size={size} className={className} />;
+    if (scaleWhenCurrent) {
+      return <div style={{ transform: scaleWhenCurrent, transformOrigin: 'center' }}>{svgLogo}</div>;
+    }
+    return svgLogo;
+  }
+
+  // sm/md get a slight size boost so rings don't look congested; xl/2xl get a bigger boost for welcome screen
+  const px = { sm: 46, md: 58, lg: 70, xl: 108, "2xl": 162, "3xl": 190, "4xl": 260 }[size];
+  const resolvedTheme = theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme;
+  const asset = resolvedTheme === "dark" ? ringLogoLight : ringLogoDark;
+
+  const font  = { sm: 19, md: 24, lg: 36, xl: 44, '2xl': 62, '3xl': 90, '4xl': 124 }[size];
+
+  return (
+    <>
+      <style>{`
+        @keyframes fius-uploaded-rings-rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .fius-uploaded-rings-spin {
+          animation: fius-uploaded-rings-rotate 10s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .fius-uploaded-rings-spin { animation: none; }
+        }
+      `}</style>
+      <div
+        className={cn("inline-flex flex-shrink-0 items-center justify-center relative", className)}
+        style={{ width: px, height: px }}
+        data-testid="logo-fius-rings"
+      >
+        {/* Rings image — rotates; no F in this PNG */}
+        <img
+          src={asset}
+          alt=""
+          aria-hidden="true"
+          width={px}
+          height={px}
+          className="absolute inset-0 object-contain fius-uploaded-rings-spin"
+          style={{ width: px, height: px }}
+        />
+        {/* F letter — stays static, slightly smaller and nudged up */}
+        <span
+          aria-label="Fius"
+          style={{
+            position: "relative",
+            fontSize: font * 0.72,
+            fontWeight: 400,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            lineHeight: 1,
+            userSelect: "none",
+            color: "currentColor",
+            marginTop: `-${Math.round(font * 0.13)}px`,
+            marginLeft: `${Math.round(font * 0.06)}px`,
+          }}
+        >
+          ƒ
+        </span>
       </div>
     </>
   );

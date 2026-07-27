@@ -1,16 +1,22 @@
-import { imagesReady } from "./preload-images";
+import "./preload-images"; // kick off background memory-caching immediately
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { applyAppFont } from "./lib/appearance-settings";
 
+// Apply the saved global font before React paints so the default is
+// Google Sans Flex even on the landing screen and during lazy loading.
+applyAppFont();
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Wait for the static icon/avatar set to finish loading (capped at 1.5s)
-// before revealing transitions/animations, so icons don't visibly pop in.
-imagesReady.then(() => {
+// Remove the preload class (transition/animation suppressor) after the very
+// first committed render — 2 rAFs is enough for all useLayoutEffects to fire
+// and position nav pills / pills correctly before transitions are enabled.
+// We do NOT gate this on imagesReady: images are preloaded via <link> in
+// index.html so they are cache-warm before JS even runs; waiting 3 s here
+// would suppress ALL transitions while users interact with the app.
+requestAnimationFrame(() => {
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.documentElement.classList.remove('preload');
-    });
+    document.documentElement.classList.remove('preload');
   });
 });

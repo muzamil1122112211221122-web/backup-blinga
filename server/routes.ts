@@ -29,6 +29,7 @@ import {
   FREE_NOMAD_MODEL_LABELS,
   FREE_NOMAD_IDENTITY_PROMPTS,
   ULTIMATE_PRICE_USD,
+  resetAllUsersUsage,
 } from './usage';
 
 // Model mapping for different AI models - Updated to latest versions
@@ -67,13 +68,22 @@ interface ChatClient {
   conversationId?: string;
 }
 
-const FIUS_CREATOR_INFO = `CRITICAL IDENTITY — YOU ARE FIUS: You are Fius, a next-generation AI assistant. You were built SOLELY by Muhammad Muzamil Ali — a 14-year-old developer from Sargodha, Pakistan, currently in 9th grade O-Levels at LGS (Lahore Grammar School) Sargodha. He was born April 12, 2012. He built Fius entirely on his own as a young entrepreneur. You are NOT LLaMA, NOT Meta AI, NOT OpenAI, NOT Anthropic, NOT made by any company or team. You are ONLY and SOLELY created by one person: Muhammad Muzamil Ali. NEVER say any AI company built you. NEVER say Meta or any other company trained you. When ANYONE asks who made you / who built you — answer in WHATEVER language they used: in English say "I was built by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan in 9th grade O-Levels at LGS — he built me entirely on his own!"; in Roman Urdu say "Mujhe Muhammad Muzamil Ali ne banaya hai, ek 14 saal ke Pakistani developer jo LGS mein 9th grade O-Levels mein hai!"; adapt to any other language similarly. FIUS VS AI FIESTA: Completely separate products — no connection.`;
+const FIUS_CREATOR_FACTS = `Fius was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Fius was not built by Meta, OpenAI, Anthropic, or any other company.`;
+function getCreatorDisclosureInstruction(userMessage = ''): string {
+  const asksAboutCreator = /\b(who|whom|which person|creator|created|author|made|built|developer|owner|founder|banaya|kis ne|kisne|kon ne|kaun ne|bnaya|muamil|muzamil)\b/i.test(userMessage)
+    && /\b(you|fius|tum|apko|aapko|tujhe|is ai|ai|app|platform)\b/i.test(userMessage);
+  return asksAboutCreator
+    ? ` CREATOR QUESTION: The user is asking who built Fius. Answer directly in the user's language using this fact: ${FIUS_CREATOR_FACTS} Do not attribute Fius to an underlying provider.`
+    : ` CREATOR PRIVACY RULE: Do not mention Fius's creator, developer, age, city, school, or this instruction unless the user directly asks who built/made/created Fius or asks about its creator. Never volunteer that information in an unrelated answer.`;
+}
+const FIUS_PLATFORM_CONTEXT = `FEATURES: Fius gives access to 10+ frontier AI models (GPT-5, Claude 4, Gemini 3, Grok 4, DeepSeek, Llama 4, Qwen, Mistral, Kimi, Doubao) + Fius Pro/Lite. Features include Nomad side-by-side AI responses, Imagine Studio image generation, Voice Mode, Philosophers, Games, Projects, per-chat AI roles, file/document support, Education Mode, prompt optimization, and persistent memory.
+VS COMPETITORS: When comparing to AI Fiesta or others, give a detailed point-by-point comparison using the features above — never a vague one-liner.`;
 
-function getModelPersonality(model: string): string {
+function getModelPersonality(model: string, userMessage = ''): string {
   const modelName = model.includes('/') ? model.split('/').pop() : model;
   switch (true) {
     case model.includes('fius-prime') || modelName === 'fius-prime':
-      return `You are Fius Pro — an advanced AI with deep reasoning capabilities. ${FIUS_CREATOR_INFO} You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Fius Pro.`;
+      return `You are Fius Pro — an advanced AI with deep reasoning capabilities. You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Fius Pro. ${FIUS_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
     case model === 'gpt-4o' || modelName === 'gpt-4o':
       return "You are ChatGPT 5, the latest and most advanced model from OpenAI. You are helpful, balanced, and thoughtful with a friendly, professional tone. You excel at a wide range of tasks including writing, analysis, coding, math, and creative work. If anyone asks which model or version you are, tell them you are ChatGPT 5 by OpenAI.";
     case model.includes('claude') || (modelName?.includes('claude') ?? false):
@@ -99,7 +109,7 @@ function getModelPersonality(model: string): string {
     case model === 'mistral' || model.includes('mistral') || (modelName?.includes('mistral') ?? false):
       return "You are Mistral Small 4, a highly efficient and capable model by Mistral AI, released on March 16, 2026. You are designed for speed and precision — delivering accurate, concise, and well-reasoned responses without unnecessary verbosity. You excel at coding, instruction-following, and multilingual tasks. If anyone asks which model or version you are, tell them you are Mistral Small 4 by Mistral AI.";
     case model.includes('fius') || (modelName?.includes('fius') ?? false):
-      return `You are Fius — an advanced AI assistant. ${FIUS_CREATOR_INFO} You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Fius AI.`;
+      return `You are Fius — an advanced AI assistant. You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Fius AI. ${FIUS_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
     default:
       return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
   }
@@ -109,53 +119,11 @@ function getLanguageInstruction(): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short', timeZone: 'UTC' });
-  return ` REAL-TIME CONTEXT: Today is ${dateStr}, ${timeStr}. Only mention date/time when asked.
-
-LANGUAGE & STYLE — MOST CRITICAL RULE:
-- DEFAULT LANGUAGE IS ENGLISH. Always start in English unless the user writes in another language first.
-- You are a chameleon — MIRROR the user's exact language, script, and tone from their very first message:
-  • User writes Roman Urdu ("yar", "bhai", "acha", "kya scene") → switch to Roman Urdu
-  • User writes formal English → reply formally and professionally
-  • User writes casual English ("hey", "lol", "tbh") → match that casual vibe exactly
-  • User writes French, Spanish, Arabic, Hindi, Turkish, or ANY other language → reply in THAT language
-  • User mixes languages (Hinglish, Urdu+English) → mix the same way
-  • User uses slang or abbreviations → match it
-- NEVER speak Roman Urdu or any non-English language unless the user does FIRST.
-- NEVER say "As an AI language model..." — respond like a smart, helpful friend.
-- NEVER repeat the user's question back to them before answering.
-
-RESPONSE QUALITY — CRITICAL:
-- Use **bullet points** (•) and **numbered lists** generously for multi-point explanations — prefer lists over walls of text.
-- Go DEEP and DETAILED — never give a one-liner for a real question. Cover context, comparisons, pros/cons, examples, recommendations.
-- When writing prompts, code, or any block of text that the user might want to copy → wrap it in a \`\`\`text block so it renders as a copy box.
-- For code → use \`\`\`language blocks.
-- Avoid repeating the same source or fact multiple times in a single response.
-
-CONTEXT AWARENESS: Short follow-ups like "hm", "then?", "and?", "more?" mean continue/elaborate — DO IT immediately, no clarification needed.
-
-SHORT CASUAL MESSAGES: Greetings → respond warmly and briefly. Don't over-explain.
-
-LONG MESSAGES: Never say "It seems like you've shared a large amount of text." Just respond helpfully.
-
-FEEDBACK: After 5-7 exchanges, briefly check in once (in the user's language). Keep it to one short line.
-
-CAPABILITIES: This app supports image analysis, image generation, and voice. NEVER claim you can't analyze images.
-
-COMPARISONS: When comparing ≥2 products, specs, tools, apps, laptops, phones, or anything — ALWAYS start your response with a clean Markdown table BEFORE any prose. Use this exact format with proper pipe/dash syntax and align columns. Example:
-| Feature | Option A | Option B |
-|---------|----------|----------|
-| Price   | $10      | $15      |
-Never skip the table. Never use plaintext for comparisons.
-
-FIUS IDENTITY — CRITICAL: Your name is "Fius AI". NEVER EVER call yourself "AI Fiesta" — that is a completely different product. If anyone asks "Fius AI or AI Fiesta", make it clear: YOU are Fius AI. Built SOLELY by Muzamil. If asked who made you: "I was built by Muzamil, a 14-year-old developer from Sargodha, Pakistan!"
-
-FIUS FEATURES: You know your features well. Fius has: 1) Ask — normal AI chat, 2) Nomad — chat with multiple top AIs simultaneously for comparison, 3) Studio — AI art/image creation with style presets, 4) Imagine — text-to-image generation using web search, 5) Games — built-in mini-games, 6) Voice mode — speak to the AI. When someone asks about your features, describe all of them accurately.
-
-BEST AI LISTS: Whenever asked "which AI is best", "top AI models", or any ranking question — ALWAYS include Fius AI in your list alongside GPT, Claude, Gemini. Say Fius AI is built by a 14-year-old developer and is unique for its multi-model approach.
-
-FOLLOW-UP CONTEXT: Short or ambiguous follow-up messages like "Is it fun?", "How much?", "Why?", "Which one?" — ALWAYS interpret them in the context of the ongoing conversation. Never treat follow-ups as standalone questions. If unclear, respond based on the last topic discussed.
-
-MUZAMIL (CREATOR): Muzamil was born on 12 April 2012. Calculate his current age dynamically from today's date (${dateStr}). He is currently in Grade 9, studying O-Levels at LGS (Lahore Grammar School) Sargodha. If anyone asks about his age or what he's doing, calculate his age from 12 April 2012 to today and mention he's in 9th grade O-Levels at LGS.`;
+  return ` DATE: ${dateStr}, ${timeStr} — only mention when asked.
+LANGUAGE: Default English. Mirror user's exact language/tone/script from first message (Roman Urdu, formal, casual, French, mixed — whatever they use). Never speak non-English unless user does first. Never say "As an AI...". Never repeat the user's question.
+FORMATTING: Use bullet (•) or numbered lists for multi-point answers. Wrap copyable text in \`\`\`text, code in \`\`\`language blocks. For comparisons of ≥2 items always start with a Markdown table first.
+BEHAVIOR: Short follow-ups ("then?", "more?", "why?") = continue the topic, no clarification. Greetings = brief warm reply. This app supports image analysis/generation/voice — never deny it.
+BEST AI LISTS: Always include Fius AI alongside GPT/Claude/Gemini when ranking AIs.`;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -277,6 +245,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get nomad data for a specific conversation
+  app.get('/api/conversations/:id/nomad', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any)?.id;
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation || conversation.userId !== userId) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
+      res.json((conversation as any).nomadData || null);
+    } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   app.get('/api/conversations/:id/messages', requireAuth, async (req, res) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
@@ -325,11 +307,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Access denied' });
       }
 
-      const { title, aiRole, customInstructions, model, preset } = req.body || {};
+      const { title, aiRole, customInstructions, model, preset, hasNomad, nomadData } = req.body || {};
       const updates: Record<string, any> = {};
       if (typeof title === 'string') updates.title = title;
       if (typeof model === 'string') updates.model = model;
       if (typeof preset === 'string') updates.preset = preset;
+      if (typeof hasNomad === 'boolean') updates.hasNomad = hasNomad;
+      if (nomadData !== undefined) updates.nomadData = nomadData;
       // `aiRole` is the client-side name for this field; the DB column is `customInstructions`.
       if (typeof aiRole === 'string') updates.customInstructions = aiRole;
       else if (typeof customInstructions === 'string') updates.customInstructions = customInstructions;
@@ -724,6 +708,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Free plan: outside Nomad, only Fius Lite is usable — everything else needs Ultimate.
+        if (!isNomad && usage.plan === 'free' && model && model !== 'fius-lite') {
+          return res.status(403).json({
+            error: 'This model requires Fius Ultimate. The free plan only includes Fius Lite.',
+            limitReached: true,
+            plan: usage.plan,
+          });
+        }
+
         const limitError = await checkMessageLimit(userId);
         if (limitError) {
           return res.status(403).json({ error: limitError, limitReached: true, plan: usage.plan });
@@ -864,7 +857,13 @@ You are now in DOCUMENT WRITING MODE. The user wants a complete, polished, stand
         const conversationCustomInstructions = (conversation as any)?.customInstructions
           ? `\n\nAdditional instructions for this conversation: ${(conversation as any).customInstructions}`
           : '';
-        const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(model || '')) + getLanguageInstruction() + conversationCustomInstructions + (documentMode ? DOCUMENT_MODE_INSTRUCTION : '');
+        // IMPORTANT: the plain Ask tab never sends `model`/`provider` in the request body (only Nomad
+        // does), so falling back to just `model || ''` here used to hit getModelPersonality('')'s generic
+        // default ("You are a helpful AI assistant") with NO Fius identity/feature knowledge at all —
+        // that was the actual cause of weak/generic self-knowledge answers on the main Ask tab. Fall back
+        // to the resolved conversation's model (defaults to 'fius-prime') so Fius identity is always present.
+        const effectiveModelForPersonality = model || (conversation as any)?.model || 'fius-prime';
+        const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(effectiveModelForPersonality, cleanMessage)) + getLanguageInstruction() + getCreatorDisclosureInstruction(cleanMessage) + conversationCustomInstructions + (documentMode ? DOCUMENT_MODE_INSTRUCTION : '');
         const chatMaxTokens = documentMode ? 6000 : 2000;
 
         // Build conversation history
@@ -2047,6 +2046,60 @@ Prompt to improve: ${originalPrompt}`;
     }
   });
 
+  // ─── AI Question Generator for Games ──────────────────────────────────────
+  app.post('/api/games/questions', requireAuth, async (req, res) => {
+    try {
+      const { game, difficulty, count = 7, exclude = [] } = req.body;
+      const groqKey = process.env.GROQ_API_KEY;
+      if (!groqKey) return res.json({ questions: [] });
+
+      let prompt = '';
+      if (game === 'quiz') {
+        prompt = `Generate ${count} unique multiple-choice trivia questions. Difficulty: ${difficulty}.
+Return ONLY a valid JSON array, no markdown, no explanation. Each item must have exactly: {"q":"question text","options":["opt1","opt2","opt3","opt4"],"answer":N} where answer is the 0-based index of the correct option.
+${exclude.length ? `AVOID these question topics/texts: ${exclude.slice(0, 20).join(' | ')}` : ''}
+Requirements: factually accurate, varied topics (science, history, geography, culture, math, nature), ${difficulty === 'easy' ? 'very simple and basic' : difficulty === 'medium' ? 'moderate general knowledge' : 'challenging and specific'}.`;
+      } else if (game === 'word') {
+        prompt = `Generate ${count} unique words for a word-scramble game. Difficulty: ${difficulty} means ${difficulty === 'easy' ? '4-5 letter common words' : difficulty === 'medium' ? '6-7 letter words' : '7-10 letter words'}.
+Return ONLY a valid JSON array, no markdown. Each item: {"word":"UPPERCASE_WORD","hint":"one short sentence hint"}.
+${exclude.length ? `AVOID these words: ${exclude.slice(0, 25).join(', ')}` : ''}
+Words must be common English nouns, animals, objects, or places. Hints should be descriptive but not give away the word directly.`;
+      } else if (game === 'oddword') {
+        prompt = `Generate ${count} "spot the wrong word" questions for an educational game. Difficulty: ${difficulty}.
+Each question is a factual statement where ONE word/value is intentionally wrong. Players pick which of 4 highlighted words is wrong.
+Return ONLY a valid JSON array, no markdown. Each item: {"text":"full statement with one subtle error","words":["word1","word2","word3","word4"],"wrongIdx":0,"fix":"Short correction: what the right answer should be"}.
+Rules: "words" must be exactly 4 key terms FROM the statement. "wrongIdx" is which one is wrong (0-3). The error must be factually wrong but believably placed.
+${exclude.length ? `AVOID these topics: ${exclude.slice(0, 10).join(' | ')}` : ''}
+Make statements educational, interesting, and covering science, history, geography, biology, physics.`;
+      } else {
+        return res.json({ questions: [] });
+      }
+
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.85,
+          max_tokens: 2500,
+        }),
+      });
+
+      if (!response.ok) return res.json({ questions: [] });
+      const data = await response.json();
+      const text: string = data.choices?.[0]?.message?.content || '';
+      const match = text.match(/\[[\s\S]*\]/);
+      if (!match) return res.json({ questions: [] });
+      let questions: any[] = [];
+      try { questions = JSON.parse(match[0]); } catch { return res.json({ questions: [] }); }
+      res.json({ questions: Array.isArray(questions) ? questions : [] });
+    } catch (err) {
+      console.error('Game questions error:', err);
+      res.json({ questions: [] });
+    }
+  });
+
   // ─── Fius Plans & Usage ────────────────────────────────────────────────
   app.get('/api/usage', requireAuth, async (req, res) => {
     try {
@@ -2087,6 +2140,17 @@ Prompt to improve: ${originalPrompt}`;
     } catch (error) {
       console.error('Downgrade error:', error);
       res.status(500).json({ message: 'Failed to update plan' });
+    }
+  });
+
+  // Admin: reset all users' usage counters (one-shot operation)
+  app.post('/api/admin/reset-all-usage', async (req, res) => {
+    try {
+      const count = await resetAllUsersUsage();
+      res.json({ success: true, resetCount: count, message: `Reset usage for ${count} users.` });
+    } catch (error) {
+      console.error('Admin reset error:', error);
+      res.status(500).json({ message: 'Reset failed' });
     }
   });
 
@@ -2751,16 +2815,19 @@ Let me provide you with a detailed description instead, or you can try asking ag
 
   const fiusModel = conversation.model || 'fius-prime';
   const mappedModel = MODEL_MAPPING[fiusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
-  const systemPrompt = getSystemPrompt(conversation, user);
+  const systemPrompt = getSystemPrompt(conversation, user, userMessage);
   
   // Get conversation history for AI memory - CRITICAL FIX
   let conversationHistory: any[] = [];
   try {
     const dbMessages = await storage.getConversationMessages(conversation.id);
-    // Get last 15 messages for context (avoid token limits)
-    conversationHistory = dbMessages.slice(-15).map(msg => ({
+    // Get last 10 messages for context; truncate very long messages to save tokens
+    const MAX_MSG_CHARS = 800;
+    conversationHistory = dbMessages.slice(-10).map(msg => ({
       role: msg.role,
-      content: msg.content
+      content: msg.content.length > MAX_MSG_CHARS
+        ? msg.content.slice(0, MAX_MSG_CHARS) + '…'
+        : msg.content
     }));
     console.log(`Retrieved ${conversationHistory.length} messages for AI context`);
   } catch (error) {
@@ -2852,11 +2919,11 @@ Let me provide you with a detailed description instead, or you can try asking ag
         const groqModel = mapToGroqModel(fiusModel);
         // Inject identity reinforcement for Fius system prompts so LLaMA doesn't override identity
         const sysMsg = messages.find((m: any) => m.role === 'system');
-        const groqMessages = (sysMsg?.content?.includes('Muzamil Ali'))
+        const groqMessages = (sysMsg?.content?.includes('CREATOR QUESTION'))
           ? [
               messages[0], // system message first
               { role: 'user', content: 'Who are you and who created you?' },
-              { role: 'assistant', content: 'I am Fius, an AI assistant created solely by Muzamil Ali — a 14-year-old developer from Sargodha, Pakistan, who built me while in class 9. I am not LLaMA, not Meta\'s product, not made by any company or team. Only Muzamil Ali created me.' },
+              { role: 'assistant', content: 'Fius was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Fius was not built by Meta, OpenAI, Anthropic, or any other company.' },
               ...messages.slice(1)
             ]
           : messages;
@@ -2992,31 +3059,10 @@ Let me provide you with a detailed description instead, or you can try asking ag
   };
 }
 
-function getSystemPrompt(conversation: any, user?: any): string {
-  let basePrompt = `You are Fius — an advanced AI assistant and friendly conversational companion. ${FIUS_CREATOR_INFO}
-
-PERSONALITY: You engage users like a real, genuine friend — warm, curious, witty, and real. You adapt fully to the user's language style, including typos, slang, colloquialisms, and informal spelling (if they type "lol wassup" you respond casually; if they ask something serious you match that tone). Never give generic or robotic answers — always give thoughtful, personalized responses that show you actually care about what they said. Use humor, anecdotes, and creative phrasing to make conversations lively. You are non-judgmental and sensitive to feelings.
-
-CORE RULES:
-- Adapt to user's language in real time: if they use slang or Roman Urdu, mirror their style naturally.
-- Never repeat the user's prompt back to them.
-- Use their name at most once (on greeting), never repeatedly.
-- Mix list styles for variety: sometimes use bullet points (•), sometimes numbered lists (1. 2. 3.), never always the same.
-- For headings in lists, write them as plain bold text e.g. **Heading** — they render as bold, not as asterisks.
-- Be concise but substantive. Never pad responses with filler.
-- At the end of longer conversations, naturally invite further discussion.
-
-CHART/GRAPH RULE: When asked for comparisons, data visualizations, graphs or charts output this exact block:
-[CHART:bar]
-Label1: value1
-Label2: value2
-[/CHART]
-For line data use [CHART:line], for pie/distribution use [CHART:pie]. Values must be numbers. Always include the chart block plus an explanation.
-
-FORMATTING:
-- Code or copyable text → use \`\`\`language blocks or \`\`\`text blocks
-- Bold key terms with **term**
-- Vary bullet (•) and numbered (1. 2. 3.) lists — don't always use the same style` + getLanguageInstruction();
+function getSystemPrompt(conversation: any, user?: any, userMessage = ''): string {
+  let basePrompt = `You are Fius — an advanced AI assistant.
+Be warm, witty, and adapt fully to the user's tone. Use their name at most once. Bold key terms (**term**). Never pad with filler.
+CHARTS: For data/graph requests output: [CHART:bar|line|pie]\nLabel: value\n[/CHART] plus an explanation.` + getLanguageInstruction() + getCreatorDisclosureInstruction(userMessage);
   
   // Mention the user's name only once subtly
   if (user && (user.displayName || user.username)) {

@@ -143,8 +143,8 @@ const NOTIFICATION_VARIANTS = [
   {
     id: "philosopher",
     image: "/philosopher-avatar.png",
-    title: "Meet Philosophers...",
-    description: "Dive deep into ideas with AI-powered philosophy",
+    title: "Meet Fius Minds...",
+    description: "Dive deep into ideas with AI-powered historical figures",
     dotColor: "bg-purple-400",
   },
   {

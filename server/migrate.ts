@@ -27,6 +27,13 @@ export async function runMigrations() {
       );
     `);
 
+    // Nomad columns on conversations
+    await d.execute(sql`
+      ALTER TABLE conversations
+        ADD COLUMN IF NOT EXISTS has_nomad BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS nomad_data JSONB;
+    `);
+
     console.log("✓ Database migrations complete.");
   } catch (err: any) {
     console.error("Migration error:", err?.message || err);

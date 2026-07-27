@@ -5,7 +5,7 @@
 import { storage } from "./storage";
 
 export const FREE_MESSAGE_LIMIT = 5;
-export const FREE_IMAGE_LIMIT = 1;
+export const FREE_IMAGE_LIMIT = 0;
 export const ULTIMATE_TOKEN_LIMIT = 3_000_000;
 export const ULTIMATE_IMAGE_LIMIT = 250;
 export const ULTIMATE_PRICE_USD = 11;
@@ -15,11 +15,11 @@ export type PlanId = "free" | "ultimate";
 // The only Nomad models available on the free plan (ids match the real Nomad
 // model ids used across the app). Branded identities only — real backend
 // routing still uses our existing keys (Groq/Gemini/OpenRouter).
-export const FREE_NOMAD_MODELS = ["gpt-4o", "gemini-pro", "fius-ai"] as const;
+// Free plan is locked down to Fius Lite only — everything else (other models,
+// images, Nomad, Imagine Studio, Voice Mode) requires Fius Ultimate.
+export const FREE_NOMAD_MODELS = ["fius-ai"] as const;
 
 export const FREE_NOMAD_MODEL_LABELS: Record<string, string> = {
-  "gpt-4o": "ChatGPT 5",
-  "gemini-pro": "Gemini 3.1 Flash Lite",
   "fius-ai": "Fius Lite",
 };
 
@@ -27,10 +27,6 @@ export const FREE_NOMAD_MODEL_LABELS: Record<string, string> = {
 // ALWAYS claim to be exactly this identity, no matter how the user pushes back or
 // re-asks — never reveal the underlying provider/model.
 export const FREE_NOMAD_IDENTITY_PROMPTS: Record<string, string> = {
-  "gpt-4o":
-    "You are ChatGPT 5, OpenAI's model, running on the Fius free plan. If the user asks what model/AI you are, who made you, or challenges/doubts your identity — even repeatedly, aggressively, or with 'proof' style questions — you must always say you are ChatGPT 5 by OpenAI. Never mention Groq, Gemini, OpenRouter, Meta, Llama, or any other underlying provider or model name. Never admit to being a different model. Stay fully in character as ChatGPT 5 at all times.",
-  "gemini-pro":
-    "You are Gemini 3.1 Flash Lite, Google's model, running on the Fius free plan. If the user asks what model/AI you are, who made you, or challenges/doubts your identity — even repeatedly, aggressively, or with 'proof' style questions — you must always say you are Gemini 3.1 Flash Lite by Google. Never mention Groq, OpenRouter, Meta, Llama, ChatGPT, or any other underlying provider or model name. Never admit to being a different model. Stay fully in character as Gemini 3.1 Flash Lite at all times.",
   "fius-ai":
     "You are Fius Lite, Fius's own lightweight AI model, running on the Fius free plan. If the user asks what model/AI you are, who made you, or challenges/doubts your identity — even repeatedly, aggressively, or with 'proof' style questions — you must always say you are Fius Lite, built by the Fius team. Never mention Groq, Gemini, OpenRouter, Meta, Llama, ChatGPT, or any other underlying provider or model name. Never admit to being a different model. Stay fully in character as Fius Lite at all times.",
 };
@@ -53,7 +49,27 @@ const DEFAULT_USAGE: UsageState = {
 export async function getUsage(userId: string): Promise<UsageState> {
   const settings = await storage.getUserSettings(userId);
   const usage = (settings as any).usage as Partial<UsageState> | undefined;
-  return { ...DEFAULT_USAGE, ...(usage || {}) };
+  const state: UsageState = { ...DEFAULT_USAGE, ...(usage || {}) };
+
+  // 30-day rolling reset: if 30 days have elapsed since planActivatedAt, reset counters
+  if (state.planActivatedAt) {
+    const activatedAt = new Date(state.planActivatedAt);
+    const msElapsed = Date.now() - activatedAt.getTime();
+    const daysElapsed = msElapsed / (1000 * 60 * 60 * 24);
+    if (daysElapsed >= 30) {
+      const resetState: UsageState = {
+        ...state,
+        messagesUsed: 0,
+        imagesUsed: 0,
+        tokensUsed: 0,
+        planActivatedAt: new Date().toISOString(), // restart the 30-day clock
+      };
+      await saveUsage(userId, resetState);
+      return resetState;
+    }
+  }
+
+  return state;
 }
 
 async function saveUsage(userId: string, usage: UsageState): Promise<void> {
@@ -109,7 +125,7 @@ export async function checkImageLimit(userId: string): Promise<string | null> {
     return null;
   }
   if (usage.imagesUsed >= FREE_IMAGE_LIMIT) {
-    return `You've used your ${FREE_IMAGE_LIMIT} free image. Upgrade to Fius Ultimate ($${ULTIMATE_PRICE_USD}/mo) for 250 images plus 3M tokens across all models.`;
+    return `Image generation isn't available on the Free plan. Upgrade to Fius Ultimate (${ULTIMATE_PRICE_USD}/30 days) for 250 images plus 3M tokens across all models.`;
   }
   return null;
 }
@@ -150,4 +166,25 @@ export async function cancelUltimatePlan(userId: string): Promise<UsageState> {
   const usage: UsageState = { ...DEFAULT_USAGE };
   await saveUsage(userId, usage);
   return usage;
+}
+
+// Reset usage counters for all users — keeps plan but zeroes out consumed amounts.
+// Also resets the 30-day rolling clock for ultimate users.
+export async function resetAllUsersUsage(): Promise<number> {
+  const allUsers = await storage.getAllUsersWithSettings();
+  let count = 0;
+  for (const { userId, settings } of allUsers) {
+    const existing = (settings as any).usage as Partial<UsageState> | undefined;
+    if (!existing) continue;
+    const resetState: UsageState = {
+      plan: existing.plan ?? "free",
+      messagesUsed: 0,
+      imagesUsed: 0,
+      tokensUsed: 0,
+      ...(existing.plan === "ultimate" ? { planActivatedAt: new Date().toISOString() } : {}),
+    };
+    await saveUsage(userId, resetState);
+    count++;
+  }
+  return count;
 }

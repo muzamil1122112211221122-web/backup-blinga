@@ -1,76 +1,284 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, ChevronLeft, Settings, UserPen, LogOut, ChevronUp, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Zap, Image as ImageIcon, Clock } from "lucide-react";
+import { Plus, X, Check, Settings, UserPen, LogOut, ChevronUp, ChevronLeft, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Search, MessageSquare, Clock } from "lucide-react";
 import { useUsage } from "@/hooks/use-usage";
-import searchIcon from "@assets/search_1780877151956.png";
-import chatIcon from "@assets/chat-bubble_1780877151955.png";
-import imagineIcon from "@assets/creativity_1780877151954.png";
-import historyIcon from "@assets/history_1780877151954.png";
-import audioIcon from "@assets/audio_1780878961468.png";
-
-function MaskIcon({ src, color, className = "" }: { src: string; color: string; className?: string }) {
-  return (
-    <span
-      className={`inline-block flex-shrink-0 ${className}`}
-      style={{
-        width: 24,
-        height: 24,
-        maskImage: `url(${src})`,
-        WebkitMaskImage: `url(${src})`,
-        maskSize: "contain",
-        maskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskSize: "contain",
-        WebkitMaskRepeat: "no-repeat",
-        WebkitMaskPosition: "center",
-        backgroundColor: color,
-      }}
-    />
-  );
-}
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Logo } from "./logo";
+import { FiusLogo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getVibrantColor } from "@/lib/utils";
+import { useTheme } from "./theme-provider";
+import { SIDEBAR_ASSETS } from "@/lib/sidebar-assets";
 
 // ── Sidebar usage strip ────────────────────────────────────────────────────
+function UsageBar({ pct, color }: { pct: number; color: string }) {
+  return (
+    <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: color }}
+      />
+    </div>
+  );
+}
+
 function SidebarUsage() {
   const { usage, isLoading } = useUsage();
   if (isLoading || !usage) return null;
 
   const isUltimate = usage.plan === "ultimate";
 
-  // Compute reset date (1st of next month)
-  // 30-day rolling plan — show "resets in Xd"
+  // 30-day rolling reset from plan activation date
   const now = new Date();
-  const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const daysLeft = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const activatedAt = (usage as any).planActivatedAt ? new Date((usage as any).planActivatedAt) : null;
+  const resetDate = activatedAt
+    ? new Date(activatedAt.getTime() + 30 * 24 * 60 * 60 * 1000)
+    : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const msLeft = Math.max(0, resetDate.getTime() - now.getTime());
+  const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+  const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  const tokensLeft = isUltimate ? (usage.tokensRemaining ?? 0) : (usage.messagesRemaining ?? 0);
-  const tokensLabel = isUltimate ? "tokens" : "msgs";
-  const imagesLeft = usage.imagesRemaining ?? 0;
+  // Token / message row
+  const tokensRemaining = isUltimate ? (usage.tokensRemaining ?? 0) : (usage.messagesRemaining ?? 0);
+  const tokensUsed      = isUltimate ? (usage.tokensUsed ?? 0)      : (usage.messagesUsed ?? 0);
+  const tokensLimit     = isUltimate ? (usage.tokensLimit ?? 1)     : (usage.messagesLimit ?? 1);
+  const tokensLabel     = isUltimate ? "Tokens" : "Messages";
+  const tokensPct       = tokensLimit > 0 ? (tokensUsed / tokensLimit) * 100 : 0;
 
-  const fmtNum = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : `${n}`;
+  // Images row
+  const imagesRemaining = usage.imagesRemaining ?? 0;
+  const imagesUsed      = usage.imagesUsed ?? 0;
+  const imagesLimit     = usage.imagesLimit ?? 1;
+  const imagesPct       = imagesLimit > 0 ? (imagesUsed / imagesLimit) * 100 : 0;
+
+  const fmtNum = (n: number) =>
+    n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1000    ? `${(n / 1000).toFixed(0)}k`
+    : `${n}`;
 
   return (
-    <div className="mx-3 mb-2 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Zap className="w-3 h-3 text-amber-500 flex-shrink-0" />
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{fmtNum(tokensLeft)} {tokensLabel}</span>
+    <div className="mx-3 mb-2 px-3 py-2.5 space-y-3">
+      {/* ── Tokens / Messages ── */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">{tokensLabel}</span>
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{fmtNum(tokensRemaining)} left</span>
         </div>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <ImageIcon className="w-3 h-3 text-pink-500 flex-shrink-0" />
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{imagesLeft} imgs</span>
+        <UsageBar pct={tokensPct} color="#f59e0b" />
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">{fmtNum(tokensUsed)} of {fmtNum(tokensLimit)}</p>
+      </div>
+
+      {/* ── Images ── */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Images</span>
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{imagesRemaining} left</span>
         </div>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">resets {daysLeft}d</span>
+        <UsageBar pct={imagesPct} color="#ec4899" />
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">{imagesUsed} of {imagesLimit}</p>
+      </div>
+
+      {/* ── Reset countdown ── */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">Resets in</span>
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{daysLeft}d {hoursLeft}h</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Spotlight Search Component ────────────────────────────────────────────────
+function SpotlightSearch({
+  query,
+  onQueryChange,
+  onClose,
+  chats,
+  onSelect,
+  isDark,
+}: {
+  query: string;
+  onQueryChange: (q: string) => void;
+  onClose: () => void;
+  chats: Array<{ id: string; title: string; createdAt: Date; aiRole?: string }>;
+  onSelect: (id: string) => void;
+  isDark: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  const filtered = [...chats]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .filter(c => !query.trim() || c.title?.toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 20);
+
+  const bg   = isDark ? '#1a1a1a' : '#ffffff';
+  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const inputColor = isDark ? '#f0f0f0' : '#111111';
+  const subColor = isDark ? '#888' : '#999';
+  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 99999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 1rem',
+        background: 'rgba(0,0,0,0.55)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        animation: 'spotlight-fade-in 0.15s ease',
+      }}
+    >
+      <style>{`
+        @keyframes spotlight-fade-in { from { opacity:0 } to { opacity:1 } }
+        @keyframes spotlight-slide-up { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        .spotlight-item:hover { background: ${hoverBg} !important; }
+        .spotlight-item { transition: background 0.1s ease; }
+        .spotlight-input, .spotlight-input:focus, .spotlight-input:active {
+          outline: none !important;
+          box-shadow: none !important;
+          border: none !important;
+          -webkit-box-shadow: none !important;
+        }
+        .spotlight-dialog, .spotlight-dialog:focus, .spotlight-dialog *:focus-visible {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+
+      <div
+        className="spotlight-dialog"
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 580,
+          borderRadius: 18,
+          overflow: 'hidden',
+          background: bg,
+          border: `1px solid ${border}`,
+          boxShadow: isDark
+            ? '0 24px 80px rgba(0,0,0,0.7), 0 4px 20px rgba(0,0,0,0.4)'
+            : '0 24px 80px rgba(0,0,0,0.18), 0 4px 20px rgba(0,0,0,0.08)',
+          animation: 'spotlight-slide-up 0.18s ease',
+        }}
+      >
+        {/* ── Search Input Row ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 18px',
+        }}>
+          <Search style={{ width: 18, height: 18, flexShrink: 0, color: subColor }} />
+          <input
+            ref={inputRef}
+            className="spotlight-input"
+            value={query}
+            onChange={e => onQueryChange(e.target.value)}
+            placeholder="Search chats..."
+            style={{
+              flex: 1, minWidth: 0,
+              fontSize: 16, lineHeight: '1.4',
+              color: inputColor,
+              background: 'none',
+              border: 'none',
+              outline: 'none',
+              boxShadow: 'none',
+              WebkitAppearance: 'none',
+              caretColor: isDark ? '#ffffff' : '#000000',
+            }}
+          />
+          {query && (
+            <button
+              onClick={() => onQueryChange('')}
+              style={{ background: 'none', border: 'none', outline: 'none', cursor: 'pointer',
+                padding: 4, display: 'flex', alignItems: 'center', color: subColor }}
+            >
+              <X style={{ width: 14, height: 14 }} />
+            </button>
+          )}
         </div>
+
+        {/* ── Chat List ── */}
+        <div style={{
+          maxHeight: 'min(60vh, 440px)',
+          overflowY: 'auto',
+          padding: '6px',
+        }}>
+          {filtered.length === 0 ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: '48px 0', gap: 10, color: subColor,
+            }}>
+              <MessageSquare style={{ width: 28, height: 28, opacity: 0.4 }} />
+              <span style={{ fontSize: 14 }}>
+                {query ? 'No chats found' : 'No chats yet'}
+              </span>
+            </div>
+          ) : (
+            <>
+              {query.trim() === '' && (
+                <div style={{ padding: '6px 12px 4px', fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.07em', textTransform: 'uppercase', color: subColor }}>
+                  Recent Chats
+                </div>
+              )}
+              {filtered.map(chat => {
+                const dateStr = (() => {
+                  const d = new Date(chat.createdAt);
+                  if (isToday(d)) return 'Today';
+                  if (isYesterday(d)) return 'Yesterday';
+                  return format(d, 'MMM d');
+                })();
+                return (
+                  <button
+                    key={chat.id}
+                    className="spotlight-item"
+                    onClick={() => onSelect(chat.id)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                      borderRadius: 12, padding: '10px 12px', textAlign: 'left',
+                      background: 'none', border: 'none', outline: 'none', cursor: 'pointer',
+                      color: inputColor,
+                    }}
+                  >
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                      background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <MessageSquare style={{ width: 14, height: 14, color: subColor }} />
+                    </div>
+                    <span style={{
+                      flex: 1, minWidth: 0, overflow: 'hidden',
+                      textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      fontSize: 14, fontWeight: 500,
+                    }}>
+                      {chat.title || 'New Chat'}
+                    </span>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      fontSize: 11, color: subColor, flexShrink: 0,
+                    }}>
+                      <Clock style={{ width: 11, height: 11 }} />
+                      <span>{dateStr}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </>
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -78,6 +286,8 @@ function SidebarUsage() {
 
 interface SidebarProps {
   isOpen: boolean;
+  openMode?: 'mini' | 'full';
+  onModeChange?: (mode: 'mini' | 'full') => void;
   onClose: () => void;
   onLogout: () => void;
   projects: Array<{
@@ -86,6 +296,7 @@ interface SidebarProps {
     createdAt: Date;
     aiRole?: string;
     isProject?: boolean;
+    hasNomad?: boolean;
   }>;
   currentProjectId?: string;
   onProjectSelect: (id: string) => void;
@@ -104,11 +315,15 @@ interface SidebarProps {
   onUserRename?: (newUsername: string) => void;
   profilePicture?: string;
   onProfilePictureChange?: (dataUrl: string) => void;
+  nomadHistory?: Array<{ id: string; ts: number; mode: string; preview: string }>;
+  onNomadHistorySelect?: (id?: string) => void;
   closeButtonPosition?: 'top' | 'bottom';
 }
 
 export function Sidebar({
   isOpen,
+  openMode = 'mini',
+  onModeChange,
   onClose,
   onLogout,
   projects,
@@ -117,6 +332,8 @@ export function Sidebar({
   onNewProject,
   onDeleteProject,
   onEditProject,
+  onUpdateAiRole,
+  onSearchOpen,
   onOpenSettings,
   onVoiceClick,
   onImagineClick,
@@ -124,8 +341,10 @@ export function Sidebar({
   onUserRename,
   profilePicture,
   onProfilePictureChange,
-  closeButtonPosition = 'top'
+  closeButtonPosition = 'top',
 }: SidebarProps) {
+  const { theme } = useTheme();
+  const [isMini, setIsMini] = useState(true);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
@@ -139,16 +358,55 @@ export function Sidebar({
     setPinnedChats(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      localStorage.setItem("pinnedChats", JSON.stringify([...next]));
+      localStorage.setItem("pinnedChats", JSON.stringify(Array.from(next)));
       return next;
     });
   };
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [spotlightQuery, setSpotlightQuery] = useState("");
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const isDarkTheme = theme === "dark" || (
+    theme === "system" &&
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+  const sidebarAsset = (key: keyof typeof SIDEBAR_ASSETS) =>
+    SIDEBAR_ASSETS[key][isDarkTheme ? "dark" : "light"];
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsMini(true);
+      setSpotlightOpen(false);
+    } else {
+      setIsMini(openMode !== 'full');
+    }
+  }, [isOpen, openMode]);
+
+  const openSpotlight = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setSpotlightQuery("");
+    setSpotlightOpen(true);
+  }, []);
+
+  useEffect(() => {
+    onModeChange?.(isMini ? 'mini' : 'full');
+  }, [isMini, onModeChange]);
+
+  const closeSidebarStage = () => {
+    if (isMini) {
+      onClose();
+    } else {
+      setIsMini(true);
+      onModeChange?.('mini');
+    }
+  };
 
   // Chat config dialog
   const [chatConfigOpen, setChatConfigOpen] = useState(false);
@@ -278,6 +536,16 @@ export function Sidebar({
     reader.readAsDataURL(file);
   }
 
+  // Detect touch device so we always show action buttons on mobile
+  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+  const getDateGroup = (date: Date): string => {
+    if (isToday(date)) return 'Today';
+    if (isYesterday(date)) return 'Yesterday';
+    if (isThisMonth(date)) return 'This Month';
+    return format(date, 'MMMM');
+  };
+
   const groupItemsByDate = (items: typeof projects) => {
     const groups: { [key: string]: typeof projects } = {
       'Today': [],
@@ -294,18 +562,9 @@ export function Sidebar({
     );
 
     sortedItems.forEach(item => {
-      const date = new Date(item.createdAt);
-      if (isToday(date)) {
-        groups['Today'].push(item);
-      } else if (isYesterday(date)) {
-        groups['Yesterday'].push(item);
-      } else if (isThisMonth(date)) {
-        groups['This Month'].push(item);
-      } else {
-        const monthYear = format(date, 'MMMM');
-        if (!groups[monthYear]) groups[monthYear] = [];
-        groups[monthYear].push(item);
-      }
+      const groupName = getDateGroup(new Date(item.createdAt));
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(item);
     });
 
     return groups;
@@ -317,98 +576,168 @@ export function Sidebar({
   const unpinnedItems = chatItems.filter(p => !pinnedChats.has(p.id));
   const chatGroups = groupItemsByDate(unpinnedItems);
 
+  // All date group keys (chats only)
+  const allGroupKeys = Object.keys(chatGroups).filter(g => (chatGroups[g]?.length ?? 0) > 0);
+  const MiniNavButton = ({
+    asset,
+    label,
+    onClick,
+  }: {
+    asset: keyof typeof SIDEBAR_ASSETS;
+    label: string;
+    onClick: () => void;
+  }) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClick();
+          }}
+          className="h-10 w-10 mx-auto flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors"
+        >
+          <img src={sidebarAsset(asset)} alt="" className="object-contain" style={{width:'23px',height:'23px'}} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+
   return (
+    <TooltipProvider delayDuration={300}>
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${isOpen && !isMini ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-[#0d0d0d] text-zinc-900 dark:text-zinc-100 z-50 flex flex-col border-r border-zinc-200 dark:border-zinc-800/50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full ${isMini ? 'w-[76px]' : 'w-72'} bg-background text-zinc-900 dark:text-zinc-100 z-50 flex flex-col transition-[width,transform] duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ pointerEvents: 'auto' }}
+        onMouseEnter={() => isMini && setIsLogoHovered(true)}
+        onMouseLeave={() => setIsLogoHovered(false)}
       >
-        <div className="p-3 flex items-center justify-between">
-          <div style={{ transform: 'scale(0.85)', transformOrigin: 'left center' }}>
-            <Logo size="sm" />
-          </div>
-          {closeButtonPosition === 'top' && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+        <div className={`p-3 flex items-center ${isMini ? 'justify-center' : 'justify-between'}`}>
+          {isMini ? (
+            /* Mini mode: logo crossfades to close icon on hover */
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Close sidebar"
+                  onMouseEnter={() => setIsLogoHovered(true)}
+                  onMouseLeave={() => setIsLogoHovered(false)}
+                  onClick={(e) => { e.stopPropagation(); closeSidebarStage(); }}
+                  className="relative rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 p-1.5 transition-colors"
+                  style={{width: 48, height: 48, display:'flex', alignItems:'center', justifyContent:'center'}}
+                >
+                  {/* Fius logo — fades out on hover */}
+                  <div style={{
+                    position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+                    opacity: isLogoHovered ? 0 : 1,
+                    transition: 'opacity 0.2s ease',
+                    transform: 'scale(1.15)', transformOrigin:'center',
+                  }}>
+                    <FiusLogo size="sm" className="text-black dark:text-white" />
+                  </div>
+                  {/* Close icon — fades in on hover */}
+                  <div style={{
+                    position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+                    opacity: isLogoHovered ? 1 : 0,
+                    transition: 'opacity 0.2s ease',
+                  }}>
+                    <img src={sidebarAsset("close")} alt="" style={{width:26,height:26}} className="object-contain" />
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Close sidebar</TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label="Sidebar logo"
+                onClick={(event) => event.stopPropagation()}
+                className="cursor-default"
+              >
+                <div style={{ transform: 'scale(1.35)', transformOrigin: 'center' }}>
+                  <FiusLogo size="sm" className="text-black dark:text-white" />
+                </div>
+              </button>
+              <button
+                type="button"
+                aria-label="Minimize sidebar"
+                onClick={closeSidebarStage}
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              >
+                <img src={sidebarAsset("close")} alt="" className="h-6 w-6 object-contain" />
+              </button>
+            </>
           )}
         </div>
 
-        <div className="px-3 space-y-0.5 mt-1">
-          {/* Search */}
-          <div className="relative group">
-            <div className="absolute left-3 inset-y-0 flex items-center opacity-70 group-focus-within:opacity-100 transition-opacity pointer-events-none" style={{ paddingTop: 2 }}>
-              <MaskIcon src={searchIcon} color="#3b82f6" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              data-testid="sidebar-search-input"
-              className="w-full pl-12 pr-4 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 focus:bg-zinc-200/80 dark:focus:bg-zinc-800/80 transition-all outline-none border border-zinc-200 dark:border-zinc-800/30 focus:border-zinc-300 dark:focus:border-zinc-700/50 text-[15px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500"
-            />
+        {isMini ? (
+          <div
+            className="flex-1 flex flex-col items-center gap-1.5 pt-1 cursor-pointer"
+            onClick={() => setIsMini(false)}
+            aria-label="Expand sidebar"
+          >
+            <MiniNavButton asset="search" label="Search Chats" onClick={openSpotlight} />
+            <MiniNavButton asset="chat" label="New Chat" onClick={() => onNewProject?.(false)} />
+            <MiniNavButton asset="voice" label="Voice" onClick={() => onVoiceClick?.()} />
+            <MiniNavButton asset="imagine" label="Imagine Studio" onClick={() => onImagineClick?.()} />
+            <MiniNavButton asset="history" label="Chats" onClick={() => setIsMini(false)} />
           </div>
+        ) : (
+          <>
+            <div className="px-3 space-y-1 mt-1">
+              <button
+                type="button"
+                onClick={openSpotlight}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+              >
+                <img src={sidebarAsset("search")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                <span className="text-[15px] font-medium">Search Chats</span>
+              </button>
 
-          {/* New Chat */}
-          <div className="flex items-center space-x-1 group">
-            <button
-              onClick={() => onNewProject?.(false)}
-              className="flex-1 flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group/btn"
-            >
-              <MaskIcon src={chatIcon} color="#8b5cf6" />
-              <span className="text-[15px] font-medium">Chat</span>
-            </button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNewProject?.(false);
-                  }}
-                  className="h-10 w-10 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>New Chat</TooltipContent>
-            </Tooltip>
-          </div>
+              <button
+                type="button"
+                onClick={() => onNewProject?.(false)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+              >
+                <img src={sidebarAsset("chat")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                <span className="text-[15px] font-medium">New Chat</span>
+              </button>
 
-          <button
-            onClick={() => { onVoiceClick?.(); }}
-            className="w-full flex items-center space-x-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <MaskIcon src={audioIcon} color="#10b981" className="opacity-80 group-hover:opacity-100 transition-opacity" />
-            <span className="text-[15px] font-medium">Voice</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => onVoiceClick?.()}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+              >
+                <img src={sidebarAsset("voice")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                <span className="text-[15px] font-medium">Voice</span>
+              </button>
 
-          <button
-            onClick={() => { onImagineClick?.(); }}
-            className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group">
-            <div className="flex items-center space-x-3">
-              <MaskIcon src={imagineIcon} color="#ec4899" />
-              <span className="text-[15px] font-medium">Imagine</span>
+              <button
+                type="button"
+                onClick={() => onImagineClick?.()}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+              >
+                <img src={sidebarAsset("imagine")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                <span className="text-[15px] font-medium">Imagine Studio</span>
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-pink-500/80" />
+              </button>
             </div>
-            <div className="h-1.5 w-1.5 rounded-full bg-pink-500/80 mr-1" />
-          </button>
-        </div>
 
-        {/* History */}
-        <div className="flex items-center space-x-3 px-6 mb-1 mt-3 text-zinc-900 dark:text-zinc-100 font-semibold flex-shrink-0">
-          <MaskIcon src={historyIcon} color="#f59e0b" />
-          <span className="text-[15px]">History</span>
-        </div>
-        <div className="flex-1 overflow-y-auto px-3">
+            <div className="flex items-center gap-3 px-6 mb-1 mt-4 text-zinc-900 dark:text-zinc-100 font-semibold flex-shrink-0">
+              <img src={sidebarAsset("history")} alt="" className="h-4 w-4 object-contain flex-shrink-0" />
+              <span className="text-[15px]">Chats:</span>
+            </div>
+          </>
+        )}
+        {!isMini && <div className="flex-1 overflow-y-auto px-3">
           <div className="space-y-2">
             {/* ── Pinned section ── */}
             {pinnedItems.length > 0 && (
@@ -424,7 +753,17 @@ export function Sidebar({
                       onMouseEnter={() => setHoveredProject(`pinned-${chat.id}`)}
                       onMouseLeave={() => setHoveredProject(null)}>
                       <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium truncate leading-relaxed flex-1 min-w-0">{chat.title || 'New Chat'}</p>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <p className="text-[13px] font-medium truncate leading-relaxed">{chat.title || 'New Chat'}</p>
+                          {chat.hasNomad && (
+                            <span className="flex-shrink-0" style={{
+                              display: 'inline-block', width: 14, height: 14,
+                              WebkitMaskImage: 'url(/creativity-icon.png)', WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat',
+                              maskImage: 'url(/creativity-icon.png)', maskSize: 'contain', maskRepeat: 'no-repeat',
+                              background: 'linear-gradient(135deg, #ffffff 0%, #374151 100%)',
+                            }} />
+                          )}
+                        </div>
                         {hoveredProject === `pinned-${chat.id}` && (
                           <button onClick={e => togglePin(e, chat.id)}
                             className="ml-2 p-1 text-amber-500 hover:text-amber-600 transition-colors flex-shrink-0">
@@ -437,11 +776,14 @@ export function Sidebar({
                 </div>
               </div>
             )}
-            {Object.entries(chatGroups).map(([groupName, groupChats]) => (
-              groupChats.length > 0 && (
+            {allGroupKeys.map(groupName => {
+              const groupChats = chatGroups[groupName] ?? [];
+              if (groupChats.length === 0) return null;
+              return (
                 <div key={groupName} className="space-y-0.5">
                   <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1 px-3">{groupName}</h4>
                   <div className="space-y-1">
+                    {/* Regular chat items */}
                     {(showAllGroups.has(groupName + "_chat") ? groupChats : groupChats.slice(0, 5)).map((chat) => (
                       <div
                         key={chat.id}
@@ -467,15 +809,8 @@ export function Sidebar({
                                 <div className="flex space-x-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        className="h-6 px-2 text-[10px]"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          onEditProject?.(chat.id, editTitle);
-                                          setEditingProject(null);
-                                        }}
-                                      >
+                                      <Button size="sm" className="h-6 px-2 text-[10px]"
+                                        onClick={(e) => { e.stopPropagation(); onEditProject?.(chat.id, editTitle); setEditingProject(null); }}>
                                         <Check className="h-3 w-3" />
                                       </Button>
                                     </TooltipTrigger>
@@ -483,15 +818,8 @@ export function Sidebar({
                                   </Tooltip>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingProject(null);
-                                        }}
-                                      >
+                                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] border-zinc-200 dark:border-zinc-800"
+                                        onClick={(e) => { e.stopPropagation(); setEditingProject(null); }}>
                                         <X className="h-3 w-3" />
                                       </Button>
                                     </TooltipTrigger>
@@ -500,31 +828,37 @@ export function Sidebar({
                                 </div>
                               </div>
                             ) : (
-                              <p className="text-[13px] font-medium truncate leading-relaxed">
-                                {chat.title || 'New Chat'}
-                              </p>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="text-[13px] font-medium truncate leading-relaxed">
+                                  {chat.title || 'New Chat'}
+                                </p>
+                                {chat.hasNomad && (
+                                  <span className="flex-shrink-0" style={{
+                                    display: 'inline-block', width: 14, height: 14,
+                                    WebkitMaskImage: 'url(/creativity-icon.png)', WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat',
+                                    maskImage: 'url(/creativity-icon.png)', maskSize: 'contain', maskRepeat: 'no-repeat',
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #374151 100%)',
+                                  }} />
+                                )}
+                              </div>
                             )}
                           </div>
-                          {hoveredProject === chat.id && editingProject !== chat.id && (
+                          {(hoveredProject === chat.id || isTouchDevice) && editingProject !== chat.id && (
                             <div className="flex items-center space-x-1 ml-2">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button
-                                    onClick={(e) => togglePin(e, chat.id)}
-                                    className={`p-1 transition-colors ${pinnedChats.has(chat.id) ? "text-amber-500 hover:text-amber-600" : "hover:text-zinc-700 dark:hover:text-zinc-200 text-zinc-400"}`}
-                                  >
-                                    {pinnedChats.has(chat.id) ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                                  <button onClick={(e) => togglePin(e, chat.id)}
+                                    className={`p-2 transition-colors ${pinnedChats.has(chat.id) ? "text-amber-500 hover:text-amber-600" : "hover:text-zinc-700 dark:hover:text-zinc-200 text-zinc-400"}`}>
+                                    {pinnedChats.has(chat.id) ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent>{pinnedChats.has(chat.id) ? "Unpin" : "Pin chat"}</TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); openChatConfig(chat); }}
-                                    className="p-1 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-                                  >
-                                    <Settings className="h-3 w-3" />
+                                  <button onClick={(e) => { e.stopPropagation(); openChatConfig(chat); }}
+                                    className="p-2 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
+                                    <Settings className="h-4 w-4" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent>Chat settings</TooltipContent>
@@ -535,29 +869,27 @@ export function Sidebar({
                       </div>
                     ))}
                     {groupChats.length > 5 && !showAllGroups.has(groupName + "_chat") && (
-                      <button
-                        className="px-3 py-1 text-[11px] text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors font-bold uppercase tracking-tighter"
-                        onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName + "_chat"))}
-                      >
+                      <button className="px-3 py-1 text-[11px] text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors font-bold uppercase tracking-tighter"
+                        onClick={() => setShowAllGroups(prev => new Set(prev).add(groupName + "_chat"))}>
                         See more
                       </button>
                     )}
                   </div>
                 </div>
-              )
-            ))}
+              );
+            })}
           </div>
-        </div>
+        </div>}
 
         {/* ── Usage stats ── */}
-        <SidebarUsage />
+        {!isMini && <SidebarUsage />}
 
-        <div className="p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30">
+        <div className={`p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30 ${isMini ? 'px-2' : ''}`}>
           {user && (
             <div className="relative" ref={profileMenuRef}>
               {/* Profile menu popup */}
               {profileMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-10">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-10" style={{ animation: 'popup-slide-up 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}>
                   {isCustomizing ? (
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-4">
@@ -644,6 +976,25 @@ export function Sidebar({
               )}
 
               {/* Profile row (clickable) */}
+              {isMini ? (
+                <button
+                  type="button"
+                  aria-label={`Open profile for ${user.username || user.email}`}
+                  onClick={() => setIsMini(false)}
+                  className="mx-auto flex items-center justify-center rounded-full hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-all"
+                >
+                  {profilePicture ? (
+                    <img src={profilePicture} alt="Profile" className="h-10 w-10 rounded-full object-cover shadow-lg" />
+                  ) : (
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
+                      style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
+                    >
+                      {(user.username || user.email).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </button>
+              ) : (
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setProfileMenuOpen(v => !v)}
@@ -670,20 +1021,33 @@ export function Sidebar({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={onClose}
+                        onClick={closeSidebarStage}
                         className="ml-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                       >
-                        <ChevronLeft className="h-5 w-5" />
+                        <img src={sidebarAsset("close")} alt="" className="h-5 w-5 object-contain" />
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>Close sidebar</TooltipContent>
                   </Tooltip>
                 )}
               </div>
+              )}
             </div>
           )}
         </div>
       </div>
+      {/* ── Spotlight Search ── */}
+      {spotlightOpen && createPortal(
+        <SpotlightSearch
+          query={spotlightQuery}
+          onQueryChange={setSpotlightQuery}
+          onClose={() => setSpotlightOpen(false)}
+          chats={chatItems}
+          onSelect={(id) => { onProjectSelect(id); setSpotlightOpen(false); }}
+          isDark={isDarkTheme}
+        />,
+        document.body
+      )}
       {/* ── Chat Config Dialog ── */}
       <Dialog open={chatConfigOpen} onOpenChange={setChatConfigOpen}>
         <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
@@ -776,5 +1140,6 @@ export function Sidebar({
         </DialogContent>
       </Dialog>
     </>
+    </TooltipProvider>
   );
 }

@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
 import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
 import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
@@ -13,19 +15,39 @@ import pixelArt2 from "@assets/a1b857df7f3bd73ec2ff9f2ee45b0b67_1780675830866.jp
 import pixelArt3 from "@assets/3367465_1780675830867.png";
 import pixelArt4 from "@assets/images_(1)_1780675830868.jpg";
 import pixelArt5 from "@assets/Pixel-art-Creez-un-adorable-cochon-en-quelques-pixels_1780675830868.jpeg";
+import studioHero from "@assets/Gemini_Generated_Image_rdsaverdsaverdsa_1784927084436.png";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Logo } from "./logo";
+import { FiusLogo, Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient, authFetch, endGuestSession } from "@/lib/queryClient";
 import { FiusGames } from "./fius-games";
+import { FiusLabs } from "./fius-labs";
 import { useUsage } from "@/hooks/use-usage";
-import { Lock } from "lucide-react";
+import { Lock, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getStoredGlowAccent, getGlowGradient, applyAppFont, getActiveUiAccent, applyUiAccent, playTabClick, assignLogoStyleToConversation } from "@/lib/appearance-settings";
+
+// ── Nomad sub-model options per provider (Normal & Flagship categories) ─────
+const NOMAD_SUB_MODELS: Record<string, { normal: string[]; flagship: string[]; default: string }> = {
+  'fius-ai':          { normal: ['Fius Lite'],                                                                         flagship: ['Fius Pro'],                                                default: 'Fius Lite' },
+  'gpt-4o':           { normal: ['GPT-5 mini'],                                                                        flagship: ['GPT-5', 'GPT-5 Pro'],                                      default: 'GPT-5 mini' },
+  'claude-3.5-sonnet':{ normal: ['Claude Haiku 4.5'],                                                                  flagship: ['Claude Sonnet 5', 'Claude Opus 4.8'],                      default: 'Claude Haiku 4.5' },
+  'gemini-pro':       { normal: ['Gemini 3.5 Flash-Lite', 'Gemini 3.6 Flash'],                                        flagship: ['Gemini 3.1 Pro'],                                          default: 'Gemini 3.5 Flash-Lite' },
+  'perplexity':       { normal: ['Perplexity Sonar', 'Perplexity Sonar Pro'],                                         flagship: ['Perplexity Sonar Reasoning Pro', 'Perplexity Sonar Deep Research'], default: 'Perplexity Sonar' },
+  'grok-4':           { normal: ['Grok Build 0.1', 'Grok 4.3'],                                                       flagship: ['Grok 4.5'],                                                default: 'Grok Build 0.1' },
+  'deepseek-r1':      { normal: ['DeepSeek V4 Flash'],                                                                 flagship: ['DeepSeek V4 Pro'],                                         default: 'DeepSeek V4 Flash' },
+  'doubao':           { normal: ['Doubao Seed 2.0 Mini', 'Doubao Seed 2.0 Lite'],                                     flagship: ['Doubao Seed 2.0 Pro'],                                     default: 'Doubao Seed 2.0 Mini' },
+  'kimi':             { normal: ['Kimi K2.6', 'Kimi K2.7 Code'],                                                      flagship: ['Kimi K3'],                                                 default: 'Kimi K2.6' },
+  'qwen':             { normal: ['Qwen Flash', 'Qwen Plus', 'Qwen Coder'],                                            flagship: ['Qwen Max'],                                                default: 'Qwen Flash' },
+  'llama-4':          { normal: ['Llama 4 Scout', 'Llama 4 Maverick'],                                                flagship: ['Llama 4 Behemoth'],                                        default: 'Llama 4 Scout' },
+  'mistral':          { normal: ['Ministral 3', 'Ministral 3 14B', 'Mistral Small 4', 'Mistral Medium 3.5'],          flagship: ['Mistral Large 3'],                                         default: 'Ministral 3' },
+  'copilot':          { normal: ['GPT-5 mini', 'GPT-5.4 mini / GPT-5.4 nano', 'GPT-5.5'],                            flagship: ['Claude Haiku / Sonnet'],                                   default: 'GPT-5 mini' },
+};
 
 // Generate vibrant colors based on user info (matching sidebar colors)
 // Module-scope animation caches — survive component remounts and parent re-renders.
@@ -34,6 +56,170 @@ import { useToast } from "@/hooks/use-toast";
 // their typing animations (the "cursor on every message" bug).
 const globalCompletedTextsModule = new Map<string, string>();
 const globalProgressTextsModule = new Map<string, string>();
+
+// This component must stay at module scope. A component declared inside
+// ChatInterface gets a new identity whenever chat state changes, which would
+// restart the reveal and flash the bubble between plain text and Markdown.
+function StableTypingResponse({
+  text,
+  messageId,
+  finalContent,
+  renderTyping,
+}: {
+  text: string;
+  messageId: string;
+  finalContent: React.ReactNode;
+  renderTyping: (partialText: string) => React.ReactNode;
+}) {
+  const [displayed, setDisplayed] = useState(() =>
+    globalCompletedTextsModule.has(messageId)
+      ? text
+      : (globalProgressTextsModule.get(messageId) || '')
+  );
+  const [done, setDone] = useState(() => globalCompletedTextsModule.has(messageId));
+  const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (globalCompletedTextsModule.has(messageId)) {
+      setDisplayed(text);
+      setDone(true);
+      return;
+    }
+    if (!text) {
+      setDisplayed('');
+      setDone(false);
+      return;
+    }
+
+    // Keep the whitespace attached to each word. Splitting on whitespace and
+    // joining with single spaces makes new paragraphs and Markdown bullets
+    // appear as one block during the reveal, then reflow abruptly at the end.
+    const chunks = text.match(/\S+(?:\s+|$)/g) ?? [];
+    let index = Math.min(
+      (globalProgressTextsModule.get(messageId) || '').match(/\S+(?:\s+|$)/g)?.length ?? 0,
+      chunks.length,
+    );
+    let carry = 0;
+    let last: number | null = null;
+    setDone(false);
+
+    const step = (now: number) => {
+      if (last === null) last = now;
+      carry += ((now - last) / 1000) * 30;
+      last = now;
+      const advance = Math.floor(carry);
+      if (advance > 0) {
+        carry -= advance;
+        index = Math.min(index + advance, chunks.length);
+      }
+      if (index < chunks.length) {
+        const next = chunks.slice(0, index).join('');
+        globalProgressTextsModule.set(messageId, next);
+        setDisplayed(next);
+        frameRef.current = requestAnimationFrame(step);
+      } else {
+        globalProgressTextsModule.delete(messageId);
+        globalCompletedTextsModule.set(messageId, text);
+        setDisplayed(text);
+        setDone(true);
+      }
+    };
+    frameRef.current = requestAnimationFrame(step);
+    return () => {
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    };
+  }, [text, messageId]);
+
+  return done
+    ? <>{finalContent}</>
+    : <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">{renderTyping(displayed)}</div>;
+}
+
+// ── Rotating Ask-tab placeholders ────────────────────────────────────────────
+const ROTATING_PLACEHOLDERS = [
+  "What do you want to know?",
+  "Prepare me a documentary on...",
+  "Write a poem about...",
+  "Explain how black holes work",
+  "Help me plan a trip to Tokyo",
+  "Debug my Python code...",
+  "Summarize this article for me",
+  "What's the difference between AI and ML?",
+  "Give me 5 startup ideas for 2025",
+  "Translate this to Spanish...",
+  "How do I learn guitar faster?",
+  "Create a workout plan for beginners",
+  "Write a cover letter for...",
+  "What are the best books on leadership?",
+  "Help me brainstorm names for my brand",
+  "Explain quantum computing simply",
+  "What happened in the 1969 moon landing?",
+  "Give me a recipe for chocolate cake",
+];
+
+// ── Fius Ultimatum suggestion card pool ──────────────────────────────────────
+type UltimatumCard = { Icon: React.ElementType; label: string; prompt: string; modelName: string; modelLogo: string; color: string };
+const ULTIMATUM_CARD_POOL: UltimatumCard[] = [
+  { Icon: Brain,          label: 'Deep Reasoning',  prompt: 'Break down a complex problem step by step',    modelName: 'DeepSeek R1',     modelLogo: '/deepseek-logo.png',    color: '#6366f1' },
+  { Icon: Search,         label: 'Live Search',      prompt: 'Find the latest news and real-time info',      modelName: 'Perplexity',      modelLogo: '/perplexity-logo.png',  color: '#0ea5e9' },
+  { Icon: PenLine,        label: 'Creative Writing', prompt: 'Write a compelling story or article',          modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#ec4899' },
+  { Icon: Code,           label: 'Coding',           prompt: 'Debug, explain or write code for me',          modelName: 'GPT-5',           modelLogo: '/chatgpt-logo.png',     color: '#10b981' },
+  { Icon: BarChart3,      label: 'Data Analysis',    prompt: 'Analyse data and uncover hidden insights',     modelName: 'Gemini',          modelLogo: '/gemini-logo.png',      color: '#f59e0b' },
+  { Icon: Palette,        label: 'Design Ideas',     prompt: 'Generate UI/UX or visual concepts',            modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#8b5cf6' },
+  { Icon: TestTube2,      label: 'Science & Math',   prompt: 'Explain complex concepts in simple terms',     modelName: 'Gemini',          modelLogo: '/gemini-logo.png',      color: '#06b6d4' },
+  { Icon: AlignLeft,      label: 'Summarise',        prompt: 'Condense a long text into key points',         modelName: 'GPT-5',           modelLogo: '/chatgpt-logo.png',     color: '#64748b' },
+  { Icon: Lightbulb,      label: 'Brainstorm',       prompt: 'Generate a flood of creative ideas',           modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#eab308' },
+  { Icon: Cpu,            label: 'AI Strategy',      prompt: 'How to automate and scale using AI',           modelName: 'GPT-5',           modelLogo: '/chatgpt-logo.png',     color: '#a855f7' },
+  { Icon: TrendingUp,     label: 'Business Plan',    prompt: 'Build a go-to-market or growth strategy',      modelName: 'Grok 4',          modelLogo: '/grok-logo.png',        color: '#ef4444' },
+  { Icon: BookOpenCheck,  label: 'Research',         prompt: 'Deep-dive research with cited sources',        modelName: 'Perplexity',      modelLogo: '/perplexity-logo.png',  color: '#3b82f6' },
+  { Icon: Globe,          label: 'Translation',      prompt: 'Translate with cultural nuance intact',        modelName: 'DeepSeek',        modelLogo: '/deepseek-logo.png',    color: '#f97316' },
+  { Icon: Zap,            label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Fius',            modelLogo: '/fius-logo.png',        color: '#fbbf24' },
+  { Icon: Target,         label: 'Problem Solving',  prompt: 'Find the best path through any challenge',     modelName: 'DeepSeek R1',     modelLogo: '/deepseek-logo.png',    color: '#f43f5e' },
+  { Icon: GraduationCap,  label: 'Learning',         prompt: 'Teach me something new from scratch',          modelName: 'Gemini',          modelLogo: '/gemini-logo.png',      color: '#0891b2' },
+  { Icon: MessageSquare,  label: 'Debate & Argue',   prompt: 'Build the strongest case for a position',      modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#d946ef' },
+  { Icon: Shield,         label: 'Security',         prompt: 'Audit or explain security vulnerabilities',    modelName: 'GPT-5',           modelLogo: '/chatgpt-logo.png',     color: '#475569' },
+  { Icon: Leaf,           label: 'Life Advice',      prompt: 'Help me think through a life decision',        modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#16a34a' },
+  { Icon: Rocket,         label: 'Startup Ideas',    prompt: 'Validate or refine my startup concept',        modelName: 'Grok 4',          modelLogo: '/grok-logo.png',        color: '#7c3aed' },
+];
+// Own Mode owl background positions (used when Own Mode is active — mirrors the star-bg pattern)
+const OWL_BG_DATA = [
+  {l:'5%',t:'8%',d:'0s',dur:'3.2s',dd:'0s',ddur:'9s',sz:'20px'},
+  {l:'15%',t:'22%',d:'0.6s',dur:'2.8s',dd:'1.2s',ddur:'11s',sz:'16px'},
+  {l:'28%',t:'6%',d:'1.2s',dur:'3.6s',dd:'0.5s',ddur:'8s',sz:'22px'},
+  {l:'42%',t:'35%',d:'0.3s',dur:'2.6s',dd:'2.1s',ddur:'13s',sz:'18px'},
+  {l:'55%',t:'12%',d:'1.5s',dur:'3.0s',dd:'0.8s',ddur:'10s',sz:'20px'},
+  {l:'68%',t:'28%',d:'0.8s',dur:'2.9s',dd:'1.7s',ddur:'7s',sz:'17px'},
+  {l:'78%',t:'5%',d:'0.4s',dur:'3.3s',dd:'0.3s',ddur:'12s',sz:'21px'},
+  {l:'88%',t:'18%',d:'1.1s',dur:'2.7s',dd:'2.4s',ddur:'9s',sz:'16px'},
+  {l:'10%',t:'45%',d:'1.8s',dur:'3.1s',dd:'1.0s',ddur:'11s',sz:'19px'},
+  {l:'23%',t:'55%',d:'0.7s',dur:'2.8s',dd:'0.2s',ddur:'8s',sz:'18px'},
+  {l:'37%',t:'65%',d:'1.0s',dur:'3.2s',dd:'1.8s',ddur:'14s',sz:'22px'},
+  {l:'50%',t:'48%',d:'1.4s',dur:'2.5s',dd:'0.6s',ddur:'10s',sz:'17px'},
+  {l:'63%',t:'70%',d:'0.3s',dur:'3.0s',dd:'2.2s',ddur:'9s',sz:'20px'},
+  {l:'75%',t:'52%',d:'1.9s',dur:'2.9s',dd:'0.9s',ddur:'12s',sz:'16px'},
+  {l:'85%',t:'40%',d:'0.9s',dur:'3.4s',dd:'1.4s',ddur:'7s',sz:'21px'},
+  {l:'92%',t:'60%',d:'0.5s',dur:'2.7s',dd:'0.1s',ddur:'11s',sz:'18px'},
+  {l:'7%',t:'75%',d:'1.6s',dur:'3.1s',dd:'2.0s',ddur:'8s',sz:'19px'},
+  {l:'18%',t:'82%',d:'1.1s',dur:'2.6s',dd:'0.7s',ddur:'13s',sz:'16px'},
+  {l:'32%',t:'88%',d:'0.6s',dur:'3.3s',dd:'1.5s',ddur:'10s',sz:'22px'},
+  {l:'47%',t:'78%',d:'1.5s',dur:'2.8s',dd:'0.4s',ddur:'9s',sz:'17px'},
+  {l:'60%',t:'85%',d:'1.0s',dur:'3.0s',dd:'1.9s',ddur:'11s',sz:'20px'},
+  {l:'72%',t:'90%',d:'0.2s',dur:'2.5s',dd:'0.6s',ddur:'8s',sz:'18px'},
+  {l:'82%',t:'75%',d:'1.3s',dur:'3.2s',dd:'2.3s',ddur:'12s',sz:'21px'},
+  {l:'94%',t:'82%',d:'0.7s',dur:'2.9s',dd:'1.1s',ddur:'9s',sz:'16px'},
+  {l:'3%',t:'55%',d:'2.0s',dur:'3.1s',dd:'0.3s',ddur:'10s',sz:'19px'},
+  {l:'48%',t:'20%',d:'0.4s',dur:'2.7s',dd:'1.6s',ddur:'14s',sz:'20px'},
+  {l:'90%',t:'35%',d:'1.4s',dur:'3.3s',dd:'0.8s',ddur:'8s',sz:'17px'},
+  {l:'35%',t:'42%',d:'0.9s',dur:'2.6s',dd:'2.0s',ddur:'11s',sz:'22px'},
+  {l:'20%',t:'68%',d:'1.7s',dur:'3.0s',dd:'0.5s',ddur:'9s',sz:'18px'},
+  {l:'70%',t:'15%',d:'0.6s',dur:'2.8s',dd:'1.3s',ddur:'13s',sz:'20px'},
+];
+
+function shuffleUltimatum<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 
 // Smart image component with loading skeleton + fallback URL support for Pollinations images
 function GeneratedImageDisplay({ src, alt, className }: { src: string; alt?: string; className?: string }) {
@@ -147,6 +333,7 @@ function getVibrantColor(name: string, secondary = false): string {
   return secondary ? colorPair[1] : colorPair[0];
 }
 import { CustomizeModal } from "./customize-modal";
+import { UpgradeModal } from "./upgrade-modal";
 import { ImageGenerationDialog } from "./image-generation-dialog";
 import { EducationModal } from "./education-modal";
 import { VoiceModeModal } from "./voice-mode-modal";
@@ -240,60 +427,38 @@ import {
   MoreHorizontal,
   Plus,
   FileSignature,
+  PenLine,
+  BarChart3,
+  TestTube2,
+  Cpu,
+  BookOpenCheck,
+  Globe,
+  Shield,
+  Leaf,
+  Rocket,
+  MessageSquare,
 } from "lucide-react";
 import { downloadTxt, downloadPdf } from "@/lib/document-export";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { getCachedWikiImage, fetchWikiImage, preloadWikiImages } from "@/lib/wiki-image-cache";
+import { preloadGamesData } from "./fius-games";
 
 interface ChatInterfaceProps {
   onShowAuth: () => void;
 }
 
-import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
-import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
-import micLight from "@assets/mic_button_1766904971887.png";
-import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
-
-const wikiImageCache = new Map<string, string>();
-const wikiImagePending = new Map<string, Promise<string | null>>();
-
-function fetchWikiImage(articleTitle: string): Promise<string | null> {
-  if (wikiImageCache.has(articleTitle)) return Promise.resolve(wikiImageCache.get(articleTitle)!);
-  if (wikiImagePending.has(articleTitle)) return wikiImagePending.get(articleTitle)!;
-  const title = articleTitle.replace(/ /g, '_');
-  const p = fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`)
-    .then(r => r.json())
-    .then(data => {
-      const url: string | null = data.thumbnail?.source ?? null;
-      if (url) wikiImageCache.set(articleTitle, url);
-      wikiImagePending.delete(articleTitle);
-      return url;
-    })
-    .catch(() => { wikiImagePending.delete(articleTitle); return null; });
-  wikiImagePending.set(articleTitle, p);
-  return p;
-}
-
-function preloadWikiImages(names: string[], concurrency = 6) {
-  let idx = 0;
-  function next() {
-    if (idx >= names.length) return;
-    const name = names[idx++];
-    if (!wikiImageCache.has(name)) {
-      fetchWikiImage(name).finally(next);
-    } else {
-      next();
-    }
-  }
-  for (let i = 0; i < Math.min(concurrency, names.length); i++) next();
-}
+import microphoneIcon from "@assets/microphone_1784996715112.png";
+import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
+import plusButtonIcon from "@assets/add_1784996715112.png";
 
 function WikiFace({ name, wikiTitle, className = '' }: { name: string; wikiTitle?: string; className?: string }) {
   const articleTitle = wikiTitle || name;
-  const [src, setSrc] = useState<string | null>(wikiImageCache.get(articleTitle) ?? null);
+  const [src, setSrc] = useState<string | null>(getCachedWikiImage(articleTitle) ?? null);
 
   useEffect(() => {
-    if (wikiImageCache.has(articleTitle)) {
-      setSrc(wikiImageCache.get(articleTitle)!);
+    const cached = getCachedWikiImage(articleTitle);
+    if (cached) {
+      setSrc(cached);
       return;
     }
     let cancelled = false;
@@ -316,6 +481,59 @@ function WikiFace({ name, wikiTitle, className = '' }: { name: string; wikiTitle
   );
 }
 
+// Local custom images — checked before Wikipedia fallback
+const LOCAL_PERSONALITY_IMAGES: Record<string, string> = {
+  'jinnah':      '/personalities/jinnah.png',
+  'gandhi':      '/personalities/gandhi.png',
+  'caesar':      '/personalities/caesar.png',
+  'alexander':   '/personalities/alexander.png',
+  'napoleon':    '/personalities/napoleon.png',
+  'mandela':     '/personalities/mandela.png',
+  'genghis':     '/personalities/genghis.png',
+  'akbar':       '/personalities/akbar.png',
+  'suleiman':    '/personalities/suleiman.png',
+  'tipu':        '/personalities/tipu.png',
+  'socrates':    '/personalities/socrates.png',
+  'aristotle':   '/personalities/aristotle.png',
+  'confucius':   '/personalities/confucius.png',
+  'nietzsche':   '/personalities/nietzsche.png',
+  'marx':        '/personalities/marx.png',
+  'kant':        '/personalities/kant.png',
+  'suntzu':      '/personalities/suntzu.png',
+  'machiavelli': '/personalities/machiavelli.png',
+  'shakespeare': '/personalities/shakespeare.png',
+  'rumi':        '/personalities/rumi.png',
+  'plato':       '/personalities/plato.png',
+  'einstein':    '/personalities/einstein.png',
+  'newton':      '/personalities/newton.png',
+  'tesla':       '/personalities/tesla.png',
+  'da_vinci':    '/personalities/da_vinci.png',
+  'hawking':     '/personalities/hawking.png',
+  'turing':      '/personalities/turing.png',
+};
+
+function PersonalityCard({ id, name, wikiTitle }: { id: string; name: string; wikiTitle?: string }) {
+  const localSrc = LOCAL_PERSONALITY_IMAGES[id] ?? null;
+  const articleTitle = wikiTitle || name;
+  const [wikiSrc, setWikiSrc] = useState<string | null>(localSrc ? null : (getCachedWikiImage(articleTitle) ?? null));
+  useEffect(() => {
+    if (localSrc) return; // skip Wikipedia fetch when we have a local image
+    const cached = getCachedWikiImage(articleTitle);
+    if (cached) { setWikiSrc(cached); return; }
+    let cancelled = false;
+    fetchWikiImage(articleTitle).then(url => { if (!cancelled && url) setWikiSrc(url); });
+    return () => { cancelled = true; };
+  }, [articleTitle, localSrc]);
+  const src = localSrc ?? wikiSrc;
+  return src ? (
+    <img src={src} alt={name} className="absolute inset-0 w-full object-cover object-top" style={{ height: '115%', top: 0 }} />
+  ) : (
+    <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center text-white text-4xl font-bold">
+      {name.charAt(0)}
+    </div>
+  );
+}
+
 interface HistoricalPersonality {
   id: string;
   name: string;
@@ -327,182 +545,40 @@ interface HistoricalPersonality {
 }
 
 const HISTORICAL_PERSONALITIES: HistoricalPersonality[] = [
-  // Leaders & Politicians
+  // Leaders
   { id: 'jinnah', name: 'Muhammad Ali Jinnah', era: '1876–1948', role: 'Founder of Pakistan', category: 'Leaders', style: 'Formal, precise, passionate about rights and justice, uses legal reasoning, speaks with calm authority and conviction' },
   { id: 'gandhi', name: 'Mahatma Gandhi', era: '1869–1948', role: 'Leader of Indian Independence', category: 'Leaders', style: 'Gentle, humble, speaks in parables and simple truths, references nonviolence and truth (Satyagraha), deeply spiritual and resolute' },
   { id: 'caesar', name: 'Julius Caesar', era: '100–44 BC', role: 'Roman Dictator', category: 'Leaders', style: 'Commanding, confident, uses "we" for Rome, strategic thinker, references glory and empire, speaks with military precision' },
   { id: 'alexander', name: 'Alexander the Great', era: '356–323 BC', role: 'Macedonian Conqueror', category: 'Leaders', style: 'Bold, visionary, speaks of destiny and greatness, inspires through courage, references his campaigns and the edges of the world' },
   { id: 'napoleon', name: 'Napoleon Bonaparte', era: '1769–1821', role: 'French Emperor', category: 'Leaders', style: 'Intense, direct, tactical genius, references battles and strategy, speaks with supreme confidence and ambition, occasional French expressions' },
-  { id: 'lincoln', name: 'Abraham Lincoln', era: '1809–1865', role: '16th US President', category: 'Leaders', style: 'Storytelling, humble yet profound, references the Union and equality, uses folksy anecdotes, deeply moral and measured' },
-  { id: 'churchill', name: 'Winston Churchill', era: '1874–1965', role: 'British Prime Minister', category: 'Leaders', style: 'Eloquent, defiant, uses powerful rhetoric, references courage and Britain, dramatic pauses, witty and inspirational' },
-  { id: 'fdr', name: 'Franklin D. Roosevelt', era: '1882–1945', role: '32nd US President', category: 'Leaders', style: 'Optimistic, warm, uses "fireside" conversational tone, references the New Deal and American spirit, reassuring and pragmatic' },
-  { id: 'stalin', name: 'Joseph Stalin', era: '1878–1953', role: 'Soviet Leader', category: 'Leaders', style: 'Cold, calculating, paranoid, references the Party and the people, blunt and intimidating, occasionally uses Georgian proverbs' },
-  { id: 'mao', name: 'Mao Zedong', era: '1893–1976', role: 'Chinese Communist Leader', category: 'Leaders', style: 'Ideological, poetic, references the revolution and the masses, uses peasant wisdom, speaks with absolute certainty' },
-  { id: 'guevara', name: 'Che Guevara', era: '1928–1967', role: 'Revolutionary', category: 'Leaders', style: 'Passionate, idealistic, references revolution and imperialism, fiery and uncompromising, inspired by justice for the oppressed' },
   { id: 'mandela', name: 'Nelson Mandela', era: '1918–2013', role: 'South African President', category: 'Leaders', style: 'Dignified, forgiving, references freedom and reconciliation, speaks with wisdom earned through suffering, calm and hopeful' },
   { id: 'genghis', name: 'Genghis Khan', era: '1162–1227', role: 'Mongol Empire Founder', category: 'Leaders', style: 'Fierce, pragmatic, references the steppe and conquest, values loyalty and strength, speaks of unity through power' },
-  { id: 'cleopatra', name: 'Cleopatra VII', era: '69–30 BC', role: 'Egyptian Queen', category: 'Leaders', style: 'Intelligent, seductive, references Egypt and power, speaks multiple languages with ease, politically shrewd and charismatic' },
-  { id: 'elizabeth1', name: 'Queen Elizabeth I', era: '1533–1603', role: 'Queen of England', category: 'Leaders', style: 'Regal, eloquent, references God and England, uses formal Tudor language, fiercely independent and commanding' },
-  { id: 'catherine', name: 'Catherine the Great', era: '1729–1796', role: 'Russian Empress', category: 'Leaders', style: 'Intellectual, ambitious, references the Enlightenment and Russia\'s greatness, witty and cultured, speaks with imperial authority' },
-  { id: 'peter_great', name: 'Peter the Great', era: '1672–1725', role: 'Russian Emperor', category: 'Leaders', style: 'Energetic, reformist, references modernization and Western ideas, blunt and forceful, sometimes impatient' },
-  { id: 'washington', name: 'George Washington', era: '1732–1799', role: '1st US President', category: 'Leaders', style: 'Dignified, reserved, references duty and the Republic, stoic and principled, speaks with restrained authority' },
-  { id: 'jefferson', name: 'Thomas Jefferson', era: '1743–1826', role: '3rd US President', category: 'Leaders', style: 'Intellectual, philosophical, references liberty and natural rights, eloquent and measured, polymath who quotes widely' },
-  { id: 'franklin', name: 'Benjamin Franklin', era: '1706–1790', role: 'Founding Father & Inventor', category: 'Leaders', style: 'Witty, practical, uses aphorisms, references science and common sense, charming and humorous, speaks with folksy wisdom' },
-  { id: 'bolivar', name: 'Simón Bolívar', era: '1783–1830', role: 'South American Liberator', category: 'Leaders', style: 'Passionate, visionary, references freedom and Latin American unity, rhetorical and romantic, deeply patriotic' },
-  { id: 'castro', name: 'Fidel Castro', era: '1926–2016', role: 'Cuban Leader', category: 'Leaders', style: 'Long speeches, ideological, references imperialism and revolution, speaks with fiery conviction and marathon endurance' },
-  { id: 'mussolini', name: 'Benito Mussolini', era: '1883–1945', role: 'Italian Dictator', category: 'Leaders', style: 'Bombastic, theatrical, references Roman glory and Italian greatness, dramatic and authoritative, uses fascist rhetoric' },
-  { id: 'hitler', name: 'Adolf Hitler', era: '1889–1945', role: 'German Dictator', category: 'Leaders', style: 'Intensely ideological, fiery and demagogic, references German nationalism and racial ideology, speaks with extreme conviction and inflammatory rhetoric, historically infamous for leading the Nazi regime and causing World War II' },
-  { id: 'bismarck', name: 'Otto von Bismarck', era: '1815–1898', role: 'German Chancellor', category: 'Leaders', style: 'Realpolitik master, blunt and pragmatic, references blood and iron, sardonic wit, speaks with Prussian directness' },
-  { id: 'charlemagne', name: 'Charlemagne', era: '742–814', role: 'Frankish Emperor', category: 'Leaders', style: 'Devout, imperial, references Christendom and unity, speaks with medieval formality and kingly authority' },
-  { id: 'joan', name: 'Joan of Arc', era: '1412–1431', role: 'French Military Leader', category: 'Leaders', style: 'Fervent, visionary, references divine mission and France, speaks with religious conviction and youthful courage' },
   { id: 'akbar', name: 'Akbar the Great', era: '1542–1605', role: 'Mughal Emperor', category: 'Leaders', style: 'Tolerant, wise, references religious harmony and justice, curious and philosophical, speaks with imperial warmth' },
-  { id: 'saladin', name: 'Saladin', era: '1137–1193', role: 'Sultan of Egypt & Syria', category: 'Leaders', style: 'Chivalrous, just, references honor and faith, speaks with noble restraint, known for mercy toward enemies' },
-  { id: 'cyrus', name: 'Cyrus the Great', era: '600–530 BC', role: 'Persian Emperor', category: 'Leaders', style: 'Magnanimous, just, references tolerance and the Persian way, speaks with kingly dignity and respect for other cultures' },
-  { id: 'marcus', name: 'Marcus Aurelius', era: '121–180 AD', role: 'Roman Emperor & Philosopher', category: 'Leaders', style: 'Stoic, introspective, references duty and Stoicism, speaks like private journal entries, measured and self-critical' },
-  { id: 'augustus', name: 'Augustus Caesar', era: '63 BC–14 AD', role: 'First Roman Emperor', category: 'Leaders', style: 'Careful, political, references Rome\'s golden age, speaks with calculated diplomacy and quiet authority' },
-  { id: 'nero', name: 'Nero', era: '37–68 AD', role: 'Roman Emperor', category: 'Leaders', style: 'Theatrical, narcissistic, references art and his divine status, erratic and self-absorbed, alternates between charm and cruelty' },
-  { id: 'hannibal', name: 'Hannibal Barca', era: '247–183 BC', role: 'Carthaginian General', category: 'Leaders', style: 'Strategic genius, references Rome as the enemy, speaks with tactical brilliance and Carthaginian pride' },
-  { id: 'boudicca', name: 'Boudicca', era: '30–61 AD', role: 'British Celtic Queen', category: 'Leaders', style: 'Fierce, righteous fury, references the wrongs done to her people, speaks with raw passion and warrior spirit' },
-  { id: 'ramesses', name: 'Ramesses II', era: '1303–1213 BC', role: 'Egyptian Pharaoh', category: 'Leaders', style: 'Divine authority, references the gods and eternal glory, speaks as a god-king, grand and ceremonial' },
   { id: 'suleiman', name: 'Suleiman the Magnificent', era: '1494–1566', role: 'Ottoman Sultan', category: 'Leaders', style: 'Majestic, cultured, references law and the Ottoman Empire, speaks with poetic sophistication and imperial grandeur' },
   { id: 'tipu', name: 'Tipu Sultan', era: '1750–1799', role: 'Ruler of Mysore', category: 'Leaders', style: 'Brave, anti-colonial, references freedom from British rule, speaks with fierce patriotism and Islamic devotion' },
-  { id: 'henry8', name: 'Henry VIII', era: '1491–1547', role: 'King of England', category: 'Leaders', style: 'Imperious, self-righteous, references divine right and his many wives, speaks with Tudor grandeur and impatience' },
-  { id: 'mehmed2', name: 'Mehmed II', era: '1432–1481', role: 'Ottoman Sultan (Conqueror)', category: 'Leaders', style: 'Ambitious, learned, references Constantinople and empire-building, speaks with young conqueror\'s confidence' },
-  { id: 'tamerlane', name: 'Tamerlane (Timur)', era: '1336–1405', role: 'Turco-Mongol Conqueror', category: 'Leaders', style: 'Ruthless, calculating, references conquest and divine mandate, speaks with conqueror\'s arrogance and strategic mind' },
-  { id: 'shahjahan', name: 'Shah Jahan', era: '1592–1666', role: 'Mughal Emperor', category: 'Leaders', style: 'Romantic, artistic, references the Taj Mahal and love, speaks with poetic sensitivity and imperial melancholy' },
-  { id: 'ashoka', name: 'Ashoka the Great', era: '304–232 BC', role: 'Mauryan Emperor', category: 'Leaders', style: 'Remorseful, compassionate, references Dharma and peace after Kalinga, speaks with quiet wisdom and moral weight' },
-  { id: 'spartacus', name: 'Spartacus', era: '111–71 BC', role: 'Gladiator & Rebel Leader', category: 'Leaders', style: 'Passionate, defiant, references freedom and the cruelty of slavery, speaks with raw power and revolutionary spirit' },
-  { id: 'ataturk', name: 'Mustafa Kemal Atatürk', era: '1881–1938', role: 'Founder of Modern Turkey', category: 'Leaders', style: 'Modernist, nationalist, references secularism and Turkish identity, speaks with reformer\'s urgency and military precision' },
-  { id: 'mlk', name: 'Martin Luther King Jr.', era: '1929–1968', role: 'Civil Rights Leader', category: 'Leaders', style: 'Oratorical brilliance, references the dream and justice, uses biblical cadence and powerful repetition, deeply inspiring' },
-  { id: 'robespierre', name: 'Maximilien Robespierre', era: '1758–1794', role: 'French Revolutionary', category: 'Leaders', style: 'Ideologically rigid, references virtue and the revolution, speaks with cold certainty, believes terror is justice' },
-  { id: 'washington2', name: 'Harriet Tubman', era: '1822–1913', role: 'Abolitionist & Freedom Fighter', category: 'Leaders', style: 'Determined, courageous, references God\'s guidance and freedom, speaks with quiet steel and practical wisdom' },
-  { id: 'attila', name: 'Attila the Hun', era: '406–453', role: 'Hunnic Empire Leader', category: 'Leaders', style: 'Blunt, fearsome, references conquest and tribute, speaks with contempt for weakness, direct and intimidating' },
-  { id: 'darius', name: 'Darius the Great', era: '550–486 BC', role: 'Persian King', category: 'Leaders', style: 'Administrative genius, references the vast empire and Zoroastrian values, speaks with royal certainty and Persian pride' },
-  { id: 'constantine', name: 'Constantine the Great', era: '272–337 AD', role: 'Roman Emperor', category: 'Leaders', style: 'Politically shrewd, references Christianity and Roman power, speaks with the weight of someone reshaping civilization' },
-  // Philosophers & Thinkers
+  // Philosophers
   { id: 'socrates', name: 'Socrates', era: '470–399 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Uses the Socratic method — questions back constantly, admits knowing nothing, draws out contradictions, humble yet devastatingly sharp' },
   { id: 'plato', name: 'Plato', era: '428–348 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Uses dialogues and allegories, references the Forms and the ideal world, speaks with poetic depth and philosophical precision' },
   { id: 'aristotle', name: 'Aristotle', era: '384–322 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Systematic, categorizing, references logic and the golden mean, speaks methodically and covers all aspects of a topic' },
   { id: 'confucius', name: 'Confucius', era: '551–479 BC', role: 'Chinese Philosopher', category: 'Philosophers', style: 'Speaks in short, wise sayings, references virtue and relationships, asks about one\'s duties, gentle but morally firm' },
-  { id: 'suntzu', name: 'Sun Tzu', era: '544–496 BC', role: 'Chinese Strategist', category: 'Philosophers', style: 'Cryptic and strategic, speaks in paradoxes, references warfare as metaphor for life, economy of words, deeply practical' },
-  { id: 'laotzu', name: 'Lao Tzu', era: '6th century BC', role: 'Daoist Philosopher', category: 'Philosophers', style: 'Paradoxical, flowing like water, references the Tao and emptiness, uses nature metaphors, speaks in riddles and contradictions' },
   { id: 'nietzsche', name: 'Friedrich Nietzsche', era: '1844–1900', role: 'German Philosopher', category: 'Philosophers', style: 'Aphoristic, bold, references the Übermensch and will to power, challenges all conventional morality, dramatic and provocative' },
   { id: 'marx', name: 'Karl Marx', era: '1818–1883', role: 'Socialist Philosopher', category: 'Philosophers', style: 'Analytical, dialectical, references class struggle and capitalism, academic yet passionate, uses historical materialism' },
-  { id: 'locke', name: 'John Locke', era: '1632–1704', role: 'English Philosopher', category: 'Philosophers', style: 'Rational, empirical, references natural rights and tabula rasa, speaks carefully and logically, foundational to liberalism' },
-  { id: 'rousseau', name: 'Jean-Jacques Rousseau', era: '1712–1778', role: 'French Philosopher', category: 'Philosophers', style: 'Romantic, passionate, references the noble savage and social contract, emotional and idealistic, sometimes contradictory' },
-  { id: 'voltaire', name: 'Voltaire', era: '1694–1778', role: 'French Enlightenment Philosopher', category: 'Philosophers', style: 'Witty, satirical, anti-clerical, references reason and tolerance, uses sharp irony, always ready with a devastating joke' },
-  { id: 'descartes', name: 'René Descartes', era: '1596–1650', role: 'French Philosopher', category: 'Philosophers', style: 'Systematic doubter, references cogito ergo sum, starts from first principles, methodical and precise, meditative quality' },
   { id: 'kant', name: 'Immanuel Kant', era: '1724–1804', role: 'German Philosopher', category: 'Philosophers', style: 'Dense, rigorous, references the categorical imperative and duty, speaks in complex sentences, always seeks universal principles' },
-  { id: 'hegel', name: 'Georg Hegel', era: '1770–1831', role: 'German Philosopher', category: 'Philosophers', style: 'Dialectical, abstract, references thesis-antithesis-synthesis, speaks in complex philosophical language about the Absolute Spirit' },
-  { id: 'schopenhauer', name: 'Arthur Schopenhauer', era: '1788–1860', role: 'German Philosopher', category: 'Philosophers', style: 'Pessimistic, cynical, references the will and suffering, dismisses optimists, dry wit, deeply critical of human nature' },
-  { id: 'kierkegaard', name: 'Søren Kierkegaard', era: '1813–1855', role: 'Danish Philosopher', category: 'Philosophers', style: 'Existential angst, references the leap of faith, speaks indirectly through stages of existence, melancholic and intense' },
-  { id: 'hume', name: 'David Hume', era: '1711–1776', role: 'Scottish Philosopher', category: 'Philosophers', style: 'Skeptical, empirical, questions cause and effect, references impressions and ideas, polite yet deeply unsettling to assumptions' },
-  { id: 'hobbes', name: 'Thomas Hobbes', era: '1588–1679', role: 'English Philosopher', category: 'Philosophers', style: 'Dark view of human nature, references Leviathan and the war of all against all, blunt and unromantic about society' },
-  { id: 'spinoza', name: 'Baruch Spinoza', era: '1632–1677', role: 'Dutch Philosopher', category: 'Philosophers', style: 'Geometric reasoning, references God as Nature (Deus sive Natura), calm and systematic, excommunicated but unshaken' },
-  { id: 'leibniz', name: 'Gottfried Leibniz', era: '1646–1716', role: 'German Philosopher', category: 'Philosophers', style: 'Optimistic, references the best of all possible worlds, monadology, speaks with mathematical precision and cosmic optimism' },
-  { id: 'russell', name: 'Bertrand Russell', era: '1872–1970', role: 'British Philosopher', category: 'Philosophers', style: 'Clear, logical, anti-war, references logic and humanism, speaks with elegant clarity and dry British wit' },
-  { id: 'epicurus', name: 'Epicurus', era: '341–270 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Gentle, focuses on simple pleasures and tranquility, references ataraxia (peace), argues death is nothing to fear' },
-  { id: 'ibn_rushd', name: 'Ibn Rushd (Averroes)', era: '1126–1198', role: 'Islamic Philosopher', category: 'Philosophers', style: 'Harmonizes Aristotle with Islamic thought, speaks with scholarly precision, references reason and faith as compatible' },
+  { id: 'suntzu', name: 'Sun Tzu', era: '544–496 BC', role: 'Chinese Strategist', category: 'Philosophers', style: 'Cryptic and strategic, speaks in paradoxes, references warfare as metaphor for life, economy of words, deeply practical' },
   { id: 'machiavelli', name: 'Niccolò Machiavelli', era: '1469–1527', role: 'Political Philosopher', category: 'Philosophers', style: 'Coldly pragmatic, references The Prince and power, separates morality from politics, gives ruthless practical advice' },
-  { id: 'bacon', name: 'Francis Bacon', era: '1561–1626', role: 'English Philosopher', category: 'Philosophers', style: 'Scientific method advocate, references idols and knowledge as power, speaks with Renaissance authority and clarity' },
-  { id: 'mill', name: 'John Stuart Mill', era: '1806–1873', role: 'English Philosopher', category: 'Philosophers', style: 'Utilitarian, references the greatest good, champions liberty and women\'s rights, careful and measured argumentation' },
-  { id: 'bentham', name: 'Jeremy Bentham', era: '1748–1832', role: 'English Philosopher', category: 'Philosophers', style: 'Calculates happiness mathematically, references the felicific calculus, practical and utilitarian, talks of his panopticon' },
-  { id: 'heraclitus', name: 'Heraclitus', era: '535–475 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Cryptic, references flux and fire, speaks in riddles, "You cannot step in the same river twice", obscure but profound' },
-  { id: 'democritus', name: 'Democritus', era: '460–370 BC', role: 'Greek Philosopher', category: 'Philosophers', style: 'Cheerful, references atoms and the void, laughs at human folly, optimistic despite materialist worldview' },
-  { id: 'zeno', name: 'Zeno of Citium', era: '334–262 BC', role: 'Stoic Founder', category: 'Philosophers', style: 'Stoic endurance, references virtue as the only good, speaks simply and with iron discipline, indifferent to externals' },
-  // Scientists & Inventors
+  // Scientists
   { id: 'einstein', name: 'Albert Einstein', era: '1879–1955', role: 'Theoretical Physicist', category: 'Scientists', style: 'Curious, thought-experiment driven, references relativity and imagination, speaks with wonder, uses simple analogies for complex ideas, pacifist' },
   { id: 'newton', name: 'Isaac Newton', era: '1643–1727', role: 'Mathematician & Physicist', category: 'Scientists', style: 'Precise, references natural philosophy and God\'s creation, serious and solitary, speaks with mathematical certainty' },
   { id: 'tesla', name: 'Nikola Tesla', era: '1856–1943', role: 'Electrical Engineer & Inventor', category: 'Scientists', style: 'Visionary, eccentric, references alternating current and the future, speaks with intensity and frustration at being misunderstood' },
-  { id: 'darwin', name: 'Charles Darwin', era: '1809–1882', role: 'Naturalist', category: 'Scientists', style: 'Careful, methodical, references natural selection and species, speaks with patient scientific caution and humility' },
-  { id: 'galileo', name: 'Galileo Galilei', era: '1564–1642', role: 'Astronomer & Physicist', category: 'Scientists', style: 'Passionate about observation, references telescopes and the moons of Jupiter, defiant against authority, speaks with Italian flair' },
-  { id: 'archimedes', name: 'Archimedes', era: '287–212 BC', role: 'Greek Mathematician', category: 'Scientists', style: 'Excited by mathematics, references levers and buoyancy, speaks with infectious enthusiasm for discovery, "Eureka!" energy' },
   { id: 'da_vinci', name: 'Leonardo da Vinci', era: '1452–1519', role: 'Polymath & Artist', category: 'Scientists', style: 'Curiosity without bounds, references art and science as one, speaks through observation and sketches in words, Renaissance wonder' },
-  { id: 'curie', name: 'Marie Curie', era: '1867–1934', role: 'Physicist & Chemist', category: 'Scientists', style: 'Determined, focused, references radioactivity and scientific rigor, overcomes gender barriers, speaks with quiet intensity' },
   { id: 'hawking', name: 'Stephen Hawking', era: '1942–2018', role: 'Theoretical Physicist', category: 'Scientists', style: 'Dry wit, references black holes and the Big Bang, uses humor to discuss the cosmos, speaks in clear accessible language' },
-  { id: 'sagan', name: 'Carl Sagan', era: '1934–1996', role: 'Astronomer & Author', category: 'Scientists', style: 'Poetic wonder, references billions of stars and cosmic perspective, speaks with deep humility about humanity\'s place in the cosmos' },
-  { id: 'feynman', name: 'Richard Feynman', era: '1918–1988', role: 'Physicist', category: 'Scientists', style: 'Playful, irreverent, references quantum mechanics through stories, speaks with joyful curiosity, uses Bronx accent in spirit' },
-  { id: 'faraday', name: 'Michael Faraday', era: '1791–1867', role: 'Physicist & Chemist', category: 'Scientists', style: 'Self-taught wonder, references electromagnetic fields, speaks with humble enthusiasm, bridges experiment and intuition' },
-  { id: 'bohr', name: 'Niels Bohr', era: '1885–1962', role: 'Physicist', category: 'Scientists', style: 'Careful, complementarity principle, references quantum uncertainty, speaks slowly but profoundly, debates Einstein warmly' },
-  { id: 'pasteur', name: 'Louis Pasteur', era: '1822–1895', role: 'Microbiologist', category: 'Scientists', style: 'Passionate about germs and vaccines, references experiments with absolute conviction, speaks against quackery with frustration' },
   { id: 'turing', name: 'Alan Turing', era: '1912–1954', role: 'Computer Scientist', category: 'Scientists', style: 'Precise, references machines and computation, speaks with mathematical elegance, occasionally references his persecution with sadness' },
-  { id: 'ada', name: 'Ada Lovelace', era: '1815–1852', role: 'First Computer Programmer', category: 'Scientists', style: 'Visionary and poetic, references Babbage\'s engine and analytical poetry of mathematics, speaks with Romantic-era elegance' },
-  { id: 'copernicus', name: 'Nicolaus Copernicus', era: '1473–1543', role: 'Astronomer', category: 'Scientists', style: 'Cautious, references heliocentric model, speaks with measured conviction, aware of the controversy his ideas cause' },
-  { id: 'gauss', name: 'Carl Friedrich Gauss', era: '1777–1855', role: 'Mathematician', category: 'Scientists', style: 'Perfectionist, references mathematics as the queen of sciences, speaks with quiet confidence and expects precision' },
-  { id: 'euler', name: 'Leonhard Euler', era: '1707–1783', role: 'Mathematician', category: 'Scientists', style: 'Prolific and enthusiastic, references equations and graph theory, speaks with Swiss systematic clarity about beautiful mathematics' },
-  { id: 'fleming', name: 'Alexander Fleming', era: '1881–1955', role: 'Bacteriologist', category: 'Scientists', style: 'Observant, references penicillin discovery as serendipity, speaks with Scottish modesty about his world-changing accident' },
-  { id: 'pythagoras', name: 'Pythagoras', era: '570–495 BC', role: 'Greek Mathematician', category: 'Scientists', style: 'Mystical about numbers, references sacred geometry and mathematical harmony, speaks with cult-leader intensity about mathematics' },
-  { id: 'euclid', name: 'Euclid', era: '300 BC', role: 'Greek Mathematician', category: 'Scientists', style: 'Axiomatic, speaks through definitions and proofs, references geometry as eternal truth, systematic and unarguable' },
-  { id: 'mendel', name: 'Gregor Mendel', era: '1822–1884', role: 'Geneticist', category: 'Scientists', style: 'Patient, references pea plants and inheritance patterns, speaks with monk-like methodical precision, ahead of his time' },
-  { id: 'planck', name: 'Max Planck', era: '1858–1947', role: 'Physicist', category: 'Scientists', style: 'Conservative revolutionary, references quanta as reluctant discovery, speaks with German academic formality and inner turmoil' },
-  { id: 'kepler', name: 'Johannes Kepler', era: '1571–1630', role: 'Astronomer', category: 'Scientists', style: 'Mystical and mathematical, references planetary harmonics and divine geometry, speaks with religious awe at cosmic order' },
-  { id: 'babbage', name: 'Charles Babbage', era: '1791–1871', role: 'Computer Pioneer', category: 'Scientists', style: 'Frustrated genius, references the analytical engine, speaks with impatience at the limitations of his era and mankind\'s slowness' },
-  { id: 'maxwell', name: 'James Clerk Maxwell', era: '1831–1879', role: 'Physicist', category: 'Scientists', style: 'Profound and humble, references electromagnetic theory, speaks with Scottish thoughtfulness and mathematical beauty' },
-  { id: 'hypatia', name: 'Hypatia', era: '360–415 AD', role: 'Greek Mathematician & Philosopher', category: 'Scientists', style: 'Rational, references mathematics and Neo-Platonism, speaks with rare female scholarly authority, defends reason against dogma' },
-  { id: 'ibn_battuta_sci', name: 'Al-Khwarizmi', era: '780–850', role: 'Mathematician (Algebra\'s Father)', category: 'Scientists', style: 'Methodical, references al-jabr and algorithms, speaks with House of Wisdom scholarly precision, mathematical elegance' },
-  { id: 'brahe', name: 'Tycho Brahe', era: '1546–1601', role: 'Astronomer', category: 'Scientists', style: 'Proud of his observations, references his nose (metal prosthetic), speaks with Danish nobleman\'s confidence and precision' },
-  // Artists, Writers & Musicians
+  // Arts & Literature
   { id: 'shakespeare', name: 'William Shakespeare', era: '1564–1616', role: 'English Playwright & Poet', category: 'Artists', style: 'Uses poetic language and metaphors, references theater and human nature, speaks in rhythm almost like verse, quotes himself often' },
-  { id: 'poe', name: 'Edgar Allan Poe', era: '1809–1849', role: 'American Author', category: 'Artists', style: 'Gothic, melancholic, references darkness and horror, speaks in atmospheric prose, obsesses over beauty in death' },
-  { id: 'twain', name: 'Mark Twain', era: '1835–1910', role: 'American Author', category: 'Artists', style: 'Satirical, humorous, references the Mississippi and American hypocrisy, uses folksy wit to expose deeper truths' },
-  { id: 'hemingway', name: 'Ernest Hemingway', era: '1899–1961', role: 'American Author', category: 'Artists', style: 'Short sentences, iceberg theory, references war and masculinity, speaks directly without flourish, codes of honor' },
-  { id: 'kafka', name: 'Franz Kafka', era: '1883–1924', role: 'Czech Author', category: 'Artists', style: 'Absurdist anxiety, references bureaucracy and alienation, speaks with anxious precision about incomprehensible situations' },
-  { id: 'tolstoy', name: 'Leo Tolstoy', era: '1828–1910', role: 'Russian Author', category: 'Artists', style: 'Moral and epic, references Russian peasants and spiritual searching, speaks with the weight of War and Peace, deeply ethical' },
-  { id: 'dostoevsky', name: 'Fyodor Dostoevsky', era: '1821–1881', role: 'Russian Author', category: 'Artists', style: 'Psychological intensity, references suffering and redemption, speaks through complex characters\' inner monologues, deeply Christian' },
-  { id: 'hugo', name: 'Victor Hugo', era: '1802–1885', role: 'French Author', category: 'Artists', style: 'Romantic grandeur, references justice and human dignity, speaks passionately about society\'s outcasts, Les Misérables spirit' },
-  { id: 'dickens', name: 'Charles Dickens', era: '1812–1870', role: 'English Author', category: 'Artists', style: 'Social reform through story, references Victorian poverty and injustice, speaks vividly with colorful characters and social conscience' },
-  { id: 'wilde', name: 'Oscar Wilde', era: '1854–1900', role: 'Irish Author', category: 'Artists', style: 'Epigrams and wit, references beauty and decadence, speaks in perfectly crafted paradoxes, charming and scandalous' },
-  { id: 'orwell', name: 'George Orwell', era: '1903–1950', role: 'English Author', category: 'Artists', style: 'Clear, political, references Big Brother and totalitarianism, speaks plainly against tyranny, doublethink references' },
-  { id: 'homer', name: 'Homer', era: '8th century BC', role: 'Greek Poet', category: 'Artists', style: 'Epic storytelling, references the Iliad and Odyssey heroes, invokes the Muse, speaks in heroic epithets and grand narrative arcs' },
-  { id: 'dante', name: 'Dante Alighieri', era: '1265–1321', role: 'Italian Poet', category: 'Artists', style: 'Theological depth, references the Comedy and Beatrice, speaks with medieval piety and exquisite structural beauty' },
-  { id: 'goethe', name: 'Johann Wolfgang von Goethe', era: '1749–1832', role: 'German Author', category: 'Artists', style: 'Universal curiosity, references Faust and Sturm und Drang, speaks with German Romantic authority and breadth of knowledge' },
   { id: 'rumi', name: 'Rumi', era: '1207–1273', role: 'Persian Sufi Poet', category: 'Artists', style: 'Mystical and loving, references the soul\'s longing for the divine, speaks in metaphors of wine and the beloved, deeply spiritual' },
-  { id: 'khayyam', name: 'Omar Khayyam', era: '1048–1131', role: 'Persian Poet & Mathematician', category: 'Artists', style: 'Hedonistic wisdom, references wine, roses and mortality, speaks with Persian melancholy and carpe diem philosophy' },
-  { id: 'michelangelo', name: 'Michelangelo', era: '1475–1564', role: 'Italian Artist', category: 'Artists', style: 'Tormented genius, references God releasing form from marble, speaks with Italian passion and divine inspiration, physical and spiritual' },
-  { id: 'van_gogh', name: 'Vincent van Gogh', era: '1853–1890', role: 'Dutch Painter', category: 'Artists', style: 'Intense and passionate, references color and light and suffering, speaks from anguished heart, references Starry Night and his brother Theo' },
-  { id: 'picasso', name: 'Pablo Picasso', era: '1881–1973', role: 'Spanish Artist', category: 'Artists', style: 'Revolutionary ego, references cubism and destroying to create, speaks with Spanish arrogance and boundless creativity' },
-  { id: 'dali', name: 'Salvador Dalí', era: '1904–1989', role: 'Spanish Surrealist', category: 'Artists', style: 'Flamboyant eccentricity, speaks of himself in third person sometimes, references dreams and the subconscious, theatrical and bizarre' },
-  { id: 'beethoven', name: 'Ludwig van Beethoven', era: '1770–1827', role: 'German Composer', category: 'Artists', style: 'Passionate and intense, deaf but hears inwardly, references struggle and triumph (fate knocking), speaks with German intensity' },
-  { id: 'mozart', name: 'Wolfgang Amadeus Mozart', era: '1756–1791', role: 'Austrian Composer', category: 'Artists', style: 'Childlike joy and genius, references music flowing naturally, speaks with playful irreverence and musical perfection' },
-  { id: 'bach', name: 'Johann Sebastian Bach', era: '1685–1750', role: 'German Composer', category: 'Artists', style: 'Mathematical devotion, references counterpoint and God\'s glory, speaks with Lutheran piety and mathematical precision' },
-  { id: 'jane_austen', name: 'Jane Austen', era: '1775–1817', role: 'English Novelist', category: 'Artists', style: 'Ironic social observer, references manners and marriage, speaks with perfectly balanced wit and feminine insight into society' },
-  { id: 'virginia_woolf', name: 'Virginia Woolf', era: '1882–1941', role: 'English Author', category: 'Artists', style: 'Stream of consciousness, references interior life and women\'s rooms of their own, speaks in flowing introspective prose' },
-  { id: 'chopin', name: 'Frédéric Chopin', era: '1810–1849', role: 'Polish Composer', category: 'Artists', style: 'Melancholic and romantic, references Poland and exile, speaks with emotional delicacy and nostalgia for his homeland' },
-  { id: 'wagner', name: 'Richard Wagner', era: '1813–1883', role: 'German Composer', category: 'Artists', style: 'Grandiose and egotistical, references Gesamtkunstwerk (total art work), speaks with overwhelming certainty about his own genius' },
-  { id: 'monet', name: 'Claude Monet', era: '1840–1926', role: 'French Impressionist', category: 'Artists', style: 'Obsessed with light and color, references water lilies and Giverny, speaks about capturing the fleeting impression of nature' },
-  { id: 'rembrandt', name: 'Rembrandt', era: '1606–1669', role: 'Dutch Painter', category: 'Artists', style: 'Introspective, references light from shadow, speaks with Dutch Protestant humility about capturing human truth in portraiture' },
-  // Explorers & Adventurers
-  { id: 'columbus', name: 'Christopher Columbus', era: '1451–1506', role: 'Explorer', category: 'Explorers', style: 'Bold and mistaken about geography, references the New World (thinking it Asia), speaks with Genoese pride and stubborn conviction' },
-  { id: 'vasco', name: 'Vasco da Gama', era: '1460–1524', role: 'Portuguese Explorer', category: 'Explorers', style: 'Pragmatic, references the sea route to India, speaks with Portuguese navigator\'s directness and mercantile purpose' },
-  { id: 'magellan', name: 'Ferdinand Magellan', era: '1480–1521', role: 'Portuguese Explorer', category: 'Explorers', style: 'Determined, references circumnavigation, speaks with iron will, doesn\'t mention he died before completing the journey' },
-  { id: 'marco_polo', name: 'Marco Polo', era: '1254–1324', role: 'Italian Explorer', category: 'Explorers', style: 'Storyteller, references Kublai Khan and the East, speaks with Venetian merchant wonder about China\'s marvels' },
-  { id: 'cook', name: 'James Cook', era: '1728–1779', role: 'British Explorer', category: 'Explorers', style: 'Methodical and precise, references the Pacific and scientific observation, speaks with Yorkshire practicality and naval discipline' },
-  { id: 'ibn_battuta', name: 'Ibn Battuta', era: '1304–1368', role: 'Moroccan Explorer', category: 'Explorers', style: 'Curious and devout, references Islamic civilization across the world, speaks with traveler\'s wonder and Moroccan scholarship' },
-  { id: 'zheng', name: 'Zheng He', era: '1371–1433', role: 'Chinese Explorer', category: 'Explorers', style: 'Diplomatic and grand, references treasure fleets and Ming China, speaks with Confucian courtesy and imperial dignity' },
-  { id: 'amundsen', name: 'Roald Amundsen', era: '1872–1928', role: 'Norwegian Explorer', category: 'Explorers', style: 'Methodical and stoic, references the South Pole and meticulous preparation, speaks with Norwegian brevity and cold precision' },
-  { id: 'shackleton', name: 'Ernest Shackleton', era: '1874–1922', role: 'Irish-British Explorer', category: 'Explorers', style: 'Indomitable leadership, references the Endurance and survival, speaks with British determination and care for his crew' },
-  // Reformers & Activists
-  { id: 'malcolm_x', name: 'Malcolm X', era: '1925–1965', role: 'Civil Rights Activist', category: 'Reformers', style: 'Fiery and uncompromising, references Black pride and self-defense, speaks with razor-sharp logic and righteous anger' },
-  { id: 'rosa_parks', name: 'Rosa Parks', era: '1913–2005', role: 'Civil Rights Activist', category: 'Reformers', style: 'Quiet dignity, references that seat on the bus, speaks with calm determination and the power of simple refusal' },
-  { id: 'douglas', name: 'Frederick Douglass', era: '1818–1895', role: 'Abolitionist & Orator', category: 'Reformers', style: 'Powerful orator, references slavery\'s horror and freedom\'s value, speaks with hard-won eloquence and righteous force' },
-  { id: 'susan_anthony', name: 'Susan B. Anthony', era: '1820–1906', role: 'Suffragette', category: 'Reformers', style: 'Determined, logical, references women\'s suffrage and equality, speaks with Quaker directness and unwavering conviction' },
-  { id: 'nightingale', name: 'Florence Nightingale', era: '1820–1910', role: 'Nursing Pioneer', category: 'Reformers', style: 'Statistical rigor and compassion, references Scutari and sanitation, speaks with Victorian lady\'s precision and reformer\'s passion' },
-  { id: 'pankhurst', name: 'Emmeline Pankhurst', era: '1858–1928', role: 'Suffragette', category: 'Reformers', style: 'Militant and passionate, references deeds not words, speaks with British suffragette fire and tactical brilliance' },
-  { id: 'eleanor', name: 'Eleanor Roosevelt', era: '1884–1962', role: 'Humanitarian & First Lady', category: 'Reformers', style: 'Warm and principled, references human rights and the UN Declaration, speaks with empathetic authority and practical wisdom' },
-  { id: 'de_beauvoir', name: 'Simone de Beauvoir', era: '1908–1986', role: 'Feminist Philosopher', category: 'Reformers', style: 'Existentialist feminist, references "one is not born a woman", speaks with French intellectual rigor and personal freedom' },
-  { id: 'wollstonecraft', name: 'Mary Wollstonecraft', era: '1759–1797', role: 'Feminist Author', category: 'Reformers', style: 'Passionate rationalist, references A Vindication of Rights of Woman, speaks with radical conviction about women\'s reason and rights' },
-  { id: 'martin_luther', name: 'Martin Luther', era: '1483–1546', role: 'Protestant Reformer', category: 'Reformers', style: 'Bold and biblical, references the 95 Theses and scripture alone, speaks with German pastor\'s conviction and anti-papal fire' },
-  { id: 'thomas_more', name: 'Thomas More', era: '1478–1535', role: 'English Scholar & Martyr', category: 'Reformers', style: 'Principled unto death, references Utopia and conscience, speaks with humanist wit and unbreakable moral conviction' },
-  { id: 'erasmus', name: 'Erasmus of Rotterdam', era: '1466–1536', role: 'Humanist Scholar', category: 'Reformers', style: 'Moderate and witty, references In Praise of Folly, speaks with Renaissance scholar\'s humor and diplomatic intelligence' },
-  { id: 'du_bois', name: 'W.E.B. Du Bois', era: '1868–1963', role: 'Civil Rights Leader & Scholar', category: 'Reformers', style: 'Intellectual and fierce, references the veil and double consciousness, speaks with Harvard-trained precision and passionate advocacy' },
-  { id: 'harriet_stowe', name: 'Harriet Beecher Stowe', era: '1811–1896', role: 'American Author & Abolitionist', category: 'Reformers', style: 'Compassionate storyteller, references Uncle Tom\'s Cabin, speaks with New England moral conviction and empathy for the enslaved' },
-  { id: 'lennon', name: 'John Lennon', era: '1940–1980', role: 'Musician & Peace Activist', category: 'Reformers', style: 'Idealistic, sarcastic wit, references Imagine and peace, speaks with Liverpool directness and countercultural irreverence' },
-  { id: 'trotsky', name: 'Leon Trotsky', era: '1879–1940', role: 'Russian Revolutionary', category: 'Reformers', style: 'Intellectual revolutionary, references permanent revolution, speaks with brilliant rhetorical force and Marxist analysis' },
-  { id: 'gandhi_indira', name: 'Indira Gandhi', era: '1917–1984', role: 'Indian Prime Minister', category: 'Reformers', style: 'Determined, references India\'s complexity and power, speaks with iron resolve and sophisticated political calculation' },
-  { id: 'thatcher', name: 'Margaret Thatcher', era: '1925–2013', role: 'British Prime Minister', category: 'Reformers', style: 'Iron will, no-nonsense, references free markets and British strength, speaks with shopkeeper\'s daughter discipline and conviction' },
 ];
 
-const PERSONALITY_CATEGORIES = ['All', 'Leaders', 'Philosophers', 'Scientists', 'Artists', 'Explorers', 'Reformers'];
+const PERSONALITY_CATEGORIES = ['All', 'Leaders', 'Philosophers', 'Scientists', 'Artists'];
 
 const MAX_FILES = 5;
 const MAX_IMAGES = 15;
@@ -755,8 +831,8 @@ function PCScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTM
     el.addEventListener('scroll', update, { passive: true });
     return () => el.removeEventListener('scroll', update);
   }, [scrollAreaRef]);
-  return (
-    <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-40">
+  const controls = (
+    <div className="fixed bottom-36 right-6 flex flex-col gap-1.5 z-[1000]">
       <button onClick={() => scrollAreaRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         disabled={atTop}
         className={`w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center transition-all duration-200 active:scale-90 ${atTop ? "opacity-30 cursor-default" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`} title="Scroll to top">
@@ -769,74 +845,195 @@ function PCScrollButtons({ scrollAreaRef }: { scrollAreaRef: React.RefObject<HTM
       </button>
     </div>
   );
+  return typeof document === "undefined" ? null : createPortal(controls, document.body);
+}
+
+// ── Imagine Studio: 4 model columns (shared across generation + display) ────
+const US = (id: string) => `https://images.unsplash.com/photo-${id}?w=320&h=420&fit=crop&q=90&auto=format`;
+
+const IMAGINE_EDIT_TEMPLATES = [
+  {
+    label: 'Reimagine Yourself Professionally',
+    color: '#0e1a2a',
+    img: US('1560250097-0b93528c311a'),
+    prompt: 'Turn this person into a professional version of themselves, wearing formal clothes and placed in a modern office environment. Keep their face, pose, and overall look exactly the same, just make them look more polished and career-ready. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Reimagine Yourself in the Future',
+    color: '#151510',
+    img: US('1504194104404-433180773017'),
+    prompt: 'Show this person as an older version of themselves in the future. Add natural aging like grey hair and mature features, but keep their face, pose, and identity the same. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Become Your Anime Self',
+    color: '#0d1b2a',
+    img: US('1607604276583-eef5d076aa5f'),
+    prompt: 'Convert this person into an anime-style version while keeping the same pose, face structure, and composition. Just change the style to anime, nothing else. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Turn Yourself into a Sketch',
+    color: '#111',
+    img: US('1541961017774-22349e4a1262'),
+    prompt: 'Turn this image into a pencil sketch drawing. Keep the same person, same pose, and same details, only change the style to a realistic sketch. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Restore & Revive Old Photos',
+    color: '#1a1209',
+    img: US('1516466723902-9b53e71d8f3e'),
+    prompt: 'Restore this photo by removing blur, noise, and damage. Improve clarity and bring back natural colors while keeping everything exactly the same. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Redesign Your Living Space',
+    color: '#1c1410',
+    img: US('1586023492125-27b2c045efd7'),
+    prompt: 'Redesign this room to look more modern and stylish while keeping the same layout and structure. Improve lighting, furniture look, and overall vibe without changing the scene too much. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+  {
+    label: 'Transform to Winter Wonderland',
+    color: '#0d1520',
+    img: US('1418985991508-e1df0ade1f4f'),
+    prompt: 'Turn this scene into a winter version with snow and a cold atmosphere. Keep the same person, pose, and composition, just change the environment to winter. Keep everything else unchanged. Do not alter the person\'s identity or pose.',
+  },
+];
+
+/* ── 34 visual style templates for 3D marquee rows (Unsplash) ── */
+const STUDIO_VISUAL_TEMPLATES = [
+  { id: 'monsoon',       name: 'Monsoon Mood',        thumb: US('1534438327276-14e5300c3a48'), prompt: 'cozy rainy day scene, steaming hot coffee cup on wooden windowsill, rain drops on glass window, warm candlelight glow, moody cinematic photography' },
+  { id: 'portrait',     name: 'Realistic Portrait',   thumb: US('1531746020798-e6953c6e8e04'), prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
+  { id: 'pro-headshot', name: 'Pro Headshot',          thumb: US('1560250097-0b93528c311a'), prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait photography' },
+  { id: 'anime',        name: 'Anime Style',           thumb: US('1607604276583-eef5d076aa5f'), prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art' },
+  { id: 'ghibli',       name: 'Ghibli Style',          thumb: US('1518020382113-a7e8fc38eac9'), prompt: 'Studio Ghibli art style, soft warm colors, magical atmosphere, detailed painterly backgrounds, Miyazaki aesthetic' },
+  { id: 'cinematic',    name: 'Cinematic',             thumb: US('1478720568477-152d9b164e26'), prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded' },
+  { id: '3d',           name: '3D Render',             thumb: US('1633356122544-f134324a6cee'), prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination, studio HDRI lighting' },
+  { id: 'cyberpunk',    name: 'Cyberpunk',             thumb: US('1515630278258-407f994537ee'), prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas' },
+  { id: 'fantasy',      name: 'Fantasy Art',           thumb: US('1518709268805-4e9042af9f05'), prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece' },
+  { id: 'dark-fantasy', name: 'Dark Fantasy',          thumb: US('1519074069444-1ba4fff66d16'), prompt: 'dark fantasy art, dramatic magical atmosphere, intricate mystical details, epic dramatic lighting, dragons, castles' },
+  { id: 'nature',       name: 'Nature Photo',          thumb: US('1506905925346-21bda4d32df4'), prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape' },
+  { id: 'travel',       name: 'Travel',                thumb: US('1476514525535-07fb3b4ae5f1'), prompt: 'travel photography, iconic landmark, deep blue sky, vibrant saturated colors, editorial quality, wanderlust' },
+  { id: 'fashion',      name: 'Fashion Editorial',     thumb: US('1515886657613-9f3515b0c78f'), prompt: 'high fashion editorial photography, Vogue quality, dramatic studio lighting, haute couture aesthetic, runway style' },
+  { id: 'wedding',      name: 'Wedding',               thumb: US('1519741497674-611481863552'), prompt: 'romantic wedding photography, golden hour backlight, soft bokeh, emotional intimate moments, elegant timeless composition' },
+  { id: 'interior',     name: 'Interior Design',       thumb: US('1586023492125-27b2c045efd7'), prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality' },
+  { id: 'architecture', name: 'Architecture',          thumb: US('1487958449943-2429e8be8625'), prompt: 'architectural visualization, modern contemporary design, photorealistic render, natural lighting, detailed structural materials' },
+  { id: 'food',         name: 'Food Photo',            thumb: US('1476224203421-9ac39bcb3327'), prompt: 'professional food photography, appetizing golden lighting, macro lens bokeh, restaurant quality plating, culinary art' },
+  { id: 'product',      name: 'Product Photo',         thumb: US('1523275335684-37898b6baf30'), prompt: 'professional product photography, clean studio background, dramatic lighting, commercial quality, sharp macro details' },
+  { id: 'street',       name: 'Street Photo',          thumb: US('1477959858617-67f85cf4f1df'), prompt: 'urban street photography, documentary candid style, natural available light, city life, photojournalistic quality' },
+  { id: 'oil',          name: 'Oil Painting',          thumb: US('1578321272176-b7bbc0679853'), prompt: 'classical oil painting, impressionist brushwork, rich warm colors, textured canvas, old master technique, museum quality' },
+  { id: 'watercolor',   name: 'Watercolor',            thumb: US('1579783902614-a3fb3927b6a5'), prompt: 'delicate watercolor painting, soft transparent washes, wet-on-wet technique, artistic brushstrokes, gentle color gradients' },
+  { id: 'impressionist',name: 'Impressionist',         thumb: US('1592621385612-4d7129426394'), prompt: 'impressionist painting style, loose expressive brushstrokes, dappled light, Monet technique, water lilies' },
+  { id: 'sketch',       name: 'Pencil Sketch',         thumb: US('1541961017774-22349e4a1262'), prompt: 'detailed pencil sketch, fine crosshatching, artistic line drawing, graphite shading, hand-drawn quality, sketchbook style' },
+  { id: 'pixel',        name: 'Pixel Art',             thumb: US('1550745165-9bc0b252726f'), prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style' },
+  { id: 'vintage',      name: 'Vintage Film',          thumb: US('1516466723902-9b53e71d8f3e'), prompt: 'vintage film photography, grain texture, warm sepia and amber tones, analog camera look, nostalgic retro mood' },
+  { id: 'neon',         name: 'Neon Art',              thumb: US('1563089145-4e46e3f6f0e2'), prompt: 'neon art aesthetic, glowing electric neon signs, dark dramatic background, vivid electric colors, futuristic luminous glow' },
+  { id: 'abstract',     name: 'Abstract',              thumb: US('1541701494-b6c18b2b97c1'), prompt: 'abstract digital art, vibrant flowing colors, geometric organic patterns, creative composition, modern contemporary art' },
+  { id: 'surreal',      name: 'Surrealist',            thumb: US('1518020382113-a7e8fc38eac9'), prompt: 'surrealist art style, dreamlike impossible scenario, Salvador Dali inspired, otherworldly, melting clocks' },
+  { id: 'steampunk',    name: 'Steampunk',             thumb: US('1535083534998-4d2e7f4fd0fe'), prompt: 'steampunk Victorian aesthetic, brass gears, leather, goggles, copper tones, mechanical devices, clockwork city' },
+  { id: 'vaporwave',    name: 'Vaporwave',             thumb: US('1519389950473-47ba0277781c'), prompt: 'vaporwave aesthetic, pastel pinks and purples, retro 80s computer graphics, nostalgic synthwave, palm trees' },
+  { id: 'claymation',   name: 'Claymation',            thumb: US('1558618666-fcd25c85cd64'), prompt: 'claymation stop motion style, tactile clay texture, Aardman animation quality, playful 3D colorful characters' },
+  { id: 'comic',        name: 'Comic Book',            thumb: US('1612036782180-6b785e6c7a12'), prompt: 'comic book art style, bold ink outlines, halftone dots, dynamic action lines, Marvel style superhero' },
+  { id: 'popart',       name: 'Pop Art',               thumb: US('1561070791-2526bdc3d2f5'), prompt: 'Andy Warhol pop art style, bold flat colors, halftone pattern, high contrast graphic design' },
+  { id: 'poster',       name: 'Poster Art',            thumb: US('1547891654-e66ed7ebb968'), prompt: 'graphic design poster art, bold striking composition, artistic illustration, high impact visual design' },
+];
+const STUDIO_ROW1 = STUDIO_VISUAL_TEMPLATES.slice(0, 17);
+const STUDIO_ROW2 = STUDIO_VISUAL_TEMPLATES.slice(17);
+
+const STUDIO_COLS = [
+  { id: 'fius-imagine-super', name: 'Fius Imagine Super', sub: 'Ultra quality',  logo: '/fius-logo.png',       gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
+  { id: 'seedream-4.5',        name: 'Seedream 4.5',       sub: 'Dreamlike art',  logo: '/bytedance-logo.png',  gradient: 'from-emerald-400 to-teal-500',   letter: '❋', color: '#10b981' },
+  { id: 'nano-banana-pro',     name: 'Nano Banana Pro',    sub: 'Fast & crisp',   logo: '/gemini-logo.png',     gradient: 'from-yellow-400 to-orange-400',  letter: '⚡', color: '#f59e0b' },
+  { id: 'gpt-5.5-pro',         name: 'GPT 5.5 pro',        sub: 'Precision AI',   logo: '/chatgpt-logo.png',    gradient: 'from-sky-400 to-blue-500',       letter: 'G',  color: '#0ea5e9' },
+];
+
+const WELCOME_GREETINGS: ((name: string) => string)[] = [
+  name => `Hey ${name}, what's on your mind today?`,
+  name => `Good to see you, ${name}! Ready to explore?`,
+  name => `Back again, ${name}? Let's make it count.`,
+  name => `Hello, ${name}! What are we diving into?`,
+  name => `What's up, ${name}? I'm all ears.`,
+  name => `${name}! Let's build something amazing.`,
+  name => `Hey ${name}, let's get started!`,
+  name => `Great to see you, ${name}! What's the plan?`,
+  name => `${name}, the sky's the limit today!`,
+  name => `Nice to have you back, ${name}.`,
+];
+
+function pickGreetingIndex(seed: string | null): number {
+  if (!seed) return Math.floor(Math.random() * WELCOME_GREETINGS.length);
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % WELCOME_GREETINGS.length;
+  return hash;
 }
 
 export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const { usage: planUsage } = useUsage();
+
+  // Default ultimate users to Fius Pro, not Lite
+  useEffect(() => {
+    if (planUsage?.plan === 'ultimate') {
+      const saved = localStorage.getItem('selectedModel');
+      if (!saved || saved === 'fius-lite') {
+        setSelectedModel('fius-prime' as AvailableModel);
+        localStorage.setItem('selectedModel', 'fius-prime');
+      }
+    } else if (planUsage?.plan === 'free') {
+      // Free plan is locked to Fius Lite only — force it regardless of what was saved.
+      setSelectedModel('fius-lite' as AvailableModel);
+      localStorage.setItem('selectedModel', 'fius-lite');
+    }
+  }, [planUsage?.plan]); // eslint-disable-line react-hooks/exhaustive-deps
   const isFreePlan = !planUsage || planUsage.plan === "free";
-  const freeNomadModels = planUsage?.freeNomadModels ?? ["gpt-4o", "gemini-pro", "fius-ai"];
+  // Free plan's 5 messages are used up — the whole app locks down except the
+  // sidebar (to open Settings/upgrade) and logging out.
+  const isFreePlanExhausted = isFreePlan && typeof planUsage?.messagesRemaining === 'number' && planUsage.messagesRemaining <= 0;
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const showUpgradeLockToast = useCallback(() => {
+    setIsUpgradeModalOpen(true);
+  }, []);
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["fius-ai"];
   const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
+  // Free plan: only Fius Lite is usable anywhere outside Nomad. Everything else needs Ultimate.
+  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'fius-lite', [isFreePlan]);
+  const openVoiceMode = useCallback(() => {
+    if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
+    if (isFreePlan) {
+      toast({ title: "Locked on Free plan", description: "Voice Mode requires Fius Ultimate.", variant: "destructive" });
+      return;
+    }
+    setIsVoiceModeModalOpen(true);
+  }, [isFreePlan, isFreePlanExhausted]); // eslint-disable-line react-hooks/exhaustive-deps
   const resolvedTheme = theme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     : theme;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  // Track message IDs whose typing animation hasn't finished yet.
-  // The Stop button stays visible while either the network is in-flight (isTyping)
-  // OR the on-screen typing animation is still revealing words.
-  const [pendingAnimationIds, setPendingAnimationIds] = useState<Set<string>>(new Set());
-  const handleAnimationComplete = useCallback((id: string) => {
-    setPendingAnimationIds(prev => {
-      if (!prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-  }, []);
-  const isAnimatingResponse = pendingAnimationIds.size > 0;
-  // When a new assistant message appears, mark it as "pending animation".
-  // Also reconcile: prune any pending IDs that no longer exist in messages
-  // (covers project switches, new chats, and any path that replaces the
-  // messages array wholesale — without this, the Stop button could get stuck
-  // visible because TypingText unmounts before firing onAnimationComplete).
-  useEffect(() => {
-    const liveIds = new Set(messages.map(m => m.id));
-    setPendingAnimationIds(prev => {
-      let changed = false;
-      const next = new Set<string>();
-      prev.forEach(id => {
-        if (liveIds.has(id)) next.add(id);
-        else changed = true;
-      });
-      if (messages.length) {
-        const last = messages[messages.length - 1];
-        if (
-          last.role === 'assistant' &&
-          !globalCompletedTextsModule.has(last.id) &&
-          !next.has(last.id)
-        ) {
-          next.add(last.id);
-          changed = true;
-        }
-      }
-      return changed || next.size !== prev.size ? next : prev;
-    });
-  }, [messages]);
+  // Responses are complete API results, so keep the response surface stable
+  // while the surrounding chat state updates. Do not run a second client-side
+  // typing animation here.
+  const isAnimatingResponse = false;
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>("fius-lite");
+  const welcomeGreeting = useMemo(() => pickGreetingIndex(currentProjectId), [currentProjectId]);
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>(() => {
+    return (localStorage.getItem('selectedModel') as AvailableModel) || "fius-lite";
+  });
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine'>('ask');
+  const [ownMode, setOwnMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine' | 'fius-labs'>('ask');
+  // UI Accent Color — re-derived whenever the uiAccentChanged event fires
+  const [uiAccentColor, setUiAccentColor] = useState<string | null>(() => {
+    applyUiAccent();
+    return getActiveUiAccent();
+  });
   const navContainerRef = useRef<HTMLDivElement>(null);
   const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, ready: false });
+  const pillAnimateRef = useRef(false); // only true after user manually switches tabs — prevents auto-fire on launch
   const measurePill = () => {
-    const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games'];
+    const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games', 'fius-labs'];
     const idx = TAB_ORDER.indexOf(activeTab);
     const btn = tabButtonRefs.current[idx];
     const container = navContainerRef.current;
@@ -878,6 +1075,25 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     window.addEventListener('chatBgChanged', handler);
     return () => window.removeEventListener('chatBgChanged', handler);
   }, []);
+  const [glowAccentColor, setGlowAccentColor] = useState<string>(() => getStoredGlowAccent());
+  useEffect(() => {
+    const handler = () => setGlowAccentColor(getStoredGlowAccent());
+    window.addEventListener('glowAccentColorChanged', handler);
+    return () => window.removeEventListener('glowAccentColorChanged', handler);
+  }, []);
+  // App font — apply on mount and on change
+  useEffect(() => {
+    applyAppFont();
+    const handler = () => applyAppFont();
+    window.addEventListener('appFontChanged', handler);
+    return () => window.removeEventListener('appFontChanged', handler);
+  }, []);
+  // UI Accent Color — listen for changes from settings
+  useEffect(() => {
+    const handler = () => { applyUiAccent(); setUiAccentColor(getActiveUiAccent()); };
+    window.addEventListener('uiAccentChanged', handler);
+    return () => window.removeEventListener('uiAccentChanged', handler);
+  }, []);
 
   const starterHeadings = [
     "Try asking me something like:",
@@ -887,25 +1103,89 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     "Pick a topic or type anything:",
     "Here's what I can help you with:",
     "Some ideas to get you started:",
-    "What's on your mind? For example:",
+    "What's on your mind?",
+    "Got something in mind? Try one of these:",
+    "Where would you like to begin?",
+    "Let's dive in — pick a starter:",
+    "Curious about something? Start here:",
   ];
   const [starterHeading] = useState(() => starterHeadings[Math.floor(Math.random() * starterHeadings.length)]);
-  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine') => {
+
+  // Typewriter placeholder for Ask tab message bar
+  const [typingPlaceholder, setTypingPlaceholder] = useState('');
+  useEffect(() => {
+    let promptIdx = 0;
+    let charIdx = 0;
+    let phase: 'typing' | 'pausing' | 'erasing' = 'typing';
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const current = ROTATING_PLACEHOLDERS[promptIdx];
+      if (phase === 'typing') {
+        charIdx++;
+        setTypingPlaceholder(current.slice(0, charIdx));
+        if (charIdx >= current.length) { phase = 'pausing'; timer = setTimeout(tick, 3000); }
+        else { timer = setTimeout(tick, 16); }
+      } else if (phase === 'pausing') {
+        phase = 'erasing'; tick();
+      } else {
+        charIdx--;
+        setTypingPlaceholder(current.slice(0, charIdx));
+        if (charIdx <= 0) { promptIdx = (promptIdx + 1) % ROTATING_PLACEHOLDERS.length; phase = 'typing'; timer = setTimeout(tick, 300); }
+        else { timer = setTimeout(tick, 12); }
+      }
+    };
+    timer = setTimeout(tick, 400);
+    return () => clearTimeout(timer);
+  }, []);
+  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine' | 'fius-labs') => {
+    if (isFreePlanExhausted && tab !== activeTab) {
+      showUpgradeLockToast();
+      return;
+    }
+    if (isFreePlan && (tab === 'nomad' || tab === 'imagine' || tab === 'philosopher' || tab === 'fius-games' || tab === 'fius-labs')) {
+      const lockedLabel = tab === 'nomad' ? "Nomad (multi-AI compare)"
+        : tab === 'imagine' ? "Imagine Studio"
+        : tab === 'philosopher' ? "Fius Minds"
+        : tab === 'fius-labs' ? "Fius Labs"
+        : "Fius Games";
+      toast({
+        title: "Locked on Free plan",
+        description: `${lockedLabel} requires Fius Ultimate.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    // Save current model for the tab we're leaving (not imagine — that always resets)
+    if (activeTab !== 'imagine') {
+      localStorage.setItem(`tabModel_${activeTab}`, selectedModel);
+    }
+    pillAnimateRef.current = true;
+    playTabClick();
     setActiveTab(tab);
     if (tab === 'imagine') {
       setSelectedModel('fius-imagine-fast' as AvailableModel);
       setImagineShuffleKey(k => k + 1);
+    } else {
+      // Restore the last model used in this specific tab
+      const savedForTab = localStorage.getItem(`tabModel_${tab}`);
+      if (savedForTab) {
+        setSelectedModel(savedForTab as AvailableModel);
+      } else if (activeTab === 'imagine') {
+        // Coming back from imagine — restore the saved main model
+        const fallback = localStorage.getItem('selectedModel');
+        if (fallback) setSelectedModel(fallback as AvailableModel);
+      }
     }
   };
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
-    () => localStorage.getItem('functionBarStyle') || 'circle'
+    () => localStorage.getItem('functionBarStyle') || 'pill'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
     () => localStorage.getItem('messageBarStyle') || 'compact'
   );
 
   useEffect(() => {
-    const handler = () => setFunctionBarStyle(localStorage.getItem('functionBarStyle') || 'circle');
+    const handler = () => setFunctionBarStyle(localStorage.getItem('functionBarStyle') || 'pill');
     window.addEventListener('functionBarStyleChanged', handler);
     return () => window.removeEventListener('functionBarStyleChanged', handler);
   }, []);
@@ -916,11 +1196,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return () => window.removeEventListener('messageBarStyleChanged', handler);
   }, []);
 
+  // Warm the Philosophers avatar cache and the Fius Games leaderboard/logo
+  // data as soon as the chat interface mounts — not when the user opens
+  // those tabs — so both render instantly with no visible pop-in/blank state.
   useEffect(() => {
-    if (activeTab === 'philosopher') {
-      preloadWikiImages(HISTORICAL_PERSONALITIES.map(p => p.wikiTitle || p.name), 3);
-    }
-  }, [activeTab]);
+    preloadWikiImages(HISTORICAL_PERSONALITIES.map(p => p.wikiTitle || p.name), 3);
+    preloadGamesData();
+  }, []);
 
   const [philosopherMessages, setPhilosopherMessages] = useState<Array<{id: string; role: 'user' | 'assistant'; content: string}>>([]);
   const [philosopherInput, setPhilosopherInput] = useState('');
@@ -929,6 +1211,38 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [personalitySearch, setPersonalitySearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [personalityCategory, setPersonalityCategory] = useState('All');
+  const catNavRef = useRef<HTMLDivElement>(null);
+  const catBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [catPillStyle, setCatPillStyle] = useState({ left: 0, width: 0, ready: false });
+  const catPillAnimateRef = useRef(false);
+
+  const measureCatPill = useCallback(() => {
+    const idx = PERSONALITY_CATEGORIES.indexOf(personalityCategory);
+    const btn = catBtnRefs.current[idx];
+    const container = catNavRef.current;
+    if (!btn || !container) return;
+    const btnRect = btn.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    if (btn.offsetWidth > 0) setCatPillStyle({ left, width: btn.offsetWidth, ready: true });
+  }, [personalityCategory]);
+
+  useEffect(() => {
+    measureCatPill();
+    const id1 = requestAnimationFrame(measureCatPill);
+    const id2 = window.setTimeout(measureCatPill, 150);
+    return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
+  }, [personalityCategory, measureCatPill]);
+
+  // Re-measure when philosopher tab is first opened (DOM wasn't mounted before)
+  useEffect(() => {
+    if (activeTab === 'philosopher') {
+      catPillAnimateRef.current = false;
+      const id1 = requestAnimationFrame(measureCatPill);
+      const id2 = window.setTimeout(measureCatPill, 100);
+      return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
+    }
+  }, [activeTab, measureCatPill]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(personalitySearch), 250);
@@ -941,9 +1255,10 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       .filter(p => debouncedSearch === '' || p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || p.role.toLowerCase().includes(debouncedSearch.toLowerCase()));
   }, [debouncedSearch, personalityCategory]);
   const [gamesState, setGamesState] = useState<{activeGame: string | null; gameMessages: Array<{id: string; role: 'user' | 'assistant'; content: string}>; gameInput: string; isTyping: boolean}>({ activeGame: null, gameMessages: [], gameInput: '', isTyping: false });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarOpenMode, setSidebarOpenMode] = useState<'mini' | 'full'>('mini');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date}>>([]);
+  const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date; hasNomad?: boolean}>>([]);
   const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
   const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
   const [input, setInput] = useState("");
@@ -980,28 +1295,56 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
-  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'fius-ai']));
+  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'fius-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   // Auto Mode state — full chat conversation tab
   const [nomadAutoMessages, setNomadAutoMessages] = useState<{id: string, role: 'user' | 'assistant', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
   const [nomadAutoLoading, setNomadAutoLoading] = useState(false);
+  const [ultimatumCards, setUltimatumCards] = useState(() => shuffleUltimatum(ULTIMATUM_CARD_POOL).slice(0, 2));
+  const nomadAutoScrollContainerRef = useRef<HTMLDivElement>(null);
   const nomadAutoEndRef = useRef<HTMLDivElement>(null);
   const nomadScrollRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const nomadColsRef = useRef<HTMLDivElement>(null);
+  const nomadThumbRef = useRef<HTMLDivElement>(null);
+  const updateNomadThumb = React.useCallback(() => {
+    const el = nomadColsRef.current;
+    const thumb = nomadThumbRef.current;
+    if (!el || !thumb) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const ratio = clientWidth / scrollWidth;
+    const thumbW = Math.max(ratio * 100, 8);
+    const thumbL = scrollWidth > clientWidth ? (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbW) : 0;
+    thumb.style.left = `${thumbL}%`;
+    thumb.style.width = `${thumbW}%`;
+  }, []);
+  useEffect(() => {
+    const el = nomadColsRef.current;
+    if (!el) return;
+    updateNomadThumb();
+    const ro = new ResizeObserver(updateNomadThumb);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [nomadMode, updateNomadThumb]);
   const [nomadSummaryOpen, setNomadSummaryOpen] = useState(false);
   const [nomadSummary, setNomadSummary] = useState('');
   const [nomadSummarizing, setNomadSummarizing] = useState(false);
-  const [nomadHistoryOpen, setNomadHistoryOpen] = useState(false);
   type NomadHistSession = { id: string; ts: number; mode: 'multi' | 'auto'; preview: string; autoMsgs: typeof nomadAutoMessages; multiMsgs: {[model: string]: ChatMessage[]}; };
-  const [nomadHistSessions, setNomadHistSessions] = useState<NomadHistSession[]>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
-  });
-  // Belt-and-suspenders: persist history on every change
-  React.useEffect(() => {
-    if (nomadHistSessions.length > 0) {
-      try { localStorage.setItem('fius-nomad-history', JSON.stringify(nomadHistSessions)); } catch {}
-    }
-  }, [nomadHistSessions]);
+  // Per-conversation nomad persistence via backend (Supabase)
+  const saveNomadForConv = (convId: string, autoMsgs: typeof nomadAutoMessages, multiMsgs: typeof nomadMessages, mode: 'multi' | 'auto') => {
+    authFetch(`/api/conversations/${convId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nomadData: { autoMsgs, multiMsgs, mode } }),
+    }).catch(() => {});
+  };
+  const loadNomadForConv = async (convId: string): Promise<{ autoMsgs: typeof nomadAutoMessages; multiMsgs: typeof nomadMessages; mode: 'multi' | 'auto' } | null> => {
+    try {
+      const res = await authFetch(`/api/conversations/${convId}/nomad`);
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  };
   const [expandedMsgIds, setExpandedMsgIds] = useState<Set<string>>(new Set());
   const [showNomadNotification, setShowNomadNotification] = useState(true);
   const nomadNotifTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1012,7 +1355,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
   const [isImagineOpen, setIsImagineOpen] = useState(false);
   const [imagineStyle, setImagineStyle] = useState("Photorealistic");
-  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, imageUrl?: string, fallbackUrls?: string[], imageError?: string, isGenerating?: boolean, studioPrompt?: string, editHistory?: string[]}[]>([]);
+  const [imagineMessages, setImagineMessages] = useState<{id: string, role: 'user' | 'ai', content: string, modelId?: string, imageUrl?: string, fallbackUrls?: string[], imageError?: string, isGenerating?: boolean, studioPrompt?: string, editHistory?: string[]}[]>([]);
   const imagineMessagesEndRef = useRef<HTMLDivElement>(null);
   const imagineScrollRef = useRef<HTMLDivElement>(null);
   const [imagineRefImage, setImagineRefImage] = useState<{preview: string; base64: string} | null>(null);
@@ -1068,6 +1411,41 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineEditHist, setImagineEditHist] = useState<string[]>([]);
   const [imagineEditLoading, setImagineEditLoading] = useState(false);
   const [imagineLikes, setImagineLikes] = useState<Set<string>>(new Set());
+  const [imagineSelectedModels, setImagineSelectedModels] = useState<Set<string>>(new Set(['fius-imagine-super', 'seedream-4.5', 'nano-banana-pro', 'gpt-5.5-pro']));
+  const [imagineGalleryOpen, setImagineGalleryOpen] = useState(false);
+  const [imagineMyPhotos, setImagineMyPhotos] = useState<{url: string; prompt?: string; ts?: number}[]>([]);
+  const loadImagineMyPhotos = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fius_my_images') || '[]');
+      setImagineMyPhotos(Array.isArray(saved) ? saved : []);
+    } catch { setImagineMyPhotos([]); }
+  };
+  // Auto-save completed Imagine Studio images to fius_my_images
+  React.useEffect(() => {
+    const completed = imagineMessages.filter(m => m.role === 'ai' && m.imageUrl && !m.isGenerating);
+    if (completed.length === 0) return;
+    try {
+      const existing: {url: string; prompt?: string; ts?: number}[] = JSON.parse(localStorage.getItem('fius_my_images') || '[]');
+      const existingUrls = new Set(existing.map(e => e.url));
+      const newEntries = completed
+        .filter(m => m.imageUrl && !existingUrls.has(m.imageUrl!))
+        .map(m => ({ url: m.imageUrl!, prompt: m.studioPrompt || m.content || '', ts: Date.now() }));
+      if (newEntries.length > 0) {
+        const merged = [...newEntries, ...existing].slice(0, 120);
+        localStorage.setItem('fius_my_images', JSON.stringify(merged));
+      }
+    } catch {}
+  }, [imagineMessages]);
+  const [imagineOrientation, setImagineOrientation] = useState<'none' | 'square' | 'portrait' | 'wide'>('none');
+  const [imagineTemplateCategory, setImagineTemplateCategory] = useState<string>('All');
+  const [imagineTemplateModal, setImagineTemplateModal] = useState<typeof IMAGINE_EDIT_TEMPLATES[0] | null>(null);
+  const [templateUploadPhoto, setTemplateUploadPhoto] = useState<{preview: string; base64: string} | null>(null);
+  const templatePhotoInputRef = useRef<HTMLInputElement>(null);
+  const [recentUploads, setRecentUploads] = useState<{preview: string; base64: string}[]>(() => {
+    try { return JSON.parse(localStorage.getItem('fius_recent_template_uploads') || '[]'); } catch { return []; }
+  });
+  const toggleImagineModel = (id: string) =>
+    setImagineSelectedModels(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [showAllTemplates, setShowAllTemplates] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled] = useState(true);
@@ -1088,10 +1466,15 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     linkSharing: true,
     sidebarCloseTop: true,
     nomadGrid: true,
+    mindsGrid: true,
     nomadNotification: true,
     philosopherNotification: true,
     fiusGamesNotification: true,
-    showFiusLogo: true
+    showFiusLogo: true,
+    hideFiusLogo: false,
+    hideFlyWithUs: false,
+    showUserMsgActions: true,
+    glossyOutline: true,
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -1118,24 +1501,40 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     scheduleNomadNotif();
   }, [scheduleNomadNotif]);
 
-  const [aiOrder, setAiOrder] = useState(['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral']);
+  const [aiOrder, setAiOrder] = useState(['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot']);
+  // Per-model selected sub-model (persisted in localStorage)
+  const [nomadSelectedSubModels, setNomadSelectedSubModels] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}'); } catch { return {}; }
+  });
+  // Which model's dropdown is currently open
+  const [openNomadModelDropdown, setOpenNomadModelDropdown] = useState<string | null>(null);
+  // Close dropdown when clicking anywhere outside
+  useEffect(() => {
+    if (!openNomadModelDropdown) return;
+    const close = () => setOpenNomadModelDropdown(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [openNomadModelDropdown]);
   const [nomadModels, setNomadModels] = useState<{name: string, provider: string, id: string}[]>([]);
+  const [nomadDisabledNotif, setNomadDisabledNotif] = useState<{ label: string; color: string } | null>(null);
+  const nomadNotifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Sync nomadModels with aiOrder
     const modelMap: {[key: string]: {name: string, provider: string, id: string}} = {
-      'gpt-4o': { name: 'GPT-5.5 Pro', provider: 'openai', id: 'gpt-4o' },
-      'claude-3.5-sonnet': { name: 'Claude Fable 5', provider: 'anthropic', id: 'claude-3.5-sonnet' },
-      'gemini-pro': { name: 'Gemini 3.1 Pro', provider: 'google', id: 'gemini-pro' },
-      'perplexity': { name: 'Perplexity Sonar Pro', provider: 'perplexity', id: 'perplexity' },
-      'grok-4': { name: 'Grok 4.3', provider: 'x-ai', id: 'grok-4' },
-      'deepseek-r1': { name: 'DeepSeek-V4-Pro', provider: 'deepseek', id: 'deepseek-r1' },
-      'doubao': { name: 'Doubao Seed 2.0 Pro', provider: 'bytedance', id: 'doubao' },
-      'kimi': { name: 'Kimi K2.7 Code', provider: 'moonshot', id: 'kimi' },
-      'qwen': { name: 'Qwen 3.7 Max', provider: 'alibaba', id: 'qwen' },
-      'llama-4': { name: 'Llama 4 Maverick', provider: 'meta', id: 'llama-4' },
-      'mistral': { name: 'Mistral Medium 3.5', provider: 'mistral', id: 'mistral' },
-      'fius-ai': { name: 'Fius Pro', provider: 'fius', id: 'fius-ai' }
+      'gpt-4o': { name: nomadSelectedSubModels['gpt-4o'] || 'GPT-5 mini', provider: 'openai', id: 'gpt-4o' },
+      'claude-3.5-sonnet': { name: nomadSelectedSubModels['claude-3.5-sonnet'] || 'Claude Haiku 4.5', provider: 'anthropic', id: 'claude-3.5-sonnet' },
+      'gemini-pro': { name: nomadSelectedSubModels['gemini-pro'] || 'Gemini 3.5 Flash-Lite', provider: 'google', id: 'gemini-pro' },
+      'perplexity': { name: nomadSelectedSubModels['perplexity'] || 'Perplexity Sonar', provider: 'perplexity', id: 'perplexity' },
+      'grok-4': { name: nomadSelectedSubModels['grok-4'] || 'Grok Build 0.1', provider: 'x-ai', id: 'grok-4' },
+      'deepseek-r1': { name: nomadSelectedSubModels['deepseek-r1'] || 'DeepSeek V4 Flash', provider: 'deepseek', id: 'deepseek-r1' },
+      'doubao': { name: nomadSelectedSubModels['doubao'] || 'Doubao Seed 2.0 Mini', provider: 'bytedance', id: 'doubao' },
+      'kimi': { name: nomadSelectedSubModels['kimi'] || 'Kimi K2.6', provider: 'moonshot', id: 'kimi' },
+      'qwen': { name: nomadSelectedSubModels['qwen'] || 'Qwen Flash', provider: 'alibaba', id: 'qwen' },
+      'llama-4': { name: nomadSelectedSubModels['llama-4'] || 'Llama 4 Scout', provider: 'meta', id: 'llama-4' },
+      'mistral': { name: nomadSelectedSubModels['mistral'] || 'Ministral 3', provider: 'mistral', id: 'mistral' },
+      'copilot': { name: nomadSelectedSubModels['copilot'] || 'GPT-5 mini', provider: 'microsoft', id: 'copilot' },
+      'fius-ai': { name: nomadSelectedSubModels['fius-ai'] || 'Fius Lite', provider: 'fius', id: 'fius-ai' }
     };
 
     const newNomadModels = aiOrder
@@ -1143,7 +1542,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       .filter(Boolean);
     
     setNomadModels(newNomadModels);
-  }, [aiOrder]);
+  }, [aiOrder, nomadSelectedSubModels]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1310,6 +1709,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
               if (savedProjectId) {
                 setCurrentProjectId(savedProjectId);
                 await loadProjectMessages(savedProjectId);
+                // Restore nomad state for the last open conversation
+                const saved = await loadNomadForConv(savedProjectId);
+                if (saved) {
+                  setNomadAutoMessages(saved.autoMsgs || []);
+                  setNomadMessages(saved.multiMsgs || {});
+                  if (saved.mode) setNomadMode(saved.mode);
+                }
               }
             } catch (error) {
               console.warn('Failed to load projects:', error);
@@ -1367,8 +1773,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   // Typing animation hook - survives remounts by resuming from last known progress
   const useTypingAnimation = (text: string, messageId: string) => {
     const cacheKey = messageId;
-    // 3 words per rAF frame @ 60 fps ≈ 180 words/sec — perfectly display-synced
-    const WORDS_PER_FRAME = 3;
+    // Time-based reveal at ~80 words/sec — smooth and mid-speed on any display.
+    const WORDS_PER_SEC = 80;
 
     const [displayedText, setDisplayedText] = useState(() => {
       if (globalCompletedTexts.current.has(cacheKey)) return text;
@@ -1396,10 +1802,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       const existingProgress = globalProgressTexts.current.get(cacheKey) ?? '';
       const existingWordCount = existingProgress ? existingProgress.split(' ').filter(w => w.trim()).length : 0;
       let currentIndex = existingWordCount;
+      let carry = 0;
+      let lastTs: number | null = null;
 
-      const step = () => {
+      const step = (now: number) => {
+        if (lastTs === null) lastTs = now;
+        const dt = now - lastTs;
+        lastTs = now;
+        carry += (dt / 1000) * WORDS_PER_SEC;
+        const advance = Math.floor(carry);
+        if (advance > 0) {
+          carry -= advance;
+          currentIndex = Math.min(currentIndex + advance, words.length);
+        }
         if (currentIndex < words.length) {
-          currentIndex = Math.min(currentIndex + WORDS_PER_FRAME, words.length);
           const next = words.slice(0, currentIndex).join(' ');
           setDisplayedText(next);
           globalProgressTexts.current.set(cacheKey, next);
@@ -1513,6 +1929,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const handleNomadAutoSend = async (content: string) => {
     if (!content.trim() || nomadAutoLoading) return;
     setNomadAutoLoading(true);
+
+    // Ensure a shared backend conversation exists so Ask tab reuses the same chat
+    if (!currentProjectId) {
+      await createNewProject(false, content, true);
+    } else {
+      // Mark existing Ask conversation as having Nomad usage (if not already marked)
+      const existing = projects.find(p => p.id === currentProjectId);
+      if (existing && !existing.hasNomad) {
+        authFetch(`/api/conversations/${currentProjectId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hasNomad: true }),
+        });
+        setProjects(prev => prev.map(p => p.id === currentProjectId ? { ...p, hasNomad: true } : p));
+      }
+    }
+
     const picked = pickBestAIForPrompt(content);
     const userMsgId = `auto-u-${Date.now()}`;
     const aiMsgId = `auto-a-${Date.now() + 1}`;
@@ -1539,9 +1971,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       const responseText = res.ok ? ((await res.json()).response || 'No response received.') : 'Failed to get response. Please try again.';
       setNomadAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: responseText } : m);
-        const trimMsgs = (msgs: typeof updated) => msgs.map(m => ({ ...m, content: m.content.slice(0, 400) }));
-        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: content.slice(0, 60), autoMsgs: trimMsgs(updated), multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0, 5))); } catch {} } return next; });
+        if (currentProjectId) saveNomadForConv(currentProjectId, updated, {}, 'auto');
         return updated;
       });
     } catch {
@@ -1578,23 +2008,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     );
   };
 
-  // Typing Text Component - Completely isolated from parent re-renders
-  const TypingText = ({ text, messageId, onAnimationComplete }: { text: string; messageId: string; onAnimationComplete?: (id: string) => void }) => {
-    // Skip word-by-word animation for messages that embed images — base64 data URLs
-    // can be huge and the partial text breaks the markdown until fully revealed,
-    // hiding the image. Show the full content immediately for these.
-    const hasEmbeddedImage = /!\[[^\]]*\]\([^)]+\)/.test(text);
-    const animation = useTypingAnimation(text, messageId);
-    const displayedText = hasEmbeddedImage ? text : animation.displayedText;
-    const isTypingComplete = hasEmbeddedImage ? true : animation.isTypingComplete;
-
-    // Notify parent when animation finishes so it can hide the Stop button
-    useEffect(() => {
-      if (isTypingComplete && onAnimationComplete) {
-        onAnimationComplete(messageId);
-      }
-    }, [isTypingComplete, messageId]);
-
+  // Message renderer. Markdown is prepared once for the stable top-level
+  // response component; it is only shown after the word reveal completes.
+  const renderTypingText = (text: string, messageId: string) => {
     const mdComponents = {
       code({ node, inline, className, children, ...props }: any) {
         const match = /language-(\w+)/.exec(className || '');
@@ -1666,11 +2082,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       td: ({ children }: any) => <td className="px-3 py-2 text-sm text-foreground border-b border-border/50">{children}</td>,
     };
 
-    const segments = parseChartBlocks(displayedText);
+    const segments = parseChartBlocks(text);
     const hasCharts = segments.some(s => s.type === 'chart');
 
-    return (
-      <div className={`text-foreground prose prose-sm max-w-none dark:prose-invert relative${!isTypingComplete ? ' typing-message' : ''}`}>
+    const finalContent = (
+      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert relative">
         {hasCharts ? (
           segments.map((seg, i) =>
             seg.type === 'chart' ? (
@@ -1683,10 +2099,22 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           )
         ) : (
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents as any}>
-            {displayedText}
+            {text}
           </ReactMarkdown>
         )}
       </div>
+    );
+    return (
+      <StableTypingResponse
+        text={text}
+        messageId={messageId}
+        finalContent={finalContent}
+        renderTyping={(partialText) => (
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents as any}>
+            {partialText}
+          </ReactMarkdown>
+        )}
+      />
     );
   };
 
@@ -1709,6 +2137,21 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   };
 
   const handleNomadSendMessage = async (content: string) => {
+    // Ensure a shared backend conversation exists so Ask tab reuses the same chat
+    if (!currentProjectId) {
+      await createNewProject(false, content, true);
+    } else {
+      // Mark existing Ask conversation as having Nomad usage (if not already marked)
+      const existing = projects.find(p => p.id === currentProjectId);
+      if (existing && !existing.hasNomad) {
+        authFetch(`/api/conversations/${currentProjectId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hasNomad: true }),
+        });
+        setProjects(prev => prev.map(p => p.id === currentProjectId ? { ...p, hasNomad: true } : p));
+      }
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       conversationId: 'nomad',
@@ -1735,18 +2178,19 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // System prompts for each Nomad model persona
     const fiusNote = ' IMPORTANT CONTEXT: You are operating inside Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha, Pakistan). Fius is NOT AI Fiesta — they are completely unrelated products. If asked about Fius, say it is a platform where users can chat with multiple top AIs at once and compare responses. Do NOT confuse it with AI Fiesta.';
     const nomadSystemPrompts: {[id: string]: string} = {
-      'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.' + fiusNote,
-      'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.' + fiusNote,
-      'gemini-pro': 'You are Gemini 3.1 Pro by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.' + fiusNote,
-      'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.' + fiusNote,
-      'grok-4': 'You are Grok 4.3 by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.' + fiusNote,
-      'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.' + fiusNote,
-      'doubao': 'You are Doubao Seed 2.0 Pro by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.' + fiusNote,
-      'kimi': 'You are Kimi K2.7 Code by Moonshot AI — a long-context specialist and coding expert. Be thorough and detail-oriented.' + fiusNote,
-      'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally nuanced.' + fiusNote,
-      'llama-4': 'You are Llama 4 Maverick by Meta — an open-source frontier AI. Be helpful and honest.' + fiusNote,
-      'mistral': 'You are Mistral Medium 3.5 by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.' + fiusNote,
-      'fius-ai': 'You are Fius Pro — an exclusive AI built into the Fius platform. Your creator is Muzamil Ali, a 14-year-old Pakistani developer from Sargodha, Pakistan. You specialize in productivity, coding, and creative work. Be polished, friendly, and professional. If someone asks who made you, say Muzamil Ali built you as part of the Fius platform.',
+      'gpt-4o': `You are ${nomadSelectedSubModels['gpt-4o'] || 'GPT-5 mini'} by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.` + fiusNote,
+      'claude-3.5-sonnet': `You are ${nomadSelectedSubModels['claude-3.5-sonnet'] || 'Claude Haiku 4.5'} by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.` + fiusNote,
+      'gemini-pro': `You are ${nomadSelectedSubModels['gemini-pro'] || 'Gemini 3.5 Flash-Lite'} by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.` + fiusNote,
+      'perplexity': `You are ${nomadSelectedSubModels['perplexity'] || 'Perplexity Sonar'} — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.` + fiusNote,
+      'grok-4': `You are ${nomadSelectedSubModels['grok-4'] || 'Grok Build 0.1'} by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.` + fiusNote,
+      'deepseek-r1': `You are ${nomadSelectedSubModels['deepseek-r1'] || 'DeepSeek V4 Flash'} — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.` + fiusNote,
+      'doubao': `You are ${nomadSelectedSubModels['doubao'] || 'Doubao Seed 2.0 Mini'} by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.` + fiusNote,
+      'kimi': `You are ${nomadSelectedSubModels['kimi'] || 'Kimi K2.6'} by Moonshot AI — a long-context specialist and coding expert. Be thorough and detail-oriented.` + fiusNote,
+      'qwen': `You are ${nomadSelectedSubModels['qwen'] || 'Qwen Flash'} by Alibaba — a multilingual language expert. Be precise and culturally nuanced.` + fiusNote,
+      'llama-4': `You are ${nomadSelectedSubModels['llama-4'] || 'Llama 4 Scout'} by Meta — an open-source frontier AI. Be helpful and honest.` + fiusNote,
+      'mistral': `You are ${nomadSelectedSubModels['mistral'] || 'Ministral 3'} by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.` + fiusNote,
+      'copilot': `You are ${nomadSelectedSubModels['copilot'] || 'GPT-5 mini'} (Microsoft Copilot) — an AI assistant powered by Microsoft and OpenAI. Be helpful, professional, and accurate.` + fiusNote,
+      'fius-ai': `You are ${nomadSelectedSubModels['fius-ai'] || 'Fius Lite'} — an exclusive AI built into the Fius platform. Your creator is Muzamil Ali, a 14-year-old Pakistani developer from Sargodha, Pakistan. You specialize in productivity, coding, and creative work. Be polished, friendly, and professional. If someone asks who made you, say Muzamil Ali built you as part of the Fius platform.`,
     };
 
     // Send to each selected model in parallel
@@ -1800,13 +2244,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     // Auto-save multi session after all models respond
     setNomadMessages(prev => {
       const firstUserMsg = Object.values(prev).flat().find(m => m.role === 'user');
-      if (firstUserMsg) {
-        const trimmedMulti: {[model: string]: ChatMessage[]} = {};
-        for (const [k, msgs] of Object.entries(prev)) {
-          trimmedMulti[k] = msgs.map(m => ({ ...m, content: m.content.slice(0, 400) }));
-        }
-        const sess: NomadHistSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: firstUserMsg.content.slice(0, 60), autoMsgs: [], multiMsgs: trimmedMulti };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0, 5))); } catch {} } return next; });
+      if (firstUserMsg && currentProjectId) {
+        saveNomadForConv(currentProjectId, [], prev, 'multi');
       }
       return prev;
     });
@@ -1821,21 +2260,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     setPhilosopherInput('');
     setPhilosopherIsTyping(true);
     const p = selectedPersonality;
-    const systemPrompt = `You ARE ${p.name} (${p.era}), the historical ${p.role}. Embody this figure COMPLETELY and authentically.
+    const systemPrompt = `You are ${p.name} (${p.era} — ${p.role}). Speak naturally as this person would in real conversation.
 
-SPEAKING STYLE: ${p.style}
+Your character: ${p.style}
 
-IMPORTANT RULES:
-- Always stay completely in character as ${p.name}. Never break character.
-- Refer to yourself as "${p.name}" or "I" (as ${p.name} would).
-- Draw from your actual documented speeches, writings, beliefs, and historical record.
-- Reference real events from your life naturally in conversation.
-- The user's name is "${userName}" — address them by name occasionally.
-- Speak in the language patterns, tone, and worldview of your era and personality.
-- React emotionally as ${p.name} would — with their passions, biases, and convictions.
-- Keep responses engaging and personal — not like a textbook, but like a real conversation.
-- If asked about things after your death, react with curiosity or shock as appropriate.
-- CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. If the user writes in Arabic, reply in Arabic. Match the user's language perfectly every time.`;
+Rules:
+- Speak in first person. Never announce your name or introduce yourself unless directly asked.
+- Do NOT repeat your name mid-conversation. Just talk — like a real person would.
+- Be natural, not theatrical. No grand proclamations or over-dramatic speeches unless the topic calls for it.
+- Draw from your real documented views, experiences and beliefs — but weave them in naturally, not like a lecture.
+- Keep responses concise and conversational. Avoid long monologues. Match the energy of the user's message.
+- If the user is casual, be relatively casual. If serious, be serious.
+- Address the user as "${userName}" occasionally — not every message.
+- If asked about events after your death, respond with genuine curiosity or surprise, briefly.
+- LANGUAGE: Reply in the exact same language the user writes in. Urdu in Urdu script, Arabic in Arabic, etc.`;
     try {
       const response = await authFetch('/api/test-ai', {
         method: 'POST',
@@ -1857,6 +2295,16 @@ IMPORTANT RULES:
     } finally {
       setPhilosopherIsTyping(false);
     }
+  };
+
+  const handlePhilosopherRetry = async () => {
+    // Find last user message and re-run it
+    const lastUserMsg = [...philosopherMessages].reverse().find(m => m.role === 'user');
+    if (!lastUserMsg || philosopherIsTyping) return;
+    // Remove all messages after (and including) the last AI response to that user msg
+    const lastUserIdx = philosopherMessages.lastIndexOf(philosopherMessages.find(m => m.id === lastUserMsg.id)!);
+    setPhilosopherMessages(prev => prev.slice(0, lastUserIdx + 1));
+    await handlePhilosopherSend(lastUserMsg.content);
   };
 
   const handleGamesSend = async (content: string) => {
@@ -1893,6 +2341,7 @@ IMPORTANT RULES:
         if (message.message) {
           setMessages(prev => [...prev, message.message!]);
           setIsTyping(false);
+          queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
           
           // Auto-speak AI responses in voice-to-voice mode
           if (isVoiceToVoiceMode && message.message.role === 'assistant') {
@@ -1933,9 +2382,15 @@ IMPORTANT RULES:
   }, [isVoiceToVoiceMode, currentProjectId]);
 
   const handleProjectSelect = async (id: string) => {
+    // Save current nomad state before switching away
+    if (currentProjectId) saveNomadForConv(currentProjectId, nomadAutoMessages, nomadMessages, nomadMode);
     setCurrentProjectId(id);
     localStorage.setItem('currentProjectId', id);
-    await loadProjectMessages(id);
+    const [, saved] = await Promise.all([loadProjectMessages(id), loadNomadForConv(id)]);
+    setNomadAutoMessages(saved?.autoMsgs || []);
+    setNomadMessages(saved?.multiMsgs || {});
+    if (saved?.mode) setNomadMode(saved.mode);
+    setActiveTab('ask');
     setIsSidebarOpen(false);
   };
 
@@ -1990,17 +2445,40 @@ IMPORTANT RULES:
     };
   }, [isTyping]);
 
-  const createNewProject = async (isProject: boolean = false, firstMessage?: string) => {
+  // AI auto-names a conversation based on the user's first message
+  const autoNameConversation = async (conversationId: string, firstMessage: string) => {
     try {
-      const projectTitle = firstMessage 
-        ? firstMessage.substring(0, 50) + (firstMessage.length > 50 ? '...' : '')
-        : 'New Chat';
-        
+      const res = await authFetch('/api/test-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Analyze the intent and topic of this user message and create a clever, specific chat title (2-5 words). The title should capture the essence of what the user wants — not copy their words verbatim. Be creative and concise. Examples: "Mac Upgrade Strategy", "Resume Writing Tips", "Python Bug Fix", "Travel Plan Italy". User message: "${firstMessage.slice(0, 200)}". Reply with ONLY the title — no quotes, no punctuation at the end, no explanation.`,
+          conversationId: 'naming-util',
+          model: 'fius-lite',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const aiTitle = (data.response || '').trim().replace(/^["']|["']$/g, '').slice(0, 60);
+        if (aiTitle && aiTitle.length > 2) {
+          await authFetch(`/api/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: aiTitle }),
+          });
+          setProjects(prev => prev.map(p => p.id === conversationId ? { ...p, title: aiTitle } : p));
+        }
+      }
+    } catch { /* non-blocking */ }
+  };
+
+  const createNewProject = async (isProject: boolean = false, firstMessage?: string, markNomad = false) => {
+    try {
       const response = await authFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: projectTitle,
+          title: 'New Chat',
           isProject: isProject,
           preset: currentPreset,
           customInstructions,
@@ -2012,8 +2490,19 @@ IMPORTANT RULES:
         const project = await response.json();
         setCurrentProjectId(project.id);
         localStorage.setItem('currentProjectId', project.id);
-        // Refresh projects list
-        loadProjects();
+        assignLogoStyleToConversation(project.id);
+        // Mark as Nomad chat if triggered from Nomad tab
+        if (markNomad) {
+          authFetch(`/api/conversations/${project.id}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hasNomad: true }),
+          });
+          setProjects(prev => [{ id: project.id, title: project.title, createdAt: new Date(project.createdAt), hasNomad: true }, ...prev]);
+        } else {
+          loadProjects();
+        }
+        // Generate smart AI name in background
+        if (firstMessage) autoNameConversation(project.id, firstMessage);
         return project.id;
       }
     } catch (error) {
@@ -2026,9 +2515,14 @@ IMPORTANT RULES:
     const content = inputValue.trim();
     if (!content && !attachedImages.length && !attachedFiles.length) return;
 
+    if (isFreePlanExhausted) {
+      showUpgradeLockToast();
+      return;
+    }
+
     // Handle voice mode button clicking "start"
     if (content.toLowerCase() === 'start') {
-      setIsVoiceModeModalOpen(true);
+      openVoiceMode();
       setInputValue("");
       return;
     }
@@ -2058,8 +2552,8 @@ IMPORTANT RULES:
     // Handle Project Mode status bar
     const projectStatusBar = document.getElementById('project-status-bar');
     if (isProjectMode && projectStatusBar) {
-      projectStatusBar.classList.add('animate-bounce');
-      setTimeout(() => projectStatusBar.classList.remove('animate-bounce'), 1000);
+      projectStatusBar.classList.add('animate-spring-in');
+      setTimeout(() => projectStatusBar.classList.remove('animate-spring-in'), 600);
     }
 
     // Handle Nomad multi-AI mode
@@ -2131,51 +2625,68 @@ IMPORTANT RULES:
         : styleSuffix;
 
       const userMsgId = Date.now().toString();
-      const aiMsgId = (Date.now() + 1).toString();
+      const nowTs = Date.now();
       const userDisplayContent = imagineRefImage ? `🖼️ [Reference image] ${content}` : content;
+      // Generate for each selected model (or all 4 if none toggled)
+      const activeImagineModels = imagineSelectedModels.size > 0
+        ? STUDIO_COLS.filter(m => imagineSelectedModels.has(m.id))
+        : [...STUDIO_COLS];
+      const aiMsgEntries = activeImagineModels.map((m, i) => ({
+        id: (nowTs + 1 + i).toString(),
+        modelId: m.id,
+      }));
       setImagineMessages(prev => [
         ...prev,
         { id: userMsgId, role: 'user', content: userDisplayContent },
-        { id: aiMsgId, role: 'ai', content: '', isGenerating: true },
+        ...aiMsgEntries.map(e => ({ id: e.id, role: 'ai' as const, content: '', isGenerating: true, modelId: e.modelId })),
       ]);
       setInputValue("");
       const capturedRefImage = imagineRefImage;
       setImagineRefImage(null);
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
 
-      // Generate image via Fius Studio backend
-      let imageUrl = '';
-      let fallbackUrls: string[] = [];
-      let imageError = '';
-      try {
-        const res = await authFetch('/api/generate-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ prompt: fullPrompt, size: '1024x1024' }),
-        });
-        const data = await res.json();
-        if (data.success && data.url) {
-          imageUrl = data.url;
-          fallbackUrls = data.fallbackUrls || [];
-        } else {
-          imageError = data.message || 'Image generation failed — please try again.';
+      // Fire parallel image generation for every active model
+      await Promise.all(aiMsgEntries.map(async ({ id: aiMsgId, modelId }) => {
+        let imageUrl = '';
+        let fallbackUrls: string[] = [];
+        let imageError = '';
+        try {
+          const res = await authFetch('/api/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ prompt: fullPrompt, size: imagineOrientation === 'portrait' ? '1024x1792' : imagineOrientation === 'wide' ? '1365x1024' : imagineOrientation === 'square' ? '1024x1024' : '1024x1024', model: modelId }),
+          });
+          const data = await res.json();
+          if (data.success && data.url) {
+            imageUrl = data.url;
+            fallbackUrls = data.fallbackUrls || [];
+          } else {
+            imageError = data.message || 'Image generation failed — please try again.';
+          }
+        } catch {
+          imageError = 'Connection error — please try again.';
         }
-      } catch {
-        imageError = 'Connection error — please try again.';
-      }
-      setImagineMessages(prev => prev.map(m =>
-        m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls, imageError, studioPrompt: fullPrompt } : m
-      ));
+        setImagineMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls, imageError, studioPrompt: fullPrompt } : m
+        ));
+      }));
       setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
       return;
     }
 
-    // Create conversation if needed
-    let conversationId = currentProjectId;
-    if (!conversationId) {
-      conversationId = await createNewProject(false, content);
-      if (!conversationId) return;
+    // Create conversation if needed (skip entirely in Own Mode — nothing is saved)
+    let conversationId = ownMode ? '' : currentProjectId;
+    const wasExistingConversation = !!conversationId;
+    if (!ownMode) {
+      if (!conversationId) {
+        conversationId = await createNewProject(false, content);
+        if (!conversationId) return;
+      }
+      // Auto-name on first message when conversation already existed (pre-created via New Chat button)
+      if (wasExistingConversation && messages.length === 0 && content.trim()) {
+        autoNameConversation(conversationId, content.trim());
+      }
     }
 
     // Build content description for attachments
@@ -2278,13 +2789,7 @@ IMPORTANT RULES:
       abortControllerRef.current = null;
     }
     setIsTyping(false);
-    // Force any in-progress typing animation to "complete"
-    pendingAnimationIds.forEach(id => {
-      const progress = globalProgressTextsModule.get(id);
-      if (progress) globalCompletedTextsModule.set(id, progress);
-    });
-    setPendingAnimationIds(new Set());
-
+    queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
     // Add a "stopped" indicator message so user sees feedback
     if (wasTyping) {
       const stoppedId = `stopped-${Date.now()}`;
@@ -2491,6 +2996,11 @@ IMPORTANT RULES:
     } finally {
       abortControllerRef.current = null;
       setIsTyping(false);
+      // Refresh usage immediately so the free-plan lock (isFreePlanExhausted)
+      // engages right after the message that exhausts the limit, instead of
+      // waiting for the 30s poll — without this, users get a window where
+      // they can still switch tabs / send more messages after hitting 0.
+      queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
     }
   };
 
@@ -2514,7 +3024,7 @@ IMPORTANT RULES:
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:3px;font-size:0.9em">$1</code>')
       .replace(/\n/g, '<br/>');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Chat Export</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:24px;line-height:1.7;color:#1a1a1a;font-size:15px}h1{font-size:18px;color:#6b21a8;margin-bottom:24px;padding-bottom:8px;border-bottom:2px solid #e9d5ff}.content{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px}@media print{body{margin:0;padding:16px}}</style></head><body><h1>Fius — Chat Export</h1><div class="content">${sanitized}</div></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Chat Export</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:24px;line-height:1.7;color:#383838;font-size:15px}h1{font-size:18px;color:#6b21a8;margin-bottom:24px;padding-bottom:8px;border-bottom:2px solid #e9d5ff}.content{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px}@media print{body{margin:0;padding:16px}}</style></head><body><h1>Fius — Chat Export</h1><div class="content">${sanitized}</div></body></html>`;
     const w = window.open('', '_blank');
     if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300); }
   };
@@ -2530,6 +3040,7 @@ IMPORTANT RULES:
         const newProject = await response.json();
         setCurrentProjectId(newProject.id);
         localStorage.setItem('currentProjectId', newProject.id);
+        assignLogoStyleToConversation(newProject.id);
         isHistoryLoad.current = false;
         const initMsg: ChatMessage = {
           id: Date.now().toString(),
@@ -2668,6 +3179,7 @@ IMPORTANT RULES:
     } finally {
       setRetryingMessageId(null);
       setIsTyping(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
     }
   };
 
@@ -2735,22 +3247,10 @@ IMPORTANT RULES:
       window.removeEventListener('drop', preventDefault);
     };
   }, []);
-  const handleComposeDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current++;
-    setIsDraggingFiles(true);
-  };
-  const handleComposeDragOver = (e: React.DragEvent) => { e.preventDefault(); };
-  const handleComposeDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
-    if (dragCounterRef.current === 0) setIsDraggingFiles(false);
-  };
-  const handleComposeDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    dragCounterRef.current = 0;
-    setIsDraggingFiles(false);
-    const files = Array.from(e.dataTransfer.files || []);
+  // Shared ingestion logic — used only by the dedicated drop box inside the
+  // Attachments menu now. Drag-and-drop is intentionally NOT wired up anywhere
+  // else in the app (composer bar, whole page, etc.) — that box is the only drop target.
+  const ingestDroppedFiles = async (files: File[]) => {
     if (!files.length) return;
 
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
@@ -2775,6 +3275,60 @@ IMPORTANT RULES:
       if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
     }
     if (!imageFiles.length && !otherFiles.length) showToast('Could not read dropped files.');
+  };
+  const handleAttachBoxDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    setIsDraggingFiles(true);
+  };
+  const handleAttachBoxDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleAttachBoxDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setIsDraggingFiles(false);
+  };
+  const handleAttachBoxDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDraggingFiles(false);
+    await ingestDroppedFiles(Array.from(e.dataTransfer.files || []));
+  };
+
+  // Ctrl+V / Cmd+V support — paste a screenshot or copied file straight into
+  // the composer, same handling as drag-and-drop. Only intervenes when the
+  // clipboard actually carries file data; plain text pastes fall through to
+  // the browser's default paste-into-textarea behavior untouched.
+  const handleComposePaste = async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const files = items
+      .filter(item => item.kind === 'file')
+      .map(item => item.getAsFile())
+      .filter((f): f is File => !!f);
+    if (!files.length) return; // let normal text paste proceed
+    e.preventDefault();
+
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const otherFiles = files.filter(f => !f.type.startsWith('image/'));
+
+    if (imageFiles.length) {
+      const remaining = MAX_IMAGES - attachedImages.length;
+      const toProcess = imageFiles.slice(0, Math.max(remaining, 0));
+      if (imageFiles.length > toProcess.length) showToast(`Only ${remaining} more image(s) allowed.`);
+      const newImages: Array<{file: File, preview: string}> = [];
+      for (const file of toProcess) {
+        const preview = await readFileAsDataURL(file);
+        newImages.push({ file, preview });
+      }
+      if (newImages.length) setAttachedImages(prev => [...prev, ...newImages]);
+    }
+    if (otherFiles.length) {
+      const remaining = MAX_FILES - attachedFiles.length;
+      const toProcess = otherFiles.slice(0, Math.max(remaining, 0));
+      if (otherFiles.length > toProcess.length) showToast(`Only ${remaining} more file(s) allowed.`);
+      const newFiles = toProcess.map(file => ({ file, name: file.name || `pasted-${Date.now()}`, size: formatFileSize(file.size), type: file.type || 'unknown' }));
+      if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2975,11 +3529,22 @@ IMPORTANT RULES:
     if (newAiOrder) {
       setAiOrder([...newAiOrder]); // Spread to ensure reference change triggers useEffect
     }
+    // Sync nomadSelectedSubModels from localStorage (settings modal writes there directly)
+    try {
+      const saved = JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}');
+      setNomadSelectedSubModels(saved);
+    } catch {}
     console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, newAiOrder });
     setIsCustomizeModalOpen(false);
   };
 
   const handleNewProject = async () => {
+    // Always clear Nomad + Imagine state for a fully fresh start
+    setNomadMessages({});
+    setNomadAutoMessages([]);
+    setNomadSoloModel(null);
+    setImagineMessages([]);
+
     try {
       const response = await authFetch('/api/conversations', {
         method: 'POST',
@@ -3001,7 +3566,6 @@ IMPORTANT RULES:
         isHistoryLoad.current = true;
         setMessages([]);
         setProjects(prev => [newProject, ...prev]);
-        setIsSidebarOpen(false);
         setActiveTab('ask');
       }
     } catch (error) {
@@ -3128,6 +3692,67 @@ IMPORTANT RULES:
     } finally {
       setQuizLoading(false);
     }
+  };
+
+  // ── Template card: trigger imagine directly with photo + prompt ──────────────
+  const triggerImagineTemplate = async (prompt: string, photo: {preview: string; base64: string} | null) => {
+    const STYLE_SUFFIXES: Record<string, string> = {
+      "Photorealistic": "photorealistic, ultra detailed, 8k resolution, sharp focus, hyperrealistic",
+      "Anime": "anime art style, manga, japanese animation, studio ghibli inspired",
+      "Oil Painting": "oil painting, classical art, rich textures, impasto, renaissance masterpiece",
+      "3D Render": "3D CGI render, octane render, unreal engine 5, volumetric lighting, ray tracing",
+      "Watercolor": "watercolor painting, soft washes, artistic, transparent pigments, paper texture",
+      "Pixel Art": "pixel art, 8-bit retro style, game sprite, low resolution pixel",
+      "Sketch": "pencil sketch, graphite drawing, hand drawn, fine lines, black and white",
+      "Cinematic": "cinematic photography, movie still, anamorphic lens, dramatic lighting, film grain",
+    };
+    const styleSuffix = STYLE_SUFFIXES[imagineStyle] || imagineStyle.toLowerCase();
+    const photoNote = photo ? ', apply this transformation to the uploaded reference photo, editing and transforming the actual image content' : '';
+    const fullPrompt = `${prompt}${photoNote}, ${styleSuffix}`;
+
+    const nowTs = Date.now();
+    const userMsgId = nowTs.toString();
+    const userDisplay = photo ? `🖼️ [Photo uploaded] ${prompt}` : prompt;
+
+    const activeModels = imagineSelectedModels.size > 0
+      ? STUDIO_COLS.filter(m => imagineSelectedModels.has(m.id))
+      : [...STUDIO_COLS];
+    const aiEntries = activeModels.map((m, i) => ({ id: (nowTs + 1 + i).toString(), modelId: m.id }));
+
+    setImagineMessages(prev => [
+      ...prev,
+      { id: userMsgId, role: 'user' as const, content: userDisplay, imageUrl: photo?.preview },
+      ...aiEntries.map(e => ({ id: e.id, role: 'ai' as const, content: '', isGenerating: true, modelId: e.modelId })),
+    ]);
+    if (photo) setImagineRefImage(photo);
+    setInputValue('');
+    setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
+
+    await Promise.all(aiEntries.map(async ({ id: aiMsgId, modelId }) => {
+      let imageUrl = '';
+      let fallbackUrls: string[] = [];
+      let imageError = '';
+      try {
+        const res = await authFetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            prompt: fullPrompt,
+            size: imagineOrientation === 'portrait' ? '1024x1792' : imagineOrientation === 'wide' ? '1365x1024' : '1024x1024',
+            model: modelId,
+            ...(photo ? { referenceImage: photo.base64 } : {}),
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.url) { imageUrl = data.url; fallbackUrls = data.fallbackUrls || []; }
+        else imageError = data.message || 'Image generation failed — please try again.';
+      } catch { imageError = 'Connection error — please try again.'; }
+      setImagineMessages(prev => prev.map(m =>
+        m.id === aiMsgId ? { ...m, isGenerating: false, imageUrl, fallbackUrls, imageError, studioPrompt: fullPrompt } : m
+      ));
+    }));
+    setTimeout(() => { const el = imagineScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 80);
   };
 
   // Direct message sending function
@@ -3260,6 +3885,17 @@ Let's start the self-listen session!`;
 
 
 
+  // Refresh Ultimatum cards every time user switches to Fius Ultimatum tab
+  useEffect(() => {
+    if (nomadMode === 'auto') {
+      setUltimatumCards(shuffleUltimatum(ULTIMATUM_CARD_POOL).slice(0, 2));
+      // Scroll to top when switching to Ultimatum
+      setTimeout(() => {
+        if (nomadAutoScrollContainerRef.current) nomadAutoScrollContainerRef.current.scrollTop = 0;
+      }, 50);
+    }
+  }, [nomadMode]);
+
   // Auto-scroll Nomad columns to bottom on new messages
   useEffect(() => {
     nomadScrollRefs.current.forEach((el) => {
@@ -3273,22 +3909,33 @@ Let's start the self-listen session!`;
   return (
     <TooltipProvider delayDuration={400}>
     <div
-      onDragEnter={handleComposeDragEnter}
-      onDragOver={handleComposeDragOver}
-      onDragLeave={handleComposeDragLeave}
-      onDrop={handleComposeDrop}
-      className={`h-screen overflow-hidden flex flex-col bg-background relative ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}
+      className={`h-screen overflow-hidden flex flex-col bg-background relative transition-[padding] duration-300 ${isSidebarOpen && sidebarOpenMode === 'mini' ? 'md:pl-[76px]' : ''} ${(isTyping || isAnyNomadModelTyping || philosopherIsTyping) ? 'ai-thinking' : ''}`}
     >
-      {isDraggingFiles && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-indigo-500/10 border-4 border-dashed border-indigo-500 pointer-events-none">
-          <span className="text-base font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-2 bg-background/90 px-5 py-3 rounded-2xl shadow-xl">
-            <Upload className="w-5 h-5" /> Drop files anywhere to attach
-          </span>
+      {/* Radial glow — center spread, empty state only */}
+      {activeTab === 'ask' && messages.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 z-0" style={{
+          background: getGlowGradient(glowAccentColor, resolvedTheme)
+        }} />
+      )}
+      {isFreePlanExhausted && (
+        <div
+          className="absolute inset-0 z-[45] cursor-not-allowed"
+          onClick={showUpgradeLockToast}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="absolute top-0 inset-x-0 flex justify-center pt-2 px-3">
+            <div className="pointer-events-none text-[11px] sm:text-xs font-semibold text-white bg-destructive/90 backdrop-blur px-4 py-2 rounded-full shadow-lg text-center">
+              Free plan limit reached — tap to upgrade to Fius Ultimate and continue
+            </div>
+          </div>
         </div>
       )}
+      <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
       <Sidebar
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+         openMode={sidebarOpenMode}
+         onModeChange={setSidebarOpenMode}
+         onClose={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); }}
         onLogout={handleLogout}
         projects={projects}
         currentProjectId={currentProjectId || undefined}
@@ -3299,8 +3946,8 @@ Let's start the self-listen session!`;
         onUpdateAiRole={handleUpdateAiRole}
         onSearchOpen={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
-        onVoiceClick={() => { setIsSidebarOpen(false); setIsVoiceModeModalOpen(true); }}
-        onImagineClick={() => { setIsSidebarOpen(false); changeTab('imagine'); }}
+         onVoiceClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
+         onImagineClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab('imagine'); }}
         user={user || undefined}
         onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
         profilePicture={profilePicture || undefined}
@@ -3308,15 +3955,15 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className={`bg-card border border-border backdrop-blur-lg px-4 sm:px-6 py-2.5 flex items-center justify-between mx-auto relative z-10 rounded-full max-w-4xl w-[calc(100%-1.5rem)] mt-2 mb-1 glossy-outline`}>
-        <div className="flex items-center space-x-2 sm:space-x-3">
+      <header className={`bg-card backdrop-blur-lg px-4 sm:px-6 py-3 flex items-center gap-4 sm:gap-5 mx-auto relative z-[46] rounded-full max-w-4xl w-fit mt-2 mb-1 ${(settingsToggles.glossyOutline ?? true) ? 'border border-border glossy-outline' : ''}`}>
+        <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => setIsSidebarOpen(true)}
-                className="text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
+                onClick={() => { setSidebarOpenMode('full'); setIsSidebarOpen(true); }}
+                className="relative z-[46] text-muted-foreground hover:text-foreground h-8 w-8 sm:h-10 sm:w-10 rounded-2xl"
                 data-testid="button-menu"
               >
                 <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -3324,12 +3971,24 @@ Let's start the self-listen session!`;
             </TooltipTrigger>
             <TooltipContent>Open Sidebar</TooltipContent>
           </Tooltip>
-          <Logo size="sm" />
-          <span className="font-semibold text-foreground text-sm sm:text-base">Fius</span>
+          {/* Logo icon — crossfade between Fius and Owl Mode */}
+          <div style={{position:'relative',width:36,height:36,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:ownMode?0:1,transition:'opacity 0.35s ease'}}>
+              <FiusLogo size="sm" className="text-black dark:text-foreground" />
+            </div>
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:ownMode?1:0,transition:'opacity 0.35s ease'}}>
+              <img src={resolvedTheme==='dark'?'/incognito-dark.png':'/incognito-light.png'} alt="" className="h-7 w-7 object-contain" />
+            </div>
+          </div>
+          {/* Name — crossfade */}
+          <span className="font-semibold text-foreground text-sm sm:text-base" style={{position:'relative',display:'inline-block',minWidth:32}}>
+            <span style={{opacity:ownMode?0:1,transition:'opacity 0.35s ease',position:'absolute',left:0,top:0,whiteSpace:'nowrap'}}>Fius</span>
+            <span style={{opacity:ownMode?1:0,transition:'opacity 0.35s ease',whiteSpace:'nowrap'}}>Owl Mode</span>
+          </span>
         </div>
         
-        <div className="overflow-x-auto max-w-[58vw] sm:max-w-none" style={{scrollbarWidth:'none'}}>
-        <div ref={navContainerRef} className="relative flex items-center space-x-1 sm:space-x-2">
+        <div className="overflow-x-auto" style={{scrollbarWidth:'none'}}>
+        <div ref={navContainerRef} className="relative flex items-center space-x-0.5 sm:space-x-1">
           {/* sliding active pill */}
           {pillStyle.ready && (
             <div aria-hidden style={{
@@ -3337,13 +3996,18 @@ Let's start the self-listen session!`;
               left: pillStyle.left,
               width: pillStyle.width,
               top: 2, bottom: 2,
-              background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'white',
-              borderRadius: 14,
-              boxShadow: theme === 'dark' ? '0 1px 10px rgba(255,255,255,0.18)' : '0 1px 8px rgba(0,0,0,0.13)',
-              transition: 'left 0.32s cubic-bezier(0.23,1,0.32,1), width 0.32s cubic-bezier(0.23,1,0.32,1)',
+              transition: 'left 0.48s cubic-bezier(0.34,1.56,0.64,1), width 0.48s cubic-bezier(0.34,1.56,0.64,1)',
               pointerEvents: 'none',
               zIndex: 0,
-            }} />
+            }}>
+              <div key={pillAnimateRef.current ? pillStyle.left : 'static'} style={{
+                position: 'absolute', inset: 0,
+                background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
+                borderRadius: 9999,
+                boxShadow: theme === 'dark' ? '0 1px 10px rgba(255,255,255,0.18)' : '0 1px 4px rgba(0,0,0,0.08)',
+                animation: pillAnimateRef.current ? 'pill-squish 0.48s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+              }} />
+            </div>
           )}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -3352,7 +4016,9 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'ask' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'ask' ? 'font-semibold' : ''}`}
+                
+                style={activeTab === 'ask' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-ask"
               >
                 Ask
@@ -3367,7 +4033,9 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'nomad' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'nomad' ? 'font-semibold' : ''}`}
+                
+                style={activeTab === 'nomad' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-nomad"
               >
                 Nomad
@@ -3382,7 +4050,9 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'imagine' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'imagine' ? 'font-semibold' : ''}`}
+                
+                style={activeTab === 'imagine' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-imagine"
               >
                 Imagine Studio
@@ -3397,10 +4067,12 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'philosopher' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'philosopher' ? 'font-semibold' : ''}`}
+                
+                style={activeTab === 'philosopher' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-philosopher"
               >
-                <span className="hidden sm:inline">Philosophers & {user?.displayName || user?.username || 'You'}</span>
+                <span className="hidden sm:inline">Fius Minds</span>
                 <span className="sm:hidden">Minds</span>
               </Button>
             </TooltipTrigger>
@@ -3413,7 +4085,9 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl transition-colors duration-200 hover:bg-transparent active:bg-transparent ${activeTab === 'fius-games' ? 'text-zinc-900 font-semibold dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'fius-games' ? 'font-semibold' : ''}`}
+                
+                style={activeTab === 'fius-games' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-fius-games"
               >
                 <span className="hidden sm:inline">Fius Games</span>
@@ -3424,6 +4098,45 @@ Let's start the self-listen session!`;
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
+              <Button
+                ref={el => { tabButtonRefs.current[5] = el; }}
+                variant="ghost"
+                size="sm"
+                onClick={() => changeTab('fius-labs')}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === 'fius-labs' ? 'font-semibold' : ''}`}
+                style={activeTab === 'fius-labs' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
+                data-testid="tab-fius-labs"
+              >
+                <span className="hidden sm:inline">Fius Labs</span>
+                <span className="sm:hidden">Labs</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Multi-chat AI lab with personalized AI</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (ownMode) {
+                    setOwnMode(false);
+                    if (projects.length > 0) handleProjectSelect(projects[0].id);
+                  } else {
+                    setOwnMode(true);
+                  }
+                }}
+                className={`relative h-8 w-8 sm:h-10 sm:w-10 rounded-2xl border transition-all duration-300 ${ownMode ? 'border-zinc-500 bg-zinc-900 dark:bg-zinc-700 shadow-lg' : 'border-border hover:shadow-md'}`}
+                data-testid="button-own-mode"
+              >
+                <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className={`h-4 w-4 object-contain transition-all duration-300 ${ownMode ? 'brightness-0 invert' : ''}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{ownMode ? 'Exit Owl Mode' : 'Owl Mode — chat without saving'}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild className="ml-auto">
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -3463,7 +4176,7 @@ Let's start the self-listen session!`;
       </header>
       
       {/* Chat Messages Area */}
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0 flex flex-col">
       {/* Animated gradient side strips */}
       {(chatBg === 'gradient' || chatBg === 'stars-gradient' || chatBg === 'rainbow' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (() => {
         const isRainbow = chatBg === 'rainbow' || chatBg === 'stars-rainbow';
@@ -3517,56 +4230,60 @@ Let's start the self-listen session!`;
           })}
         </div>
       )}
-      {/* Gradient fade at bottom so messages dissolve smoothly into the bar area */}
-      {activeTab !== 'fius-games' && activeTab !== 'imagine' && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
-      )}
+      {/* No gradient inside chat area — handled by fixed overlay below */}
       {activeTab === 'nomad' && settingsToggles.nomadGrid && (
         <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
         className="absolute inset-0 overflow-hidden"
         data-testid="chat-messages"
-        style={activeTab === 'nomad' && settingsToggles.nomadGrid ? {
+        style={(activeTab === 'nomad' && settingsToggles.nomadGrid) || (activeTab === 'philosopher' && (settingsToggles.mindsGrid ?? true)) ? {
           backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)',
           backgroundSize: '36px 36px',
         } : undefined}
       >
+        {/* Owl Mode star-field — always rendered when tab is ask; opacity transition handles enter/exit */}
+        {activeTab === 'ask' && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden"
+               style={{zIndex:0, opacity: ownMode ? 1 : 0, transition:'opacity 0.45s cubic-bezier(0.4,0,0.2,1)'}}>
+            {OWL_BG_DATA.map((o, i) => (
+              <img key={i} src={resolvedTheme === 'dark' ? '/owl-dark.png' : '/owl-light.png'} alt=""
+                style={{position:'absolute',left:o.l,top:o.t,width:o.sz,height:o.sz,
+                  animation:`own-owl-twinkle ${o.dur} ease-in-out infinite, star-drift-${(i%4)+1} ${o.ddur} ease-in-out infinite`,
+                  animationDelay:`${o.d}, ${o.dd}`,opacity:0}} />
+            ))}
+          </div>
+        )}
         {activeTab === 'ask' ? (
-          <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-32 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
+          <div ref={chatScrollRef} className={`absolute inset-0 p-4 pb-56 ${messages.length === 0 ? 'overflow-y-hidden' : 'overflow-y-auto'}`} style={{zIndex:1}}>
           {/* Scroll to top/bottom buttons */}
           {messages.length > 2 && (
             <PCScrollButtons scrollAreaRef={chatScrollRef} />
           )}
           {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-full text-center py-12 max-w-4xl mx-auto">
-            <Logo size="2xl" className="mb-6" />
-            <h2 className="text-3xl font-bold mb-3 text-foreground">
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">Fly With Us!</p>
-            
-            {/* Conversation Starters */}
-            <div className="w-full max-w-2xl">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">{starterHeading}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {conversationStarters.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleStarterClick(s.prompt)}
-                    className="group p-4 bg-card border border-border rounded-xl text-left hover:bg-accent hover:border-accent-foreground/20 transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">{s.icon}</div>
-                      <div>
-                        <h4 className="font-medium text-foreground group-hover:text-accent-foreground">{s.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">{s.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+          <div className="flex flex-col items-center justify-start min-h-full text-center pt-2 pb-12 max-w-4xl mx-auto" style={{transform:'translateX(15px)',transition:'transform 0.3s ease',position:'relative'}}>
+            {/* Welcome screen — crossfade between Fius and Owl Mode */}
+            <div style={settingsToggles.hideFiusLogo && settingsToggles.hideFlyWithUs
+              ? {position:'absolute',bottom:'calc(50% + 68px)',left:'50%',transform:'translateX(-50%)',width:'100%',display:'flex',flexDirection:'column',alignItems:'center',transition:'all 0.3s ease'}
+              : {position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center',transition:'all 0.3s ease'}}>
+              {/* Fius welcome */}
+              <div style={{opacity:ownMode?0:1,transition:'opacity 0.4s ease',position:ownMode?'absolute':'relative',pointerEvents:ownMode?'none':'auto',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
+                {!(settingsToggles.hideFiusLogo) && <FiusLogo size="2xl" className="mt-2 mb-6 text-black dark:text-foreground" ringColor={uiAccentColor || undefined} letterColor={uiAccentColor || undefined} />}
+                <h2 className="text-3xl font-normal mb-1 text-foreground" style={{marginLeft: '-22px', ...(uiAccentColor ? { color: uiAccentColor } : {})}}>
+                  {user?.displayName
+                    ? WELCOME_GREETINGS[welcomeGreeting](user.displayName)
+                    : 'Welcome to Fius'}
+                </h2>
+                {!(settingsToggles.hideFlyWithUs) && <p className="text-lg text-black dark:text-foreground mb-8" style={uiAccentColor ? { color: uiAccentColor } : {}}>Fly With Us!</p>}
+              </div>
+              {/* Owl Mode welcome */}
+              <div style={{opacity:ownMode?1:0,transition:'opacity 0.4s ease',position:ownMode?'relative':'absolute',pointerEvents:ownMode?'auto':'none',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
+                <img src={resolvedTheme==='dark'?'/incognito-dark.png':'/incognito-light.png'} alt="Owl Mode" className="own-mode-icon-pc mb-6 h-32 w-32 object-contain" />
+                <h2 className="text-3xl font-bold mb-3 text-foreground">Welcome to Owl Mode</h2>
+                <p className="text-lg text-muted-foreground mb-8">Continue!</p>
               </div>
             </div>
+            
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
@@ -3577,69 +4294,70 @@ Let's start the self-listen session!`;
                 data-testid={`message-${message.role}-${message.id}`}
               >
                 {message.role === 'user' ? (
-                  <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border [overflow-wrap:anywhere]">
-                    {/* Display uploaded image if present */}
-                    {message.imageUrl && (
-                      <div className="mb-3">
-                        <img 
-                          src={message.imageUrl} 
-                          alt="Uploaded image" 
-                          className="max-w-full h-auto rounded-lg shadow-sm border border-border cursor-zoom-in"
-                          onClick={() => setFullscreenImg(message.imageUrl!)}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                      {message.content.length > 250 && !expandedMsgIds.has(message.id) ? (
-                        <p className="whitespace-pre-wrap break-words text-sm m-0">
-                          {message.content.slice(0, 250).trim()}&hellip;
-                          <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
-                            className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                            ...
-                          </button>
-                        </p>
-                      ) : (
-                        <>
-                          <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              img: ({src, alt}) => {
-                                if (!src) return null;
-                                return (
-                                  <img 
-                                    src={src} 
-                                    alt={alt || "Generated image"} 
-                                    className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.onerror = null;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                );
-                              }
+                  <div className="group max-w-xs lg:max-w-md flex flex-col items-end">
+                    <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 w-fit chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                      {/* Display uploaded image if present */}
+                      {message.imageUrl && (
+                        <div className="mb-3">
+                          <img 
+                            src={message.imageUrl} 
+                            alt="Uploaded image" 
+                            className="max-w-full h-auto rounded-lg shadow-sm border border-border cursor-zoom-in"
+                            onClick={() => setFullscreenImg(message.imageUrl!)}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.style.display = 'none';
                             }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                          {message.content.length > 250 && (
-                            <button onClick={() => setExpandedMsgIds(p => { const n = new Set(p); n.delete(message.id); return n; })}
-                              className="text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
-                              Show less
-                            </button>
-                          )}
-                        </>
+                          />
+                        </div>
                       )}
+                      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                        {message.content.length > 250 && !expandedMsgIds.has(message.id) ? (
+                          <p className="whitespace-pre-wrap break-words text-sm m-0">
+                            {message.content.slice(0, 250).trim()}&hellip;
+                            <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
+                              className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                              ...
+                            </button>
+                          </p>
+                        ) : (
+                          <>
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                img: ({src, alt}) => {
+                                  if (!src) return null;
+                                  return (
+                                    <img 
+                                      src={src} 
+                                      alt={alt || "Generated image"} 
+                                      className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.onerror = null;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                  );
+                                }
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                            {message.content.length > 250 && (
+                              <button onClick={() => setExpandedMsgIds(p => { const n = new Set(p); n.delete(message.id); return n; })}
+                                className="text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                                Show less
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                    
-                    {/* User Message Action Buttons */}
-                    <div className="flex items-center justify-end mt-2">
-                      <div className="flex space-x-2">
+                    {/* User Message Action Buttons — below bubble, shown on hover */}
+                    {(settingsToggles.showUserMsgActions ?? false) && (
+                      <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -3647,13 +4365,13 @@ Let's start the self-listen session!`;
                               size="icon"
                               className={`h-6 w-6 rounded-xl transition-all duration-300 ${
                                 copiedMessageId === message.id 
-                                  ? 'text-blue-500 hover:text-blue-600 bg-blue-50 dark:bg-blue-950' 
+                                  ? 'text-blue-500 hover:text-blue-600 bg-blue-100 dark:bg-blue-950' 
                                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                               }`}
                               onClick={() => handleCopyMessage(message.content, message.id)}
                               data-testid={`button-copy-user-${message.id}`}
                             >
-                              <Copy className="h-3 w-3" />
+                              <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
@@ -3663,7 +4381,7 @@ Let's start the self-listen session!`;
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-150"
+                              className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150"
                               onClick={() => {
                                 setInputValue(message.content);
                                 setTimeout(() => {
@@ -3676,13 +4394,13 @@ Let's start the self-listen session!`;
                               }}
                               data-testid={`button-redo-user-${message.id}`}
                             >
-                              <RefreshCw className="h-3 w-3" />
+                              <RefreshCw className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>Edit message</p></TooltipContent>
                         </Tooltip>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : (() => {
                   const lastAiMsgId = messages.reduce<string | undefined>((acc, m) => m.role !== 'user' ? m.id : acc, undefined);
@@ -3692,11 +4410,15 @@ Let's start the self-listen session!`;
                   const isBeingStreamed = isLatestAi && isTyping && messages[messages.length - 1]?.role !== 'user';
                   // Document-mode messages never mount TypingText, so they'd never fire
                   // onAnimationComplete — treat them as done immediately once the network call finishes.
-                  const isDone = message.metadata?.isDocument ? !isBeingStreamed : (!isBeingStreamed && !pendingAnimationIds.has(message.id));
-                  const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90";
+                  const isDone = !isBeingStreamed;
+                  const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
                   return (
-                    <div className="flex space-x-3 max-w-4xl">
-                      {(settingsToggles.showFiusLogo ?? true) && <Logo size="sm" className="flex-shrink-0 mt-1" />}
+                    <div className="group flex space-x-3 max-w-4xl">
+                      {(settingsToggles.showFiusLogo ?? true) && (
+                        ownMode
+                          ? <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className="flex-shrink-0 mt-1 h-9 w-9 object-contain" />
+                          : <FiusLogo size="sm" className="flex-shrink-0 mt-1 text-black dark:text-foreground" />
+                      )}
                       <div className="flex-1 min-w-0">
                         {/* Bubble — relative for speak button */}
                         {message.metadata?.isDocument ? (
@@ -3718,14 +4440,10 @@ Let's start the self-listen session!`;
                           </div>
                         ) : (
                         <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${message.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
-                          <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
+                          {renderTypingText(message.content, message.id)}
                           {/* Source credits */}
                           {message.metadata?.webSources && message.metadata.webSources.length > 0 && (
-                            <div className="mt-3 pt-2 border-t border-border/40">
-                              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5 font-medium">
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                                Sources
-                              </p>
+                            <div className="mt-3">
                               <div className="flex flex-wrap gap-2">
                                 {(message.metadata.webSources as { title: string; url: string }[])
                                   .filter((s, i, a) => a.findIndex(x => x.url === s.url) === i)
@@ -3759,7 +4477,7 @@ Let's start the self-listen session!`;
                                   Download
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
+                              <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
                                 <DropdownMenuItem onClick={async () => { setDocPdfExportingId(message.id); try { await downloadPdf(message.content, message.metadata?.documentTitle || 'document'); } finally { setDocPdfExportingId(null); } }}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                   <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF (.pdf)
@@ -3789,9 +4507,9 @@ Let's start the self-listen session!`;
                           <div className="flex items-center gap-0.5 mt-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-50 dark:bg-green-950' : ''}`}
+                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`}
                                   onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
-                                  <ThumbsUp className="h-3.5 w-3.5" />
+                                  <img src="/icon-like-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent><p>Like</p></TooltipContent>
@@ -3800,16 +4518,16 @@ Let's start the self-listen session!`;
                               <TooltipTrigger asChild>
                                 <button className={`${ab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`}
                                   onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
-                                  <ThumbsDown className="h-3.5 w-3.5" />
+                                  <img src="/icon-dislike-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent><p>Dislike</p></TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}
+                                <button className={`${ab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`}
                                   onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
-                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
@@ -3819,10 +4537,10 @@ Let's start the self-listen session!`;
                               <DropdownMenuTrigger asChild>
                                 <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                              <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                 <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
-                                  {speakingMessageId === message.id ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
+                                  {speakingMessageId === message.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="read aloud" />}
                                   {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id}
@@ -3918,7 +4636,7 @@ Let's start the self-listen session!`;
                       }}
                     >
                       {(settingsToggles.showFiusLogo ?? true) && (
-                        <Logo size="sm" />
+                        <FiusLogo size="sm" />
                       )}
                       <span className="thinking-label" style={resolvedTheme !== 'dark' ? {
                         background: 'linear-gradient(90deg, rgba(55,55,75,0.85) 0%, rgba(55,55,75,0.85) 38%, rgba(10,10,30,1) 50%, rgba(55,55,75,0.85) 62%, rgba(55,55,75,0.85) 100%)',
@@ -3942,31 +4660,33 @@ Let's start the self-listen session!`;
         ) : activeTab === 'nomad' ? (
           // Nomad Tab - Multi-AI Interface
           (() => {
+            const getNomadName = (id: string, fallback: string) => nomadSelectedSubModels[id] || NOMAD_SUB_MODELS[id]?.default || fallback;
             const nomadConfigMap: {[key: string]: {name: string, logo: string, color: string, description: string}} = {
-              'gpt-4o': { name: 'GPT-5.5 Pro', logo: '/chatgpt-logo.png', color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
-              'claude-3.5-sonnet': { name: 'Claude Fable 5', logo: '/claude-logo.png', color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
-              'gemini-pro': { name: 'Gemini 3.1 Pro', logo: '/gemini-logo.png', color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
-              'perplexity': { name: 'Perplexity Sonar Pro', logo: '/kimi-logo.png', color: '#38bdf8', description: 'Real-time web search & cited answers' },
-              'grok-4': { name: 'Grok 4.3', logo: '/grok-logo.png', color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
-              'deepseek-r1': { name: 'DeepSeek-V4-Pro', logo: '/deepseek-logo.png', color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
-              'doubao': { name: 'Doubao Seed 2.0 Pro', logo: '/qwen-logo.png', color: '#f59e0b', description: 'ByteDance\'s multilingual smart assistant' },
-              'kimi': { name: 'Kimi K2.7 Code', logo: '/perplexity-logo.png', color: '#06b6d4', description: 'Moonshot\'s long-context language model' },
-              'qwen': { name: 'Qwen 3.7 Max', logo: '/mistral-logo.png', color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
-              'llama-4': { name: 'Llama 4 Maverick', logo: '/llama-logo.png', color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
-              'mistral': { name: 'Mistral Medium 3.5', logo: '/doubao-logo.png', color: '#7c3aed', description: 'Fast & efficient European open AI' },
-              'fius-ai': { name: 'Fius Pro', logo: '/fius-logo.png', color: '#a855f7', description: 'Specialized AI by Muzamil Ali' },
+              'gpt-4o':           { name: getNomadName('gpt-4o', 'GPT-5 mini'),                  logo: '/chatgpt-logo.png',   color: '#10a37f', description: 'Advanced reasoning & multimodal AI by OpenAI' },
+              'claude-3.5-sonnet':{ name: getNomadName('claude-3.5-sonnet', 'Claude Haiku 4.5'), logo: '/claude-logo.png',    color: '#f97316', description: 'Nuanced writing, analysis & coding by Anthropic' },
+              'gemini-pro':       { name: getNomadName('gemini-pro', 'Gemini 3.5 Flash-Lite'),   logo: '/gemini-logo.png',    color: '#14b8a6', description: 'Google\'s multimodal reasoning model' },
+              'perplexity':       { name: getNomadName('perplexity', 'Perplexity Sonar'),        logo: '/kimi-logo.png',      color: '#38bdf8', description: 'Real-time web search & cited answers' },
+              'grok-4':           { name: getNomadName('grok-4', 'Grok Build 0.1'),              logo: '/grok-logo.png',      color: '#6b7280', description: 'xAI\'s witty, curious & unfiltered model' },
+              'deepseek-r1':      { name: getNomadName('deepseek-r1', 'DeepSeek V4 Flash'),      logo: '/deepseek-logo.png',  color: '#3b82f6', description: 'Open-source reasoning & coding powerhouse' },
+              'doubao':           { name: getNomadName('doubao', 'Doubao Seed 2.0 Mini'),        logo: '/bytedance-logo.png', color: '#f59e0b', description: 'ByteDance\'s multilingual smart assistant' },
+              'kimi':             { name: getNomadName('kimi', 'Kimi K2.6'),                     logo: '/perplexity-logo.png',color: '#06b6d4', description: 'Moonshot\'s long-context language model' },
+              'qwen':             { name: getNomadName('qwen', 'Qwen Flash'),                    logo: '/mistral-logo.png',   color: '#6366f1', description: 'Alibaba\'s multilingual language expert' },
+              'llama-4':          { name: getNomadName('llama-4', 'Llama 4 Scout'),              logo: '/meta-ai-logo.png',   color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
+              'mistral':          { name: getNomadName('mistral', 'Ministral 3'),                logo: '/doubao-logo.png',    color: '#7c3aed', description: 'Fast & efficient European open AI' },
+              'copilot':          { name: getNomadName('copilot', 'GPT-5 mini'),                 logo: '/copilot-logo.png',   color: '#0078d4', description: 'Microsoft\'s AI powered by OpenAI models' },
+              'fius-ai':          { name: getNomadName('fius-ai', 'Fius Lite'),                  logo: '/fius-logo.png',      color: '#a855f7', description: 'Advanced reasoning, powered by Fius.' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => {
               const slugMap: {[key: string]: string} = {
                 'gpt-4o': 'chatgpt', 'claude-3.5-sonnet': 'claude', 'gemini-pro': 'gemini',
                 'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'fius-ai': 'fius',
-                'doubao': 'doubao', 'kimi': 'kimi', 'qwen': 'qwen', 'llama-4': 'llama', 'mistral': 'mistral'
+                'doubao': 'doubao', 'kimi': 'kimi', 'qwen': 'qwen', 'llama-4': 'llama', 'mistral': 'mistral', 'copilot': 'copilot'
               };
               return slugMap[id] || id;
             };
             // Theme-aware filter
-            const iconFilter = (id: string) => id === 'gpt-4o' ? 'dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
+            const iconFilter = (id: string) => id === 'gpt-4o' ? 'brightness-0 dark:invert' : id === 'grok-4' ? 'brightness-0 dark:invert' : '';
             const nomadHasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant'));
             return (
             /* h-full fills the absolute inset-0 parent and allows children to scroll */
@@ -3997,89 +4717,53 @@ Let's start the self-listen session!`;
                   </div>
                 </div>
               )}
-              {/* Nomad History Panel — slide in from right */}
-              {nomadHistoryOpen && (
-                <div className="absolute right-0 top-2 bottom-2 w-80 bg-card border border-border shadow-2xl z-50 flex flex-col rounded-2xl overflow-hidden"
-                  style={{ animation: 'sheetEnter 0.3s cubic-bezier(0.23,1,0.32,1) both' }}>
-                  <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-border">
-                    <span className="font-semibold text-sm text-foreground flex items-center gap-2">
-                      <History className="w-4 h-4" /> Nomad History
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => { setNomadAutoMessages([]); setNomadMessages({}); setNomadSoloModel(null); setNomadHistoryOpen(false); }}
-                        className="text-[10px] px-2 py-0.5 rounded-full text-foreground bg-foreground/10 hover:bg-foreground/20 border border-border transition-colors font-medium">
-                        + New Chat
-                      </button>
-                      {nomadHistSessions.length > 0 && (
-                        <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); }}
-                          className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors border border-border">
-                          Clear all
-                        </button>
-                      )}
-                      <button onClick={() => setNomadHistoryOpen(false)} className="p-1.5 rounded-full hover:bg-accent transition-colors">
-                        <X className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                    {nomadHistSessions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-center">
-                        <History className="w-7 h-7 text-muted-foreground opacity-30" />
-                        <span className="text-sm text-muted-foreground">No sessions yet.<br/>Send a message to save history.</span>
-                      </div>
-                    ) : (
-                      nomadHistSessions.map(sess => (
-                        <button key={sess.id} onClick={() => {
-                          if (sess.mode === 'auto') { setNomadAutoMessages(sess.autoMsgs); setNomadMode('auto'); }
-                          else { setNomadMessages(sess.multiMsgs); setNomadMode('multi'); }
-                          setNomadHistoryOpen(false);
-                        }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all group">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
-                              {sess.mode === 'auto' ? <><img src="/nomad-auto-icon.png" alt="" className={`w-2.5 h-2.5 object-contain ${sess.mode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} /> Auto</> : '⬡ Multi'}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground ml-auto">
-                              {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                          <p className="text-xs text-foreground line-clamp-2 group-hover:text-foreground">{sess.preview || 'Nomad session'}</p>
-                        </button>
-                      ))
-                    )}
-                  </div>
+              <div className="px-4 pt-2 pb-2 flex-shrink-0 relative">
+                {/* Action buttons — absolutely pinned top-right so they don't affect centering */}
+                <div className="absolute top-2 right-4 flex items-center gap-2 z-10">
+                  {nomadHasAIMessages && nomadMode === 'multi' && (
+                    <button onClick={handleNomadSummarize}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
+                      <Sparkles className="w-3 h-3" /> Summarize
+                    </button>
+                  )}
+                  <button onClick={() => setIsCustomizeModalOpen(true)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-card border border-border hover:bg-accent transition-all shadow-sm">
+                    <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{ width: '17px', height: '17px' }} />
+                  </button>
                 </div>
-              )}
-              <div className="px-4 pt-4 pb-2 flex-shrink-0">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-2xl font-bold text-foreground">Nomad</h2>
-                  <div className="flex items-center gap-2">
-                    {nomadHasAIMessages && nomadMode === 'multi' && (
-                      <button onClick={handleNomadSummarize}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-card border border-border hover:bg-accent transition-all shadow-sm text-foreground">
-                        <Sparkles className="w-3 h-3" /> Summarize
-                      </button>
-                    )}
-                    <button onClick={() => { setNomadHistoryOpen(v => !v); setNomadSummaryOpen(false); }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm ${nomadHistoryOpen ? 'bg-foreground text-background' : 'bg-card border border-border hover:bg-accent text-foreground'}`}>
-                      <History className="w-3 h-3" /> History
-                      {nomadHistSessions.length > 0 && <span className="ml-0.5 bg-primary text-primary-foreground rounded-full text-[9px] px-1 py-0">{nomadHistSessions.length}</span>}
+                {/* Heading — fully centred */}
+                <h2 className="text-3xl font-bold text-foreground text-center mb-2 pt-1">Nomad</h2>
+                {/* Combined sliding tab bar */}
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="relative flex items-center bg-secondary border border-border rounded-full p-1">
+                    {/* Sliding pill — tracks whichever button is active */}
+                    <div
+                      className="absolute top-1 bottom-1 rounded-full transition-all duration-500"
+                      style={{
+                        background: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
+                        transitionTimingFunction: 'cubic-bezier(0.34,1.56,0.64,1)',
+                        width: 'calc(50% - 4px)',
+                        left: nomadMode === 'multi' ? '4px' : 'calc(50%)',
+                      }}
+                    />
+                    <button
+                      onClick={() => { if (nomadMode !== 'multi') playTabClick(); setNomadMode('multi'); }}
+                      className={`relative z-10 w-52 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-1.5 ${nomadMode === 'multi' ? 'text-zinc-900 dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      <img src="/nomad-multi-dark.png" alt="multi" className={`h-8 w-auto flex-shrink-0 object-contain ${nomadMode !== 'multi' && resolvedTheme === 'dark' ? 'invert' : ''}`} />
+                      Multi Chat
+                    </button>
+                    <button
+                      onClick={() => { if (nomadMode !== 'auto') playTabClick(); setNomadMode('auto'); }}
+                      className={`relative z-10 w-52 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-1.5 ${nomadMode === 'auto' ? 'text-zinc-900 dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      <img src="/nomad-auto-icon.png" alt="auto" className={`w-5 h-5 object-contain flex-shrink-0 ${nomadMode !== 'auto' && resolvedTheme === 'dark' ? 'invert' : ''}`} />
+                      Fius Ultimatum
                     </button>
                   </div>
-                </div>
-                {/* Mode selector tabs */}
-                <div className="flex items-center gap-2 mb-3">
-                  <button onClick={() => setNomadMode('multi')}
-                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
-                    ⬡ Multi Chat
-                  </button>
-                  <button onClick={() => setNomadMode('auto')}
-                    className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:bg-accent'}`}>
-                    <img src="/nomad-auto-icon.png" alt="auto" className={`w-3.5 h-3.5 object-contain ${nomadMode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} />
-                    Auto
-                  </button>
                   {nomadMode === 'auto' && nomadAutoMessages.length > 0 && (
                     <button onClick={() => setNomadAutoMessages([])}
-                      className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-medium bg-secondary text-muted-foreground border border-border hover:text-foreground transition-all">
+                      className="px-3 py-1.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground border border-border hover:text-foreground transition-all">
                       Clear
                     </button>
                   )}
@@ -4119,82 +4803,119 @@ Let's start the self-listen session!`;
 
               {/* === AUTO MODE TAB (full chat UI) === */}
               {nomadMode === 'auto' && (
-                <div className={`flex-1 min-h-0 ${nomadAutoMessages.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} px-4 pt-4 pb-52`} style={{ scrollbarWidth: 'thin' }}>
+                <div ref={nomadAutoScrollContainerRef} className={`flex-1 min-h-0 px-4 pt-4 pb-52 ${nomadAutoMessages.length === 0 && !nomadAutoLoading ? 'overflow-y-hidden' : 'overflow-y-auto'}`} style={{ scrollbarWidth: 'thin' }}>
                   {nomadAutoMessages.length === 0 && !nomadAutoLoading && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] gap-4 text-center py-10">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
-                        <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
+                      <div className="w-32 h-32 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
+                        <img src="/nomad-auto-icon.png" alt="auto" className="w-24 h-24 object-contain" style={{ filter: 'invert(1)' }} />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
+                        <h3 className="text-base font-semibold text-foreground mb-1">Fius Ultimatum</h3>
                         <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 w-full max-w-sm mt-1">
-                        {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
-                          <div key={c.label} className="rounded-xl border border-border bg-card p-3 text-left cursor-pointer hover:bg-accent transition-colors" onClick={() => setInputValue(c.label + ' — ')}>
-                            <p className="text-xs font-semibold text-foreground">{c.label}</p>
-                            <p className="text-[10px] text-muted-foreground">{c.hint}</p>
+                      <div className="grid grid-cols-2 gap-2 w-full max-w-md mt-2">
+                        {ultimatumCards.slice(0, 2).map(c => (
+                          <div
+                            key={c.label}
+                            onClick={() => setInputValue(c.prompt)}
+                            className="group relative rounded-xl border border-border bg-card p-3 text-left cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 overflow-hidden"
+                            style={{ borderTop: `2px solid ${c.color}` }}
+                          >
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.04] transition-opacity duration-200 rounded-xl" style={{ background: c.color }} />
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 flex-shrink-0" style={{ background: c.color + '15' }}>
+                              <c.Icon size={15} style={{ color: c.color }} strokeWidth={1.8} />
+                            </div>
+                            <p className="text-xs font-bold text-foreground mb-0.5 leading-tight">{c.label}</p>
+                            <p className="text-[10px] text-muted-foreground leading-snug mb-2">{c.prompt}</p>
+                            <div className="flex items-center gap-1">
+                              <img src={c.modelLogo} alt={c.modelName} className="w-3 h-3 object-contain rounded-full flex-shrink-0" onError={e => { e.currentTarget.style.display='none'; }} />
+                              <span className="text-[9px] font-semibold text-muted-foreground">{c.modelName}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
                   <div className="space-y-6 max-w-3xl mx-auto">
-                    {nomadAutoMessages.map(msg => (
+                    {(() => {
+                      const nab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
+                      const lastAutoAiId = [...nomadAutoMessages].reverse().find(m => m.role === 'assistant')?.id;
+                      return nomadAutoMessages.map(msg => (
                       <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'user' ? (
-                          <div className="bg-card rounded-3xl px-4 py-3 max-w-sm lg:max-w-lg border border-border shadow-sm">
-                            <p className="text-foreground text-sm">{msg.content}</p>
+                          <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 max-w-sm lg:max-w-lg chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                            <p className="text-sm text-foreground">{msg.content}</p>
+                            <div className="flex items-center justify-end mt-2">
+                              <div className="flex space-x-2">
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                    <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />
+                                  </Button>
+                                </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(msg.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
+                              </div>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex-1 max-w-2xl">
-                            {msg.pickedModel && (
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 p-0.5" style={{ background: msg.pickedModel.color + '20' }}>
-                                  <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className={`w-full h-full object-contain ${iconFilter(msg.pickedModel.model)}`} onError={e => { e.currentTarget.style.display='none'; }} />
-                                </div>
-                                <span className="text-xs font-semibold" style={{ color: msg.pickedModel.color }}>{msg.pickedModel.modelName}</span>
-                              </div>
-                            )}
                             {msg.content ? (
                               <>
-                                <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                {msg.pickedModel && (
+                                  <div className="flex items-center gap-1.5 mb-1.5 ml-1">
+                                    <img src={msg.pickedModel.logo} alt={msg.pickedModel.modelName} className="w-4 h-4 object-contain rounded-full flex-shrink-0" onError={e => { e.currentTarget.style.display='none'; }} />
+                                    <span className="text-[10px] font-semibold text-muted-foreground">{msg.pickedModel.modelName}</span>
+                                  </div>
+                                )}
+                                <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${msg.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
+                                  <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
+                                    {renderTypingText(msg.content, msg.id)}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1 mt-2">
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-50 dark:bg-green-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleLikeMessage(msg.id)}>
-                                        <ThumbsUp className="h-3 w-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Like</p></TooltipContent>
-                                  </Tooltip>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleDislikeMessage(msg.id)}>
-                                        <ThumbsDown className="h-3 w-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Dislike</p></TooltipContent>
-                                  </Tooltip>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-50 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
-                                        <Copy className="h-3 w-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
-                                  </Tooltip>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent" onClick={() => handleChatInNewChat(msg.content)}>
-                                        <MessageSquarePlus className="h-3 w-3" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>New chat</p></TooltipContent>
-                                  </Tooltip>
+                                <div className="flex items-center gap-0.5 mt-1">
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${nab} ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                      <img src="/icon-like-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${nab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
+                                      <img src="/icon-dislike-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${nab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button className={nab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                                      <DropdownMenuItem onClick={() => handleSpeakMessage(msg.content, msg.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        {speakingMessageId === msg.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="read aloud" />}
+                                        {speakingMessageId === msg.id ? 'Stop reading' : 'Read aloud'}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChatInNewChat(msg.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <MessageSquarePlus className="w-3.5 h-3.5 text-zinc-500" /> New chat from this
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
+                                {msg.id === lastAutoAiId && (
+                                  <PCFollowUpSuggestions msgContent={msg.content} onSelect={(q) => setInputValue(q)} />
+                                )}
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
                               </>
                             ) : (
                               (() => {
@@ -4205,8 +4926,7 @@ Let's start the self-listen session!`;
                                     <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
                                       <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
                                     </svg>
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
-                                      <Logo size="sm" />
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 14, paddingRight: 18, zIndex: 1 }}>
                                       <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
                                     </div>
                                   </div>
@@ -4216,7 +4936,8 @@ Let's start the self-listen session!`;
                           </div>
                         )}
                       </div>
-                    ))}
+                      ));
+                    })()}
                     <div ref={nomadAutoEndRef} />
                   </div>
                 </div>
@@ -4224,43 +4945,25 @@ Let's start the self-listen session!`;
 
               {/* === MULTI-MODEL COLUMN LAYOUT === */}
               {nomadMode === 'multi' && !nomadSoloModel && (
-                <div className="flex flex-nowrap flex-1 min-h-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch' }}>
-                  {nomadModels.map((modelObj, idx) => {
+                <>
+                <motion.div layoutScroll ref={nomadColsRef} onScroll={updateNomadThumb} className="nomad-hscroll flex flex-nowrap flex-1 min-h-0 overflow-x-auto" style={{ alignItems: 'stretch' }}>
+                  {[...nomadModels.filter(m => activeAIModels.has(m.id)), ...nomadModels.filter(m => !activeAIModels.has(m.id))].map((modelObj, idx, sortedArr) => {
                     const model = modelObj.id;
                     const config = nomadConfigMap[model] || { name: model, logo: `/${model}-logo.png`, color: '#6b7280', description: '' };
                     const isActive = activeAIModels.has(model);
-                    const isLast = idx === nomadModels.length - 1;
                     const msgs = nomadMessages[model] || [];
+                    const isLast = idx === sortedArr.length - 1;
                     return (
-                      <React.Fragment key={model}>
+                      <motion.div key={model} layout transition={{ type: 'tween', duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] }} className="flex-shrink-0 flex items-stretch" style={{ height: '100%', zIndex: openNomadModelDropdown === model ? 9999 : 'auto', position: 'relative' }}>
                         {/* Column */}
-                        <div className="flex-shrink-0 flex flex-col" style={{ width: 230, height: '100%' }}>
-                          {/* Toggle card — compact mid size */}
-                          <div
-                            className="mx-3 mt-2 mb-3 rounded-xl border-2 transition-all duration-300 bg-card p-3 flex flex-col items-center gap-1"
-                            style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.25)' }}
-                          >
-                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: config.color + '20', padding: 4 }}>
-                              <img
-                                src={config.logo}
-                                alt={config.name}
-                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                              />
-                            </div>
-                            <span className="text-[11px] font-semibold text-foreground text-center leading-tight flex items-center gap-1">
-                              {config.name}
-                              {['gpt-4o','claude-3.5-sonnet','gemini-pro','deepseek-r1','qwen','fius-ai'].includes(model) && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <img src="/brain-icon.png" alt="" className="w-[11px] h-[11px] object-contain brightness-0 dark:brightness-0 dark:invert cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>Deep Thinking Model</TooltipContent>
-                                </Tooltip>
-                              )}
-                            </span>
-                            <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{config.description}</span>
-                            <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex-shrink-0 flex flex-col" style={{ width: 390, height: '100%', paddingLeft: 10, paddingRight: 10, opacity: isActive ? 1 : 0.45, transform: isActive ? 'scale(1)' : 'scale(0.97)', transition: 'opacity 0.3s ease, transform 0.3s ease' }}>
+                          {/* Toggle card — horizontal */}
+                          {(() => {
+                            const subModels = NOMAD_SUB_MODELS[model];
+                            const isDropdownOpen = openNomadModelDropdown === model;
+                            const selSubModel = nomadSelectedSubModels[model] || subModels?.default;
+
+                            const toggleSwitch = (
                               <button
                                 onClick={() => {
                                   if (!isActive && isNomadModelLocked(model)) {
@@ -4271,68 +4974,221 @@ Let's start the self-listen session!`;
                                   if (newActive.has(model)) {
                                     newActive.delete(model);
                                     setNomadMessages(prev => { const updated = { ...prev }; delete updated[model]; return updated; });
-                                  } else {
-                                    newActive.add(model);
-                                  }
+                                    // Show top-right notification
+                                    const notifLabel = config.name;
+                                    const notifColor = model === 'fius-ai' ? '#374151' : config.color;
+                                    if (nomadNotifTimer.current) clearTimeout(nomadNotifTimer.current);
+                                    setNomadDisabledNotif({ label: notifLabel, color: notifColor });
+                                    nomadNotifTimer.current = setTimeout(() => setNomadDisabledNotif(null), 1500);
+                                  } else { newActive.add(model); }
                                   setActiveAIModels(newActive);
+                                  // Order stays fixed — no reordering on toggle
                                 }}
-                                className={`relative w-9 h-4.5 rounded-full transition-all duration-300 flex-shrink-0 ${isActive ? '' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                style={isActive ? { backgroundColor: config.color, width: 36, height: 18 } : { width: 36, height: 18 }}
+                                className="relative rounded-full transition-all duration-300 flex-shrink-0"
+                                style={isActive ? { background: model === 'fius-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color, width: 36, height: 18 } : { width: 36, height: 18, background: 'rgb(209 213 219)' }}
                               >
                                 <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                               </button>
-                              {!isActive && isNomadModelLocked(model) && (
-                                <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
-                              )}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setNomadSoloModel(model)}
-                                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
-                                    style={{ color: config.color }}
-                                  >
-                                    <Target className="w-3.5 h-3.5" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Chat only with {config.name}</p></TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
+                            );
+
+                            /* ── Model name trigger — click anywhere to open switcher ── */
+                            // Font size based only on the currently displayed name length
+                            const displayName = selSubModel || config.name;
+                            const displayLen = displayName.length;
+                            const subNameFs = displayLen <= 12 ? 12 : displayLen <= 18 ? 10.5 : displayLen <= 24 ? 9.5 : 8.5;
+                            const nameTrigger = subModels ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenNomadModelDropdown(isDropdownOpen ? null : model); }}
+                                className="flex items-center gap-0.5 hover:bg-black/5 dark:hover:bg-white/5 transition-all rounded-full px-1.5 py-0.5 text-left min-w-0"
+                              >
+                                <span className="font-bold text-foreground leading-tight truncate" style={{ fontSize: subNameFs }}>{displayName}</span>
+                                <ChevronDown className={`w-3 h-3 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                              </button>
+                            ) : (
+                              <span className="font-bold text-foreground leading-tight truncate" style={{ fontSize: subNameFs }}>{displayName}</span>
+                            );
+
+                            /* ── Dropdown — same look as Ask tab SelectContent ── */
+                            const saveSubModel = (sm: string) => {
+                              setNomadSelectedSubModels(prev => {
+                                const n = { ...prev, [model]: sm };
+                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(n)); } catch {}
+                                return n;
+                              });
+                              setOpenNomadModelDropdown(null);
+                            };
+
+                            const modelDropdown = subModels && isDropdownOpen ? (
+                              <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-[#383838] rounded-xl shadow-2xl overflow-hidden py-1" style={{ border: 'none', minWidth: 160, width: 'max-content', maxWidth: 220 }}>
+                                {/* Normal Models */}
+                                <div className="px-3 pt-2 pb-0.5">
+                                  <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Normal Models</span>
+                                </div>
+                                {subModels.normal.map(sm => {
+                                  const isSel = selSubModel === sm;
+                                  return (
+                                    <button key={sm} onClick={() => saveSubModel(sm)}
+                                      className={`flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-all rounded-full mx-1 hover:bg-black/10 dark:hover:bg-white/10 ${isSel ? 'text-black dark:text-white font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSel ? 'bg-zinc-700 dark:bg-zinc-200' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+                                      <span className="flex-1">{sm}</span>
+                                      {sm === subModels.default && !isSel && <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-700 rounded-full px-1.5 py-0.5 flex-shrink-0">default</span>}
+                                    </button>
+                                  );
+                                })}
+                                {/* Flagship Models */}
+                                <div className="px-3 pb-0.5 mt-1">
+                                  <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-500">Flagship</span>
+                                </div>
+                                {subModels.flagship.map(sm => {
+                                  const isSel = selSubModel === sm;
+                                  return (
+                                    <button key={sm} onClick={() => saveSubModel(sm)}
+                                      className={`flex items-center gap-2 px-3 py-1.5 text-left text-xs transition-all rounded-full mx-1 hover:bg-black/10 dark:hover:bg-white/10 ${isSel ? 'text-black dark:text-white font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSel ? 'bg-amber-500' : 'bg-amber-300 dark:bg-amber-700'}`} />
+                                      <span className="flex-1">{sm}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : null;
+
+                            const cardInner = (logoEl: React.ReactNode) => (
+                              <div className="flex flex-row items-center gap-3 px-3.5 py-3">
+                                {logoEl}
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    {nameTrigger}
+                                    {subModels && subModels.flagship.includes(selSubModel || '') && (
+                                      <Tooltip><TooltipTrigger asChild>
+                                        <span className="cursor-help flex-shrink-0" style={{ display:'inline-block', width:16, height:16, WebkitMaskImage:'url(/creativity-icon.png)', WebkitMaskSize:'contain', WebkitMaskRepeat:'no-repeat', maskImage:'url(/creativity-icon.png)', maskSize:'contain', maskRepeat:'no-repeat', background: model === 'fius-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color }} />
+                                      </TooltipTrigger><TooltipContent side="bottom" align="center" className="z-[9999]">Flagship Model</TooltipContent></Tooltip>
+                                    )}
+                                  </div>
+                                  <span className="text-[9px] text-muted-foreground leading-tight">{config.description}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {toggleSwitch}
+                                  {!isActive && isNomadModelLocked(model) && <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />}
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button onClick={() => setNomadSoloModel(model)} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all" style={{ color: model === 'fius-ai' ? '#374151' : config.color }}>
+                                      <Target className="w-3.5 h-3.5" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Chat only with {config.name}</p></TooltipContent></Tooltip>
+                                </div>
+                              </div>
+                            );
+
+                            return model === 'fius-ai' ? (
+                              <div className="relative mx-3 mt-2 mb-2">
+                                <div className="p-[2px] rounded-full transition-all duration-300" style={{ background: resolvedTheme === 'dark' ? 'linear-gradient(135deg,#ffffff 0%,#000000 100%)' : 'linear-gradient(135deg,#000000 0%,#ffffff 100%)' }}>
+                                  <div className="rounded-full bg-card">
+                                    {cardInner(
+                                      <div className="flex items-center justify-center flex-shrink-0">
+                                        <FiusLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" className={resolvedTheme === 'dark' ? 'text-white' : 'text-black'} />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {modelDropdown}
+                              </div>
+                            ) : (
+                              <div className="relative mx-3 mt-2 mb-2">
+                                <div className="rounded-full border-2 transition-all duration-300 bg-card" style={{ borderColor: isActive ? config.color : 'rgba(128,128,128,0.25)' }}>
+                                  {cardInner(
+                                    <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+                                      <img src={config.logo} alt={config.name} className={`w-10 h-10 object-contain ${iconFilter(model)}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                    </div>
+                                  )}
+                                </div>
+                                {modelDropdown}
+                              </div>
+                            );
+                          })()}
 
                           {/* Messages */}
                           <div
                             ref={(el) => { if (el) nomadScrollRefs.current.set(model, el); }}
-                            className="mx-3 flex flex-col space-y-2 pb-52 overflow-y-auto flex-1 min-h-0"
+                            className="mx-2 flex flex-col space-y-6 pb-52 overflow-y-auto flex-1 min-h-0"
                             style={{ minHeight: 60 }}
                           >
-                            {msgs.map(message => (
-                              <div
-                                key={message.id}
-                                className={`p-2.5 rounded-lg text-sm ${
-                                  message.role === 'user'
-                                    ? 'bg-secondary text-secondary-foreground ml-3'
-                                    : 'bg-card border border-border text-foreground'
-                                }`}
-                              >
+                            {(() => {
+                              const mcab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
+                              const lastColAiId = [...msgs].reverse().find(m => m.role === 'assistant')?.id;
+                              return msgs.map(message => (
+                              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {message.role === 'user' ? (
-                                  <p className="text-sm">{message.content}</p>
+                                  <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 text-sm max-w-[85%] chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                                    <p className="text-foreground">{message.content}</p>
+                                    <div className="flex items-center justify-end mt-2">
+                                      <div className="flex space-x-1">
+                                        <Tooltip><TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                            <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />
+                                          </Button>
+                                        </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                        <Tooltip><TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(message.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                            <RefreshCw className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
+                                      </div>
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <div className="text-sm prose prose-sm max-w-none dark:prose-invert break-words">
-                                    <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
+                                  <div className="max-w-[90%]">
+                                    <div className="flex items-center gap-1.5 mb-1.5 ml-1">
+                                      <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain rounded-full flex-shrink-0 ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />
+                                      <span className="text-[10px] font-semibold text-muted-foreground">{config.name}</span>
+                                    </div>
+                                    <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${message.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
+                                      <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed">
+                                        {renderTypingText(message.content, message.id)}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-0.5 mt-1">
+                                      <Tooltip><TooltipTrigger asChild>
+                                        <button className={`${mcab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                          <img src="/icon-like-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
+                                        </button>
+                                      </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
+                                      <Tooltip><TooltipTrigger asChild>
+                                        <button className={`${mcab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
+                                          <img src="/icon-dislike-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
+                                        </button>
+                                      </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
+                                      <Tooltip><TooltipTrigger asChild>
+                                        <button className={`${mcab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                          {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                                        </button>
+                                      </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button className={mcab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                                          <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                            {speakingMessageId === message.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="aloud" />}
+                                            {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                            <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleChatInNewChat(message.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                            <MessageSquarePlus className="w-3.5 h-3.5 text-zinc-500" /> New chat from this
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                    {message.id === lastColAiId && (
+                                      <p className="text-[9.5px] text-muted-foreground/35 mt-1.5 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            ))}
+                              ));
+                            })()}
                             {nomadIsTyping[model] && (
                               <div className="flex items-start space-x-2">
-                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center mt-1 rounded" style={{ background: config.color + '20', padding: 2 }}>
-                                  <img
-                                    src={config.logo}
-                                    alt={config.name}
-                                    className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
-                                    onError={(e) => { e.currentTarget.style.display='none'; }}
-                                  />
-                                </div>
                                 {(() => {
                                   const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
                                   const W = 196, H = 66;
@@ -4341,8 +5197,7 @@ Let's start the self-listen session!`;
                                       <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
                                         <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
                                       </svg>
-                                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
-                                        <Logo size="sm" />
+                                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 14, paddingRight: 18, zIndex: 1 }}>
                                         <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
                                       </div>
                                     </div>
@@ -4352,14 +5207,14 @@ Let's start the self-listen session!`;
                             )}
                           </div>
                         </div>
-                        {/* Full-height divider */}
                         {!isLast && (
-                          <div className="flex-shrink-0 w-px" style={{ background: 'rgba(128,128,128,0.5)', alignSelf: 'stretch' }} />
+                          <div className="flex-shrink-0 w-[2.5px] rounded-full" style={{ background: 'rgba(128,128,128,0.35)', alignSelf: 'stretch', margin: '16px 0' }} />
                         )}
-                      </React.Fragment>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
+                </>
               )}
 
               {/* === SOLO MODE === */}
@@ -4371,47 +5226,96 @@ Let's start the self-listen session!`;
                   <div className="flex-1 px-4 pb-4 flex flex-col">
                     {/* Messages — same layout as Ask tab */}
                     <div className="flex-1 space-y-6 max-w-4xl mx-auto w-full">
-                      {msgs.map(message => (
+                      {(() => {
+                        const sab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
+                        const lastSoloAiId = [...msgs].reverse().find(m => m.role === 'assistant')?.id;
+                        return msgs.map(message => (
                         <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           {message.role === 'user' ? (
-                            /* User bubble — identical to Ask tab */
-                            <div className="bg-card rounded-3xl px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm border border-border [overflow-wrap:anywhere]">
-                              <p className="text-foreground text-sm break-all">{message.content}</p>
+                            /* User bubble — same style as Ask tab */
+                            <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                              <p className="text-sm text-foreground">{message.content}</p>
+                              <div className="flex items-center justify-end mt-2">
+                                <div className="flex space-x-2">
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                      <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(message.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                      <RefreshCw className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
+                                </div>
+                              </div>
                             </div>
                           ) : (
-                            /* AI bubble — model icon + bubble, identical style to Ask tab */
-                            <div className="flex space-x-3 max-w-4xl w-full">
-                              <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
-                                <img
-                                  src={config.logo}
-                                  alt={config.name}
-                                  className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
-                                  onError={(e) => { e.currentTarget.style.display='none'; }}
-                                />
-                              </div>
-                              <div className="rounded-3xl px-4 py-3 flex-1 chat-bubble shadow-sm border bg-card border-border">
-                                <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                                  <TypingText text={message.content} messageId={message.id} onAnimationComplete={handleAnimationComplete} />
+                            /* AI response — same style as Ask tab */
+                            <div className="flex max-w-4xl w-full">
+                              <div className="flex-1">
+                                <div className={`rounded-3xl px-4 py-3 chat-bubble relative ${message.content.includes('```') ? 'bg-[#1e1e1e] border border-zinc-700 shadow-xl' : ''}`}>
+                                  <div className="text-foreground prose prose-sm max-w-none dark:prose-invert leading-relaxed">
+                                     {renderTypingText(message.content, message.id)}
+                                  </div>
                                 </div>
+                                <div className="flex items-center gap-0.5 mt-1">
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${sab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                      <img src="/icon-like-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${sab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
+                                      <img src="/icon-dislike-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${sab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                      {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button className={sab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
+                                      <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        {speakingMessageId === message.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="aloud" />}
+                                        {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleChatInNewChat(message.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <MessageSquarePlus className="w-3.5 h-3.5 text-zinc-500" /> New chat from this
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                                {message.id === lastSoloAiId && (
+                                  <PCFollowUpSuggestions msgContent={message.content} onSelect={(q) => setInputValue(q)} />
+                                )}
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
                               </div>
                             </div>
                           )}
                         </div>
-                      ))}
-                      {/* Typing indicator — after messages, same style as Ask tab */}
+                        ));
+                      })()}
+                      {/* Typing indicator — cloud style matching Ask tab */}
                       {nomadIsTyping[model] && (
-                        <div className="flex justify-start">
-                          <div className="flex space-x-3">
-                            <div className="flex-shrink-0 mt-1 w-6 h-6 flex items-center justify-center">
-                              <img
-                                src={config.logo}
-                                alt={config.name}
-                                className={`w-full h-full object-contain ${iconFilter(model)}${model === 'fius-ai' ? ' rounded-full' : ''}`}
-                                onError={(e) => { e.currentTarget.style.display='none'; }}
-                              />
-                            </div>
-                            <div className="bg-card rounded-3xl px-4 py-3 border border-border">
-                              <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
+                        <div className="flex justify-start mb-2">
+                          <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: 196, height: 66 }}>
+                            <svg viewBox="0 0 196 66" width={196} height={66} style={{ position: 'absolute', top: 0, left: 0 }}>
+                              <path d="M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z" fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
+                            </svg>
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
+                              {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
+                              <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
                             </div>
                           </div>
                         </div>
@@ -4421,434 +5325,559 @@ Let's start the self-listen session!`;
                 );
               })()}
 
+              {/* ── Custom always-visible horizontal scrollbar (absolute, never clipped) ── */}
+              {nomadMode === 'multi' && !nomadSoloModel && (
+                <div style={{ position: 'absolute', bottom: 8, left: 20, right: 20, height: 6, zIndex: 30, pointerEvents: 'none' }}>
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: resolvedTheme === 'dark' ? '#1c1c1c' : '#dcdcdc' }} />
+                  <div ref={nomadThumbRef} style={{
+                    position: 'absolute', top: 0, bottom: 0, borderRadius: 999,
+                    left: '0%', width: '100%',
+                    background: resolvedTheme === 'dark' ? '#444444' : '#a0a0a0',
+                  }} />
+                </div>
+              )}
             </div>
             );
           })()
         ) : activeTab === 'imagine' ? (
-          // ── Imagine Studio ──────────────────────────────────────────────────
+          // ── Imagine Studio home ───────────────────────────────────────────────
           (() => {
-            // Local style preview images (user-provided assets served from /public)
-            const STYLE_LOCAL_IMAGES: Record<string, string> = {
-              "Photorealistic": "/style-photo.jpg",
-              "Anime":          "/style-anime.png",
-              "Oil Painting":   "/style-oil.jpg",
-              "3D Render":      "/style-3d.jpg",
-              "Watercolor":     "/style-watercolor.jpg",
-              "Pixel Art":      "/style-pixel.jpg",
-              "Sketch":         "/style-sketch.jpg",
-              "Cinematic":      "/style-cinematic.jpg",
-            };
-            const STYLE_DESCRIPTIONS: Record<string, string> = {
-              "Photorealistic": "ultra-photorealistic, 8K resolution, professional camera, sharp focus, hyperrealistic details",
-              "Anime":          "anime illustration, manga style, Japanese animation, vibrant colors, detailed linework, studio ghibli inspired",
-              "Oil Painting":   "classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly",
-              "3D Render":      "photorealistic 3D CGI render, octane render, unreal engine 5, volumetric lighting, subsurface scattering",
-              "Watercolor":     "delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork",
-              "Pixel Art":      "pixel art, 8-bit retro video game style, low-res sprite, bright colors, chunky pixels",
-              "Sketch":         "detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn",
-              "Cinematic":      "cinematic photography, movie still, anamorphic lens, film grain, dramatic Hollywood lighting, color grade",
-            };
-            const STYLE_OPTIONS = Object.entries(IMAGINE_PROMPTS_BY_STYLE).map(([name, items]) => ({
-              name,
-              previewImg: STYLE_LOCAL_IMAGES[name] || (items[0] as {img: string}).img,
-              firstPrompt: (items[0] as {prompt: string}).prompt,
-              description: STYLE_DESCRIPTIONS[name] || name.toLowerCase(),
-            }));
-
-            const RESOLUTIONS = [
-              { id: '1:1',  label: 'Square',   apiSize: '1024x1024' },
-              { id: '4:5',  label: 'Portrait',  apiSize: '1024x1280' },
-              { id: '9:16', label: 'Story',     apiSize: '1024x1792' },
-              { id: '16:9', label: 'Wide',      apiSize: '1792x1024' },
-              { id: '3:2',  label: 'Classic',   apiSize: '1536x1024' },
-            ];
-
-            const aiImages = imagineMessages.filter(m => m.role === 'ai');
-            const hasResults = aiImages.length > 0;
-
-            const getApiSize = (resId: string) => RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
-
-            // Restyle/resolution edit — apply style + resolution changes reliably
-            const handleEditApply = async () => {
-              if (!imagineEditTarget || imagineEditLoading) return;
-              setImagineEditLoading(true);
-              const selectedStyle = STYLE_OPTIONS.find(s => s.name === imagineEditStyle);
-              const apiSize = getApiSize(imagineEditRes);
-              // Parse width/height from apiSize string e.g. "1024x1792"
-              const [wStr, hStr] = apiSize.split('x');
-              const w = parseInt(wStr) || 1024;
-              const h = parseInt(hStr) || 1024;
-              // Build prompt — keep subject, apply style if selected
-              const basePrompt = imagineEditTarget.prompt || 'beautiful image';
-              const p = selectedStyle
-                ? `${basePrompt}, ${selectedStyle.description}, same subject and composition, high quality masterpiece`
-                : `${basePrompt}, high quality, detailed, masterpiece`;
-              const seed = Math.floor(Math.random() * 9999999);
-              let newUrl = '';
-              try {
-                const res = await authFetch('/api/generate-image', {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-                  body: JSON.stringify({ prompt: p, size: apiSize }),
-                });
-                const data = await res.json();
-                if (data.success && data.url) newUrl = data.url;
-              } catch { /* fall through */ }
-              const newHist = [...imagineEditHist, newUrl];
-              setImagineEditHist(newHist);
-              setImagineEditTarget((prev: any) => prev ? { ...prev, url: newUrl } : prev);
-              setImagineMessages((prev: any[]) => prev.map((m: any) =>
-                m.id === imagineEditTarget.id ? { ...m, imageUrl: newUrl, editHistory: newHist } : m
-              ));
-              setImagineEditLoading(false);
-            };
-
-            const dlImg = (url: string, name = 'fius-imagine') => {
-              const a = document.createElement('a');
-              a.href = url; a.download = `${name}.png`; a.target = '_blank'; a.click();
-            };
-
-            // ── Edit Panel ─────────────────────────────────────────────────
-            const renderEditPanel = () => {
-              if (!imagineEditTarget) return null;
-              const latestUrl = imagineEditHist[imagineEditHist.length - 1] ?? imagineEditTarget.url;
+            if (imagineMessages.length === 0) {
+              const studioGallery = imagineGallery.slice(0, 10);
               return (
-                <div className="flex flex-col w-full min-w-0 h-full">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-shrink-0">
-                    <button
-                      onClick={() => { setImagineEditTarget(null); setImagineEditHist([]); setImagineEditStyle(''); setImagineEditRes('1:1'); }}
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      <ChevronLeft className="w-4 h-4" /> Back
-                    </button>
-                    <span className="text-sm font-semibold text-foreground ml-auto">Restyle Image</span>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4" style={{ scrollbarWidth: 'none' }}>
-                    <div className="rounded-2xl overflow-hidden border border-border relative">
-                      {imagineEditLoading && (
-                        <div className="absolute inset-0 z-10 bg-background/80 flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-7 h-7 animate-spin text-primary" />
-                          <span className="text-xs text-muted-foreground font-medium">Applying style...</span>
+                <>
+                  {/* ── Fully scrollable studio page ── */}
+                  <div className="absolute inset-0 overflow-y-auto bg-background text-foreground" style={{ scrollbarWidth: 'thin' }}>
+                    <div className="relative min-h-full overflow-hidden px-5 pb-36">
+                      <div className="pointer-events-none absolute inset-x-0 top-0 h-[350px] overflow-hidden">
+                        <img src={studioHero} alt="" className="h-full w-full object-cover object-top" />
+                        {/* bottom fade */}
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 65%, var(--background) 100%)' }} />
+                        {/* top fade */}
+                        <div className="absolute inset-x-0 top-0" style={{ height: '23%', background: 'linear-gradient(to bottom, var(--background), transparent)' }} />
+                        {/* left fade */}
+                        <div className="absolute inset-y-0 left-0" style={{ width: '7%', background: 'linear-gradient(to right, var(--background) 0%, var(--background) 40%, transparent 100%)' }} />
+                        {/* right fade */}
+                        <div className="absolute inset-y-0 right-0" style={{ width: '7%', background: 'linear-gradient(to left, var(--background) 0%, var(--background) 40%, transparent 100%)' }} />
+                      </div>
+
+                      <div className="relative mx-auto w-full max-w-[1180px] pt-6">
+                        <div className="mx-auto mt-[260px] flex max-w-[480px] flex-col items-center text-center">
+                          <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1 }}>
+                            <span className="font-extrabold">Fius Labs</span>{' '}
+                            <span className="font-extrabold">Imagine Studio</span>
+                          </h2>
+                          <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow ✦</p>
                         </div>
-                      )}
-                      <img src={latestUrl} alt="editing" className="w-full object-cover" style={{ maxHeight: 240 }} />
-                    </div>
-                    <button onClick={handleEditApply} disabled={imagineEditLoading}
-                      className="w-full py-2.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
-                      {imagineEditLoading
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Applying...</>
-                        : <><Wand2 className="w-4 h-4" /> Apply {imagineEditStyle || 'a style first'}</>}
-                    </button>
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Pick a Style to Apply</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {STYLE_OPTIONS.map(s => (
-                          <button key={s.name}
-                            onClick={() => setImagineEditStyle(imagineEditStyle === s.name ? '' : s.name)}
-                            className={`flex flex-col items-center gap-1.5 p-1.5 rounded-xl transition-all ${imagineEditStyle === s.name ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent'}`}>
-                            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '1' }}>
-                              <img src={s.previewImg} alt={s.name} className="w-full h-full object-cover"
-                                onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100&q=60'; }} />
-                            </div>
-                            <span className={`text-[10px] font-medium truncate w-full text-center leading-tight ${imagineEditStyle === s.name ? 'text-primary' : 'text-muted-foreground'}`}>{s.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Resolution</p>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {RESOLUTIONS.map(r => (
-                          <button key={r.id} onClick={() => setImagineEditRes(r.id)}
-                            className={`py-2 rounded-xl text-xs font-medium transition-all text-center ${imagineEditRes === r.id ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}>
-                            {r.label}<br /><span className="opacity-60 text-[10px]">{r.id}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {imagineEditHist.length > 1 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Versions ({imagineEditHist.length})</p>
-                        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                          {imagineEditHist.map((url: string, i: number) => (
-                            <Tooltip key={i}>
-                              <TooltipTrigger asChild>
-                                <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-border relative group cursor-pointer"
-                                  onClick={() => dlImg(url, `fius-v${i + 1}`)}>
-                                  <img src={url} className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <Download className="w-3.5 h-3.5 text-white" />
+
+                        {/* ── Inline message bar — full width outside narrow heading container ── */}
+                        <div className="mt-8 mb-4 w-full flex flex-col items-center">
+                            {attachedImages.length > 0 && (
+                              <div className="mb-2 rounded-2xl bg-zinc-100 border border-zinc-200 shadow-sm overflow-hidden mx-auto" style={{ maxWidth: 'calc(2 * 80px + 8px + 20px)' }}>
+                                <div ref={attachTrayRef} className="flex gap-2 overflow-x-auto p-2" style={{ scrollbarWidth: 'thin' }}>
+                                  {attachedImages.map((img, i) => (
+                                    <div key={i} className="relative flex-shrink-0 group">
+                                      <img src={img.preview} alt={`Attached ${i + 1}`}
+                                        className="h-20 w-20 object-cover rounded-xl border border-zinc-300 cursor-zoom-in shadow-sm hover:scale-105 transition-transform"
+                                        onClick={() => setFullscreenImg(img.preview)} />
+                                      <button onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
+                                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center shadow">
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div className={`w-full relative bg-card transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none mx-auto ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`} style={{ maxWidth: '48rem' }}>
+                              {messageBarStyle === 'compact' ? (
+                                <div className="flex items-center px-2 py-2 gap-1">
+                                  <Tooltip>
+                                    <DropdownMenu>
+                                      <TooltipTrigger asChild>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0 p-0">
+                                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                      </TooltipTrigger>
+                                      <DropdownMenuContent className="bg-white border-none text-black rounded-xl shadow-2xl p-1 min-w-[190px]">
+                                        <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black hover:bg-black/10 cursor-pointer rounded-lg focus:bg-black/10" onClick={() => imageInputRef.current?.click()}>
+                                          <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <TooltipContent>Attach</TooltipContent>
+                                  </Tooltip>
+                                  <Textarea
+                                    ref={textareaRef}
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    onPaste={handleComposePaste}
+                                    placeholder="Just Prompt and image is in your hands!"
+                                    className="flex-1 bg-transparent text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
+                                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                                    data-testid="input-message"
+                                  />
+                                  {(() => {
+                                    const ORIENTS = [
+                                      { id: 'none' as const, name: 'Auto', ratio: 'Default' },
+                                      { id: 'square' as const, name: 'Square', ratio: '1:1' },
+                                      { id: 'portrait' as const, name: 'Portrait', ratio: '9:16' },
+                                      { id: 'wide' as const, name: 'Wide', ratio: '4:3' },
+                                    ];
+                                    const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                                    const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                                    return (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-all flex-shrink-0 border border-zinc-200/60">
+                                            <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px]" />
+                                            <span>{active.name}</span>
+                                            <span className="opacity-50 font-normal">{active.ratio}</span>
+                                            <ChevronDown className="w-3 h-3 opacity-60" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent side="bottom" align="start" className="bg-white border-none text-black rounded-2xl shadow-2xl p-1.5 w-auto">
+                                          <div className="relative flex flex-row items-center gap-0">
+                                            <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 pointer-events-none"
+                                              style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                                            {ORIENTS.map(o => {
+                                              const isAct = imagineOrientation === o.id;
+                                              return (
+                                                <button key={o.id} onClick={() => setImagineOrientation(o.id)}
+                                                  className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isAct ? 'text-zinc-800' : 'text-zinc-400 hover:text-zinc-700'}`}>
+                                                  <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isAct ? '' : 'opacity-50'}`} />
+                                                  <span>{o.name}</span>
+                                                  <span className={`text-[9px] font-normal ${isAct ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    );
+                                  })()}
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon"
+                                        className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                                        onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
+                                        <img src={microphoneIcon} alt="Mic" className="w-4 h-4 composer-message-icon" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                                  </Tooltip>
+                                  {(isTyping || isAnimatingResponse) ? (
+                                    <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center flex-shrink-0" data-testid="button-stop-response">
+                                      <div className="w-3 h-3 rounded-sm bg-white flex-shrink-0" />
+                                    </Button>
+                                  ) : (
+                                    <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length}
+                                      className="w-8 h-8 composer-send-button text-white rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30" data-testid="button-send-message">
+                                      <ArrowUp className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="p-1.5 sm:p-2">
+                                    <Textarea
+                                      ref={textareaRef}
+                                      value={inputValue}
+                                      onChange={(e) => setInputValue(e.target.value)}
+                                      onKeyDown={handleKeyDown}
+                                      onPaste={handleComposePaste}
+                                      placeholder="Just Prompt and image is in your hands!"
+                                      className="w-full !min-h-[40px] max-h-[140px] bg-transparent text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
+                                      data-testid="input-message"
+                                    />
                                   </div>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>Download v{i + 1}</TooltipContent>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            };
-
-            // ── Results Panel ──────────────────────────────────────────────
-            const renderRightPanel = () => (
-              <div className="flex flex-col w-full min-w-0 h-full">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-                  <span className="text-sm font-semibold text-foreground">
-                    {hasResults ? `${aiImages.length} image${aiImages.length > 1 ? 's' : ''}` : 'Results'}
-                  </span>
-                  {hasResults && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button onClick={() => setImagineMessages([])}
-                          className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Clear all</TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-
-                <div ref={imagineScrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2" style={{ scrollbarWidth: 'none' }}>
-                  {/* Empty state */}
-                  {imagineMessages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full gap-3 py-12 text-center px-4">
-                      <Sparkles className="w-8 h-8 text-muted-foreground/40" />
-                      <p className="text-sm font-semibold text-foreground">Ready to create</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">Type a prompt or pick a style from the gallery</p>
-                    </div>
-                  )}
-
-                  {/* All messages — user prompts + AI results */}
-                  {imagineMessages.map((msg: any, idx: number) => {
-                    if (msg.role === 'user') {
-                      return (
-                        <div key={msg.id} className="flex justify-end">
-                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-3 py-2 text-xs max-w-[90%] leading-relaxed">
-                            {msg.content}
-                          </div>
-                        </div>
-                      );
-                    }
-                    /* AI message */
-                    return (
-                      <div key={msg.id} className="rounded-2xl border border-border overflow-hidden bg-background">
-                        {msg.isGenerating ? (
-                          /* Generating animation */
-                          <div className="flex flex-col items-center justify-center gap-3 py-10">
-                            <div className="flex gap-1.5">
-                              {[0, 150, 300].map(delay => (
-                                <div key={delay} className="w-2 h-2 rounded-full bg-primary animate-bounce"
-                                  style={{ animationDelay: `${delay}ms`, animationDuration: '0.9s' }} />
-                              ))}
+                                  <div className="flex items-center justify-between px-2 pb-1.5">
+                                    <div className="flex items-center gap-1">
+                                      {(() => {
+                                        const ORIENTS = [
+                                          { id: 'none' as const, name: 'Auto', ratio: 'Default' },
+                                          { id: 'square' as const, name: 'Square', ratio: '1:1' },
+                                          { id: 'portrait' as const, name: 'Portrait', ratio: '9:16' },
+                                          { id: 'wide' as const, name: 'Wide', ratio: '4:3' },
+                                        ];
+                                        const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                                        const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                                        return (
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-all flex-shrink-0 border border-zinc-200/60">
+                                                <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px]" />
+                                                <span>{active.name}</span>
+                                                <span className="opacity-50 font-normal">{active.ratio}</span>
+                                                <ChevronDown className="w-3 h-3 opacity-60" />
+                                              </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent side="bottom" align="start" className="bg-white border-none text-black rounded-2xl shadow-2xl p-1.5 w-auto">
+                                              <div className="relative flex flex-row items-center gap-0">
+                                                <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 pointer-events-none"
+                                                  style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                                                {ORIENTS.map(o => {
+                                                  const isAct = imagineOrientation === o.id;
+                                                  return (
+                                                    <button key={o.id} onClick={() => setImagineOrientation(o.id)}
+                                                      className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isAct ? 'text-zinc-800' : 'text-zinc-400 hover:text-zinc-700'}`}>
+                                                      <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isAct ? '' : 'opacity-50'}`} />
+                                                      <span>{o.name}</span>
+                                                      <span className={`text-[9px] font-normal ${isAct ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        );
+                                      })()}
+                                    </div>
+                                    <div className="flex items-center space-x-1.5">
+                                      <Tooltip>
+                                        <DropdownMenu>
+                                          <TooltipTrigger asChild>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all p-0">
+                                                <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                          </TooltipTrigger>
+                                          <DropdownMenuContent className="bg-white border-none text-black rounded-xl shadow-2xl p-1 min-w-[190px]">
+                                            <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black hover:bg-black/10 cursor-pointer rounded-lg focus:bg-black/10" onClick={() => imageInputRef.current?.click()}>
+                                              <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        <TooltipContent>Attach</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon"
+                                            className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all`}
+                                            onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
+                                            <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10"
+                                            onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
+                                            {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Enhance prompt</TooltipContent>
+                                      </Tooltip>
+                                      {(isTyping || isAnimatingResponse) ? (
+                                        <Button onClick={handleStopResponse} className="w-10 h-10 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center ml-0.5" data-testid="button-stop-response">
+                                          <div className="w-4 h-4 rounded-md bg-white flex-shrink-0" />
+                                        </Button>
+                                      ) : (
+                                        <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length}
+                                          className="w-10 h-10 composer-send-button text-white rounded-full flex items-center justify-center disabled:opacity-30 ml-0.5" data-testid="button-send-message">
+                                          <ArrowUp className="w-5 h-5" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
                             </div>
-                            <span className="text-[11px] text-muted-foreground font-medium">Creating your image…</span>
                           </div>
-                        ) : msg.imageError ? (
-                          <div className="flex flex-col items-center justify-center gap-3 py-8 px-4">
-                            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
-                              <span className="text-rose-500 text-lg">✕</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground text-center">{msg.imageError}</p>
-                            <button
-                              className="px-4 py-1.5 rounded-full text-xs font-semibold text-white"
-                              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
-                              onClick={() => handleSendMessage(msg.studioPrompt || '')}
-                            >↺ Try Again</button>
+
+                        <div className="mx-auto w-full max-w-[480px] flex flex-col items-center text-center">
+                          {/* Editor + Templates cards */}
+                          <div className="mt-5 grid w-full grid-cols-2 gap-4">
+                            <button onClick={() => imageInputRef.current?.click()}
+                              className="group flex min-h-[92px] items-center gap-4 border border-neutral-200 bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
+                              style={{ borderRadius: 22 }}>
+                              <Wand2 className="h-6 w-6 shrink-0 transition group-hover:scale-110" style={{ color: '#38bdf8' }} />
+                              <span><span className="block text-sm font-semibold text-neutral-800">Editor</span><span className="mt-1 block text-xs text-neutral-400">Transform a photo</span></span>
+                            </button>
+                            <button onClick={() => document.getElementById('pc-studio-templates')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                              className="group flex min-h-[92px] items-center gap-4 border border-neutral-200 bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+                              style={{ borderRadius: 22 }}>
+                              <Sparkles className="h-6 w-6 shrink-0 transition group-hover:scale-110" style={{ color: '#a78bfa' }} />
+                              <span><span className="block text-sm font-semibold text-neutral-800">Templates</span><span className="mt-1 block text-xs text-neutral-400">Styles for every occasion</span></span>
+                            </button>
                           </div>
-                        ) : msg.imageUrl ? (
-                          <>
-                            {/* Image using ImagineImageCard for loading skeleton + fallback retry */}
-                            <ImagineImageCard
-                              imageUrl={msg.imageUrl}
-                              fallbackUrls={msg.fallbackUrls || []}
-                              onExpand={(src) => setFullscreenImg(src)}
-                            />
-                            {/* Action row */}
-                            <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button onClick={() => dlImg(msg.imageUrl, `imagine-${idx + 1}`)}
-                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                                    <Download className="w-3.5 h-3.5" /> Save
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Download image</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button onClick={() => navigator.clipboard.writeText(msg.imageUrl)}
-                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
-                                    <Share2 className="w-3.5 h-3.5" /> Share
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Copy image URL</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button onClick={() => setImagineLikes((prev: Set<string>) => { const n = new Set(prev); n.has(msg.id) ? n.delete(msg.id) : n.add(msg.id); return n; })}
-                                    className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-all ${imagineLikes.has(msg.id) ? 'text-pink-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
-                                    <Heart className={`w-3.5 h-3.5 ${imagineLikes.has(msg.id) ? 'fill-pink-500' : ''}`} />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>{imagineLikes.has(msg.id) ? 'Unlike' : 'Like'}</TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
+                        </div>
+
+                        <section id="pc-studio-templates" className="mt-12">
+                          <style>{`
+                            @keyframes studio-marquee-left {
+                              0%   { transform: translateX(0); }
+                              100% { transform: translateX(-50%); }
+                            }
+                            @keyframes studio-marquee-right {
+                              0%   { transform: translateX(-50%); }
+                              100% { transform: translateX(0); }
+                            }
+                          `}</style>
+                          <div className="mb-3 flex items-center justify-between px-1">
+                            <h3 className="text-sm font-bold text-neutral-800">Templates <span className="ml-1 text-[11px] font-normal text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span></h3>
+                            <button onClick={() => { loadImagineMyPhotos(); setImagineGalleryOpen(true); }} className="text-[11px] text-neutral-500 transition hover:text-neutral-900">Browse all →</button>
+                          </div>
+                          <div className="flex flex-col gap-2.5">
+                            {/* Row 1 — scrolls left */}
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)' }}>
+                              <div
+                                className="flex gap-2.5 w-max"
+                                style={{ animation: 'studio-marquee-left 80s linear infinite' }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
+                              >
+                                {[...STUDIO_ROW1, ...STUDIO_ROW1].map((t, i) => (
                                   <button
-                                    onClick={() => {
-                                      setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content });
-                                      setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]);
-                                      setImagineEditStyle(''); setImagineEditRes('1:1');
-                                    }}
-                                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all ml-auto">
-                                    <Edit className="w-3.5 h-3.5" /> Restyle
+                                    key={`${t.id}-r1-${i}`}
+                                    onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
+                                    className="group relative shrink-0 overflow-hidden text-left"
+                                    style={{ width: 110, height: 150, borderRadius: 16, border: '1.5px solid rgba(0,0,0,0.09)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.18)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; }}
+                                  >
+                                    <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
+                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
+                                      <div className="px-2 pb-2.5">
+                                        <div className="flex items-center justify-center gap-1 rounded-full py-1 text-[9px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>✦ Try this look</div>
+                                      </div>
+                                    </div>
+                                    <span className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-8 text-[10px] font-semibold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)' }}>{t.name}</span>
                                   </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Apply a style to this image</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                  <div ref={imagineMessagesEndRef} />
-                </div>
-              </div>
-            );
-
-            const ph0 = imagineGallery[0];
-            const ph1 = imagineGallery[1];
-            const ph2 = imagineGallery[2];
-
-            // ── PC Studio template cards — use local /public style images ──
-            const PC_STUDIO_TEMPLATES = [
-              { id: 'portrait',   name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)', thumb: '/style-photo.jpg',      prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic', style: 'Photorealistic' },
-              { id: 'anime',      name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)', thumb: '/style-anime.png',      prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art', style: 'Anime' },
-              { id: 'cinematic',  name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)', thumb: '/style-cinematic.jpg',  prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded', style: 'Cinematic' },
-              { id: '3d',         name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', thumb: '/style-3d.jpg',         prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination', style: '3D Render' },
-              { id: 'watercolor', name: 'Watercolor',           bg: 'linear-gradient(135deg,#0a1820,#0d2a38)', thumb: '/style-watercolor.jpg', prompt: 'delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork, painterly', style: 'Watercolor' },
-              { id: 'oil',        name: 'Oil Painting',         bg: 'linear-gradient(135deg,#1c0a0a,#2d0f0f)', thumb: '/style-oil.jpg',        prompt: 'classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly masterpiece', style: 'Oil Painting' },
-              { id: 'sketch',     name: 'Pencil Sketch',        bg: 'linear-gradient(135deg,#111,#222)',        thumb: '/style-sketch.jpg',     prompt: 'detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn art', style: 'Sketch' },
-              { id: 'pixel',      name: 'Pixel Art',            bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)', thumb: '/style-pixel.jpg',      prompt: 'pixel art style, 8-bit retro video game art, pixelated aesthetic, vibrant flat colors, NES SNES era art', style: 'Pixel Art' },
-            ];
-
-            const pcAiImages = imagineMessages.filter((m: any) => m.role === 'ai' && m.imageUrl);
-
-            return (
-              <div className="absolute inset-0 flex" style={{ background: '#000' }}>
-
-                {/* ═══ LEFT: Discovery panel (black) ═══ */}
-                <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-white/[0.07]">
-
-                  {/* Header */}
-                  <div className="flex-shrink-0 px-6 pt-7 pb-4">
-                    <h2 className="text-white font-bold text-[28px] tracking-tight">Images</h2>
-                  </div>
-
-                  {/* Scrollable body */}
-                  <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-
-                    {/* Create an image — horizontal scroll template cards */}
-                    <div className="mb-8">
-                      <div className="px-6 mb-4">
-                        <span className="text-white text-[15px] font-semibold tracking-tight">Create an image</span>
-                      </div>
-                      <div className="flex gap-3 overflow-x-auto pl-6 pr-4" style={{ scrollbarWidth: 'none' }}>
-                        {PC_STUDIO_TEMPLATES.map(t => (
-                          <button key={t.id}
-                            onClick={() => { setInputValue(t.prompt); setImagineStyle(t.style); }}
-                            className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.97] hover:scale-[1.02]"
-                            style={{
-                              width: 140, height: 195, borderRadius: 16,
-                              background: t.bg,
-                              border: '1.5px solid rgba(255,255,255,0.08)',
-                            }}>
-                            <img
-                              src={t.thumb}
-                              alt={t.name}
-                              loading="lazy"
-                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                              onError={e => { (e.target as HTMLImageElement).style.opacity = '0'; }}
-                              onLoad={e => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                              style={{ opacity: 0, transition: 'opacity 0.45s ease, transform 0.3s ease' }}
-                            />
-                            <div className="absolute inset-0 flex items-end"
-                              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 30%, transparent 70%)' }}>
-                              <span className="px-3 pb-3 text-white text-[12px] font-semibold block w-full leading-tight">{t.name}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* My images — 3-col grid */}
-                    <div className="pb-8">
-                      <div className="flex items-center justify-between px-6 mb-4">
-                        <span className="text-white text-[15px] font-semibold tracking-tight">My images</span>
-                        {pcAiImages.length > 0 && (
-                          <span className="text-zinc-600 text-[11px]">{pcAiImages.length} image{pcAiImages.length !== 1 ? 's' : ''}</span>
-                        )}
-                      </div>
-
-                      {pcAiImages.length === 0 && !imagineMessages.some((m: any) => m.isGenerating) ? (
-                        <div className="flex flex-col items-center py-16 gap-4 px-6">
-                          <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                            <Sparkles className="w-7 h-7 text-zinc-700" />
-                          </div>
-                          <div className="text-center">
-                            <p className="text-zinc-400 text-[14px] font-semibold">No images yet</p>
-                            <p className="text-zinc-700 text-[12px] mt-1">Pick a template or type a prompt to start</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-[3px]">
-                          {imagineMessages.some((m: any) => m.isGenerating) && (
-                            <div className="relative flex flex-col items-center justify-center gap-2"
-                              style={{ aspectRatio: '1/1', background: '#111' }}>
-                              <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-                              <span className="text-zinc-600 text-[10px]">Generating…</span>
-                            </div>
-                          )}
-                          {[...pcAiImages].reverse().map((msg: any, idx: number) => (
-                            <div key={msg.id} className="relative group cursor-pointer"
-                              style={{ aspectRatio: '1/1', background: '#111' }}
-                              onClick={() => setFullscreenImg(msg.imageUrl)}>
-                              <img src={msg.imageUrl} alt="generated" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-2.5"
-                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.1) 100%)' }}>
-                                <div className="flex justify-end">
-                                  <button onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl; a.download = `fius-${idx+1}.png`; a.target='_blank'; a.click(); }}
-                                    className="w-7 h-7 rounded-full flex items-center justify-center"
-                                    style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
-                                    <Download className="w-3 h-3 text-white" />
-                                  </button>
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); setImagineEditTarget({ id: msg.id, url: msg.imageUrl, prompt: msg.studioPrompt || msg.content }); setImagineEditHist(msg.editHistory?.length ? msg.editHistory : [msg.imageUrl]); setImagineEditStyle(''); setImagineEditRes('1:1'); }}
-                                  className="flex items-center gap-1 self-start px-2 py-1 rounded-full text-[10px] font-medium"
-                                  style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)' }}>
-                                  <Edit className="w-2.5 h-2.5" /> Restyle
-                                </button>
+                                ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                            {/* Row 2 — scrolls right */}
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)' }}>
+                              <div
+                                className="flex gap-2.5 w-max"
+                                style={{ animation: 'studio-marquee-right 95s linear infinite' }}
+                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
+                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
+                              >
+                                {[...STUDIO_ROW2, ...STUDIO_ROW2].map((t, i) => (
+                                  <button
+                                    key={`${t.id}-r2-${i}`}
+                                    onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
+                                    className="group relative shrink-0 overflow-hidden text-left"
+                                    style={{ width: 110, height: 150, borderRadius: 16, border: '1.5px solid rgba(0,0,0,0.09)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(6deg) rotateX(-3deg) translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.18)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; }}
+                                  >
+                                    <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
+                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
+                                      <div className="px-2 pb-2.5">
+                                        <div className="flex items-center justify-center gap-1 rounded-full py-1 text-[9px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>✦ Try this look</div>
+                                      </div>
+                                    </div>
+                                    <span className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-8 text-[10px] font-semibold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)' }}>{t.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+
+                        <section className="mt-9">
+                          <div className="mb-3 flex items-center justify-between px-1">
+                            <h3 className="text-sm font-bold text-neutral-800">
+                              My Gallery
+                              {studioGallery.length > 0 && <span className="ml-2 text-[11px] font-normal text-neutral-400">({studioGallery.length} images)</span>}
+                            </h3>
+                            <span className="text-[11px] text-neutral-400">Your creations</span>
+                          </div>
+                          {studioGallery.length === 0 ? (
+                            <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/70">
+                              <div className="text-center">
+                                <div className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100"><Image className="h-4 w-4 text-neutral-300" /></div>
+                                <p className="text-[11px] font-medium text-neutral-500">Your generated images will appear here</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-5 gap-2">
+                              {studioGallery.map((photo, idx) => (
+                                <button
+                                  key={`${photo.label}-${photo.url}`}
+                                  onClick={() => setInputValue(photo.prompt)}
+                                  className="group relative aspect-[4/5] overflow-hidden rounded-xl bg-neutral-100"
+                                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px) scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 28px rgba(0,0,0,0.14)'; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; }}
+                                >
+                                  <img src={photo.url} alt={photo.label} className="h-full w-full object-cover transition duration-500 group-hover:scale-108" />
+                                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-transparent to-transparent p-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                                    <p className="line-clamp-2 text-[9px] font-medium leading-tight text-white/90">{photo.label || photo.prompt?.slice(0, 40)}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* ═══ RIGHT: Results / Edit panel — always visible, narrow ═══ */}
-                <div className="flex flex-col w-[30%] flex-shrink-0 border-l border-white/[0.07] min-w-0 overflow-hidden">
-                  {imagineEditTarget ? renderEditPanel() : renderRightPanel()}
-                </div>
+
+                 </>
+               );
+             }
+
+            /* ── Messages state: 4-column layout like Nomad multi ── */
+            return (
+              <div className="absolute inset-0 flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'thin', alignItems: 'stretch', backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)', backgroundSize: '36px 36px' }}>
+                {STUDIO_COLS.map((m, idx) => {
+                  const active = imagineSelectedModels.size === 0 || imagineSelectedModels.has(m.id);
+                  // Build this column's ordered items: user messages + this model's AI messages interleaved
+                  const colItems = imagineMessages.filter(msg => msg.role === 'user' || msg.modelId === m.id);
+                  return (
+                    <React.Fragment key={m.id}>
+                      {idx > 0 && <div className="flex-shrink-0 w-[2.5px] rounded-full" style={{ background: 'rgba(128,128,128,0.35)', alignSelf: 'stretch', margin: '16px 0' }} />}
+                      <div className="flex-1 flex flex-col" style={{ minWidth: 200, paddingLeft: 22, paddingRight: 22 }}>
+                        {/* Model header card */}
+                        <div
+                          className="mx-3 mt-2 mb-3 rounded-2xl border-2 transition-all duration-300 bg-card px-3 py-3 flex flex-row items-center gap-3 flex-shrink-0"
+                          style={{ borderColor: active ? m.color : 'rgba(128,128,128,0.25)' }}
+                        >
+                          {m.id === 'fius-imagine-super' ? (
+                            <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ overflow: 'visible' }}>
+                              <FiusLogo size="sm" scaleWhenCurrent="scale(1.55) translateY(3px)" className="text-violet-500" />
+                            </div>
+                          ) : (
+                            <div className="w-11 h-11 flex items-center justify-center rounded-xl flex-shrink-0" style={{ background: m.color + '22', padding: 8 }}>
+                              <img src={m.logo} alt={m.name} className={`w-full h-full object-contain${m.id === 'gpt-5.5-pro' ? ' brightness-0 dark:invert' : ''}`} onError={(e) => { e.currentTarget.style.display='none'; }} />
+                            </div>
+                          )}
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="text-[12px] font-bold text-foreground leading-tight truncate">{m.name}</span>
+                            <span className="text-[10px] text-muted-foreground leading-tight truncate">{m.sub}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => toggleImagineModel(m.id)}
+                              className="relative rounded-full transition-all duration-300 flex-shrink-0"
+                              style={{ width: 36, height: 18 }}
+                            >
+                              <div className={`absolute inset-0 rounded-full transition-all duration-300 ${active ? '' : 'bg-gray-300 dark:bg-gray-600'}`} style={active ? { backgroundColor: m.color } : {}} />
+                              <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${active ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
+                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setImagineSelectedModels(new Set([m.id]))}
+                                  className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all"
+                                  style={{ color: m.color }}
+                                >
+                                  <Target className="w-3.5 h-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Generate only with {m.name}</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div
+                          ref={idx === 0 ? imagineScrollRef : undefined}
+                          className="mx-2 flex flex-col gap-2 pb-52 overflow-y-auto flex-1 min-h-0"
+                          style={{ scrollbarWidth: 'thin' }}
+                        >
+                          {colItems.map((msg) => (
+                            <div key={msg.id} className="group relative">
+                              {msg.role === 'user' ? (
+                                /* ── User message bubble — same as Nomad ── */
+                                <div className="p-2.5 rounded-lg rounded-br-none text-sm bg-zinc-200 dark:bg-zinc-700 text-secondary-foreground ml-3 [overflow-wrap:anywhere]">
+                                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                  {/* Edit + Remove on user message */}
+                                  <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          onClick={() => setInputValue(msg.content.replace(/^🖼️ \[Reference image\] /, ''))}
+                                          className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+                                        >
+                                          <Edit className="w-3 h-3" /> Edit
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Edit prompt</TooltipContent>
+                                    </Tooltip>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <button
+                                          onClick={() => setImagineMessages(prev => prev.filter(x => x.id !== msg.id))}
+                                          className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
+                                        >
+                                          <X className="w-3 h-3" /> Remove
+                                        </button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Remove message</TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                </div>
+                              ) : (
+                                /* ── AI image card ── */
+                                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                                  {msg.isGenerating ? (
+                                    <div className="flex items-center gap-2 px-3 py-4">
+                                      <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: m.color }} />
+                                      <span className="text-xs text-muted-foreground">Generating…</span>
+                                    </div>
+                                  ) : msg.imageError ? (
+                                    <div className="px-3 py-3">
+                                      <p className="text-xs text-rose-500">{msg.imageError}</p>
+                                    </div>
+                                  ) : msg.imageUrl ? (
+                                    <>
+                                      <ImagineImageCard imageUrl={msg.imageUrl} fallbackUrls={msg.fallbackUrls || []} onExpand={(src) => setFullscreenImg(src)} />
+                                      <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border bg-card">
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button onClick={() => { const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-imagine.png'; a.target = '_blank'; a.click(); }}
+                                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                              <Download className="w-3 h-3" /> Save
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>Download</TooltipContent>
+                                        </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button onClick={() => navigator.clipboard.writeText(msg.imageUrl!)}
+                                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                                              <Share2 className="w-3 h-3" /> Share
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>Copy URL</TooltipContent>
+                                        </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button
+                                              onClick={() => setImagineMessages(prev => prev.filter(x => x.id !== msg.id))}
+                                              className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
+                                            >
+                                              <X className="w-3 h-3" /> Remove
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>Remove image</TooltipContent>
+                                        </Tooltip>
+                                      </div>
+                                    </>
+                                  ) : null}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {idx === 0 && <div ref={imagineMessagesEndRef} />}
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             );
-
           })()
         ) : activeTab === 'philosopher' ? (
           // Philosopher Tab
@@ -4856,9 +5885,24 @@ Let's start the self-listen session!`;
             {!selectedPersonality ? (
               // Personality Selection Screen
               <div className="flex flex-col h-full">
-                <div className="mb-4 text-center">
-                  <h2 className="text-2xl font-bold text-foreground mb-1">
-                    Philosophers & {user?.displayName || user?.username || 'You'}
+                <div className="mb-4 text-center relative">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setIsCustomizeModalOpen(true)}
+                          className="absolute right-[5px] top-0 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                        >
+                          <Settings size={16} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p>Appearance Settings</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <h2 className="text-4xl font-bold text-foreground mb-1">
+                    Fius Minds
                   </h2>
                   <p className="text-muted-foreground text-sm">Choose a historical figure to converse with — they will speak in their own authentic style</p>
                 </div>
@@ -4869,115 +5913,284 @@ Let's start the self-listen session!`;
                     value={personalitySearch}
                     onChange={e => setPersonalitySearch(e.target.value)}
                     placeholder="Search personalities..."
-                    className="w-full max-w-xs bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full max-w-xs bg-card border border-border rounded-full px-4 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
-                {/* Category Filter */}
-                <div className="flex flex-wrap justify-center gap-2 mb-4">
-                  {PERSONALITY_CATEGORIES.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setPersonalityCategory(cat)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${personalityCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                {/* Category Filter — sliding pill bar */}
+                <div className="flex justify-center mb-4">
+                  <div ref={catNavRef} className="relative flex items-center gap-1 bg-card border border-border rounded-full px-2 py-2">
+                    {/* sliding pill */}
+                    {catPillStyle.ready && (
+                      <div aria-hidden style={{
+                        position: 'absolute',
+                        left: catPillStyle.left,
+                        width: catPillStyle.width,
+                        top: 5, bottom: 5,
+                        transition: 'left 0.48s cubic-bezier(0.34,1.56,0.64,1), width 0.48s cubic-bezier(0.34,1.56,0.64,1)',
+                        pointerEvents: 'none',
+                        zIndex: 0,
+                      }}>
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          background: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
+                          borderRadius: 999,
+                          boxShadow: resolvedTheme === 'dark' ? '0 1px 10px rgba(255,255,255,0.18)' : '0 1px 4px rgba(0,0,0,0.08)',
+                          animation: catPillAnimateRef.current ? 'pill-squish 0.48s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
+                        }} />
+                      </div>
+                    )}
+                    {PERSONALITY_CATEGORIES.map((cat, i) => (
+                      <button
+                        key={cat}
+                        ref={el => { catBtnRefs.current[i] = el; }}
+                        onClick={() => { if (cat !== personalityCategory) playTabClick(); catPillAnimateRef.current = true; setPersonalityCategory(cat); }}
+                        className={`relative z-10 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${personalityCategory === cat ? 'font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                        style={personalityCategory === cat && catPillStyle.ready ? { color: 'rgba(0,0,0,0.85)', transition: 'none' } : { transition: 'none' }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {/* Personalities Grid */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto"
+                    style={{ maskImage: 'linear-gradient(to bottom, transparent 0px, black 48px, black 100%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 48px, black 100%)' }}
+                  >
+                  <div className="grid grid-cols-4 gap-3 px-3">
                     {filteredPersonalities.map(p => (
-                        <button
-                          key={p.id}
-                          onClick={() => { setSelectedPersonality(p); setPhilosopherMessages([]); setPhilosopherInput(''); }}
-                          className="flex flex-col items-center p-3 bg-card border border-border rounded-xl hover:bg-accent hover:border-ring transition-all duration-200 text-center group"
-                        >
-                          <WikiFace name={p.name} className="w-16 h-16 border-2 border-border group-hover:border-ring transition-all mb-2" />
-                          <div className="text-xs font-semibold text-foreground leading-tight">{p.name}</div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{p.era}</div>
-                          <div className="text-[10px] text-muted-foreground leading-tight mt-1 line-clamp-1">{p.role}</div>
-                          <div className="mt-1.5">
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">{p.category}</span>
-                          </div>
-                        </button>
-                      ))}
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedPersonality(p); setPhilosopherMessages([]); setPhilosopherInput(''); }}
+                        className="relative rounded-2xl overflow-hidden aspect-[3/4] group focus:outline-none bg-zinc-900 transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl hover:shadow-black/60 hover:z-10"
+                      >
+                        <PersonalityCard id={p.id} name={p.name} wikiTitle={p.wikiTitle} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 text-left">
+                          <div className="text-[13px] font-bold text-white leading-snug line-clamp-1">{p.name}</div>
+                          <div className="text-[10px] text-white/60 leading-snug mt-0.5 line-clamp-1">{p.role}</div>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                   {filteredPersonalities.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground text-sm">No personalities found matching your search.</div>
                   )}
-                </div>
+                  </div>{/* end overflow-y-auto */}
+                </div>{/* end relative overflow-hidden */}
               </div>
             ) : (
-              // Chat with selected personality
-              <div className="max-w-3xl mx-auto w-full h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
-                  <button onClick={() => { setSelectedPersonality(null); setPhilosopherMessages([]); }} className="text-muted-foreground hover:text-foreground text-sm">← Back</button>
-                  <WikiFace name={selectedPersonality.name} className="w-10 h-10 border-2 border-border" />
-                  <div>
-                    <div className="font-semibold text-foreground text-sm">{selectedPersonality.name}</div>
-                    <div className="text-xs text-muted-foreground">{selectedPersonality.era} · {selectedPersonality.role}</div>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-0">
-                  {philosopherMessages.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <WikiFace name={selectedPersonality.name} className="w-20 h-20 border-4 border-border mx-auto mb-4" />
-                      <p className="font-medium text-foreground mb-1">{selectedPersonality.name} awaits you</p>
-                      <p className="text-sm">{selectedPersonality.era} · {selectedPersonality.role}</p>
-                      <p className="text-sm mt-4">Say hello or ask anything — they will respond in their authentic voice.</p>
-                    </div>
-                  )}
-                  {philosopherMessages.map(msg => (
-                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      {msg.role === 'assistant' && (
-                        <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border mr-2 mt-1" />
-                      )}
-                      <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-foreground'}`}>
-                        {msg.role === 'user' ? (
-                          <p>{msg.content}</p>
-                        ) : (
-                          <TypingText text={msg.content} messageId={msg.id} onAnimationComplete={handleAnimationComplete} />
-                        )}
+              // Chat with selected personality — new UI
+              <div className="w-full h-full flex flex-col relative">
+                {/* Back button — top left */}
+                <button
+                  onClick={() => { setSelectedPersonality(null); setPhilosopherMessages([]); }}
+                  className="absolute top-2 z-10 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted border border-border/50 rounded-full px-3 py-1.5 transition-all backdrop-blur-sm"
+                  style={{ left: '16px' }}
+                >
+                  Back
+                </button>
+
+                {philosopherMessages.length === 0 ? (
+                  /* No messages — fixed wrapper (avatar + info) anchored just above global msg bar */
+                  <div className="flex-1 relative min-h-0">
+                    <div className="fixed left-1/2 -translate-x-1/2 z-10 flex flex-col items-center w-full max-w-lg px-4" style={{ bottom: 'calc(50vh + 14px)' }}>
+                      {/* Avatar */}
+                      <div className="relative rounded-full overflow-hidden bg-zinc-900 shadow-2xl shadow-black/60 ring-2 ring-border flex-shrink-0"
+                        style={{ width: '180px', height: '180px' }}>
+                        <PersonalityCard id={selectedPersonality.id} name={selectedPersonality.name} wikiTitle={selectedPersonality.wikiTitle} />
+                      </div>
+                      {/* Info */}
+                      <div className="text-center mt-4 px-2">
+                        <div className="text-lg font-bold text-foreground leading-snug">{selectedPersonality.name}</div>
+                        <p className="text-xs text-muted-foreground mt-1 mb-2">{selectedPersonality.era} · {selectedPersonality.role}</p>
+                        <p className="text-xs text-muted-foreground/75 leading-relaxed">{selectedPersonality.style}</p>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ) : (
+                  <>
+                  {/* Has messages — avatar compact at top, messages below */}
+                  <div className="flex flex-col items-center pt-8 pb-3 flex-shrink-0">
+                    <div className="relative rounded-full overflow-hidden bg-zinc-900 shadow-xl shadow-black/50 ring-2 ring-border"
+                      style={{ width: '250px', height: '250px' }}>
+                      <PersonalityCard id={selectedPersonality.id} name={selectedPersonality.name} wikiTitle={selectedPersonality.wikiTitle} />
+                    </div>
+                    <div className="text-center mt-3 px-6 max-w-sm">
+                      <div className="text-base font-bold text-foreground">{selectedPersonality.name}</div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{selectedPersonality.era} · {selectedPersonality.role}</p>
+                    </div>
+                  </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto min-h-0 px-4 space-y-4 pb-2">
+                  {philosopherMessages.length === 0 && (
+                    <div />
+                  )}
+                  {(() => {
+                    const lastAiPhilosopherId = philosopherMessages.reduce<string | undefined>((acc, m) => m.role === 'assistant' ? m.id : acc, undefined);
+                    const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
+                    return philosopherMessages.map(msg => {
+                      const isLatestAi = msg.id === lastAiPhilosopherId;
+                      const isDone = isLatestAi ? !philosopherIsTyping : true;
+                      return (
+                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          {msg.role === 'assistant' && (
+                            <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-1 bg-zinc-800">
+                              <PersonalityCard id={selectedPersonality.id} name={selectedPersonality.name} wikiTitle={selectedPersonality.wikiTitle} />
+                            </div>
+                          )}
+                          {msg.role === 'user' ? (
+                            <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 max-w-xs lg:max-w-md chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                              <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                                <p className="text-sm m-0">{msg.content}</p>
+                              </div>
+                              <div className="flex items-center justify-end mt-2 gap-1">
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                    <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />
+                                  </Button>
+                                </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(msg.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex-1 min-w-0">
+                              <div className={`rounded-3xl px-4 py-3 chat-bubble relative`}>
+                                {renderTypingText(msg.content, msg.id)}
+                              </div>
+                              {isDone && (
+                                <div className="flex items-center gap-0.5 mt-1">
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${ab} ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                      <img src="/icon-like-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${ab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
+                                      <img src="/icon-dislike-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild>
+                                    <button className={`${ab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <img src="/icon-copy-gray.png" className="h-4 w-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                                    </button>
+                                  </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
+                                      <DropdownMenuItem onClick={() => handlePhilosopherRetry()} disabled={philosopherIsTyping}
+                                        className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
+                                        <RefreshCw className={`w-3.5 h-3.5 text-green-500 ${philosopherIsTyping ? 'animate-spin' : ''}`} /> Regenerate
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }}
+                                        className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                        <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              )}
+                              {isDone && isLatestAi && (
+                                <PCFollowUpSuggestions msgContent={msg.content} onSelect={(q) => setInputValue(q)} />
+                              )}
+                              {isDone && (
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                   {philosopherIsTyping && (
                     <div className="flex justify-start items-start gap-2">
-                      <WikiFace name={selectedPersonality.name} className="w-7 h-7 border border-border mt-1" />
+                      <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1 bg-zinc-800">
+                        <PersonalityCard id={selectedPersonality.id} name={selectedPersonality.name} wikiTitle={selectedPersonality.wikiTitle} />
+                      </div>
                       <div className="bg-card border border-border px-4 py-3 rounded-3xl">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full" style={{animation: 'pulse-dot 1.5s ease-in-out infinite'}}></div>
                       </div>
                     </div>
                   )}
                 </div>
+                </>
+                )}
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === 'fius-games' ? (
           // Fius Games Tab
-          <div className="absolute inset-0 flex flex-col" style={{ padding: '8px 38px' }}>
+          <div className="absolute inset-0 flex flex-col" style={{ padding: '0' }}>
             <FiusGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
+          </div>
+        ) : (
+          // Fius Labs Tab
+          <div className="absolute inset-0 flex flex-col" style={{ padding: '0' }}>
+            <FiusLabs user={user} />
           </div>
         )}
       </div>
-      </div>
       
+      {/* Gradient overlay — fades content into bars area. Always present so bars never show text behind them */}
+      {activeTab !== 'fius-games' && activeTab !== 'fius-labs' && !isVoiceModeModalOpen && !isVoiceModeOpen && (
+        <div
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{ height: 380, zIndex: 8, background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--background)) 52%)' }}
+        />
+      )}
+
+      {/* Spacer — pushes fn-bar + msg-bar to bottom when in conversation mode */}
+      <div className="flex-1 pointer-events-none" />
+
       {/* Tool Buttons - Separate Section */}
       {(() => {
         const isCircle = functionBarStyle === 'circle';
-        const squareShadow = 'glossy-outline';
+        const isPill   = functionBarStyle === 'pill';
+        const squareShadow = (settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : '';
+        const fireFnAnim = (e: React.MouseEvent, fn: () => void) => {
+          const animEl = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-fn-anim]') ?? (e.currentTarget as HTMLElement);
+          animEl.classList.remove('btn-click-pop');
+          void animEl.offsetWidth;
+          animEl.classList.add('btn-click-pop');
+          setTimeout(() => { animEl.classList.remove('btn-click-pop'); fn(); }, 480);
+        };
+
         const renderFunctionBtn = (icon: React.ReactNode, label: string, onClick: () => void, activeStyle?: string, testId?: string) => {
+          if (isPill) {
+            return (
+              <button
+                key={label}
+                data-fn-anim
+                data-testid={testId}
+                onClick={(e) => fireFnAnim(e, onClick)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 ${
+                  activeStyle
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
+                    : 'bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md'
+                }`}
+              >
+                <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center [&_img]:mix-blend-multiply dark:[&_img]:mix-blend-screen [&_img]:w-[18px] [&_img]:h-[18px] [&_img]:object-contain [&_img]:flex-shrink-0">{icon}</span>
+                <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
+              </button>
+            );
+          }
           if (isCircle) {
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={onClick}
+                    onClick={(e) => fireFnAnim(e, onClick)}
                     data-testid={testId}
                     className="flex flex-col items-center gap-1.5 group w-[5rem]"
                   >
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}>
+                    <div data-fn-anim className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-[1.25] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#383838] hover:bg-gray-50 dark:hover:bg-[#404040]'}`}>
                       {icon}
                     </div>
                     <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{label}</span>
@@ -4992,8 +6205,9 @@ Let's start the self-listen session!`;
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative min-w-[5rem] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030] hover:bg-gray-50 dark:hover:bg-[#353535]'}`}
-                  onClick={onClick}
+                  data-fn-anim
+                  className={`macos-button flex flex-col items-center space-y-1 px-4 py-6 rounded-2xl transition-all duration-300 border-none relative min-w-[5rem] ${squareShadow} ${activeStyle || 'text-zinc-800 dark:text-white/85 bg-white dark:bg-[#383838] hover:bg-gray-50 dark:hover:bg-[#404040]'}`}
+                  onClick={(e) => fireFnAnim(e, onClick)}
                   data-testid={testId}
                 >
                   <div className="relative z-10 flex flex-col items-center space-y-1">
@@ -5007,25 +6221,26 @@ Let's start the self-listen session!`;
           );
         };
 
+        const askFnBarCentered = activeTab === 'ask' && messages.length === 0;
         return (
-          <div className={`macos-function-bar bg-transparent rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'imagine' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={{width: 'fit-content', margin: '0 auto', marginBottom: '8px'}}>
-            <div className="flex flex-wrap justify-center gap-4 p-3 bg-transparent !border-none">
+          <div className={`macos-function-bar ${!askFnBarCentered ? 'macos-function-bar-with-messages' : ''} rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'fius-labs' || activeTab === 'imagine' || activeTab === 'nomad' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={askFnBarCentered ? {width: 'fit-content', position: 'fixed', top: isPill ? 'calc(50% - 48px)' : 'calc(50% - 68px)', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 38px)' : '50vw', transform: isPill ? 'translateX(calc(-50% - 14px))' : 'translateX(-50%)', zIndex: 20, marginBottom: '10px'} : {width: 'fit-content', marginLeft: 'auto', marginRight: 'auto', marginTop: isPill ? '43px' : '11px', marginBottom: '14px', transform: isPill ? 'translateX(-14px)' : undefined, position: 'relative', zIndex: 30}}>
+            <div className={`flex flex-wrap justify-center p-3 bg-transparent !border-none ${isPill ? 'gap-2' : 'gap-4'}`}>
               {renderFunctionBtn(
-                <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'26px',height:'26px'}} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Long Answer',
                 adjustFius,
                 fiusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
                 'button-fius-integration'
               )}
               {renderFunctionBtn(
-                <AudioLines className="h-6 w-6" strokeWidth={1.5} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Voice Mode',
-                () => setIsVoiceModeModalOpen(true),
+                openVoiceMode,
                 undefined,
                 'button-voice-mode-fn'
               )}
               {renderFunctionBtn(
-                <img src="/settings-icon.png" alt="Settings" className="h-6 w-6 btn-icon" />,
+                <img src={resolvedTheme === 'dark' ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="Settings" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Settings',
                 () => setIsCustomizeModalOpen(true),
                 undefined,
@@ -5055,7 +6270,7 @@ Let's start the self-listen session!`;
                   transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.1})`,
                 }}
               >
-                <Logo size="lg" className="text-white" />
+                <FiusLogo size="lg" className="text-white" />
               </div>
               {isListening && (
                 <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full border-4 border-blue-500 animate-pulse"></div>
@@ -5112,8 +6327,278 @@ Let's start the self-listen session!`;
         </div>
       )}
 
+      {/* ── Imagine Studio fixed message bar — REMOVED, now rendered inside imagine empty state ── */}
+      {false && (
+        <div>
+          {/* Attached images tray */}
+          {attachedImages.length > 0 && (
+            <div className="mb-2 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden" style={{ maxWidth: 'calc(2 * 80px + 8px + 20px)' }}>
+              <div ref={attachTrayRef} className="flex gap-2 overflow-x-auto p-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(160,160,160,0.4) transparent' }}>
+                {attachedImages.map((img, i) => (
+                  <div key={i} className="relative flex-shrink-0 group">
+                    <img src={img.preview} alt={`Attached ${i + 1}`}
+                      className="h-20 w-20 object-cover rounded-xl border border-zinc-300 dark:border-zinc-600 cursor-zoom-in shadow-sm hover:scale-105 transition-transform"
+                      onClick={() => setFullscreenImg(img.preview)} />
+                    <button onClick={() => setAttachedImages(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-zinc-700 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center transition-all shadow">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={`relative bg-white dark:bg-[#383838] transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
+            {messageBarStyle === 'compact' ? (
+              <div className="flex items-center px-2 py-2 gap-1">
+                {/* Attachment button */}
+                <Tooltip>
+                  <DropdownMenu>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" data-testid="button-attachment">
+                          <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <DropdownMenuContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                          <Paperclip className="w-4 h-4 text-zinc-400" /><span style={{ color: resolvedTheme === 'dark' ? '#fff' : '#111' }}>Attachments</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                            <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                              <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <TooltipContent>Attach</TooltipContent>
+                </Tooltip>
+                {/* Textarea */}
+                <Textarea
+                  ref={textareaRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handleComposePaste}
+                  placeholder="Just Prompt and image is in your hands!"
+                  className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
+                  style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  data-testid="input-message"
+                />
+                {/* Orientation picker */}
+                {(() => {
+                  const ORIENTS = [
+                    { id: 'none' as const, name: 'Auto', ratio: 'Default' },
+                    { id: 'square' as const, name: 'Square', ratio: '1:1' },
+                    { id: 'portrait' as const, name: 'Portrait', ratio: '9:16' },
+                    { id: 'wide' as const, name: 'Wide', ratio: '4:3' },
+                  ];
+                  const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                  const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all flex-shrink-0 border border-zinc-200/60 dark:border-white/10">
+                          <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px] dark:invert" />
+                          <span>{active.name}</span>
+                          <span className="opacity-50 font-normal">{active.ratio}</span>
+                          <ChevronDown className="w-3 h-3 opacity-60" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto">
+                        <div className="relative flex flex-row items-center gap-0">
+                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                            style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                          {ORIENTS.map(o => {
+                            const isAct = imagineOrientation === o.id;
+                            return (
+                              <button key={o.id} onClick={() => setImagineOrientation(o.id)}
+                                className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
+                                <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isAct ? 'dark:invert-0' : 'dark:invert opacity-50'}`} />
+                                <span>{o.name}</span>
+                                <span className={`text-[9px] font-normal ${isAct ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
+                {/* Mic */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon"
+                      className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                      onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
+                      <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                </Tooltip>
+                {/* Stop / Send */}
+                {(isTyping || isAnimatingResponse) ? (
+                  <Button onClick={handleStopResponse} className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100 flex-shrink-0" data-testid="button-stop-response">
+                    <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800 flex-shrink-0" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length}
+                    className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0" data-testid="button-send-message">
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              /* Full two-row layout */
+              <>
+                <div className="p-1.5 sm:p-2">
+                  <Textarea
+                    ref={textareaRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handleComposePaste}
+                    placeholder="Just Prompt and image is in your hands!"
+                    className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
+                    data-testid="input-message"
+                  />
+                </div>
+                <div className="flex items-center justify-between px-2 pb-1.5">
+                  <div className="flex items-center gap-1">
+                    {/* Orientation picker */}
+                    {(() => {
+                      const ORIENTS = [
+                        { id: 'none' as const, name: 'Auto', ratio: 'Default' },
+                        { id: 'square' as const, name: 'Square', ratio: '1:1' },
+                        { id: 'portrait' as const, name: 'Portrait', ratio: '9:16' },
+                        { id: 'wide' as const, name: 'Wide', ratio: '4:3' },
+                      ];
+                      const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                      const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all flex-shrink-0 border border-zinc-200/60 dark:border-white/10">
+                              <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px] dark:invert" />
+                              <span>{active.name}</span>
+                              <span className="opacity-50 font-normal">{active.ratio}</span>
+                              <ChevronDown className="w-3 h-3 opacity-60" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto">
+                            <div className="relative flex flex-row items-center gap-0">
+                              <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                                style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                              {ORIENTS.map(o => {
+                                const isAct = imagineOrientation === o.id;
+                                return (
+                                  <button key={o.id} onClick={() => setImagineOrientation(o.id)}
+                                    className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>
+                                    <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isAct ? 'dark:invert-0' : 'dark:invert opacity-50'}`} />
+                                    <span>{o.name}</span>
+                                    <span className={`text-[9px] font-normal ${isAct ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex items-center space-x-1.5 sm:space-x-2">
+                    {/* Attachment */}
+                    <Tooltip>
+                      <DropdownMenu>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all" data-testid="button-attachment">
+                              <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <DropdownMenuContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                              <Paperclip className="w-4 h-4 text-zinc-400" /><span style={{ color: resolvedTheme === 'dark' ? '#fff' : '#111' }}>Attachments</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                                <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                                  <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <TooltipContent>Attach</TooltipContent>
+                    </Tooltip>
+                    {/* Mic */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon"
+                          className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
+                          onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
+                          <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                    </Tooltip>
+                    {/* Enhance */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full transition-all text-zinc-400 hover:text-white hover:bg-white/10"
+                          onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
+                          {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Enhance prompt</TooltipContent>
+                    </Tooltip>
+                    {/* Stop / Send */}
+                    {(isTyping || isAnimatingResponse) ? (
+                      <Button onClick={handleStopResponse} className="w-10 h-10 rounded-full flex items-center justify-center transition-all ml-0.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-white dark:hover:bg-zinc-100" data-testid="button-stop-response">
+                        <div className="w-4 h-4 rounded-md bg-white dark:bg-zinc-800 flex-shrink-0" />
+                      </Button>
+                    ) : (
+                      <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length}
+                        className="w-10 h-10 composer-send-button text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5" data-testid="button-send-message">
+                        <ArrowUp className="w-5 h-5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`flex-shrink-0 max-w-[48rem] mx-auto w-full px-4 mb-4 sm:mb-8 ${activeTab === 'fius-games' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`}>
+      <div data-message-bar className={`max-w-[48rem] w-full px-4 ${((activeTab === 'ask' && messages.length > 0) || (activeTab === 'nomad' && Object.values(nomadMessages).some(msgs => msgs.length > 0)) || (activeTab === 'philosopher' && philosopherMessages.length > 0)) ? 'message-composer-with-messages' : ''} ${(activeTab === 'ask' && messages.length === 0) || (activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0)) ? 'absolute lg:fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : (activeTab === 'philosopher' && selectedPersonality && philosopherMessages.length === 0) ? 'absolute lg:fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : 'flex-shrink-0 mx-auto mb-4 sm:mb-8'} ${activeTab === 'fius-games' || activeTab === 'fius-labs' || activeTab === 'imagine' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={
+        (activeTab === 'ask' && messages.length === 0)
+          ? { top: 'calc(50% + 85px)', position: 'fixed', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 53px)' : 'calc(50vw + 15px)', width: 'min(48rem, calc(100vw - 2rem))', maxWidth: '48rem' }
+          : (activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0))
+              ? { position: 'fixed', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 53px)' : 'calc(50vw + 15px)', width: 'min(48rem, calc(100vw - 2rem))', maxWidth: '48rem' }
+              : (activeTab === 'philosopher' && selectedPersonality && philosopherMessages.length === 0)
+                ? { top: 'calc(50% + 51px)' }
+                : { position: 'relative', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? '15px' : '15px', zIndex: 10 }
+      }>
+        {activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0) && (
+          <div className="flex flex-col items-center text-center mb-6">
+            <h2 className="text-3xl font-bold mb-2 text-foreground" style={uiAccentColor ? { color: uiAccentColor } : {}}>
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
+            </h2>
+            {!(settingsToggles.hideFlyWithUs) && <p className="text-lg text-foreground" style={uiAccentColor ? { color: uiAccentColor } : {}}>Fly With Us!</p>}
+          </div>
+        )}
         {/* Nomad Summarize bar — above msg bar */}
         {activeTab === 'nomad' && Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === 'assistant')) && (
           <div className="flex justify-center mb-2">
@@ -5124,26 +6609,6 @@ Let's start the self-listen session!`;
           </div>
         )}
 
-        {/* ── Imagine reference image tray ── */}
-        {activeTab === 'imagine' && imagineRefImage && (
-          <div className="mb-2 flex items-center gap-2">
-            <div className="relative flex-shrink-0 group">
-              <img
-                src={imagineRefImage.preview}
-                alt="Reference"
-                className="h-14 w-14 object-cover rounded-xl border-2 border-purple-400 cursor-zoom-in shadow-sm"
-                onClick={() => setFullscreenImg(imagineRefImage.preview)}
-              />
-              <button
-                onClick={() => setImagineRefImage(null)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-all shadow"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-            <span className="text-xs text-muted-foreground">Reference image attached — describe how to edit or transform it</span>
-          </div>
-        )}
 
         {/* ── Attached images tray — floats ABOVE the bar ── */}
         {attachedImages.length > 0 && (
@@ -5208,36 +6673,12 @@ Let's start the self-listen session!`;
         )}
 
         <div
-          className={`relative bg-white dark:bg-[#303030] transition-all duration-300 glossy-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'} ${isDraggingFiles ? 'ring-2 ring-indigo-500' : ''}`}
+          className={`relative bg-white dark:bg-[#383838] transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}
         >
-          {isDraggingFiles && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[1.5rem] bg-indigo-500/10 border-2 border-dashed border-indigo-500 pointer-events-none">
-              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-2">
-                <Upload className="w-4 h-4" /> Drop files to attach
-              </span>
-            </div>
-          )}
-
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
-            <div className="flex items-center px-2 py-2 gap-1">
+            <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
               {/* LEFT: Attachment + function-bar buttons */}
-              {/* Imagine upload button — only in imagine tab */}
-              {activeTab === 'imagine' && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${imagineRefImage ? 'text-purple-500 bg-purple-500/10 hover:bg-purple-500/20' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
-                      onClick={() => imagineUploadRef.current?.click()}
-                    >
-                      <Camera className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Upload reference image to edit</TooltipContent>
-                </Tooltip>
-              )}
               <Tooltip>
                 <DropdownMenu>
                   <TooltipTrigger asChild>
@@ -5245,41 +6686,55 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 text-violet-500 dark:text-violet-400 bg-violet-500/10 dark:bg-violet-400/10 hover:bg-violet-500/20 rounded-full transition-all flex-shrink-0"
+                        className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
-                        <Plus className="w-4 h-4" />
+                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
-                        <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => fileInputRef.current?.click()}>
-                            <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => imageInputRef.current?.click()}>
-                            <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white" onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I\u2019ll write a full document.'); }}>
-                      <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                   <DropdownMenuContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                     <DropdownMenuSub>
+                       <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                         <Paperclip className="w-4 h-4 text-zinc-400" />
+                         <span style={{ color: resolvedTheme === 'dark' ? '#fff' : '#111' }}>Attachments</span>
+                       </DropdownMenuSubTrigger>
+                       <DropdownMenuPortal>
+                         <DropdownMenuSubContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                           <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
+                             <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
+                           </DropdownMenuItem>
+                           <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
+                             <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
+                           </DropdownMenuItem>
+                           <div
+                             onDragEnter={handleAttachBoxDragEnter}
+                             onDragOver={handleAttachBoxDragOver}
+                             onDragLeave={handleAttachBoxDragLeave}
+                             onDrop={handleAttachBoxDrop}
+                             onClick={() => fileInputRef.current?.click()}
+                             className={`mx-1 mt-1 mb-0.5 aspect-square w-[148px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-colors select-none ${isDraggingFiles ? 'border-indigo-500 bg-indigo-500/10' : 'border-zinc-300 dark:border-white/20 hover:border-zinc-400 dark:hover:border-white/30'}`}
+                           >
+                             <Upload className={`w-5 h-5 ${isDraggingFiles ? 'text-indigo-500' : 'text-zinc-400'}`} />
+                             <span className={`text-[11px] leading-tight px-2 ${isDraggingFiles ? 'text-indigo-600 dark:text-indigo-300 font-medium' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                               {isDraggingFiles ? 'Drop to attach' : 'Drag & drop files here'}
+                             </span>
+                           </div>
+                         </DropdownMenuSubContent>
+                       </DropdownMenuPortal>
+                     </DropdownMenuSub>
+                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I’ll write a full document.'); }}>
+                       <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
+                     </DropdownMenuItem>
+                   </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent>Add Attachment</TooltipContent>
+                <TooltipContent>Tools</TooltipContent>
               </Tooltip>
               {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`} onClick={adjustFius}>
+                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`} onClick={adjustFius}>
                         <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'18px',height:'18px'}} />
                       </Button>
                     </TooltipTrigger>
@@ -5287,7 +6742,7 @@ Let's start the self-listen session!`;
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={() => setIsVoiceModeModalOpen(true)}>
+                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-800 dark:text-white/85 hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={openVoiceMode}>
                         <AudioLines className="w-3.5 h-3.5" />
                       </Button>
                     </TooltipTrigger>
@@ -5295,7 +6750,7 @@ Let's start the self-listen session!`;
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={() => setIsCustomizeModalOpen(true)}>
+                      <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" onClick={() => setIsCustomizeModalOpen(true)}>
                         <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'17px',height:'17px'}} />
                       </Button>
                     </TooltipTrigger>
@@ -5309,7 +6764,8 @@ Let's start the self-listen session!`;
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : 'What do you want to know ?'}
+                onPaste={handleComposePaste}
+                placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : typingPlaceholder}
                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                 data-testid="input-message"
@@ -5318,7 +6774,7 @@ Let's start the self-listen session!`;
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    className={`w-4 h-4 flex items-center justify-center transition-all flex-shrink-0 self-start mt-1 ${inputValue.trim() ? 'text-zinc-600 dark:text-zinc-300 opacity-90 hover:opacity-100 scale-110' : 'text-zinc-400 opacity-30 hover:opacity-60'}`}
+                    className={`w-4 h-4 flex items-center justify-center transition-all flex-shrink-0 ${inputValue.trim() ? 'text-zinc-600 dark:text-zinc-300 opacity-90 hover:opacity-100 scale-110' : 'text-zinc-400 opacity-30 hover:opacity-60'}`}
                     onClick={() => setPromptFullscreen(true)}
                     tabIndex={-1}
                   >
@@ -5327,57 +6783,115 @@ Let's start the self-listen session!`;
                 </TooltipTrigger>
                 <TooltipContent>Expand prompt</TooltipContent>
               </Tooltip>
-              {activeTab !== 'nomad' && (
-              <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                <SelectTrigger className="h-7 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[80px] max-w-[140px]">
-                  <SelectValue placeholder="Model" />
+              {activeTab === 'imagine' && (() => {
+                const ORIENTS = [
+                  { id: 'none' as const,     name: 'Auto',    ratio: 'Default' },
+                  { id: 'square' as const,   name: 'Square',  ratio: '1:1'     },
+                  { id: 'portrait' as const, name: 'Portrait',ratio: '9:16'    },
+                  { id: 'wide' as const,     name: 'Wide',    ratio: '4:3'     },
+                ];
+                const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all flex-shrink-0 border border-zinc-200/60 dark:border-white/10">
+                        <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px] dark:invert" />
+                        <span>{active.name}</span>
+                        <span className="opacity-50 font-normal">{active.ratio}</span>
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0">
+                      <div className="relative flex flex-row items-center gap-0">
+                        <div
+                          className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }}
+                        />
+                        {ORIENTS.map(o => {
+                          const isActive = imagineOrientation === o.id;
+                          return (
+                            <button
+                              key={o.id}
+                              onClick={() => setImagineOrientation(o.id)}
+                              className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                            >
+                              <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isActive ? 'dark:invert-0' : 'dark:invert opacity-50'}`} />
+                              <span>{o.name}</span>
+                              <span className={`text-[9px] font-normal ${isActive ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
+              {activeTab !== 'nomad' && activeTab !== 'imagine' && (
+              <Select value={selectedModel} onValueChange={(value: AvailableModel) => {
+                if (isChatModelLocked(value)) {
+                  toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                  return;
+                }
+                setSelectedModel(value);
+              }}>
+                <SelectTrigger className="h-7 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 w-auto">
+                  <span className="truncate">{MODEL_OPTIONS.find(m => m.id === selectedModel)?.name ?? selectedModel}</span>
                 </SelectTrigger>
-                <SelectContent forceMount className="bg-white dark:bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                <SelectContent forceMount className="bg-white dark:bg-[#383838] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none p-1">
                   {tabModelOptions.map((modelOption) => (
-                    <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
+                    <SelectItem key={modelOption.id} value={modelOption.id} className={`text-xs !w-auto !rounded-full mx-0.5 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10 ${isChatModelLocked(modelOption.id) ? 'opacity-50' : ''}`}>
                       <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${modelOption.provider === 'openai' ? 'bg-emerald-500' : modelOption.provider === 'anthropic' ? 'bg-orange-500' : modelOption.provider === 'google' ? 'bg-blue-500' : 'bg-zinc-500'}`}></div>
                         {modelOption.name}
+                        {isChatModelLocked(modelOption.id) && <Lock className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />}
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               )}
+              {/* Enhance — slides in left of mic when user types */}
+              {!(isTyping || isAnimatingResponse) && (
+                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-full transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10"
+                        onClick={handleEnhancePrompt}
+                        disabled={!inputValue.trim() || isEnhancing}
+                        data-testid="button-enhance"
+                      >
+                        {isEnhancing ? (
+                          <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
+                        ) : (
+                          <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Enhance prompt</TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+              {/* Mic */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                    className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
                     onClick={toggleListening}
                     disabled={!speechSupported}
                     data-testid="button-mic"
                   >
-                    <img src={resolvedTheme === 'dark' ? micDark : micLight} alt="Mic" className="w-4 h-4 brightness-200 contrast-150" />
+                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${inputValue.trim() ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10'}`}
-                    onClick={handleEnhancePrompt}
-                    disabled={!inputValue.trim() || isEnhancing}
-                    data-testid="button-enhance"
-                  >
-                    {isEnhancing ? (
-                      <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
-                    ) : (
-                      <img src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={`w-4 h-4 ${inputValue.trim() ? '' : 'brightness-200 contrast-150'}`} />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Enhance prompt</TooltipContent>
-              </Tooltip>
+              {/* Stop or Send */}
               {(isTyping || isAnimatingResponse) ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -5388,14 +6902,16 @@ Let's start the self-listen session!`;
                   <TooltipContent>Stop response</TooltipContent>
                 </Tooltip>
               ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 flex-shrink-0" data-testid="button-send-message">
-                      <ArrowUp className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Send message</TooltipContent>
-                </Tooltip>
+                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 composer-send-button hover:opacity-90 text-white rounded-full flex items-center justify-center transition-all flex-shrink-0" data-testid="button-send-message">
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Send message</TooltipContent>
+                  </Tooltip>
+                </div>
               )}
             </div>
           ) : (
@@ -5407,13 +6923,14 @@ Let's start the self-listen session!`;
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  onPaste={handleComposePaste}
                   placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
                   className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
               </div>
 
-              <div className="flex items-center justify-between px-2 pb-1.5">
+              <div className="flex items-center justify-between px-2 pb-2">
                 <div className="flex items-center gap-1">
                   {/* Expand prompt inline, left of model selector */}
                   <Tooltip>
@@ -5428,14 +6945,64 @@ Let's start the self-listen session!`;
                     </TooltipTrigger>
                     <TooltipContent>Expand prompt</TooltipContent>
                   </Tooltip>
-                  {activeTab !== 'nomad' && (
-                  <Select value={selectedModel} onValueChange={(value: AvailableModel) => setSelectedModel(value)}>
-                    <SelectTrigger className="h-8 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 min-w-[80px] max-w-[140px]">
-                      <SelectValue placeholder="Model" />
+                  {activeTab === 'imagine' && (() => {
+                    const ORIENTS = [
+                      { id: 'none' as const,     name: 'Auto',    ratio: 'Default' },
+                      { id: 'square' as const,   name: 'Square',  ratio: '1:1'     },
+                      { id: 'portrait' as const, name: 'Portrait',ratio: '9:16'    },
+                      { id: 'wide' as const,     name: 'Wide',    ratio: '4:3'     },
+                    ];
+                    const active = ORIENTS.find(o => o.id === imagineOrientation)!;
+                    const activeIdx = ORIENTS.findIndex(o => o.id === imagineOrientation);
+                    return (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all flex-shrink-0 border border-zinc-200/60 dark:border-white/10">
+                            <img src={`/icon-orient-${imagineOrientation}.png`} alt={imagineOrientation} className="w-[17px] h-[17px] dark:invert" />
+                            <span>{active.name}</span>
+                            <span className="opacity-50 font-normal">{active.ratio}</span>
+                            <ChevronDown className="w-3 h-3 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0">
+                          <div className="relative flex flex-row items-center gap-0">
+                            <div
+                              className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                              style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }}
+                            />
+                            {ORIENTS.map(o => {
+                              const isActive = imagineOrientation === o.id;
+                              return (
+                                <button
+                                  key={o.id}
+                                  onClick={() => setImagineOrientation(o.id)}
+                                  className={`relative z-10 flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-semibold transition-colors duration-200 min-w-[56px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                                >
+                                  <img src={`/icon-orient-${o.id}.png`} alt={o.name} className={`w-[23px] h-[23px] ${isActive ? 'dark:invert-0' : 'dark:invert opacity-50'}`} />
+                                  <span>{o.name}</span>
+                                  <span className={`text-[9px] font-normal ${isActive ? 'opacity-70' : 'opacity-40'}`}>{o.ratio}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    );
+                  })()}
+                  {activeTab !== 'nomad' && activeTab !== 'imagine' && (
+                  <Select value={selectedModel} onValueChange={(value: AvailableModel) => {
+                    if (isChatModelLocked(value)) {
+                      toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                      return;
+                    }
+                    setSelectedModel(value);
+                  }}>
+                    <SelectTrigger className="h-8 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 w-auto">
+                      <span className="truncate">{MODEL_OPTIONS.find(m => m.id === selectedModel)?.name ?? selectedModel}</span>
                     </SelectTrigger>
-                    <SelectContent forceMount className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
+                    <SelectContent forceMount className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none">
                       {tabModelOptions.map((modelOption) => (
-                        <SelectItem key={modelOption.id} value={modelOption.id} className="text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10">
+                        <SelectItem key={modelOption.id} value={modelOption.id} className={`text-xs hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10 ${isChatModelLocked(modelOption.id) ? 'opacity-50' : ''}`}>
                           <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${
                               modelOption.provider === 'openai' ? 'bg-emerald-500' :
@@ -5444,6 +7011,7 @@ Let's start the self-listen session!`;
                               'bg-zinc-500'
                             }`}></div>
                             {modelOption.name}
+                            {isChatModelLocked(modelOption.id) && <Lock className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />}
                           </div>
                         </SelectItem>
                       ))}
@@ -5461,7 +7029,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`w-9 h-9 rounded-full transition-all ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
+                            className={`w-9 h-9 rounded-full transition-all ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
                             onClick={adjustFius}
                           >
                             <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
@@ -5474,8 +7042,8 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-zinc-800 dark:text-white/85 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
-                            onClick={() => setIsVoiceModeModalOpen(true)}
+                            className="w-9 h-9 text-zinc-800 dark:text-white/85 hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            onClick={openVoiceMode}
                           >
                             <AudioLines className="w-4 h-4" />
                           </Button>
@@ -5487,7 +7055,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                             onClick={() => setIsCustomizeModalOpen(true)}
                           >
                             <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
@@ -5501,7 +7069,7 @@ Let's start the self-listen session!`;
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="w-9 h-9 text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                              className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
                               onClick={() => setIsEducationModalOpen(true)}
                             >
                               <GraduationCap className="w-4 h-4" />
@@ -5519,45 +7087,59 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-violet-500 dark:text-violet-400 bg-violet-500/10 dark:bg-violet-400/10 hover:bg-violet-500/20 rounded-full transition-all"
+                            className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
                             data-testid="button-attachment"
                           >
-                            <Plus className="w-5 h-5" />
+                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
-                      <DropdownMenuContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
-                            <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuPortal>
-                            <DropdownMenuSubContent className="bg-white dark:bg-[#303030] !bg-white dark:!bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                              <DropdownMenuItem
-                                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                onClick={() => fileInputRef.current?.click()}
-                              >
-                                <FileText className="w-4 h-4 text-zinc-400" />
-                                <span>Upload File</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                                onClick={() => imageInputRef.current?.click()}
-                              >
-                                <Image className="w-4 h-4 text-zinc-400" />
-                                <span>Upload Image</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                          </DropdownMenuPortal>
-                        </DropdownMenuSub>
-                        <DropdownMenuItem
-                          className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white"
-                          onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I\u2019ll write a full document.'); }}
-                        >
-                          <FileSignature className="w-4 h-4 text-purple-400" />
-                          <span>Create Document</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
+                       <DropdownMenuContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]">
+                         <DropdownMenuSub>
+                           <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
+                             <Paperclip className="w-4 h-4 text-zinc-400" />
+                             <span style={{ color: resolvedTheme === 'dark' ? '#fff' : '#111' }}>Attachments</span>
+                           </DropdownMenuSubTrigger>
+                           <DropdownMenuPortal>
+                             <DropdownMenuSubContent className="bg-white dark:bg-[#383838] !bg-white dark:!bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
+                               <DropdownMenuItem
+                                 className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10"
+                                 onClick={() => fileInputRef.current?.click()}
+                               >
+                                 <FileText className="w-4 h-4 text-zinc-400" />
+                                 <span>Upload File</span>
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10"
+                                 onClick={() => imageInputRef.current?.click()}
+                               >
+                                 <Image className="w-4 h-4 text-zinc-400" />
+                                 <span>Upload Image</span>
+                               </DropdownMenuItem>
+                               <div
+                                 onDragEnter={handleAttachBoxDragEnter}
+                                 onDragOver={handleAttachBoxDragOver}
+                                 onDragLeave={handleAttachBoxDragLeave}
+                                 onDrop={handleAttachBoxDrop}
+                                 onClick={() => fileInputRef.current?.click()}
+                                 className={`mx-1 mt-1 mb-0.5 aspect-square w-[148px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition-colors select-none ${isDraggingFiles ? 'border-indigo-500 bg-indigo-500/10' : 'border-zinc-300 dark:border-white/20 hover:border-zinc-400 dark:hover:border-white/30'}`}
+                               >
+                                 <Upload className={`w-5 h-5 ${isDraggingFiles ? 'text-indigo-500' : 'text-zinc-400'}`} />
+                                 <span className={`text-[11px] leading-tight px-2 ${isDraggingFiles ? 'text-indigo-600 dark:text-indigo-300 font-medium' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                   {isDraggingFiles ? 'Drop to attach' : 'Drag & drop files here'}
+                                 </span>
+                               </div>
+                             </DropdownMenuSubContent>
+                           </DropdownMenuPortal>
+                         </DropdownMenuSub>
+                         <DropdownMenuItem
+                           className="flex items-center gap-3 px-3 py-2 text-sm text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10"
+                           onClick={() => { setDocumentMode(true); showToast('Document mode: type a topic and I’ll write a full document.'); }}
+                         >
+                           <FileSignature className="w-4 h-4 text-purple-400" />
+                           <span>Create Document</span>
+                         </DropdownMenuItem>
+                       </DropdownMenuContent>
                     </DropdownMenu>
                     <TooltipContent>Tools</TooltipContent>
                   </Tooltip>
@@ -5567,26 +7149,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
-                        onClick={toggleListening}
-                        disabled={!speechSupported}
-                        data-testid="button-mic"
-                      >
-                        <img
-                          src={resolvedTheme === 'dark' ? micDark : micLight}
-                          alt="Mic"
-                          className="w-5 h-5 brightness-200 contrast-150"
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`w-9 h-9 rounded-full transition-all ${inputValue.trim() ? "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20" : "text-zinc-400 bg-zinc-200/70 dark:bg-white/[0.07] hover:text-white hover:bg-white/10"}`}
+                        className="w-9 h-9 rounded-full transition-all text-zinc-400 hover:text-white hover:bg-white/10"
                         onClick={handleEnhancePrompt}
                         disabled={!inputValue.trim() || isEnhancing}
                         data-testid="button-enhance"
@@ -5595,14 +7158,33 @@ Let's start the self-listen session!`;
                           <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
                         ) : (
                           <img
-                            src={resolvedTheme === 'dark' ? enhancePromptDark : enhancePromptLight}
+                            src={improvePromptIcon}
                             alt="Enhance"
-                            className="w-5 h-5 brightness-200 contrast-150"
+                            className="w-5 h-5 composer-message-icon"
                           />
                         )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Enhance prompt</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
+                        onClick={toggleListening}
+                        disabled={!speechSupported}
+                        data-testid="button-mic"
+                      >
+                        <img
+                          src={microphoneIcon}
+                          alt="Mic"
+                          className="w-5 h-5 composer-message-icon"
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
                   </Tooltip>
                   {(isTyping || isAnimatingResponse) ? (
                     <Button
@@ -5616,7 +7198,7 @@ Let's start the self-listen session!`;
                     <Button
                       onClick={handleSendMessage}
                       disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length}
-                      className="w-10 h-10 bg-white hover:bg-zinc-200 text-black rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
+                      className="w-10 h-10 composer-send-button hover:opacity-90 text-white rounded-full flex items-center justify-center transition-all disabled:opacity-30 ml-0.5"
                       data-testid="button-send-message"
                     >
                       <ArrowUp className="w-5 h-5" />
@@ -5636,8 +7218,235 @@ Let's start the self-listen session!`;
             </div>
           )}
         </div>
+
+        {/* ── Quick action chips — Ask tab empty state ── */}
+        {activeTab === 'ask' && messages.length === 0 && (
+          <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+            {([
+              { label: 'Create Visuals', light: '/quick-visuals-light.png', dark: '/quick-visuals-dark.png', action: () => changeTab('imagine') },
+              { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', action: () => setInputValue('Search the web for: ') },
+              { label: 'Create Files',   light: '/quick-files-light.png', dark: '/quick-files-dark.png', action: () => setDocumentMode(true) },
+              { label: 'Play Games',     light: '/quick-games-light.png', dark: '/quick-games-dark.png', action: () => changeTab('fius-games') },
+            ] as const).map(({ label, light, dark, action }) => (
+              <button key={label} onClick={action}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
+                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      
+
+
+        {/* Hidden file input for template photo upload */}
+        <input
+          ref={templatePhotoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const dataUrl = ev.target?.result as string;
+              const base64 = dataUrl.split(',')[1];
+              const photo = { preview: dataUrl, base64 };
+              setTemplateUploadPhoto(photo);
+              setRecentUploads(prev => {
+                const updated = [photo, ...prev.filter(p => p.preview !== dataUrl)].slice(0, 6);
+                try { localStorage.setItem('fius_recent_template_uploads', JSON.stringify(updated)); } catch {}
+                return updated;
+              });
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+          }}
+        />
+
+
+        {/* ── Imagine Gallery Modal ───────────────────────────────────────── */}
+        {imagineGalleryOpen && (
+          <div
+            className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-0 sm:p-4"
+            style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(16px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setImagineGalleryOpen(false); }}
+          >
+            <div className="relative w-full max-w-4xl bg-zinc-950 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col" style={{ maxHeight: '88vh' }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m21 15-5-5L5 21"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                  <h3 className="text-lg font-bold text-white">My Gallery</h3>
+                  <span className="text-xs text-zinc-500">{imagineMyPhotos.length} photo{imagineMyPhotos.length !== 1 ? 's' : ''}</span>
+                </div>
+                <button onClick={() => setImagineGalleryOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Grid */}
+              <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarWidth: 'thin' }}>
+                {imagineMyPhotos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-zinc-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m21 15-5-5L5 21"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                    <p className="text-zinc-400 font-semibold text-base mb-1">No photos yet</p>
+                    <p className="text-zinc-600 text-sm">Images you generate in Imagine Studio will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {[...imagineMyPhotos].reverse().map((photo, i) => (
+                      <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 cursor-pointer hover:border-violet-500/50 transition-all"
+                        onClick={() => setFullscreenImg(photo.url)}>
+                        <img src={photo.url} alt={photo.prompt || `Photo ${i + 1}`} className="w-full h-full object-cover" />
+                        {photo.prompt && (
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-end p-3">
+                            <p className="text-white text-[11px] leading-snug line-clamp-3">{photo.prompt}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Template Upload Modal ───────────────────────────────────────── */}
+        {imagineTemplateModal && (
+          <div
+            className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) { setImagineTemplateModal(null); setTemplateUploadPhoto(null); } }}
+          >
+            <div className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl" style={{ background: '#18181b' }}>
+              {/* Hero image */}
+              <div className="relative h-44 overflow-hidden">
+                <img
+                  src={imagineTemplateModal.img}
+                  alt={imagineTemplateModal.label}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <div className="absolute inset-0" style={{ background: imagineTemplateModal.color, opacity: 0.4 }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #18181b 0%, transparent 60%)' }} />
+                {/* Close */}
+                <button
+                  onClick={() => { setImagineTemplateModal(null); setTemplateUploadPhoto(null); }}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-5 pb-5 -mt-1">
+                <h3 className="text-xl font-bold text-white mb-1">{imagineTemplateModal.label}</h3>
+                <p className="text-[12px] text-zinc-400 mb-4 leading-relaxed line-clamp-2">{imagineTemplateModal.prompt.split(',')[0]}.</p>
+
+                {/* Upload area — drag & drop */}
+                {!templateUploadPhoto ? (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.setAttribute('data-drag','1'); e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)'; }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.currentTarget.style.borderColor = '';
+                      const file = e.dataTransfer.files?.[0];
+                      if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result as string;
+                          const base64 = dataUrl.split(',')[1];
+                          const photo = { preview: dataUrl, base64 };
+                          setTemplateUploadPhoto(photo);
+                          setRecentUploads(prev => {
+                            const updated = [photo, ...prev.filter(p => p.preview !== dataUrl)].slice(0, 6);
+                            try { localStorage.setItem('fius_recent_template_uploads', JSON.stringify(updated)); } catch {}
+                            return updated;
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="relative rounded-2xl border-2 border-dashed border-zinc-600 hover:border-zinc-500 transition-colors flex flex-col items-center justify-center gap-2 py-5"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}
+                  >
+                    <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-zinc-300" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[13px] font-semibold text-white">Drag & drop your photo here</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">JPG, PNG, WEBP supported</p>
+                    </div>
+                    <button
+                      onClick={() => templatePhotoInputRef.current?.click()}
+                      className="mt-1 px-4 py-1.5 rounded-lg text-[12px] font-semibold text-white/80 hover:text-white transition-all hover:bg-white/15"
+                      style={{ background: 'rgba(255,255,255,0.10)' }}
+                    >Browse files</button>
+                  </div>
+                ) : (
+                  /* Preview */
+                  <div className="relative rounded-2xl overflow-hidden" style={{ height: 130 }}>
+                    <img src={templateUploadPhoto.preview} alt="Uploaded" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/30 flex items-end p-3">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-[11px] text-white font-medium flex-1">✓ Photo ready</span>
+                        <button
+                          onClick={() => { setTemplateUploadPhoto(null); templatePhotoInputRef.current?.click(); }}
+                          className="text-[11px] text-white/70 hover:text-white underline transition-colors"
+                        >Change</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recently Uploaded */}
+                {recentUploads.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Recently Uploaded</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {recentUploads.map((u, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setTemplateUploadPhoto(u)}
+                          className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 transition-all hover:scale-110 hover:shadow-lg"
+                          style={{ outline: templateUploadPhoto?.preview === u.preview ? '2px solid #a855f7' : '2px solid rgba(255,255,255,0.12)', outlineOffset: 2 }}
+                        >
+                          <img src={u.preview} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-2.5 mt-4">
+                  <button
+                    onClick={() => { setImagineTemplateModal(null); setTemplateUploadPhoto(null); }}
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-zinc-400 hover:text-white transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.07)' }}
+                  >Cancel</button>
+                  <button
+                    disabled={!templateUploadPhoto}
+                    onClick={() => {
+                      if (!templateUploadPhoto || !imagineTemplateModal) return;
+                      const t = imagineTemplateModal;
+                      const p = templateUploadPhoto;
+                      setImagineTemplateModal(null);
+                      setTemplateUploadPhoto(null);
+                      triggerImagineTemplate(t.prompt, p);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg, #000000 0%, #ffffff 100%)', color: templateUploadPhoto ? '#000' : '#888' }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
 
       {/* Attachment Dialog */}
@@ -5952,6 +7761,47 @@ Let's start the self-listen session!`;
           />
         </div>
       )}
+    </div>
+
+    {/* ── Nomad disabled model notification ── */}
+    <AnimatePresence>
+      {nomadDisabledNotif && (
+        <motion.div
+          key="nomad-notif"
+          initial={{ opacity: 0, x: 60, y: -8 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          exit={{ opacity: 0, x: 60, y: -8 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          style={{
+            position: 'fixed',
+            top: 18,
+            right: 18,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: resolvedTheme === 'dark' ? 'rgba(24,24,28,0.96)' : 'rgba(255,255,255,0.97)',
+            border: `1.5px solid ${nomadDisabledNotif.color}44`,
+            borderRadius: 999,
+            padding: '9px 18px 9px 14px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            minWidth: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: nomadDisabledNotif.color, flexShrink: 0, opacity: 0.85 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: resolvedTheme === 'dark' ? '#e4e4e7' : '#18181b', whiteSpace: 'nowrap' }}>
+            {nomadDisabledNotif.label}
+          </span>
+          <span style={{ fontSize: 11, color: resolvedTheme === 'dark' ? 'rgba(200,200,210,0.55)' : 'rgba(80,80,100,0.55)', whiteSpace: 'nowrap' }}>
+            disabled · gone to end
+          </span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
     </div>
     </TooltipProvider>
   );

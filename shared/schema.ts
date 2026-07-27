@@ -23,6 +23,8 @@ export const conversations = pgTable("conversations", {
   preset: text("preset").default("custom").notNull(),
   customInstructions: text("custom_instructions"),
   model: text("model").default("fius-prime").notNull(),
+  hasNomad: boolean("has_nomad").default(false).notNull(),
+  nomadData: jsonb("nomad_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -1,9 +1,42 @@
 import React, { useState, useRef, useEffect, useCallback, Component, useMemo } from "react";
+import { motion } from "framer-motion";
+
+// ── Fius Ultimatum card pool (mirrors desktop) ────────────────────────────────
+type UltimatumCardM = { Icon: React.ElementType; label: string; prompt: string; modelName: string; modelLogo: string; color: string };
+const ULTIMATUM_CARD_POOL_M: UltimatumCardM[] = [
+  { Icon: Brain,         label: 'Deep Reasoning',  prompt: 'Break down a complex problem step by step',    modelName: 'DeepSeek R1', modelLogo: '/deepseek-logo.png',   color: '#6366f1' },
+  { Icon: Search,        label: 'Live Search',      prompt: 'Find the latest news and real-time info',      modelName: 'Perplexity',  modelLogo: '/perplexity-logo.png', color: '#0ea5e9' },
+  { Icon: PenLine,       label: 'Creative Writing', prompt: 'Write a compelling story or article',          modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#ec4899' },
+  { Icon: Code,          label: 'Coding',           prompt: 'Debug, explain or write code for me',          modelName: 'GPT-5',       modelLogo: '/chatgpt-logo.png',    color: '#10b981' },
+  { Icon: BarChart3,     label: 'Data Analysis',    prompt: 'Analyse data and uncover hidden insights',     modelName: 'Gemini',      modelLogo: '/gemini-logo.png',     color: '#f59e0b' },
+  { Icon: Palette,       label: 'Design Ideas',     prompt: 'Generate UI/UX or visual concepts',            modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#8b5cf6' },
+  { Icon: TestTube2,     label: 'Science & Math',   prompt: 'Explain complex concepts in simple terms',     modelName: 'Gemini',      modelLogo: '/gemini-logo.png',     color: '#06b6d4' },
+  { Icon: AlignLeft,     label: 'Summarise',        prompt: 'Condense a long text into key points',         modelName: 'GPT-5',       modelLogo: '/chatgpt-logo.png',    color: '#64748b' },
+  { Icon: Lightbulb,     label: 'Brainstorm',       prompt: 'Generate a flood of creative ideas',           modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#eab308' },
+  { Icon: Cpu,           label: 'AI Strategy',      prompt: 'How to automate and scale using AI',           modelName: 'GPT-5',       modelLogo: '/chatgpt-logo.png',    color: '#a855f7' },
+  { Icon: TrendingUp,    label: 'Business Plan',    prompt: 'Build a go-to-market or growth strategy',      modelName: 'Grok 4',      modelLogo: '/grok-logo.png',       color: '#ef4444' },
+  { Icon: BookOpenCheck, label: 'Research',         prompt: 'Deep-dive research with cited sources',        modelName: 'Perplexity',  modelLogo: '/perplexity-logo.png', color: '#3b82f6' },
+  { Icon: Globe,         label: 'Translation',      prompt: 'Translate with cultural nuance intact',        modelName: 'DeepSeek',    modelLogo: '/deepseek-logo.png',   color: '#f97316' },
+  { Icon: Zap,           label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Fius',        modelLogo: '/fius-logo.png',       color: '#fbbf24' },
+  { Icon: Target,        label: 'Problem Solving',  prompt: 'Find the best path through any challenge',     modelName: 'DeepSeek R1', modelLogo: '/deepseek-logo.png',   color: '#f43f5e' },
+  { Icon: GraduationCap, label: 'Learning',         prompt: 'Teach me something new from scratch',          modelName: 'Gemini',      modelLogo: '/gemini-logo.png',     color: '#0891b2' },
+  { Icon: MessageSquare, label: 'Debate & Argue',   prompt: 'Build the strongest case for a position',      modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#d946ef' },
+  { Icon: Shield,        label: 'Security',         prompt: 'Audit or explain security vulnerabilities',    modelName: 'GPT-5',       modelLogo: '/chatgpt-logo.png',    color: '#475569' },
+  { Icon: Leaf,          label: 'Life Advice',      prompt: 'Help me think through a life decision',        modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#16a34a' },
+  { Icon: Rocket,        label: 'Startup Ideas',    prompt: 'Validate or refine my startup concept',        modelName: 'Grok 4',      modelLogo: '/grok-logo.png',       color: '#7c3aed' },
+];
+function shuffleUltimatumM<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
 import { useQuery } from "@tanstack/react-query";
-import { FiusGames } from "./fius-games";
-import { Logo } from "./logo";
+import { FiusGames, preloadGamesData } from "./fius-games";
+import { getCachedWikiImage, fetchWikiImage, preloadWikiImages } from "@/lib/wiki-image-cache";
+import { FiusLogo, Logo } from "./logo";
 import { Sidebar } from "./sidebar";
 import { VoiceModeModal } from "./voice-mode-modal";
+import { UpgradeModal } from "./upgrade-modal";
 import { EducationModal } from "./education-modal";
 import { QuizModal, type QuizQuestion } from "./quiz-modal";
 import { NomadNotification } from "./nomad-notification";
@@ -16,7 +49,9 @@ import {
   User, Pencil, Laptop, GraduationCap, RefreshCw, Target, Share2,
   Heart, Wand2, Edit, Maximize2, Minimize2, Copy, ThumbsUp, ThumbsDown, Volume2,
   MessageSquarePlus, FileDown, Square, AlignLeft, History, MoreHorizontal, Loader2,
-  GripVertical, Plus, Paperclip, FileSignature,
+  GripVertical, Plus, Paperclip, FileSignature, Zap, BookOpen, TrendingUp, Lightbulb,
+  Code, MessageSquare, Lock, Upload, LayoutGrid,
+  PenLine, BarChart3, TestTube2, Cpu, BookOpenCheck, Shield, Leaf, Rocket,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
@@ -31,12 +66,13 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useUsage } from "@/hooks/use-usage";
+import { getStoredGlowAccent, getGlowGradient, getStoredLogoStyle, getStoredAutoRotateLogo, persistLogoStyle, persistAutoRotateLogo, assignLogoStyleToConversation, LOGO_STYLE_OPTIONS, DEFAULT_LOGO_STYLE, type LogoStyle } from "@/lib/appearance-settings";
 import { queryClient, apiRequest, authFetch, endGuestSession } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
-import enhancePromptDark from "@assets/enhance_promt_button_-_Copy_1766904971885.png";
-import enhancePromptLight from "@assets/enhance_promt_button_1766904971889.png";
-import micDark from "@assets/mic_button_-_Copy_1766904971887.png";
-import micLight from "@assets/mic_button_1766904971887.png";
+import microphoneIcon from "@assets/microphone__1784996516975.png";
+import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
+import plusButtonIcon from "@assets/plus_button__1784996516977.png";
+import studioHero from "@assets/Gemini_Generated_Image_rdsaverdsaverdsa_1784927084436.png";
 
 // ─── Minimal Mode context — kept for compatibility, always false ──────────────
 const MinimalModeCtx = React.createContext(false);
@@ -84,10 +120,44 @@ const IMAGINE_STYLES_LOCAL: Record<string, string> = {
   Cinematic: "/style-cinematic.jpg",
 };
 
-const GALLERY_PHOTOS = [
-  { url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=70", label: "Mountain Sunrise", prompt: "a breathtaking sunrise over snow-capped mountain peaks with golden rays" },
-  { url: "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=70", label: "Ocean Storm", prompt: "powerful ocean waves crashing against rocky cliffs in a storm" },
-  { url: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400&q=70", label: "Lion Portrait", prompt: "a majestic lion in close-up with intense eyes and golden mane" },
+const MUS = (id: string) => `https://images.unsplash.com/photo-${id}?w=240&h=320&fit=crop&q=90&auto=format`;
+
+/* Mobile studio templates — Unsplash high-quality images (30+) */
+const MOBILE_STUDIO_TEMPLATES = [
+  { label: "Monsoon Mood",      image: MUS('1534438327276-14e5300c3a48'), prompt: "cozy rainy day scene, steaming hot coffee cup on wooden windowsill, warm candlelight glow, moody atmospheric lighting" },
+  { label: "Portrait",          image: MUS('1531746020798-e6953c6e8e04'), prompt: "A polished realistic portrait with soft studio lighting" },
+  { label: "Pro Headshot",      image: MUS('1560250097-0b93528c311a'),    prompt: "professional business headshot, neutral background, confident expression, sharp focus" },
+  { label: "Anime",             image: MUS('1607604276583-eef5d076aa5f'), prompt: "A cozy anime café on a rainy evening" },
+  { label: "Ghibli Style",      image: MUS('1518020382113-a7e8fc38eac9'), prompt: "Studio Ghibli art style, soft warm colors, magical atmosphere" },
+  { label: "Cinematic",         image: MUS('1478720568477-152d9b164e26'), prompt: "cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood quality" },
+  { label: "3D Render",         image: MUS('1633356122544-f134324a6cee'), prompt: "3D CGI rendered artwork, Blender Cycles render, ray tracing, HDRI lighting" },
+  { label: "Cyberpunk",         image: MUS('1515630278258-407f994537ee'), prompt: "cyberpunk aesthetic, neon lights on rain-slicked streets, electric blues and magentas" },
+  { label: "Fantasy Art",       image: MUS('1518709268805-4e9042af9f05'), prompt: "epic fantasy illustration, dramatic magical lighting, painterly digital art masterpiece" },
+  { label: "Nature Photo",      image: MUS('1506905925346-21bda4d32df4'), prompt: "golden hour nature photography, National Geographic quality, breathtaking landscape" },
+  { label: "Travel",            image: MUS('1476514525535-07fb3b4ae5f1'), prompt: "travel photography, iconic landmark, deep blue sky, vibrant colors, wanderlust" },
+  { label: "Fashion",           image: MUS('1515886657613-9f3515b0c78f'), prompt: "high fashion editorial photography, Vogue quality, dramatic studio lighting" },
+  { label: "Wedding",           image: MUS('1519741497674-611481863552'), prompt: "romantic wedding photography, golden hour backlight, soft bokeh, elegant" },
+  { label: "Interior",          image: MUS('1586023492125-27b2c045efd7'), prompt: "interior design visualization, cozy atmosphere, Architectural Digest quality" },
+  { label: "Architecture",      image: MUS('1487958449943-2429e8be8625'), prompt: "modern architecture visualization, photorealistic, natural lighting" },
+  { label: "Food Photo",        image: MUS('1476224203421-9ac39bcb3327'), prompt: "professional food photography, appetizing golden lighting, restaurant quality" },
+  { label: "Product Photo",     image: MUS('1523275335684-37898b6baf30'), prompt: "professional product photography, clean studio background, commercial quality" },
+  { label: "Street Photo",      image: MUS('1477959858617-67f85cf4f1df'), prompt: "urban street photography, candid documentary style, city life" },
+  { label: "Oil Painting",      image: MUS('1578321272176-b7bbc0679853'), prompt: "classical oil painting, impressionist brushwork, old master technique, museum quality" },
+  { label: "Watercolor",        image: MUS('1579783902614-a3fb3927b6a5'), prompt: "delicate watercolor painting, soft transparent washes, artistic brushstrokes" },
+  { label: "Sketch",            image: MUS('1541961017774-22349e4a1262'), prompt: "A detailed hand-drawn pencil sketch with fine shading" },
+  { label: "Pixel Art",         image: MUS('1550745165-9bc0b252726f'), prompt: "pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors" },
+  { label: "Vintage Film",      image: MUS('1516466723902-9b53e71d8f3e'), prompt: "vintage film photography, grain texture, warm sepia tones, analog camera" },
+  { label: "Neon Art",          image: MUS('1563089145-4e46e3f6f0e2'), prompt: "neon art aesthetic, glowing electric neon signs, vivid electric colors" },
+  { label: "Abstract",          image: MUS('1541701494-b6c18b2b97c1'), prompt: "abstract digital art, vibrant flowing colors, geometric organic patterns" },
+  { label: "Surrealist",        image: MUS('1518020382113-a7e8fc38eac9'), prompt: "surrealist art style, dreamlike impossible scenario, Salvador Dali inspired" },
+  { label: "Steampunk",         image: MUS('1535083534998-4d2e7f4fd0fe'), prompt: "steampunk Victorian aesthetic, brass gears, goggles, copper tones, mechanical" },
+  { label: "Vaporwave",         image: MUS('1519389950473-47ba0277781c'), prompt: "vaporwave aesthetic, pastel pinks and purples, retro 80s nostalgia" },
+  { label: "Claymation",        image: MUS('1558618666-fcd25c85cd64'), prompt: "claymation stop motion style, tactile clay texture, playful 3D characters" },
+  { label: "Comic Book",        image: MUS('1612036782180-6b785e6c7a12'), prompt: "comic book art style, bold ink outlines, halftone dots, dynamic action lines" },
+  { label: "Pop Art",           image: MUS('1561070791-2526bdc3d2f5'), prompt: "Andy Warhol pop art style, bold flat colors, halftone pattern, high contrast" },
+  { label: "Poster Art",        image: MUS('1547891654-e66ed7ebb968'), prompt: "graphic design poster art, bold striking composition, high impact visual design" },
+  { label: "Impressionist",     image: MUS('1592621385612-4d7129426394'), prompt: "impressionist painting, loose expressive brushstrokes, Monet technique" },
+  { label: "Style Upgrade",     image: MUS('1560250097-0b93528c311a'), prompt: "Upgrade this photo into a refined editorial image" },
 ];
 
 const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; description: string }> = {
@@ -107,6 +177,13 @@ const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; 
 
 const NOMAD_DEFAULT_MODELS = ["fius-ai", "gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral"];
 
+// ─── Nomad session type (shared between NomadTab and parent) ─────────────────
+type NomadSession = {
+  id: string; ts: number; mode: 'multi' | 'auto'; preview: string;
+  autoMsgs: { id: string; role: 'user' | 'ai'; content: string; pickedModel?: { model: string; modelName: string; logo: string; color: string } }[];
+  multiMsgs: Record<string, { id: string; role: string; content: string }[]>;
+};
+
 const PRESETS = [
   { id: "custom", label: "Custom", desc: "Default style" },
   { id: "concise", label: "Concise", desc: "Brief & direct" },
@@ -114,11 +191,80 @@ const PRESETS = [
   { id: "socratic", label: "Socratic", desc: "Asks questions" },
 ];
 
-const SUGGESTION_CARDS = [
+// ── Rotating Ask-tab placeholders ────────────────────────────────────────────
+const ROTATING_PLACEHOLDERS = [
+  "What do you want to know?",
+  "Prepare me a documentary on...",
+  "Write a poem about...",
+  "Explain how black holes work",
+  "Help me plan a trip to Tokyo",
+  "Debug my Python code...",
+  "Summarize this article for me",
+  "What's the difference between AI and ML?",
+  "Give me 5 startup ideas for 2025",
+  "Translate this to Spanish...",
+  "How do I learn guitar faster?",
+  "Create a workout plan for beginners",
+  "Write a cover letter for...",
+  "What are the best books on leadership?",
+  "Help me brainstorm names for my brand",
+  "Explain quantum computing simply",
+  "What happened in the 1969 moon landing?",
+  "Give me a recipe for chocolate cake",
+];
+
+const ALL_SUGGESTION_CARDS = [
   { icon: <Search className="w-4 h-4 text-orange-400" />, title: "Research & analysis", desc: "Deep dive into any topic", prompt: "Analyze the benefits of renewable energy sources" },
   { icon: <PenTool className="w-4 h-4 text-blue-400" />, title: "Creative writing", desc: "Stories, essays, content", prompt: "Write a short story about time travel" },
   { icon: <Brain className="w-4 h-4 text-purple-400" />, title: "Brainstorm ideas", desc: "Generate fresh concepts", prompt: "Give me 10 creative business ideas for 2025" },
+  { icon: <Zap className="w-4 h-4 text-yellow-400" />, title: "Explain anything", desc: "Break down complex topics", prompt: "Explain quantum computing in simple terms" },
+  { icon: <BookOpen className="w-4 h-4 text-indigo-400" />, title: "Learn something new", desc: "Expand your knowledge", prompt: "Teach me about machine learning basics" },
+  { icon: <Target className="w-4 h-4 text-red-400" />, title: "Problem solving", desc: "Work through challenges", prompt: "Help me plan a productive daily routine" },
+  { icon: <TrendingUp className="w-4 h-4 text-emerald-400" />, title: "Career advice", desc: "Grow professionally", prompt: "How do I transition into a software engineering career?" },
+  { icon: <Lightbulb className="w-4 h-4 text-amber-400" />, title: "Fun facts", desc: "Discover interesting things", prompt: "Tell me 5 surprising facts about the universe" },
+  { icon: <Code className="w-4 h-4 text-green-400" />, title: "Code help", desc: "Debug or write code", prompt: "Help me write a Python function to sort a list" },
+  { icon: <MessageSquare className="w-4 h-4 text-cyan-400" />, title: "Improve writing", desc: "Polish any text", prompt: "Make this email sound more professional: 'Hey, can we meet?'" },
+  { icon: <Globe className="w-4 h-4 text-teal-400" />, title: "Travel planning", desc: "Plan your next trip", prompt: "Plan a 5-day trip to Japan on a budget" },
+  { icon: <GraduationCap className="w-4 h-4 text-pink-400" />, title: "Study help", desc: "Ace your exams", prompt: "Quiz me on the causes of World War 1" },
 ];
+
+const WELCOME_HEADINGS = [
+  "What's on your mind?",
+  "What would you like to explore?",
+  "Ready to dive in?",
+  "Where shall we begin?",
+  "Got something to ask?",
+  "Let's get started:",
+  "What can I help with?",
+  "Pick a topic or ask anything:",
+];
+
+const getRandomCards = () => {
+  const shuffled = [...ALL_SUGGESTION_CARDS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 3);
+};
+
+const getRandomHeading = () => WELCOME_HEADINGS[Math.floor(Math.random() * WELCOME_HEADINGS.length)];
+
+const WELCOME_GREETINGS_M: ((name: string) => string)[] = [
+  name => `Hey ${name}, what's on your mind today?`,
+  name => `Good to see you, ${name}! Ready to explore?`,
+  name => `Back again, ${name}? Let's make it count.`,
+  name => `Hello, ${name}! What are we diving into?`,
+  name => `What's up, ${name}? I'm all ears.`,
+  name => `${name}! Let's build something amazing.`,
+  name => `Hey ${name}, let's get started!`,
+  name => `Great to see you, ${name}! What's the plan?`,
+  name => `${name}, the sky's the limit today!`,
+  name => `Nice to have you back, ${name}.`,
+];
+
+function pickGreetingIndexM(seed: string | undefined): number {
+  if (!seed) return Math.floor(Math.random() * WELCOME_GREETINGS_M.length);
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i)) % WELCOME_GREETINGS_M.length;
+  return hash;
+}
 
 const PHIL_CATEGORIES = ["All", "Leaders", "Philosophers", "Scientists", "Artists", "Reformers"];
 
@@ -154,29 +300,20 @@ const PHILOSOPHERS: Personality[] = [
 function uid() { return Math.random().toString(36).slice(2); }
 
 // ─── WikiFace ─────────────────────────────────────────────────────────────────
-const wikiCache = new Map<string, string>();
-async function fetchWiki(title: string): Promise<string | null> {
-  if (wikiCache.has(title)) return wikiCache.get(title)!;
-  try {
-    const r = await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=120&origin=*`);
-    const d = await r.json();
-    const pages = d?.query?.pages;
-    const url = pages ? Object.values(pages)[0] as any : null;
-    const imgUrl = url?.thumbnail?.source || null;
-    if (imgUrl) wikiCache.set(title, imgUrl);
-    return imgUrl;
-  } catch { return null; }
-}
-
+// Uses the shared cache (client/src/lib/wiki-image-cache.ts) so avatars warmed
+// by the desktop surface or by this component's own eager preload (see the
+// PHILOSOPHERS preload effect below) are instantly available here too —
+// avatars no longer pop in one-by-one only after the tab is opened.
 function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: string; size?: number }) {
-  const [src, setSrc] = useState<string | null>(wikiCache.get(wikiTitle || name) ?? null);
+  const articleTitle = wikiTitle || name;
+  const [src, setSrc] = useState<string | null>(getCachedWikiImage(articleTitle) ?? null);
   useEffect(() => {
-    const t = wikiTitle || name;
-    if (wikiCache.has(t)) { setSrc(wikiCache.get(t)!); return; }
+    const cached = getCachedWikiImage(articleTitle);
+    if (cached) { setSrc(cached); return; }
     let cancelled = false;
-    fetchWiki(t).then(url => { if (!cancelled && url) setSrc(url); });
+    fetchWikiImage(articleTitle).then(url => { if (!cancelled && url) setSrc(url); });
     return () => { cancelled = true; };
-  }, [name, wikiTitle]);
+  }, [articleTitle]);
   return (
     <div className="rounded-full overflow-hidden flex-shrink-0 border border-border/50"
       style={{ width: size, height: size, background: "linear-gradient(135deg,#f59e0b,#ef4444)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -190,40 +327,37 @@ function WikiFace({ name, wikiTitle, size = 36 }: { name: string; wikiTitle?: st
 const _completedMsgs = new Map<string, boolean>();
 const _progressMsgs = new Map<string, string>();
 
-function useTypingAnimation(text: string, msgId: string) {
-  // Time-based reveal (not frame-count based) — speed stays identical on a 60Hz
-  // or 120Hz+ display, which is what actually reads as "buttery" vs "jerky".
-  // ~150 words/sec: fast, but every word is reached via a continuous ramp
-  // instead of hard 3-word jumps, so the eye perceives a smooth flow.
-  const WORDS_PER_SEC = 150;
+function useTypingAnimation(text: string, msgId: string, wordsPerSec: number = 80) {
+  // Time-based reveal — speed stays identical on 60Hz or 120Hz+ displays.
+  // 80 words/sec: comfortable mid-speed with smooth per-word fade-in.
   const [displayed, setDisplayed] = useState(() =>
     _completedMsgs.has(msgId) ? text : (_progressMsgs.get(msgId) ?? "")
   );
   const [done, setDone] = useState(() => _completedMsgs.has(msgId));
-  const init = useRef(false);
+  // freshWordIdx tracks where newly-revealed words start so the renderer
+  // can apply a CSS fade-in only to words that just appeared.
+  const [freshWordIdx, setFreshWordIdx] = useState(0);
   const rafRef = useRef<number | null>(null);
   useEffect(() => {
     if (_completedMsgs.has(msgId)) { setDisplayed(text); setDone(true); return; }
-    if (init.current) return;
-    init.current = true;
-    if (!text) { setDone(true); return; }
+    if (!text) { setDisplayed(""); setDone(false); return; }
     setDone(false);
     const words = text.split(" ").filter(w => w.trim());
     const existing = _progressMsgs.get(msgId) ?? "";
     let idx = existing ? existing.split(" ").filter(w => w.trim()).length : 0;
-    // fractional accumulator lets us advance by a stable wall-clock rate even
-    // when frames are skipped/throttled, instead of always jumping a fixed word count
     let carry = 0;
     let last: number | null = null;
     const step = (now: number) => {
       if (last === null) last = now;
       const dt = now - last;
       last = now;
-      carry += (dt / 1000) * WORDS_PER_SEC;
+      carry += (dt / 1000) * wordsPerSec;
       const advance = Math.floor(carry);
       if (advance > 0) {
         carry -= advance;
+        const prevIdx = idx;
         idx = Math.min(idx + advance, words.length);
+        setFreshWordIdx(prevIdx);
       }
       if (idx < words.length) {
         const next = words.slice(0, idx).join(" ");
@@ -236,8 +370,8 @@ function useTypingAnimation(text: string, msgId: string) {
     };
     rafRef.current = requestAnimationFrame(step);
     return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
-  }, []); // eslint-disable-line
-  return { displayed, done };
+  }, [text, msgId, wordsPerSec]);
+  return { displayed, done, freshWordIdx };
 }
 
 // ─── Micro components ─────────────────────────────────────────────────────────
@@ -264,7 +398,6 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
           />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
-          <Logo size="sm" />
           <span className="thinking-label" style={isLight ? {
             background: 'linear-gradient(90deg, rgba(55,55,75,0.85) 0%, rgba(55,55,75,0.85) 38%, rgba(10,10,30,1) 50%, rgba(55,55,75,0.85) 62%, rgba(55,55,75,0.85) 100%)',
             backgroundSize: '250% auto',
@@ -583,7 +716,8 @@ function FollowUpSuggestions({ msgContent, onSelect }: { msgContent: string; onS
   );
 }
 
-function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest, onFollowUp, isStreaming }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean; onFollowUp?: (q: string) => void; isStreaming?: boolean }) {
+function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest, onFollowUp, isStreaming, ownMode, showUserMsgActions, showAiMsgActions }: { msg: Msg; onExpandImg?: (s: string) => void; onNewChat?: (content: string) => void; onRetry?: () => void; onRetryUser?: (content: string) => void; isLatest?: boolean; onFollowUp?: (q: string) => void; isStreaming?: boolean; ownMode?: boolean; showUserMsgActions?: boolean; showAiMsgActions?: boolean }) {
+  const { resolvedTheme } = useTheme();
   const isUser = msg.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<"up" | "down" | null>(null);
@@ -596,15 +730,11 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   const [docExportingId, setDocExportingId] = useState<string | null>(null);
   const audioSrcRef = useRef<AudioBufferSourceNode | null>(null);
 
-  // Document-mode messages never render the animated text (they show a compact
-  // download card instead), so skip the typing animation for them entirely —
-  // otherwise "done" (and the download button) would stay hidden until a full
-  // word-by-word reveal of content nobody sees finishes.
-  const { displayed, done } = useTypingAnimation(
-    !isUser && isLatest && !msg.isDocument ? msg.content : "",
-    msg.id
-  );
-  const shownText = (!isUser && isLatest) ? displayed : msg.content;
+  // Keep the word reveal in this stable, module-scoped hook. The cache lets a
+  // parent update resume from the same word instead of remounting the bubble.
+  const typing = useTypingAnimation(msg.content, msg.id, 30);
+  const done = isUser ? true : typing.done;
+  const shownText = isUser ? msg.content : typing.displayed;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(msg.content || msg.imageUrl || "");
@@ -687,8 +817,12 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
 
   return (
     <>
-      <div className={`flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200 relative`}>
-        {!isUser && <Logo size="sm" className="flex-shrink-0 mt-1 ml-1" />}
+      <div className={`group/bubble flex gap-3 mb-2 ${isUser ? "flex-row-reverse" : "flex-row"} animate-in fade-in duration-200 relative`}>
+        {!isUser && (
+          ownMode
+            ? <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className="flex-shrink-0 mt-1 ml-1 h-9 w-9 object-contain" />
+            : <FiusLogo size="sm" className="flex-shrink-0 mt-1 ml-1" />
+        )}
         <div className={`flex flex-col ${isUser ? "max-w-[85%] items-end" : "flex-1 min-w-0 items-start"} ${!isUser ? "ml-0.5" : ""}`}>
           {isUser ? (
             <div className="flex flex-col gap-2 items-end">
@@ -709,18 +843,22 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               )}
               {/* Text bubble (only if there's text) */}
               {msg.content && (
-                <div className={`bg-card rounded-3xl px-4 py-3 shadow-sm border border-border chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all`}>
-                  {msg.content}
-                  <div className="flex items-center justify-end gap-0.5 mt-1.5">
-                    <button onClick={handleCopy}
-                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                      {copied ? <Check className="w-4 h-4 text-blue-500" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                    <button onClick={() => onRetryUser?.(msg.content)}
-                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
+                <div className="group flex flex-col items-end">
+                  <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 shadow-sm chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all w-fit">
+                    {msg.content}
                   </div>
+                  {(showUserMsgActions ?? false) && (
+                    <div className="flex items-center gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button onClick={handleCopy}
+                        className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                        {copied ? <Check className="w-4 h-4 text-blue-500" /> : <img src="/icon-copy-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                      </button>
+                      <button onClick={() => onRetryUser?.(msg.content)}
+                        className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               {/* Copy/retry when no text */}
@@ -754,23 +892,20 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                         </div>
                       </div>
                     ) : (
-                    <div className={`${!done ? "typing-message" : ""}`}>
+                     <div>
                       {isUser ? (
                         <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] text-foreground py-1">
                           {mainText.length > 200 && !msgExpanded ? `${mainText.slice(0, 200).trim()}…` : mainText}
                         </div>
                       ) : (
-                        <MobileMarkdown text={mainText} />
+                        done
+                          ? <MobileMarkdown text={mainText} />
+                          : <span className="whitespace-pre-wrap [overflow-wrap:anywhere]">{mainText}</span>
                       )}
-                      {!done && <span className="inline-block w-0.5 h-3.5 bg-foreground/60 ml-0.5 animate-pulse align-middle" />}
                     </div>
                     )}
                     {!isUser && parsedSrcs.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-border/40">
-                        <p className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1 font-medium">
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                          Sources
-                        </p>
+                      <div className="mt-2">
                         <div className="flex flex-wrap gap-2">
                           {parsedSrcs.map((src, i) => (
                             <a key={i} href={src.url} target="_blank" rel="noopener noreferrer"
@@ -807,7 +942,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                     Download
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
                   <DropdownMenuItem onClick={async () => { setDocExportingId('pdf'); try { await downloadPdf(msg.content, msg.documentTitle || 'document'); } finally { setDocExportingId(null); } }}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF (.pdf)
@@ -835,19 +970,19 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
           {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
-                <ThumbsUp className="w-4 h-4" />
+                <img src="/icon-like-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={liked === "up" ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
               </button>
               <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
-                <ThumbsDown className="w-4 h-4" />
+                <img src="/icon-dislike-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={liked === "down" ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
               </button>
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4" /> : <img src="/icon-copy-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={ab}><MoreHorizontal className="w-4 h-4" /></button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
                   <DropdownMenuItem onClick={handleSpeak}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     {speaking ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
@@ -982,8 +1117,9 @@ function useDragDismiss(onDismiss: () => void, threshold = 80) {
 }
 
 // ─── Model Sheet ──────────────────────────────────────────────────────────────
-function ModelSheet({ models, current, onSelect, onClose }: {
+function ModelSheet({ models, current, onSelect, onClose, isLocked, onLockedSelect }: {
   models: { id: string; name: string }[]; current: string; onSelect: (id: string) => void; onClose: () => void;
+  isLocked?: (id: string) => boolean; onLockedSelect?: (id: string) => void;
 }) {
   const drag = useDragDismiss(onClose);
   const [closing, setClosing] = useState(false);
@@ -1015,14 +1151,21 @@ function ModelSheet({ models, current, onSelect, onClose }: {
         <p className="text-[16px] font-bold text-foreground px-5 mb-2">Select Model</p>
         {/* Scrollable content — touch events here scroll normally */}
         <div className="overflow-y-auto" style={{ maxHeight: "60vh", WebkitOverflowScrolling: "touch" } as any}>
-          {models.map((opt, i) => (
-            <button key={opt.id} onClick={() => { onSelect(opt.id); handleClose(); }}
-              className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors active:bg-accent/60 ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""}`}>
+          {models.map((opt, i) => {
+            const locked = isLocked?.(opt.id) ?? false;
+            return (
+            <button key={opt.id} onClick={() => {
+              if (locked) { onLockedSelect?.(opt.id); return; }
+              onSelect(opt.id); handleClose();
+            }}
+              className={`w-full flex items-center gap-3.5 px-5 py-3.5 transition-colors active:bg-accent/60 ${opt.id === current ? "bg-accent/70" : "hover:bg-accent/40"} ${i > 0 ? "border-t border-border/30" : ""} ${locked ? "opacity-50" : ""}`}>
               <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.id === current ? "bg-foreground" : "bg-zinc-400"}`} />
               <span className="text-[14px] font-semibold text-foreground flex-1 text-left">{opt.name}</span>
+              {locked && <Lock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
               {opt.id === current && <Check className="w-4 h-4 text-foreground" />}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1037,6 +1180,7 @@ interface MsgBarProps {
   value: string; onChange: (v: string) => void; onSend: () => void; onStop?: () => void;
   isTyping: boolean; placeholder: string;
   tab: MobileTab;
+  centerViewport?: boolean;
   model?: string; onModelChange?: (m: string) => void;
   fiusIntegrationMode?: boolean; onIntegration?: () => void;
   onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
@@ -1045,9 +1189,10 @@ interface MsgBarProps {
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
   onDocumentMode?: () => void;
   documentModeActive?: boolean;
+  hasMessages?: boolean;
 }
 
-function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false }: MsgBarProps) {
+function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, centerViewport = false, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false, hasMessages = false }: MsgBarProps) {
   const { theme: _mbTheme } = useTheme();
   const _mbResolved = _mbTheme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -1063,8 +1208,9 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const [attachedFiles, setAttachedFiles] = useState<Array<{ file: File; name: string; size: string }>>([]);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const { toast } = useToast();
-  const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
+  const [fnBarStyle, setFnBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "pill");
   const [msgBarStyle, setMsgBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
+  const [glossyOutlineEnabled, setGlossyOutlineEnabled] = useState(() => localStorage.getItem("glossyOutline") !== "false");
   const [expandOpen, setExpandOpen] = useState(false);
   const [longAnswer, setLongAnswer] = useState(false);
   const [promptInlineExpanded, setPromptInlineExpanded] = useState(false);
@@ -1072,11 +1218,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   const overlayDrag = useDragDismiss(() => setExpandOpen(false), 60);
 
   useEffect(() => {
-    const h1 = () => setFnBarStyle(localStorage.getItem("functionBarStyle") || "circle");
+    const h1 = () => setFnBarStyle(localStorage.getItem("functionBarStyle") || "pill");
     const h2 = () => setMsgBarStyle(localStorage.getItem("messageBarStyle") || "compact");
+    const h3 = () => setGlossyOutlineEnabled(localStorage.getItem("glossyOutline") !== "false");
     window.addEventListener("functionBarStyleChanged", h1);
     window.addEventListener("messageBarStyleChanged", h2);
-    return () => { window.removeEventListener("functionBarStyleChanged", h1); window.removeEventListener("messageBarStyleChanged", h2); };
+    window.addEventListener("settingsSaved", h3);
+    return () => { window.removeEventListener("functionBarStyleChanged", h1); window.removeEventListener("messageBarStyleChanged", h2); window.removeEventListener("settingsSaved", h3); };
   }, []);
 
   const models = ASK_MODELS;
@@ -1125,6 +1273,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     } catch { } finally { setIsEnhancing(false); }
   };
 
+  const formatFileSize = (b: number) => b > 1024 * 1024 ? `${(b / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -1138,8 +1288,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     if (!nonImg.length) { toast({ title: "Use Upload Image for image files" }); e.target.value = ""; return; }
     const toProcess = nonImg.slice(0, remaining);
     if (nonImg.length > remaining) toast({ title: `Only ${remaining} more file(s) allowed` });
-    const formatSize = (b: number) => b > 1024 * 1024 ? `${(b / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`;
-    const newFiles = toProcess.map(f => ({ file: f, name: f.name, size: formatSize(f.size) }));
+    const newFiles = toProcess.map(f => ({ file: f, name: f.name, size: formatFileSize(f.size) }));
     setAttachedFiles(prev => [...prev, ...newFiles]);
     e.target.value = "";
   };
@@ -1166,6 +1315,58 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     e.target.value = "";
   };
 
+  // Shared handling for files that arrive via drag-and-drop or clipboard
+  // paste (desktop/PC browsers land on this component whenever the window
+  // is under the 1024px breakpoint — it's not just a phone-only view — so it
+  // needs the same drop/paste support as the wide desktop composer).
+  const ingestDroppedOrPastedFiles = async (files: File[]) => {
+    if (!files.length) return;
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const otherFiles = files.filter(f => !f.type.startsWith('image/'));
+
+    if (imageFiles.length) {
+      const remaining = M_MAX_IMAGES - attachedImages.length;
+      const toProcess = imageFiles.slice(0, Math.max(remaining, 0));
+      if (imageFiles.length > toProcess.length) toast({ title: `Only ${remaining} more image(s) allowed` });
+      toProcess.forEach(f => {
+        const reader = new FileReader();
+        reader.onload = ev => setAttachedImages(prev => [...prev, { file: f, preview: ev.target?.result as string }]);
+        reader.readAsDataURL(f);
+      });
+    }
+    if (otherFiles.length) {
+      const remaining = M_MAX_FILES - attachedFiles.length;
+      const toProcess = otherFiles.slice(0, Math.max(remaining, 0));
+      if (otherFiles.length > toProcess.length) toast({ title: `Only ${remaining} more file(s) allowed` });
+      const newFiles = toProcess.map(f => ({ file: f, name: f.name, size: formatFileSize(f.size) }));
+      if (newFiles.length) setAttachedFiles(prev => [...prev, ...newFiles]);
+    }
+    if (!imageFiles.length && !otherFiles.length) toast({ title: "Could not read files" });
+  };
+
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const dragCounterRef = useRef(0);
+  const handleComposeDragEnter = (e: React.DragEvent) => { e.preventDefault(); dragCounterRef.current++; setIsDraggingFiles(true); };
+  const handleComposeDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleComposeDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+    if (dragCounterRef.current === 0) setIsDraggingFiles(false);
+  };
+  const handleComposeDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDraggingFiles(false);
+    await ingestDroppedOrPastedFiles(Array.from(e.dataTransfer.files || []));
+  };
+  const handleComposePaste = async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const files = items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter((f): f is File => !!f);
+    if (!files.length) return; // let normal text paste proceed
+    e.preventDefault();
+    await ingestDroppedOrPastedFiles(files);
+  };
+
   const handleSend = () => {
     if (attachedImages.length > 0 || attachedFiles.length > 0) {
       if (onAttachmentSend) {
@@ -1182,7 +1383,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
   if (hidden) return null;
 
   // Shared button class for the input pill buttons — match PC style
-  const iconBtnCls = "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/[0.12]";
+  const iconBtnCls = "w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 bg-zinc-200/70 dark:bg-white/[0.07] hover:bg-zinc-300/70 dark:hover:bg-white/[0.12]";
   // Theme-aware icon: btn-icon applies brightness(0)+drop-shadow in light, brightness(0)+invert in dark — same as PC
   const imgCls = "w-4 h-4 btn-icon";
   const showFnBar = tab !== "philosopher" && tab !== "games";
@@ -1193,13 +1394,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     onClick?: () => void; icon: React.ReactNode; label: string;
     active?: boolean; activeStyle?: string;
   }) => {
-    const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#303030]";
+    const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#383838]";
     const resolvedActive = active ? "text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none" : undefined;
     const btnStyle = activeStyle || resolvedActive || defaultStyle;
     return (
       <button onClick={onClick}
         className="flex flex-col items-center gap-1 group flex-shrink-0 px-1 py-0.5">
-        <div className={`w-11 h-11 ${isCircleFn ? "rounded-full" : "rounded-[10px]"} flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button glossy-outline ${btnStyle}`}>
+        <div className={`w-11 h-11 ${isCircleFn ? "rounded-full" : "rounded-[10px]"} flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button ${glossyOutlineEnabled ? 'glossy-outline' : ''} ${btnStyle}`}>
           {icon}
         </div>
         <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
@@ -1209,13 +1410,24 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   return (
     <>
-    <div className="relative flex-shrink-0 bg-background" style={{ zIndex: 1 }}>
-      {/* Fade feather — invisible for first 70%, solidifies only at the very bottom */}
-      <div
-        className="absolute left-0 right-0 pointer-events-none bg-gradient-to-b from-transparent from-0% via-transparent via-[70%] to-background"
-        style={{ top: -85, height: 85 }}
-      />
-    <div className="px-3 pb-3 pt-0">
+    <div className={`relative flex-shrink-0 ${centerViewport ? 'md:left-[-38px]' : ''} ${tab === 'imagine' ? 'bg-black' : hasMessages ? 'bg-background message-composer-with-messages' : ''}`}
+      style={{ zIndex: 1 }}
+      onDragEnter={handleComposeDragEnter} onDragOver={handleComposeDragOver} onDragLeave={handleComposeDragLeave} onDrop={handleComposeDrop}>
+      {/* Fade feather — only when messages exist, fades content smoothly into the solid bar area */}
+      {(hasMessages || tab === 'imagine') && (
+        <div
+          className={`absolute left-0 right-0 pointer-events-none ${tab === 'imagine' ? 'bg-gradient-to-b from-transparent to-black' : 'bg-gradient-to-b from-transparent to-background'}`}
+          style={{ top: -120, height: 120 }}
+        />
+      )}
+      {isDraggingFiles && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-indigo-500/10 border-2 border-dashed border-indigo-500 pointer-events-none rounded-2xl">
+          <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-1.5 bg-background/90 px-3 py-1.5 rounded-full shadow-lg">
+            <Upload className="w-3.5 h-3.5" /> Drop to attach
+          </span>
+        </div>
+      )}
+      <div className="px-3 pb-3 pt-0">
       {isListening && (
         <div className="flex justify-center mb-1.5">
           <div className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2">
@@ -1231,23 +1443,53 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Function bar: centered icon + label buttons — hidden when "In Bar" style ── */}
       {showFnBar && fnBarStyle !== "message-bar" && (
-        <div className="macos-function-bar flex items-center justify-center mb-2 px-0.5">
-          <div className="flex items-center gap-1.5">
-            <FnBtn
-              onClick={onIntegration}
-              active={fiusIntegrationMode}
-              icon={<img src="/integration-icon.png" alt="" className="w-5 h-5 btn-icon" />}
-              label="Long Answer"
-            />
-            <FnBtn onClick={onVoiceMode} icon={<AudioLines className="w-5 h-5" />} label="Voice Mode" />
-            <FnBtn onClick={onSettings} icon={<img src="/settings-icon.png" alt="" className="w-5 h-5 btn-icon" />} label="Settings" />
-            {model === "fius-education" && onEducation && (
-              <FnBtn onClick={onEducation}
-                activeStyle="text-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-none"
-                active
-                icon={<GraduationCap className="w-5 h-5" />} label="Education" />
-            )}
-          </div>
+        <div className="macos-function-bar flex items-center justify-center mb-1.5 px-0.5" style={{ marginTop: fnBarStyle === 'pill' ? '38px' : '11px', transform: fnBarStyle === 'pill' ? 'translateX(-14px)' : undefined }}>
+          {fnBarStyle === "pill" ? (
+            /* ── Pill row style ── */
+            <div className="flex items-center flex-wrap justify-center gap-2">
+              {[
+                { icon: <img src={isDark ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Long Answer", onClick: onIntegration, active: fiusIntegrationMode },
+                { icon: <img src={isDark ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Voice Mode", onClick: onVoiceMode, active: false },
+                { icon: <img src={isDark ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Settings", onClick: onSettings, active: false },
+              ].map(({ icon, label, onClick, active }) => (
+                <button
+                  key={label}
+                  onClick={onClick}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 ${
+                    active
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
+                      : 'bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838]'
+                  }`}
+                >
+                  <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center [&_img]:mix-blend-multiply dark:[&_img]:mix-blend-screen [&_img]:w-[18px] [&_img]:h-[18px] [&_img]:object-contain [&_img]:flex-shrink-0">{icon}</span>
+                  <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
+                </button>
+              ))}
+              {model === "fius-education" && onEducation && (
+                <button onClick={onEducation} className="flex items-center gap-2 px-4 py-2 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[13px] font-medium active:scale-95 transition-all">
+                  <GraduationCap className="w-[18px] h-[18px]" /><span>Education</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            /* ── Circle / Square style ── */
+            <div className="flex items-center gap-1.5">
+              <FnBtn
+                onClick={onIntegration}
+                active={fiusIntegrationMode}
+                icon={<img src={isDark ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="" className="w-5 h-5 btn-icon" />}
+                label="Long Answer"
+              />
+              <FnBtn onClick={onVoiceMode} icon={<img src={isDark ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="" className="w-5 h-5 btn-icon" />} label="Voice Mode" />
+              <FnBtn onClick={onSettings} icon={<img src={isDark ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="" className="w-5 h-5 btn-icon" />} label="Settings" />
+              {model === "fius-education" && onEducation && (
+                <FnBtn onClick={onEducation}
+                  activeStyle="text-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-none"
+                  active
+                  icon={<GraduationCap className="w-5 h-5" />} label="Education" />
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1304,7 +1546,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#303030] glossy-outline overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#383838] ${glossyOutlineEnabled ? 'glossy-outline' : ''} overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -1325,7 +1567,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             )}
             {/* Row 1: full-width textarea */}
             <div className="px-3 pt-2.5 pb-1">
-              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+              <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} onPaste={handleComposePaste}
                 placeholder={placeholder}
                 className="w-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
                 style={{ minHeight: 52, maxHeight: 120, overflowY: "auto", scrollbarWidth: "none" }} />
@@ -1336,31 +1578,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className={iconBtnCls}>
-                      <Plus className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                      <img src={isDark ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
-                        <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
-                            <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
-                            <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
-                    {onDocumentMode && (
-                      <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={onDocumentMode}>
-                        <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
+                  <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => fileInputRef.current?.click()}>
+                       <FileText className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload File</span>
+                     </DropdownMenuItem>
+                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => imageInputRef.current?.click()}>
+                       <Image className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload Image</span>
+                     </DropdownMenuItem>
+                     {onDocumentMode && (
+                       <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={onDocumentMode}>
+                         <FileSignature className="w-4 h-4 flex-shrink-0 text-purple-400" /><span>Create Document</span>
+                       </DropdownMenuItem>
+                     )}
+                   </DropdownMenuContent>
                 </DropdownMenu>
                 {showModel && tab !== "nomad" && model && onModelChange && (
                   <button onClick={() => setShowModelSheet(true)}
@@ -1373,23 +1606,25 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={toggleMic} className={`${iconBtnCls} ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
-                  <img src={micLight} alt="Mic" className={imgCls} />
+                  <img src={microphoneIcon} alt="Mic" className={`${imgCls} composer-message-icon`} />
                 </button>
-                {showEnhance && (
-                  <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
-                    {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                      : <img src={enhancePromptLight} alt="Enhance" className={imgCls} />}
-                  </button>
-                )}
                 {isTyping ? (
                   <button onClick={onStop} className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 transition-all">
                     <div className="w-3 h-3 rounded-sm bg-white dark:bg-zinc-800" />
                   </button>
                 ) : (
-                  <button onClick={handleSend} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
-                    className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all">
-                    <ArrowUp className="w-4 h-4 text-white dark:text-black" />
-                  </button>
+                  <div className={`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-out ${value.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[80px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    {showEnhance && (
+                      <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} disabled:opacity-30`}>
+                        {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                          : <img src={improvePromptIcon} alt="Enhance" className={`${imgCls} composer-message-icon`} />}
+                      </button>
+                    )}
+                    <button onClick={handleSend} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
+                      className="w-8 h-8 rounded-full flex items-center justify-center composer-send-button flex-shrink-0 active:scale-90 transition-all">
+                      <ArrowUp className="w-4 h-4 text-white dark:text-black" />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1429,34 +1664,25 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={`${iconBtnCls} flex-shrink-0`}>
-                    <Plus className="w-4 h-4 text-zinc-500 dark:text-zinc-300" />
+                    <img src={isDark ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10 data-[state=open]:bg-black/10 dark:data-[state=open]:bg-white/10">
-                      <Paperclip className="w-4 h-4 text-zinc-400" /><span>Attachments</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="bg-white dark:bg-[#303030] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[160px]">
-                        <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => fileInputRef.current?.click()}>
-                          <FileText className="w-4 h-4 text-zinc-400" /><span>Upload File</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={() => imageInputRef.current?.click()}>
-                          <Image className="w-4 h-4 text-zinc-400" /><span>Upload Image</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                  {onDocumentMode && (
-                    <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" onClick={onDocumentMode}>
-                      <FileSignature className="w-4 h-4 text-purple-400" /><span>Create Document</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
+                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => fileInputRef.current?.click()}>
+                       <FileText className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload File</span>
+                     </DropdownMenuItem>
+                     <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => imageInputRef.current?.click()}>
+                       <Image className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload Image</span>
+                     </DropdownMenuItem>
+                     {onDocumentMode && (
+                       <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={onDocumentMode}>
+                         <FileSignature className="w-4 h-4 flex-shrink-0 text-purple-400" /><span>Create Document</span>
+                       </DropdownMenuItem>
+                     )}
+                   </DropdownMenuContent>
               </DropdownMenu>
               <div className="relative flex-1">
-                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey}
+                <textarea ref={taRef} value={value} onChange={e => onChange(e.target.value)} onKeyDown={handleKey} onPaste={handleComposePaste}
                   placeholder={placeholder} rows={1}
                   className="w-full bg-transparent text-[14px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-normal py-0 pl-1"
                   style={{
@@ -1473,12 +1699,12 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 </button>
                 </div>
               <button onClick={toggleMic} className={`${iconBtnCls} flex-shrink-0 ${isListening ? "!bg-emerald-500/10 !text-emerald-400" : ""}`}>
-                <img src={micLight} alt="Mic" className={imgCls} />
+                <img src={microphoneIcon} alt="Mic" className={`${imgCls} composer-message-icon`} />
               </button>
               {showEnhance && (
                 <button onClick={handleEnhance} disabled={!value.trim() || isEnhancing} className={`${iconBtnCls} flex-shrink-0 disabled:opacity-30`}>
                   {isEnhancing ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                    : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className={imgCls} />}
+                    : <img src={improvePromptIcon} alt="Enhance" className={`${imgCls} composer-message-icon`} />}
                 </button>
               )}
               {isTyping ? (
@@ -1487,7 +1713,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 </button>
               ) : (
                 <button onClick={handleSend} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
-                  className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:bg-zinc-700 dark:hover:bg-zinc-100">
+                  className="w-8 h-8 rounded-full flex items-center justify-center composer-send-button flex-shrink-0 active:scale-90 disabled:opacity-30 transition-all hover:opacity-90">
                   <ArrowUp className="w-4 h-4 text-white dark:text-black" />
                 </button>
               )}
@@ -1523,6 +1749,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               ref={expandTaRef}
               value={value}
               onChange={e => onChange(e.target.value)}
+              onPaste={handleComposePaste}
               placeholder={placeholder}
               autoFocus
               className="w-full h-full bg-transparent text-[16px] text-foreground placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none leading-relaxed"
@@ -1542,12 +1769,12 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 transition-all active:scale-90 disabled:opacity-30 flex-shrink-0">
                 {isEnhancing
                   ? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                  : <img src={isDark ? enhancePromptDark : enhancePromptLight} alt="Enhance" className="w-4 h-4 btn-icon" />}
+                  : <img src={improvePromptIcon} alt="Enhance" className="w-4 h-4 composer-message-icon" />}
               </button>
             )}
             {/* Long Answer toggle */}
             <button onClick={() => setLongAnswer(v => !v)}
-              className={`h-9 px-3 rounded-full flex items-center gap-1.5 transition-all active:scale-90 flex-shrink-0 text-[11px] font-semibold ${longAnswer ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"}`}>
+              className={`h-9 px-3 rounded-full flex items-center gap-1.5 transition-all active:scale-90 flex-shrink-0 text-[11px] font-semibold ${longAnswer ? "bg-zinc-200 dark:bg-zinc-100 text-zinc-800 dark:text-zinc-900" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"}`}>
               <AlignLeft className="w-3.5 h-3.5 flex-shrink-0" />
               Long
             </button>
@@ -1564,7 +1791,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 setLongAnswer(false);
                 setTimeout(() => { handleSend(); setExpandOpen(false); }, 0);
               }} disabled={!value.trim() && !attachedImages.length && !attachedFiles.length}
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-800 dark:bg-white active:scale-90 disabled:opacity-30 transition-all flex-shrink-0">
+                className="w-10 h-10 rounded-full flex items-center justify-center composer-send-button active:scale-90 disabled:opacity-30 transition-all flex-shrink-0">
                 <ArrowUp className="w-5 h-5 text-white dark:text-black" />
               </button>
             )}
@@ -1602,6 +1829,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   profilePicture?: string; onProfilePictureChange?: (d: string) => void; onUserRename?: (n: string) => void;
   model?: string; onModelChange?: (m: string) => void; onChatBgChange?: (bg: string) => void;
 }) {
+  const { usage: planUsage } = useUsage();
+  const isUltimatePlan = planUsage?.plan === "ultimate";
   const { theme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const [closing, setClosing] = useState(false);
@@ -1616,9 +1845,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     autoScroll: true, richText: true, improveModel: true, personalize: true,
     nomadGrid: true, nomadNotification: true, philosopherNotification: true, fiusGamesNotification: true,
     wrapLines: false, showPreviews: true, showFiusLogo: true,
+    hideFiusLogo: false, hideFlyWithUs: false, glossyOutline: true,
   });
-  const [functionBarStyle, setFunctionBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "circle");
+  const [functionBarStyle, setFunctionBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "pill");
   const [messageBarStyle, setMessageBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
+  const [logoStyle, setLogoStyle] = useState(() => getStoredLogoStyle());
+  const [autoRotateLogo, setAutoRotateLogo] = useState(() => getStoredAutoRotateLogo());
   const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
   const settingsTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -1637,11 +1869,13 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   const originalValuesRef = useRef({
     aiPreset: "custom", customInstructions: "", chatBg: "plain",
-    functionBarStyle: "circle", messageBarStyle: "compact",
+    functionBarStyle: "pill", messageBarStyle: "compact",
+    logoStyle: DEFAULT_LOGO_STYLE, autoRotateLogo: false,
     togglesRaw: {} as Record<string, string>,
+    aiOrder: ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"] as string[],
   });
 
-  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo"];
+  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo","hideFiusLogo","hideFlyWithUs","glossyOutline"];
 
   const makeTogglesBool = () => ({
     autoScroll: localStorage.getItem("autoScroll") !== "false",
@@ -1655,6 +1889,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     wrapLines: localStorage.getItem("wrapLines") === "true",
     showPreviews: localStorage.getItem("showPreviews") !== "false",
     showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
+    hideFiusLogo: localStorage.getItem("hideFiusLogo") === "true",
+    hideFlyWithUs: localStorage.getItem("hideFlyWithUs") === "true",
+    glossyOutline: localStorage.getItem("glossyOutline") !== "false",
   });
 
   useEffect(() => {
@@ -1671,17 +1908,24 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       const bg = localStorage.getItem("chatBg") || "plain";
       const fnStyle = localStorage.getItem("functionBarStyle") || "circle";
       const msgStyle = localStorage.getItem("messageBarStyle") || "compact";
+      const savedLogoStyle = getStoredLogoStyle();
+      const savedAutoRotateLogo = getStoredAutoRotateLogo();
       const togglesRaw: Record<string,string> = {};
       TOGGLE_KEYS.forEach(k => { togglesRaw[k] = localStorage.getItem(k) ?? ""; });
 
-      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, togglesRaw };
+      const aiOrderRaw = localStorage.getItem("nomadAiOrder");
+      const aiOrder: string[] = aiOrderRaw ? (() => { try { return JSON.parse(aiOrderRaw); } catch { return null; } })() ?? ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"] : ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"];
+      originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, logoStyle: savedLogoStyle, autoRotateLogo: savedAutoRotateLogo, togglesRaw, aiOrder };
 
       setSelectedPreset(preset);
       setCustomInstructions(instructions);
       setChatBg(bg);
       setFunctionBarStyle(fnStyle);
       setMessageBarStyle(msgStyle);
+      setLogoStyle(savedLogoStyle);
+      setAutoRotateLogo(savedAutoRotateLogo);
       setLocalToggles(makeTogglesBool());
+      setLocalAiOrder(aiOrder);
     }
   }, [isOpen, user]);
 
@@ -1698,6 +1942,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     localStorage.setItem("chatBg", orig.chatBg);
     localStorage.setItem("functionBarStyle", orig.functionBarStyle);
     localStorage.setItem("messageBarStyle", orig.messageBarStyle);
+    persistLogoStyle(orig.logoStyle);
+    persistAutoRotateLogo(orig.autoRotateLogo);
+    localStorage.setItem("nomadAiOrder", JSON.stringify(orig.aiOrder));
     Object.entries(orig.togglesRaw).forEach(([k, v]) => {
       if (v === "") localStorage.removeItem(k); else localStorage.setItem(k, v);
     });
@@ -1705,6 +1952,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.dispatchEvent(new Event("chatBgChanged"));
     window.dispatchEvent(new Event("functionBarStyleChanged"));
     window.dispatchEvent(new Event("messageBarStyleChanged"));
+    window.dispatchEvent(new Event("logoStyleChanged"));
+    setLocalAiOrder(orig.aiOrder);
     setIsDirty(false);
     setShowExitDialog(false);
     doClose();
@@ -1724,9 +1973,13 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     localStorage.setItem("chatBg", chatBg);
     localStorage.setItem("functionBarStyle", functionBarStyle);
     localStorage.setItem("messageBarStyle", messageBarStyle);
+    persistLogoStyle(logoStyle);
+    persistAutoRotateLogo(autoRotateLogo);
     Object.entries(localToggles).forEach(([k, v]) => localStorage.setItem(k, String(v)));
+    localStorage.setItem("nomadAiOrder", JSON.stringify(localAiOrder));
     window.dispatchEvent(new Event("functionBarStyleChanged"));
     window.dispatchEvent(new Event("messageBarStyleChanged"));
+    window.dispatchEvent(new Event("logoStyleChanged"));
     onChatBgChange?.(chatBg);
     window.dispatchEvent(new Event("chatBgChanged"));
     window.dispatchEvent(new Event("settingsSaved"));
@@ -1759,13 +2012,20 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     setOrderDragOffsetY(0);
     const startY = e.clientY;
 
+    // Snapshot sibling rows' midpoints once, excluding the dragged row —
+    // see PC customize-modal.tsx for why measuring live rects (including the
+    // dragged row's own translating one) breaks the hit-test.
+    const staticMids = orderRowRefs.current.map((el, idx) => {
+      if (!el || idx === i) return null;
+      const rect = el.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    });
+
     const findIndexAtY = (clientY: number): number => {
       let best = i;
       let bestDist = Infinity;
-      orderRowRefs.current.forEach((el, idx) => {
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const mid = rect.top + rect.height / 2;
+      staticMids.forEach((mid, idx) => {
+        if (mid === null) return;
         const dist = Math.abs(clientY - mid);
         if (dist < bestDist) { bestDist = dist; best = idx; }
       });
@@ -1856,19 +2116,24 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     left: settingsPill.left,
                     width: settingsPill.width,
                     top: 1, bottom: 1,
-                    background: "var(--foreground)",
-                    borderRadius: 12,
-                    boxShadow: "0 1px 8px rgba(0,0,0,0.18)",
-                    transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)",
+                    transition: "left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.35s cubic-bezier(0.34,1.56,0.64,1)",
                     pointerEvents: "none",
                     zIndex: 0,
-                  }} />
+                  }}>
+                    <div key={settingsPill.left} style={{
+                      position: "absolute", inset: 0,
+                      background: isDark ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.09)",
+                      borderRadius: 12,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                      animation: "pill-squish 0.44s cubic-bezier(0.22,1,0.36,1) 0.32s both",
+                    }} />
+                  </div>
                 )}
                 {menuItems.map((item, i) => (
                   <button key={item.id}
                     ref={el => { settingsTabRefs.current[i] = el; }}
                     onClick={() => setActiveSection(item.id)}
-                    className={`relative z-10 flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold transition-colors duration-200 ${activeSection === item.id ? "text-background" : "text-zinc-500 dark:text-zinc-400 hover:text-foreground"}`}>
+                    className={`relative z-10 flex items-center gap-1.5 px-3 py-2 rounded-xl whitespace-nowrap text-[12px] font-semibold transition-colors duration-200 ${activeSection === item.id ? "text-zinc-900 dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:text-foreground"}`}>
                     <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{item.label}</span>
                   </button>
@@ -1878,7 +2143,6 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
           </div>
 
           <div ref={settingsContentScrollRef} key={activeSection} className="flex-1 overflow-y-auto p-4 relative" style={{ animation: "fadeSlideIn 0.18s cubic-bezier(0.23,1,0.32,1) both" }}>
-            <SettingsScrollButtons scrollAreaRef={settingsContentScrollRef} />
             {activeSection === "account" && (
               <div className="space-y-4">
                 {/* Hidden real file picker */}
@@ -1889,7 +2153,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     reader.onload = ev => setPreviewPic(ev.target?.result as string);
                     reader.readAsDataURL(f);
                   }} />
-                <div className="p-4 bg-zinc-50 dark:bg-[#1a1a1a] rounded-2xl border border-border/50">
+                <div className="p-4 bg-zinc-50 dark:bg-[#383838] rounded-2xl border border-border/50">
                   <div className="flex items-center gap-3">
                     {/* Tappable avatar — opens photo picker */}
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-zinc-400 transition-all active:scale-95"
@@ -1925,6 +2189,78 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     </div>
                   )}
                 </div>
+
+                {/* ── Plan / Usage card ── */}
+                <div className="p-4 bg-zinc-50 dark:bg-[#383838] rounded-2xl border border-border/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Current Plan</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{isUltimatePlan ? "Fius Ultimate" : "Free"}</p>
+                    </div>
+                    {isUltimatePlan
+                      ? <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-600 text-white">✦ Ultimate</span>
+                      : <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Free</span>}
+                  </div>
+                  {planUsage && (
+                    <div className="space-y-2">
+                      {/* Tokens (Ultimate) or Messages (Free) */}
+                      {isUltimatePlan ? (
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-[11px] text-muted-foreground">Tokens</span>
+                            <span className="text-[11px] font-semibold text-foreground">
+                              {(planUsage as any).tokensRemaining != null ? `${((planUsage as any).tokensRemaining as number).toLocaleString()} left` : "Unlimited"}
+                            </span>
+                          </div>
+                          {typeof (planUsage as any).tokensRemaining === 'number' && typeof (planUsage as any).tokensLimit === 'number' && (
+                            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                              <div className="h-full rounded-full bg-violet-500 transition-all"
+                                style={{ width: `${Math.max(0, Math.min(100, ((planUsage as any).tokensUsed ?? 0) / ((planUsage as any).tokensLimit) * 100))}%` }} />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-[11px] text-muted-foreground">Messages</span>
+                            <span className="text-[11px] font-semibold text-foreground">{planUsage.messagesRemaining ?? "∞"} left</span>
+                          </div>
+                          {typeof planUsage.messagesRemaining === 'number' && typeof planUsage.messagesLimit === 'number' && (
+                            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                              <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${Math.max(0, Math.min(100, (planUsage.messagesRemaining / planUsage.messagesLimit) * 100))}%` }} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {typeof planUsage.imagesRemaining === 'number' && (
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-[11px] text-muted-foreground">Images</span>
+                            <span className="text-[11px] font-semibold text-foreground">{planUsage.imagesRemaining} left</span>
+                          </div>
+                          {typeof planUsage.imagesLimit === 'number' && (
+                            <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
+                              <div className="h-full rounded-full bg-pink-500 transition-all" style={{ width: `${Math.max(0, Math.min(100, (planUsage.imagesRemaining / planUsage.imagesLimit) * 100))}%` }} />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!isUltimatePlan && (
+                    <button
+                      onClick={() => { window.dispatchEvent(new Event('openUpgradeModal')); }}
+                      className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-500 to-purple-600 text-white active:scale-[0.98] transition-all">
+                      ✦ Upgrade to Fius Ultimate
+                    </button>
+                  )}
+                  {isUltimatePlan && (
+                    <div className="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-600/10 border border-violet-400/20 text-center">
+                      <p className="text-[11px] font-bold text-violet-500">✦ Active — Fius Ultimate</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Premium AI access unlocked</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1949,7 +2285,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Custom Instructions</p>
                   <textarea value={customInstructions} onChange={e => { setCustomInstructions(e.target.value); markDirty(); }} placeholder="Tell Fius how to respond…"
-                    className="w-full h-24 bg-zinc-50 dark:bg-[#1a1a1a] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
+                    className="w-full h-24 bg-zinc-50 dark:bg-[#383838] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Behavior</p>
@@ -1992,9 +2328,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Display</p>
                   <div className="space-y-4">
                     {[
+                      { key: "glossyOutline", label: "Glossy Outline", desc: "Shiny border on message bar, function bar & top bar" },
                       { key: "wrapLines", label: "Wrap Long Lines", desc: "Wrap code blocks by default" },
                       { key: "showPreviews", label: "Conversation Previews", desc: "Show previews in history sidebar" },
                       { key: "showFiusLogo", label: "Show Fius Logo in Responses", desc: "Display logo next to AI replies" },
+                      { key: "hideFiusLogo", label: "Hide Fius Logo", desc: "Hide logo from the welcome screen" },
+                      { key: "hideFlyWithUs", label: "Hide Fly With Us", desc: 'Hide the "Fly With Us!" tagline' },
                       { key: "nomadGrid", label: "Nomad Grid Background", desc: "Animated grid in Nomad tab" },
                     ].map(item => (
                       <div key={item.key} className="flex items-center justify-between gap-3">
@@ -2015,7 +2354,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <div className="space-y-4">
                     {[
                       { key: "nomadNotification", label: "Nomad Notifications", desc: "Pop-up every 3–5 minutes" },
-                      { key: "philosopherNotification", label: "Philosophers Notifications", desc: "Include Philosophers variant" },
+                      { key: "philosopherNotification", label: "Fius Minds Notifications", desc: "Include Fius Minds variant" },
                       { key: "fiusGamesNotification", label: "Fius Games Notifications", desc: "Include Fius Games variant" },
                     ].map(item => (
                       <div key={item.key} className="flex items-center justify-between gap-3">
@@ -2074,17 +2413,20 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <p className="text-[10.5px] text-muted-foreground mb-3">Background style for the chat area</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: "plain", label: "Plain" },
-                      { value: "gradient", label: "Blue Sides" },
-                      { value: "rainbow", label: "Rainbow" },
-                      { value: "stars", label: "Stars" },
-                      { value: "stars-gradient", label: "Stars + Blue" },
-                      { value: "stars-rainbow", label: "Stars + Rainbow" },
+                      { value: "plain", label: "Plain", preview: <div className="w-full h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-border/40" /> },
+                      { value: "gradient", label: "Blue Sides", preview: <div className="w-full h-9 rounded-lg relative overflow-hidden bg-zinc-100 dark:bg-zinc-800"><div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-blue-400/60 to-transparent" /><div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-blue-400/60 to-transparent" /></div> },
+                      { value: "rainbow", label: "Rainbow", preview: <div className="w-full h-9 rounded-lg" style={{ background: "linear-gradient(135deg, #ef4444 0%, #f97316 20%, #eab308 40%, #22c55e 60%, #3b82f6 80%, #8b5cf6 100%)", opacity: 0.75 }} /> },
+                      { value: "stars", label: "Stars", preview: <div className="w-full h-9 rounded-lg bg-zinc-900 relative overflow-hidden flex items-center justify-around px-2">{['15%','38%','55%','72%','88%'].map((l,i) => <div key={i} className="rounded-full bg-white/70" style={{ width: i%2===0?3:2, height: i%2===0?3:2 }} />)}</div> },
+                      { value: "stars-gradient", label: "Stars + Blue", preview: <div className="w-full h-9 rounded-lg bg-zinc-900 relative overflow-hidden"><div className="absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-blue-500/50 to-transparent" /><div className="absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-blue-500/50 to-transparent" /><div className="absolute inset-0 flex items-center justify-around px-4">{[0,1,2].map(i=><div key={i} className="w-0.5 h-0.5 rounded-full bg-white/60"/>)}</div></div> },
+                      { value: "stars-rainbow", label: "Stars + Rainbow", preview: <div className="w-full h-9 rounded-lg relative overflow-hidden bg-zinc-900" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.3) 0%, rgba(24,24,27,0.95) 40%, rgba(24,24,27,0.95) 60%, rgba(139,92,246,0.3) 100%)" }}><div className="absolute inset-0 flex items-center justify-around px-4">{[0,1,2].map(i=><div key={i} className="w-0.5 h-0.5 rounded-full bg-white/50"/>)}</div></div> },
                     ].map(v => (
                       <button key={v.value} onClick={() => { setChatBg(v.value); onChatBgChange?.(v.value); markDirty(); }}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all active:scale-95 ${chatBg === v.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
-                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 border-2 ${chatBg === v.value ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
-                        <span className={`text-[12px] font-semibold ${chatBg === v.value ? "text-foreground" : "text-muted-foreground"}`}>{v.label}</span>
+                        className={`flex flex-col gap-1.5 p-2 rounded-xl border text-left transition-all active:scale-95 ${chatBg === v.value ? "border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800" : "border-border/50 bg-card hover:bg-accent/50"}`}>
+                        {v.preview}
+                        <div className="flex items-center gap-1.5 px-0.5">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 border-2 ${chatBg === v.value ? "bg-foreground border-foreground" : "border-muted-foreground/40"}`} />
+                          <span className={`text-[11px] font-semibold ${chatBg === v.value ? "text-foreground" : "text-muted-foreground"}`}>{v.label}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -2098,7 +2440,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       <div
                         key={name}
                         ref={el => { orderRowRefs.current[i] = el; }}
-                        className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1a1a] rounded-xl border ${orderDraggingIndex === i ? '' : 'transition-all'} ${orderDragOverIndex === i && orderDraggingIndex !== i ? 'border-indigo-400 dark:border-indigo-500' : 'border-border/50'} ${orderDraggingIndex === i ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10' : ''}`}
+                        className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#383838] rounded-xl border ${orderDraggingIndex === i ? '' : 'transition-all'} ${orderDragOverIndex === i && orderDraggingIndex !== i ? 'border-indigo-400 dark:border-indigo-500' : 'border-border/50'} ${orderDraggingIndex === i ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10' : ''}`}
                         style={orderDraggingIndex === i ? { transform: `translateY(${orderDragOffsetY}px)` } : undefined}
                       >
                         <div className="flex items-center gap-2">
@@ -2111,10 +2453,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                           </span>
                           <span className="text-[12.5px] font-medium text-foreground">{MODEL_NAMES[name] || name}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => moveOrder(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-4 h-4" /></button>
-                          <button onClick={() => moveOrder(i, "down")} disabled={i === localAiOrder.length - 1} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-4 h-4" /></button>
-                        </div>
+                        
                       </div>
                     ))}
                   </div>
@@ -2216,9 +2555,39 @@ function ChatBg({ bg }: { bg: string }) {
   );
 }
 
+// Own Mode owl background positions (mirrors star-bg pattern)
+const OWL_BG_DATA_M = [
+  {l:'5%',t:'8%',d:'0s',dur:'3.2s',dd:'0s',ddur:'9s',sz:'18px'},
+  {l:'15%',t:'22%',d:'0.6s',dur:'2.8s',dd:'1.2s',ddur:'11s',sz:'14px'},
+  {l:'28%',t:'6%',d:'1.2s',dur:'3.6s',dd:'0.5s',ddur:'8s',sz:'20px'},
+  {l:'42%',t:'35%',d:'0.3s',dur:'2.6s',dd:'2.1s',ddur:'13s',sz:'16px'},
+  {l:'55%',t:'12%',d:'1.5s',dur:'3.0s',dd:'0.8s',ddur:'10s',sz:'18px'},
+  {l:'68%',t:'28%',d:'0.8s',dur:'2.9s',dd:'1.7s',ddur:'7s',sz:'15px'},
+  {l:'78%',t:'5%',d:'0.4s',dur:'3.3s',dd:'0.3s',ddur:'12s',sz:'19px'},
+  {l:'88%',t:'18%',d:'1.1s',dur:'2.7s',dd:'2.4s',ddur:'9s',sz:'14px'},
+  {l:'10%',t:'45%',d:'1.8s',dur:'3.1s',dd:'1.0s',ddur:'11s',sz:'17px'},
+  {l:'23%',t:'55%',d:'0.7s',dur:'2.8s',dd:'0.2s',ddur:'8s',sz:'16px'},
+  {l:'37%',t:'65%',d:'1.0s',dur:'3.2s',dd:'1.8s',ddur:'14s',sz:'20px'},
+  {l:'50%',t:'48%',d:'1.4s',dur:'2.5s',dd:'0.6s',ddur:'10s',sz:'15px'},
+  {l:'63%',t:'70%',d:'0.3s',dur:'3.0s',dd:'2.2s',ddur:'9s',sz:'18px'},
+  {l:'75%',t:'52%',d:'1.9s',dur:'2.9s',dd:'0.9s',ddur:'12s',sz:'14px'},
+  {l:'85%',t:'40%',d:'0.9s',dur:'3.4s',dd:'1.4s',ddur:'7s',sz:'19px'},
+  {l:'92%',t:'60%',d:'0.5s',dur:'2.7s',dd:'0.1s',ddur:'11s',sz:'16px'},
+  {l:'7%',t:'75%',d:'1.6s',dur:'3.1s',dd:'2.0s',ddur:'8s',sz:'17px'},
+  {l:'18%',t:'82%',d:'1.1s',dur:'2.6s',dd:'0.7s',ddur:'13s',sz:'14px'},
+  {l:'32%',t:'88%',d:'0.6s',dur:'3.3s',dd:'1.5s',ddur:'10s',sz:'20px'},
+  {l:'47%',t:'78%',d:'1.5s',dur:'2.8s',dd:'0.4s',ddur:'9s',sz:'15px'},
+  {l:'60%',t:'85%',d:'1.0s',dur:'3.0s',dd:'1.9s',ddur:'11s',sz:'18px'},
+  {l:'72%',t:'90%',d:'0.2s',dur:'2.5s',dd:'0.6s',ddur:'8s',sz:'16px'},
+  {l:'82%',t:'75%',d:'1.3s',dur:'3.2s',dd:'2.3s',ddur:'12s',sz:'19px'},
+  {l:'3%',t:'55%',d:'2.0s',dur:'3.1s',dd:'0.3s',ddur:'10s',sz:'17px'},
+  {l:'48%',t:'20%',d:'0.4s',dur:'2.7s',dd:'1.6s',ddur:'14s',sz:'18px'},
+  {l:'90%',t:'35%',d:'1.4s',dur:'3.3s',dd:'0.8s',ddur:'8s',sz:'15px'},
+];
+
 // ─── PC-style Header ──────────────────────────────────────────────────────────
-function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTab; onTabChange: (t: MobileTab) => void; onMenuClick: () => void; }) {
-  const { theme, setTheme } = useTheme();
+function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMode }: { activeTab: MobileTab; onTabChange: (t: MobileTab) => void; onMenuClick: () => void; ownMode?: boolean; onToggleOwnMode?: () => void; }) {
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const navRef = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
@@ -2235,23 +2604,32 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
 
   const navR = 14;
   return (
-    <header className="flex-shrink-0 bg-card border border-border px-2 py-1.5 flex items-center gap-1 z-10 rounded-full mx-3 mt-2 mb-1 glossy-outline">
-      <button onClick={onMenuClick} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
+    <header className={`relative flex-shrink-0 bg-card px-2 py-1.5 flex items-center gap-1 z-[46] rounded-full mx-3 mt-2 mb-1 ${glossyOutlineEnabled ? 'border border-border glossy-outline' : ''}`}>
+      <button onClick={onMenuClick} className="relative z-[46] w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         <Menu className="w-4 h-4" />
       </button>
       <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         <div ref={navRef} className="relative flex items-center min-w-max">
           {pill.ready && (
-            <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "white", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 8px rgba(0,0,0,0.14)", transition: "left 0.35s cubic-bezier(0.23,1,0.32,1), width 0.35s cubic-bezier(0.23,1,0.32,1)", pointerEvents: "none", zIndex: 0 }} />
+            <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, transition: "left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.35s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none", zIndex: 0 }}>
+              <div key={pill.left} style={{ position: "absolute", inset: 0, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.09)", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 4px rgba(0,0,0,0.08)", animation: "pill-squish 0.44s cubic-bezier(0.22,1,0.36,1) 0.32s both" }} />
+            </div>
           )}
           {TABS.map(({ id, label }, i) => (
             <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 ${activeTab === id ? "text-zinc-900 dark:text-zinc-900 font-semibold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === id ? "font-semibold" : ""}`}>
               {label}
             </button>
           ))}
         </div>
       </div>
+      <button
+        onClick={onToggleOwnMode}
+        className={`w-8 h-8 flex items-center justify-center rounded-2xl transition-colors flex-shrink-0 border ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 border-zinc-500 shadow-md' : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+        title={ownMode ? 'Exit Owl Mode' : 'Owl Mode'}
+      >
+        <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className={`w-3.5 h-3.5 object-contain ${ownMode ? 'brightness-0 invert' : ''}`} />
+      </button>
       <button onClick={cycleTheme} className="w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         {theme === "dark" ? <Moon className="w-3.5 h-3.5" /> : theme === "system" ? <Monitor className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
       </button>
@@ -2259,8 +2637,10 @@ function PCHeader({ activeTab, onTabChange, onMenuClick }: { activeTab: MobileTa
   );
 }
 
+// ─── Welcome Cards (randomised each mount) ────────────────────────────────────
+
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
@@ -2268,11 +2648,65 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
   onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
+  ownMode?: boolean; onSwitchTab?: (tab: MobileTab) => void;
+  centerViewport?: boolean;
 }) {
+  const { resolvedTheme } = useTheme();
   const endRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [expandImg, setExpandImg] = useState<string | null>(null);
+  const [typingPlaceholder, setTypingPlaceholder] = useState('');
+  const [glowAccentColor, setGlowAccentColor] = useState(() => getStoredGlowAccent());
+  const [askLocalToggles] = useState(() => {
+    try {
+      const saved = localStorage.getItem("settingsToggles");
+      const parsed = saved ? JSON.parse(saved) : {};
+      return {
+        hideFiusLogo: parsed.hideFiusLogo === true,
+        hideFlyWithUs: parsed.hideFlyWithUs === true,
+      };
+    } catch {
+      return { hideFiusLogo: false, hideFlyWithUs: false };
+    }
+  });
+  const [askMobileSettingToggles] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("settingsToggles");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
+  useEffect(() => {
+    const handler = () => setGlowAccentColor(getStoredGlowAccent());
+    window.addEventListener("glowAccentColorChanged", handler);
+    return () => window.removeEventListener("glowAccentColorChanged", handler);
+  }, []);
+  useEffect(() => {
+    let promptIdx = 0;
+    let charIdx = 0;
+    let phase: 'typing' | 'pausing' | 'erasing' = 'typing';
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const current = ROTATING_PLACEHOLDERS[promptIdx];
+      if (phase === 'typing') {
+        charIdx++;
+        setTypingPlaceholder(current.slice(0, charIdx));
+        if (charIdx >= current.length) { phase = 'pausing'; timer = setTimeout(tick, 3000); }
+        else { timer = setTimeout(tick, 16); }
+      } else if (phase === 'pausing') {
+        phase = 'erasing'; tick();
+      } else {
+        charIdx--;
+        setTypingPlaceholder(current.slice(0, charIdx));
+        if (charIdx <= 0) { promptIdx = (promptIdx + 1) % ROTATING_PLACEHOLDERS.length; phase = 'typing'; timer = setTimeout(tick, 300); }
+        else { timer = setTimeout(tick, 12); }
+      }
+    };
+    timer = setTimeout(tick, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
@@ -2286,24 +2720,31 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       {messages.length > 2 && (
         <ScrollButtons scrollAreaRef={scrollAreaRef} />
       )}
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 py-3" style={{ overscrollBehavior: "contain" }}>
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-48" style={{ overscrollBehavior: "contain", position: 'relative', zIndex: 1 }}>
         {messages.length === 0 && !isTyping ? (
-          <div className="flex flex-col items-center justify-center min-h-full py-8 text-center">
-            <Logo size="xl" className="mb-5 text-foreground" />
-            <h2 className="text-[22px] font-bold text-foreground mb-1">
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : user?.username ? `Welcome back, ${user.username}!` : "Welcome to Fius"}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-7">Fly With Us!</p>
-            <p className="text-[11px] font-semibold text-muted-foreground mb-3.5 uppercase tracking-wide">What's on your mind?</p>
-            <div className="w-full flex flex-col gap-2.5">
-              {SUGGESTION_CARDS.map((card, i) => (
-                <button key={i} onClick={() => setInput(card.prompt)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border bg-white dark:bg-zinc-900 text-left active:scale-[0.97] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800`}>
-                  <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 border border-border/60">{card.icon}</div>
-                  <div className="flex-1 min-w-0"><p className="text-[13.5px] font-semibold text-foreground">{card.title}</p><p className="text-xs text-muted-foreground mt-0.5">{card.desc}</p></div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                </button>
-              ))}
+          <div className="flex flex-col items-center min-h-full text-center relative" style={{justifyContent: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 'flex-end' : 'flex-start', paddingTop: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 0 : 8, paddingBottom: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 20 : 48, transition: 'padding 0.3s ease'}}>
+            {/* Radial glow — center spread */}
+            <div className="pointer-events-none absolute inset-0 z-0" style={{
+              background: getGlowGradient(glowAccentColor, resolvedTheme, true)
+            }} />
+            {/* Welcome screen — crossfade between Fius and Owl Mode */}
+            <div style={{position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center'}}>
+              {/* Fius welcome */}
+              <div style={{opacity:ownMode?0:1,transition:'opacity 0.4s ease',position:ownMode?'absolute':'relative',pointerEvents:ownMode?'none':'auto',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
+                {!(askLocalToggles.hideFiusLogo) && <FiusLogo size="xl" className="mt-2 mb-5 text-black dark:text-foreground" />}
+                <h2 className="text-[22px] font-normal text-foreground mb-0.5">
+                  {user?.displayName || user?.username
+                    ? WELCOME_GREETINGS_M[welcomeGreetingM](user.displayName || user.username!)
+                    : "Welcome to Fius"}
+                </h2>
+                {!(askLocalToggles.hideFlyWithUs) && <p className="text-sm text-black dark:text-foreground mb-7">Fly With Us!</p>}
+              </div>
+              {/* Owl Mode welcome */}
+              <div style={{opacity:ownMode?1:0,transition:'opacity 0.4s ease',position:ownMode?'relative':'absolute',pointerEvents:ownMode?'auto':'none',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
+                <img src={resolvedTheme==='dark'?'/incognito-dark.png':'/incognito-light.png'} alt="Owl Mode" className="own-mode-icon-m mb-5 h-24 w-24 object-contain" />
+                <h2 className="text-[22px] font-bold text-foreground mb-1">Welcome to Owl Mode</h2>
+                <p className="text-sm text-muted-foreground mb-7">Continue!</p>
+              </div>
             </div>
           </div>
         ) : (
@@ -2313,27 +2754,49 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
               return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI}
                 onNewChat={onNewChat} onRetry={m.role === "ai" ? onRetry : undefined}
                 onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined}
-                onFollowUp={setInput} isStreaming={isLatestAI && isTyping} />;
+                onFollowUp={setInput} isStreaming={isLatestAI && isTyping} ownMode={ownMode}
+                showUserMsgActions={askMobileSettingToggles.showUserMsgActions ?? false}
+                showAiMsgActions={askMobileSettingToggles.showAiMsgActions ?? false} />;
             })}
             {isTyping && <ThinkingCloud />}
             <div ref={endRef} />
           </>
         )}
       </div>
-      {documentModeActive && (
-        <div className="flex items-center gap-2 mx-3 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 w-fit">
-          <FileSignature className="w-3.5 h-3.5" />
-          Document mode — type a topic
-          <button onClick={onCancelDocumentMode} className="ml-1 hover:text-red-500 transition-colors" data-testid="button-cancel-document-mode-mobile">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-      <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
-        placeholder={documentModeActive ? "e.g. Elon Musk — I'll write the full document…" : "Ask anything…"} tab="ask" model={model} onModelChange={setModel}
-        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
-        onSettings={onSettings} onEducation={onEducation} showEnhance showModel
-        onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive} />
+      <div className={messages.length === 0 && !isTyping ? 'absolute left-0 right-0 z-20' : 'flex-shrink-0'} style={messages.length === 0 && !isTyping ? {top: 'calc(50% + 85px)', transform: 'translateY(-50%)'} : undefined}>
+        {documentModeActive && (
+          <div className="flex items-center gap-2 mx-3 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 w-fit">
+            <FileSignature className="w-3.5 h-3.5" />
+            Document mode — type a topic
+            <button onClick={onCancelDocumentMode} className="ml-1 hover:text-red-500 transition-colors" data-testid="button-cancel-document-mode-mobile">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping} centerViewport={centerViewport && messages.length === 0 && !isTyping}
+          placeholder={documentModeActive ? "e.g. Elon Musk — I'll write the full document…" : typingPlaceholder} tab="ask" model={model} onModelChange={setModel}
+          fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
+          onSettings={onSettings} onEducation={onEducation} showEnhance showModel
+          onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
+          hasMessages={messages.length > 0 || isTyping} />
+        {/* Quick action chips — shown in empty state below msg bar */}
+        {messages.length === 0 && !isTyping && (
+          <div className="flex items-center justify-center gap-1.5 mt-4 flex-wrap px-3">
+            {([
+              { label: 'Create Visuals', light: '/quick-visuals-light.png', dark: '/quick-visuals-dark.png', action: () => onSwitchTab?.('imagine') },
+              { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', action: () => setInput('Search the web for: ') },
+              { label: 'Create Files',   light: '/quick-files-light.png', dark: '/quick-files-dark.png', action: () => onDocumentMode?.() },
+              { label: 'Play Games',     light: '/quick-games-light.png', dark: '/quick-games-dark.png', action: () => onSwitchTab?.('games') },
+            ] as const).map(({ label, light, dark, action }) => (
+              <button key={label} onClick={action}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-all active:scale-[0.96] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30">
+                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -2356,6 +2819,14 @@ function NomadColumnMsgs({ msgs, modelId, isTyping }: {
     <div className="mx-2.5 flex-1 flex flex-col space-y-2 pb-4 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
       {msgs.map(msg => (
         <div key={msg.id} className={`p-2.5 rounded-lg text-sm relative group ${msg.role === "user" ? "bg-secondary text-secondary-foreground ml-3" : "bg-card border border-border text-foreground"}`}>
+          {msg.role === "ai" && (() => { const cfg = NOMAD_CONFIG[modelId]; return cfg ? (
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="w-3.5 h-3.5 flex-shrink-0 flex items-center justify-center rounded-full" style={{ background: cfg.color + '20', padding: 2 }}>
+                <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${modelId === "gpt-4o" ? "dark:invert" : modelId === "grok-4" ? "brightness-0 dark:invert" : ""}`} onError={e => { (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+              </div>
+              <span className="text-[9px] font-semibold text-muted-foreground">{cfg.name}</span>
+            </div>
+          ) : null; })()}
           {msg.role === "ai" ? <NomadAutoTypingText text={msg.content} msgId={msg.id} /> : msg.content}
           {msg.role === "ai" && (
             <button onClick={() => navigator.clipboard.writeText(msg.content)}
@@ -2372,7 +2843,7 @@ function NomadColumnMsgs({ msgs, modelId, isTyping }: {
 }
 
 // ─── Nomad Tab (multi-column + auto mode) ────────────────────────────────────────
-function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, soloModel, setSoloModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid }: {
+function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, soloModel, setSoloModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid, nomadHistSessionsProp, setNomadHistSessionsProp, centerViewport }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
   nomadMessages: Record<string, { id: string; role: "user" | "ai"; content: string }[]>;
   nomadTyping: Record<string, boolean>;
@@ -2380,23 +2851,27 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   activeModels: Set<string>; onToggleModel: (id: string) => void;
   soloModel: string | null; setSoloModel: (m: string | null) => void;
   onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
+  nomadHistSessionsProp?: NomadSession[];
+  setNomadHistSessionsProp?: React.Dispatch<React.SetStateAction<NomadSession[]>>;
+  centerViewport?: boolean;
 }) {
   const hasMessages = Object.values(nomadMessages).some(m => m.length > 0);
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [summarizing, setSummarizing] = useState(false);
-  const [nomadHistoryOpen, setNomadHistoryOpen] = useState(false);
-  type MNomadSess = { id: string; ts: number; mode: 'multi'|'auto'; preview: string; autoMsgs: typeof autoMessages; multiMsgs: Record<string, {id:string;role:string;content:string}[]>; };
-  const [nomadHistSessions, setNomadHistSessions] = useState<MNomadSess[]>(() => {
+  // Use lifted state from parent if provided, otherwise manage internally
+  const [nomadHistSessionsInternal, setNomadHistSessionsInternal] = useState<NomadSession[]>(() => {
     try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
   });
+  const nomadHistSessions = nomadHistSessionsProp ?? nomadHistSessionsInternal;
+  const setNomadHistSessions = (nomadHistSessionsProp !== undefined && setNomadHistSessionsProp) ? setNomadHistSessionsProp : setNomadHistSessionsInternal;
 
   // Sync Nomad history from server on mount
   useEffect(() => {
     authFetch('/api/nomad/history').then(r => r.ok ? r.json() : null).then(data => {
       if (Array.isArray(data) && data.length > 0) {
-        setNomadHistSessions(data);
+        setNomadHistSessions(data as NomadSession[]);
         try { localStorage.setItem('fius-nomad-history', JSON.stringify(data)); } catch {}
       }
     }).catch(() => {});
@@ -2405,11 +2880,48 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   // Auto mode state
   const [autoMessages, setAutoMessages] = useState<{id: string, role: 'user'|'ai', content: string, pickedModel?: {model: string, modelName: string, logo: string, color: string}}[]>([]);
   const [autoLoading, setAutoLoading] = useState(false);
+  const [ultimatumCardsM, setUltimatumCardsM] = useState(() => shuffleUltimatumM(ULTIMATUM_CARD_POOL_M).slice(0, 2));
   const autoEndRef = useRef<HTMLDivElement>(null);
+  const autoContainerRef = useRef<HTMLDivElement>(null);
+  // Refresh cards every time user switches to Fius Ultimatum; scroll to top
+  useEffect(() => {
+    if (nomadMode === 'auto') {
+      setUltimatumCardsM(shuffleUltimatumM(ULTIMATUM_CARD_POOL_M).slice(0, 2));
+      setTimeout(() => { if (autoContainerRef.current) autoContainerRef.current.scrollTop = 0; }, 50);
+    }
+  }, [nomadMode]);
 
-  const models = NOMAD_DEFAULT_MODELS;
+  // Apply user-saved AI order (from Settings → Preferences → Nomad AI Order)
+  // to the front of the display list, appending any remaining default models.
+  const savedOrder: string[] = (() => {
+    try { const r = localStorage.getItem('nomadAiOrder'); return r ? JSON.parse(r) : []; } catch { return []; }
+  })();
+  const models = savedOrder.length > 0
+    ? [...savedOrder.filter(id => NOMAD_DEFAULT_MODELS.includes(id)), ...NOMAD_DEFAULT_MODELS.filter(id => !savedOrder.includes(id))]
+    : NOMAD_DEFAULT_MODELS;
   const iconFilter = (id: string) => id === "gpt-4o" ? "dark:invert" : id === "grok-4" ? "brightness-0 dark:invert" : "";
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // displayOrder: active models in settings order first, disabled ones at end
+  const [displayOrder, setDisplayOrder] = useState<string[]>(() => models);
+
+  const handleToggleWithOrder = useCallback((modelId: string) => {
+    const willBeActive = !activeModels.has(modelId);
+    if (willBeActive) {
+      // Re-enable: restore to settings position among active models
+      setDisplayOrder(prev => {
+        const withoutThis = prev.filter(id => id !== modelId);
+        const activeOnes = withoutThis.filter(id => activeModels.has(id));
+        const inactiveOnes = withoutThis.filter(id => !activeModels.has(id));
+        const newActive = [...activeOnes, modelId].sort((a, b) => models.indexOf(a) - models.indexOf(b));
+        return [...newActive, ...inactiveOnes];
+      });
+    } else {
+      // Disable: animate to end
+      setDisplayOrder(prev => [...prev.filter(id => id !== modelId), modelId]);
+    }
+    onToggleModel(modelId);
+  }, [activeModels, models, onToggleModel]);
   const hasAIMessages = Object.values(nomadMessages).some(msgs => msgs.some(m => m.role === "ai"));
 
   // Ensure Nomad multi-panel starts scrolled to the far left (first model) on mount
@@ -2442,14 +2954,14 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     const aiMsgId = uid();
     setAutoMessages(prev => [...prev, { id: userMsgId, role: 'user', content: text }, { id: aiMsgId, role: 'ai', content: '', pickedModel: picked }]);
     setTimeout(() => autoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha). Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
+    const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform. Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
     const history = autoMessages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     try {
       const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx, history }) });
       const data = res.ok ? await res.json() : null;
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
-        const sess: MNomadSess = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
+        const sess: NomadSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
         setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
         return updated;
       });
@@ -2464,80 +2976,18 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
   return (
     <>
-      {/* Mode selector bar */}
-      {/* Nomad History Sidebar */}
-      {nomadHistoryOpen && (
-        <div className="absolute inset-0 z-50 flex">
-          <div className="flex-1" onClick={() => setNomadHistoryOpen(false)} />
-          <div className="w-72 bg-card border-l border-border flex flex-col shadow-2xl"
-            style={{ animation: 'sheetEnter 0.25s cubic-bezier(0.23,1,0.32,1) both' }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
-              <span className="font-semibold text-sm text-foreground flex items-center gap-2">
-                <History className="w-4 h-4" /> Nomad History
-              </span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => { setAutoMessages([]); setNomadMessages({}); setSoloModel(null); setNomadHistoryOpen(false); }}
-                  className="text-[10px] px-2 py-0.5 rounded-full text-foreground bg-foreground/10 hover:bg-foreground/20 border border-border transition-colors font-medium">
-                  + New Chat
-                </button>
-                {nomadHistSessions.length > 0 && (
-                  <button onClick={() => { setNomadHistSessions([]); localStorage.removeItem('fius-nomad-history'); authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: [] }) }).catch(() => {}); }}
-                    className="text-[10px] px-2 py-0.5 rounded-full text-muted-foreground border border-border hover:text-red-500 hover:border-red-300 transition-colors">
-                    Clear
-                  </button>
-                )}
-                <button onClick={() => setNomadHistoryOpen(false)} className="p-1.5 rounded-full hover:bg-accent transition-colors">
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {nomadHistSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-28 gap-2 text-center">
-                  <History className="w-6 h-6 text-muted-foreground opacity-25" />
-                  <span className="text-xs text-muted-foreground">No history yet.<br/>Chat to save sessions.</span>
-                </div>
-              ) : (
-                nomadHistSessions.map(sess => (
-                  <button key={sess.id} onClick={() => {
-                    if (sess.mode === 'auto') { setAutoMessages(sess.autoMsgs); setNomadMode('auto'); }
-                    else { setNomadMode('multi'); }
-                    setNomadHistoryOpen(false);
-                  }} className="w-full text-left px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-accent transition-all">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${sess.mode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground border border-border'}`}>
-                        {sess.mode === 'auto' ? <><img src="/nomad-auto-icon.png" alt="" className={`w-2 h-2 object-contain ${sess.mode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} /> Auto</> : '⬡ Multi'}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground ml-auto">
-                        {new Date(sess.ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <p className="text-xs text-foreground line-clamp-2">{sess.preview || 'Nomad session'}</p>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {!soloModel && (
         <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-card">
           <button onClick={() => setNomadMode('multi')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${nomadMode === 'multi' ? 'bg-zinc-200 dark:bg-zinc-100 text-zinc-800 dark:text-zinc-900' : 'bg-secondary text-muted-foreground'}`}>
             ⬡ Multi
           </button>
           <button onClick={() => setNomadMode('auto')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${nomadMode === 'auto' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
-            <img src="/nomad-auto-icon.png" alt="auto" className={`w-3 h-3 object-contain ${nomadMode === 'auto' ? 'invert dark:invert-0' : 'dark:invert'}`} />
-            Auto
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${nomadMode === 'auto' ? 'bg-zinc-200 dark:bg-zinc-100 text-zinc-800 dark:text-zinc-900' : 'bg-secondary text-muted-foreground'}`}>
+            <img src="/nomad-auto-icon.png" alt="auto" className={`w-3 h-3 object-contain ${nomadMode !== 'auto' ? 'dark:invert' : ''}`} />
+            Fius Ultimatum
           </button>
           {nomadMode === 'auto' && <span className="text-[10px] text-muted-foreground">Best AI per prompt</span>}
-          <div className="flex-1" />
-          <button onClick={() => setNomadHistoryOpen(v => !v)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${nomadHistoryOpen ? 'bg-foreground text-background border-transparent' : 'bg-card border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}>
-            <History className="w-3 h-3" />
-            {nomadHistSessions.length > 0 && <span>{nomadHistSessions.length}</span>}
-          </button>
         </div>
       )}
       {/* Solo mode back button */}
@@ -2562,21 +3012,33 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
       {/* === AUTO MODE CONTENT === */}
       {nomadMode === 'auto' && !soloModel && (
-        <div className={`flex-1 min-h-0 ${autoMessages.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} px-3 py-3`} style={{ scrollbarWidth: 'thin' }}>
+        <div ref={autoContainerRef} className={`flex-1 min-h-0 ${autoMessages.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} px-3 py-3`} style={{ scrollbarWidth: 'thin' }}>
           {autoMessages.length === 0 && !autoLoading && (
             <div className="flex flex-col items-center justify-center min-h-full gap-4 text-center py-12">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#000000,#ffffff)' }}>
                 <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-foreground mb-1">Auto Mode</h3>
+                <h3 className="text-base font-semibold text-foreground mb-1">Fius Ultimatum</h3>
                 <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full mt-1">
-                {[{ label: 'Reasoning', hint: 'DeepSeek-V4-Pro' }, { label: 'Search', hint: 'Perplexity Sonar Pro' }, { label: 'Writing', hint: 'Claude Fable 5' }, { label: 'General', hint: 'GPT-5.5 Pro' }].map(c => (
-                  <div key={c.label} className="rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer hover:bg-accent transition-colors active:scale-95" onClick={() => { setInput(c.label + ' — '); }}>
-                    <p className="text-[11px] font-semibold text-foreground">{c.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{c.hint}</p>
+              <div className="grid grid-cols-2 gap-2 w-full mt-2">
+                {ultimatumCardsM.map(c => (
+                  <div
+                    key={c.label}
+                    onClick={() => setInput(c.prompt)}
+                    className="group relative rounded-xl border border-border bg-card p-2.5 text-left cursor-pointer active:scale-95 transition-all duration-150 overflow-hidden"
+                    style={{ borderTop: `2px solid ${c.color}` }}
+                  >
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center mb-2 flex-shrink-0" style={{ background: c.color + '15' }}>
+                      <c.Icon size={14} style={{ color: c.color }} strokeWidth={1.8} />
+                    </div>
+                    <p className="text-[11px] font-bold text-foreground mb-0.5 leading-tight">{c.label}</p>
+                    <p className="text-[9px] text-muted-foreground leading-snug mb-1.5">{c.prompt}</p>
+                    <div className="flex items-center gap-1">
+                      <img src={c.modelLogo} alt={c.modelName} className={`${c.modelLogo === '/fius-logo.png' ? 'w-7 h-7' : 'w-3 h-3'} object-contain rounded-full flex-shrink-0`} onError={e => { e.currentTarget.style.display='none'; }} />
+                      <span className="text-[8px] font-semibold text-muted-foreground">{c.modelName}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2618,41 +3080,45 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative"
           style={nomadGrid ? { backgroundImage: 'linear-gradient(rgba(128,128,128,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.1) 1px, transparent 1px)', backgroundSize: '36px 36px' } : undefined}>
           <div ref={scrollRef} className="flex-1 min-h-0 flex flex-nowrap overflow-x-auto" style={{ scrollbarWidth: "thin", alignItems: "stretch", overscrollBehavior: "contain" }}>
-            {models.map((modelId, idx) => {
+            {displayOrder.map((modelId, idx) => {
               const cfg = NOMAD_CONFIG[modelId]; if (!cfg) return null;
               const isActive = activeModels.has(modelId);
-              const isLast = idx === models.length - 1;
+              const isLast = idx === displayOrder.length - 1;
               const msgs = nomadMessages[modelId] || [];
               return (
-                <React.Fragment key={modelId}>
-                  <div className="flex-shrink-0 flex flex-col" style={{ width: 220 }}>
-                    <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
-                      style={{ borderColor: isActive ? cfg.color : "rgba(128,128,128,0.2)" }}>
-                      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg" style={{ background: cfg.color + '20', padding: 4 }}>
-                        {modelId === "fius-ai"
-                          ? <Logo size="sm" />
-                          : <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
-                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
-                      </div>
-                      <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{cfg.name}</span>
-                      <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
-                      <div className="flex flex-col items-center gap-1.5 mt-1 w-full">
-                        <button onClick={() => onToggleModel(modelId)} className="relative flex-shrink-0 rounded-full transition-all duration-300"
-                          style={{ width: 36, height: 18, background: isActive ? cfg.color : "#d1d5db" }}>
-                          <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
-                        </button>
-                        <button onClick={() => setSoloModel(modelId)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95 w-full justify-center"
-                          style={{ background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}50` }}>
-                          <Target className="w-2.5 h-2.5 flex-shrink-0" />
-                          Chat only
-                        </button>
-                      </div>
+                <motion.div
+                  key={modelId}
+                  layout
+                  layoutId={modelId}
+                  transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+                  className="flex-shrink-0 flex flex-col"
+                  style={{ width: 220, opacity: isActive ? 1 : 0.45, borderRight: isLast ? 'none' : '1px solid rgba(128,128,128,0.25)' }}
+                >
+                  <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
+                    style={{ borderColor: isActive ? (modelId === 'fius-ai' ? '#6b7280' : cfg.color) : "rgba(128,128,128,0.2)" }}>
+                    <div className={`${modelId === "fius-ai" ? "w-12 h-12" : "w-8 h-8"} flex items-center justify-center flex-shrink-0 rounded-lg`} style={{ background: modelId === 'fius-ai' ? 'rgba(107,114,128,0.15)' : cfg.color + '20', padding: modelId === "fius-ai" ? 2 : 4 }}>
+                      {modelId === "fius-ai"
+                        ? <FiusLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" />
+                        : <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                     </div>
-                    <NomadColumnMsgs msgs={msgs} modelId={modelId} isTyping={!!nomadTyping[modelId]} />
+                    <span className="text-[11px] font-semibold text-foreground text-center leading-tight">{cfg.name}</span>
+                    <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
+                    <div className="flex flex-col items-center gap-1.5 mt-1 w-full">
+                      <button onClick={() => handleToggleWithOrder(modelId)} className="relative flex-shrink-0 rounded-full transition-all duration-300"
+                        style={{ width: 36, height: 18, background: isActive ? (modelId === 'fius-ai' ? 'linear-gradient(135deg,#ffffff,#374151)' : cfg.color) : "#d1d5db" }}>
+                        <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
+                      </button>
+                      <button onClick={() => setSoloModel(modelId)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95 w-full justify-center"
+                        style={modelId === 'fius-ai' ? { background: 'rgba(107,114,128,0.1)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.3)' } : { background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}50` }}>
+                        <Target className="w-2.5 h-2.5 flex-shrink-0" />
+                        Chat only
+                      </button>
+                    </div>
                   </div>
-                  {!isLast && <div className="flex-shrink-0 w-px self-stretch" style={{ background: "rgba(128,128,128,0.3)" }} />}
-                </React.Fragment>
+                  <NomadColumnMsgs msgs={msgs} modelId={modelId} isTyping={!!nomadTyping[modelId]} />
+                </motion.div>
               );
             })}
           </div>
@@ -2706,7 +3172,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
       {/* Nomad Summary panel */}
       {showSummary && (
-        <div className="flex-shrink-0 mx-3 mb-1 rounded-xl border border-border bg-card p-3 max-h-52 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex-shrink-0 mx-3 mb-1 rounded-xl border border-border bg-card p-3 max-h-64 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Summary</span>
             <button onClick={() => setShowSummary(false)} className="text-muted-foreground hover:text-foreground text-xs">✕</button>
@@ -2717,14 +3183,43 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
               <span className="text-xs text-muted-foreground">Analyzing AI responses…</span>
             </div>
           ) : (
-            <div className="text-xs text-foreground leading-relaxed space-y-1.5">
-              {summaryText.split('\n').map((line, i) => {
-                if (line.startsWith('## ')) return <p key={i} className="font-bold text-foreground text-xs mt-2 first:mt-0">{line.replace('## ','')}</p>;
-                if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="font-semibold text-foreground text-xs">{line.replace(/\*\*/g,'')}</p>;
-                const boldLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-                return line ? <p key={i} className="text-xs" dangerouslySetInnerHTML={{ __html: boldLine }} /> : <div key={i} className="h-1" />;
-              })}
-            </div>
+            <>
+              <div className="text-xs text-foreground leading-relaxed space-y-1.5">
+                {summaryText.split('\n').map((line, i) => {
+                  if (line.startsWith('## ')) return <p key={i} className="font-bold text-foreground text-xs mt-2 first:mt-0">{line.replace('## ','')}</p>;
+                  if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="font-semibold text-foreground text-xs">{line.replace(/\*\*/g,'')}</p>;
+                  const boldLine = line.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                  return line ? <p key={i} className="text-xs" dangerouslySetInnerHTML={{ __html: boldLine }} /> : <div key={i} className="h-1" />;
+                })}
+              </div>
+              {summaryText && (
+                <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-semibold text-muted-foreground mr-1 flex items-center gap-1"><Download className="w-3 h-3" />Download:</span>
+                  {[
+                    { label: 'TXT', action: () => downloadTxt(summaryText, 'nomad-summary') },
+                    { label: 'MD', action: () => { const a = document.createElement('a'); a.href = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(summaryText); a.download = 'nomad-summary.md'; a.click(); } },
+                    { label: 'PDF', action: () => downloadPdf(summaryText, 'Nomad AI Summary') },
+                    { label: 'DOCX', action: () => downloadWordDoc(summaryText, 'nomad-summary') },
+                    { label: 'PPTX', action: () => downloadPptx(summaryText, 'nomad-summary') },
+                    { label: 'CSV', action: () => {
+                      const rows = [['Section','Content']];
+                      let section = '';
+                      summaryText.split('\n').forEach(line => {
+                        if (line.startsWith('## ')) { section = line.replace('## ',''); }
+                        else if (line.trim()) { rows.push([section, line.replace(/\*\*/g,'')]);}
+                      });
+                      const csv = rows.map(r => r.map(c => `"${c.replace(/"/g,'""')}"`).join(',')).join('\n');
+                      const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'nomad-summary.csv'; a.click();
+                    }},
+                  ].map(btn => (
+                    <button key={btn.label} onClick={btn.action}
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -2745,7 +3240,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
             setShowSummary(true);
             setSummaryText('');
             try {
-              const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\nUse exact AI names. Be concise and clear.`;
+              const prompt = `Analyze these responses from multiple AI models and produce a structured report:\n\n${parts.join('\n\n---\n\n')}\n\nFormat your response EXACTLY as follows:\n\n## Summary\n[For each AI, write: **[AI Name]:** one-sentence summary of their response]\n\n## Similarities\n[Mention which AIs agreed, using their names. E.g. "GPT-4o and Claude both said..." or "All models agreed that..."]\n\n## Differences\n[Mention specific contrasts using names. E.g. "Grok said X, but Claude argued Y..." Be specific about WHO said WHAT.]\n\n## Conclusion\n[2-3 sentences on the overall takeaway and which response was most insightful and why.]\n\n## Best Response\n[Combine the strongest points from all AIs into one unified, corrected, and polished response. Fix any factual errors, fill gaps, and produce the best possible answer to the user's question using all available insights.]\n\nUse exact AI names. Be concise and clear.`;
               const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: prompt, conversationId: 'nomad-summary-mobile' }) });
               if (res.ok) { const data = await res.json(); setSummaryText(data.response || 'Could not generate summary.'); }
               else setSummaryText('Failed to generate summary.');
@@ -2759,201 +3254,202 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
         </div>
       )}
 
-      <MobileMessageBar value={input} onChange={setInput} onSend={handleSendDispatch} isTyping={isTyping || autoLoading}
+      <MobileMessageBar value={input} onChange={setInput} onSend={handleSendDispatch} isTyping={isTyping || autoLoading} centerViewport={centerViewport && !hasMessages}
         placeholder={nomadMode === 'auto' ? "Ask anything — best AI auto-selected…" : "Ask all AIs at once…"} tab="nomad" showEnhance={false} showModel={false}
-        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings} />
+        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings}
+        hasMessages={hasMessages} />
     </>
   );
 }
 
-// ─── Studio template thumbnails — use local public assets (no rate limits) ────
-const STUDIO_TEMPLATES = [
-  { id: 'portrait',  name: 'Realistic Portrait', bg: 'linear-gradient(135deg,#1a1a2e,#16213e)', thumb: '/style-photo.jpg',     prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic' },
-  { id: 'anime',     name: 'Anime Style',         bg: 'linear-gradient(135deg,#0d1b2a,#1b4332)', thumb: '/style-anime.png',     prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art' },
-  { id: 'cinematic', name: 'Cinematic',            bg: 'linear-gradient(135deg,#0f0c29,#302b63)', thumb: '/style-cinematic.jpg', prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded' },
-  { id: '3d',        name: '3D Render',            bg: 'linear-gradient(135deg,#1a0533,#2d1b69)', thumb: '/style-3d.jpg',        prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination' },
-  { id: 'watercolor',name: 'Watercolor',           bg: 'linear-gradient(135deg,#0a1820,#0d2a38)', thumb: '/style-watercolor.jpg',prompt: 'delicate watercolor painting, soft transparent washes, paper texture, loose artistic brushwork, painterly' },
-  { id: 'oil',       name: 'Oil Painting',         bg: 'linear-gradient(135deg,#1c0a0a,#2d0f0f)', thumb: '/style-oil.jpg',       prompt: 'classical oil painting, thick impasto brushstrokes, rich textures, old master technique, painterly masterpiece' },
-  { id: 'sketch',    name: 'Pencil Sketch',        bg: 'linear-gradient(135deg,#111,#222)',        thumb: '/style-sketch.jpg',    prompt: 'detailed pencil sketch, graphite drawing, crosshatching, fine lines, black and white, hand drawn art' },
-  { id: 'pixel',     name: 'Pixel Art',            bg: 'linear-gradient(135deg,#0a0a0a,#1a1a3a)', thumb: '/style-pixel.jpg',     prompt: 'pixel art style, 8-bit retro video game art, pixelated aesthetic, vibrant flat colors, NES SNES era art' },
-];
-
-// ─── Studio (Imagine) Tab ─────────────────────────────────────────────────────
-function StudioTab({ messages, isTyping, input, setInput, onSend, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode }: {
-  messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void; onSend: () => void;
-  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
+// ─── Studio (Imagine) Tab — mirrors Ask tab UI ────────────────────────────────
+function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, centerViewport, isActive }: {
+  messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
+  onSend: () => void; onStop?: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
+  model?: string; setModel?: (m: string) => void;
+  user?: { username: string; email: string; displayName?: string };
+  fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
+  onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
+  onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
+  centerViewport?: boolean; isActive?: boolean;
 }) {
+  const endRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [expandImg, setExpandImg] = useState<string | null>(null);
-  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
-  const templateScrollRef = useRef<HTMLDivElement>(null);
-  const myImagesRef = useRef<HTMLDivElement>(null);
-  const prevImageCount = useRef(0);
-
-  // All AI messages that have a real image URL (not empty / generating)
-  const aiImages = messages.filter(m => m.role === "ai" && m.imageUrl && !m.isGenerating);
-
-  // Auto-scroll to My images whenever a new image appears
-  useEffect(() => {
-    if (aiImages.length > prevImageCount.current) {
-      prevImageCount.current = aiImages.length;
-      setTimeout(() => myImagesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set());
+  const [studioGrid, setStudioGrid] = useState(() => localStorage.getItem("studioGrid") !== "false");
+  const [studioMobileSettingToggles] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("settingsToggles");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
     }
-  }, [aiImages.length]);
+  });
+  const toggleStudioGrid = () => setStudioGrid(v => { const n = !v; localStorage.setItem("studioGrid", String(n)); return n; });
+  const toggleModel = (id: string) =>
+    setSelectedModels(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
 
-  const scrollTemplates = (dir: 'left' | 'right') => {
-    templateScrollRef.current?.scrollBy({ left: dir === 'left' ? -260 : 260, behavior: 'smooth' });
-  };
+  const STUDIO_COLS = [
+    { id: 'fius-imagine-super', name: 'Fius Imagine Super', abbr: 'Fius',    sub: 'Ultra quality', logo: '/fius-logo.png',      gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
+    { id: 'seedream-4.5',       name: 'Seedream 4.5',       abbr: 'Seedream', sub: 'Dreamlike art', logo: '/bytedance-logo.png', gradient: 'from-emerald-400 to-teal-500',   letter: '❋', color: '#10b981' },
+    { id: 'nano-banana-pro',    name: 'Nano Banana Pro',    abbr: 'Nano',     sub: 'Fast & crisp',  logo: '/gemini-logo.png',    gradient: 'from-yellow-400 to-orange-400',  letter: '⚡', color: '#f59e0b' },
+    { id: 'gpt-5.5-pro',        name: 'GPT 5.5 pro',        abbr: 'GPT 5.5',  sub: 'Precision AI',  logo: '/chatgpt-logo.png',   gradient: 'from-sky-400 to-blue-500',       letter: 'G',  color: '#0ea5e9' },
+  ];
 
-  // ── Fullscreen image viewer ──
-  if (expandImg) {
-    return (
-      <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
-        onClick={() => setExpandImg(null)}>
-        <img src={expandImg} alt="" className="max-w-full max-h-full" />
-        <button onClick={() => setExpandImg(null)}
-          className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
-          <X className="w-5 h-5 text-white" />
-        </button>
-      </div>
-    );
-  }
+  const isEmpty = messages.length === 0 && !isTyping;
+  const hideFiusLogoStudio = localStorage.getItem("hideFiusLogo") === "true";
+  const hideFlyWithUsStudio = localStorage.getItem("hideFlyWithUs") === "true";
 
   return (
     <>
-      {/* ── Header (black) ── */}
-      <div className="flex-shrink-0 px-5 pt-6 pb-3" style={{ background: '#000' }}>
-        <h1 className="text-white font-bold text-[26px] tracking-tight">Images</h1>
-      </div>
-
-      {/* ── Scrollable body (black) ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ background: '#000', scrollbarWidth: 'none' }}>
-
-        {/* ── My images — shown FIRST so generated images are always visible at top ── */}
-        <div ref={myImagesRef} className={aiImages.length > 0 || isTyping ? "mb-8" : "mb-0"}>
-          {(aiImages.length > 0 || isTyping) && (
-            <div className="flex items-center justify-between px-5 pt-1 pb-3.5">
-              <span className="text-white text-base font-semibold tracking-tight">My images</span>
-              {aiImages.length > 0 && (
-                <span className="text-zinc-600 text-[11px]">{aiImages.length} image{aiImages.length !== 1 ? 's' : ''}</span>
-              )}
+      {expandImg && (
+        <div className="fixed inset-0 z-[100] bg-black/96 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setExpandImg(null)}>
+          <img src={expandImg} alt="" className="max-w-full max-h-full rounded-2xl" />
+          <button onClick={() => setExpandImg(null)} className="absolute top-5 right-5 w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white"><X className="w-5 h-5" /></button>
+        </div>
+      )}
+      {isEmpty ? (
+        /* ── Light reference-inspired studio home ── */
+        <div className="relative flex-1 min-h-0 flex flex-col bg-background text-foreground">
+          <div className="relative flex-1 min-h-0 overflow-y-auto px-4 pb-8">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[350px] overflow-hidden">
+              <img src={studioHero} alt="" className="h-full w-full object-cover object-top" />
+              {/* bottom fade */}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 65%, var(--background) 100%)' }} />
+              {/* top fade */}
+              <div className="absolute inset-x-0 top-0" style={{ height: '23%', background: 'linear-gradient(to bottom, var(--background), transparent)' }} />
+              {/* left fade */}
+              <div className="absolute inset-y-0 left-0" style={{ width: '7%', background: 'linear-gradient(to right, var(--background) 0%, var(--background) 40%, transparent 100%)' }} />
+              {/* right fade */}
+              <div className="absolute inset-y-0 right-0" style={{ width: '7%', background: 'linear-gradient(to left, var(--background) 0%, var(--background) 40%, transparent 100%)' }} />
             </div>
-          )}
-          {(aiImages.length > 0 || isTyping) && (
-            <div className="grid grid-cols-2 gap-[3px]">
-              {/* Generating placeholder */}
-              {isTyping && (
-                <div className="relative flex flex-col items-center justify-center gap-3"
-                  style={{ aspectRatio: '1/1', background: '#111' }}>
-                  <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-                  <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
+
+            <div className="relative mx-auto flex w-full max-w-[640px] flex-col">
+              <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-card shadow-sm ring-1 ring-border"><Sparkles className="h-3.5 w-3.5 text-amber-400" /></span>
+                  Fius Studio
                 </div>
-              )}
-              {/* Generated images — newest first */}
-              {[...aiImages].reverse().map((msg) => (
-                <div key={msg.id} className="relative group" style={{ aspectRatio: '1/1', background: '#111' }}>
-                  <img
-                    src={msg.imageUrl}
-                    alt="generated"
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => setExpandImg(msg.imageUrl!)}
-                  />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
-                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
-                    <div className="flex justify-end">
-                      <button onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-image.png'; a.target = '_blank'; a.click(); }}
-                        className="w-8 h-8 rounded-full flex items-center justify-center"
-                        style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
-                        <Download className="w-3.5 h-3.5 text-white" />
-                      </button>
+                <button onClick={toggleStudioGrid} className="rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground shadow-sm transition hover:bg-card">
+                  {studioGrid ? "Models on" : "Models off"}
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center pt-[220px]">
+                <h2 className="text-center tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(24px,6vw,32px)', lineHeight: 1.15 }}>
+                  <span className="font-extrabold">Fius Labs</span>{' '}
+                  <span className="font-extrabold">Imagine Studio</span>
+                </h2>
+                <p className="mt-2 text-center font-medium text-muted-foreground" style={{ fontSize: 'clamp(13px,3.5vw,16px)' }}>The Canvas of Tomorrow ✦</p>
+
+                <div className="mt-3 grid w-full grid-cols-2 gap-3">
+                  <button onClick={onAttachmentSend ? () => onAttachmentSend([], [], "") : undefined}
+                    className="group flex min-h-[88px] items-center gap-3 border border-border bg-card px-4 py-4 text-left shadow-sm transition hover:border-sky-200 hover:shadow-md active:scale-[0.98]"
+                    style={{ borderRadius: 22 }}>
+                    <PenTool className="h-5 w-5 shrink-0 transition group-hover:scale-110" style={{ color: '#38bdf8' }} />
+                    <span><span className="block text-xs font-semibold text-foreground">Editor</span><span className="mt-1 block text-[10px] text-muted-foreground">Transform a photo</span></span>
+                  </button>
+                  <button onClick={() => document.getElementById("mobile-studio-templates")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                    className="group flex min-h-[88px] items-center gap-3 border border-border bg-card px-4 py-4 text-left shadow-sm transition hover:border-violet-200 hover:shadow-md active:scale-[0.98]"
+                    style={{ borderRadius: 22 }}>
+                    <LayoutGrid className="h-5 w-5 shrink-0 transition group-hover:scale-110" style={{ color: '#a78bfa' }} />
+                    <span><span className="block text-xs font-semibold text-foreground">Templates</span><span className="mt-1 block text-[10px] text-muted-foreground">Styles for every occasion</span></span>
+                  </button>
+                </div>
+              </div>
+
+              <section id="mobile-studio-templates" className="mt-7">
+                <style>{`
+                  @keyframes mobile-mq-left { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+                  @keyframes mobile-mq-right { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+                `}</style>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-[13px] font-bold text-foreground">Templates <span className="ml-1 text-[10px] font-normal text-muted-foreground">{MOBILE_STUDIO_TEMPLATES.length} styles</span></h3>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {/* Row 1 — left */}
+                  <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' }}>
+                    <div className="flex gap-2 w-max" style={{ animation: 'mobile-mq-left 70s linear infinite' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}>
+                      {[...MOBILE_STUDIO_TEMPLATES.slice(0,17), ...MOBILE_STUDIO_TEMPLATES.slice(0,17)].map((t, i) => (
+                        <button key={`m1-${i}`} onClick={() => setInput(t.prompt)}
+                          className="group relative shrink-0 overflow-hidden text-left"
+                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-5deg) rotateX(3deg) translateY(-3px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 32px rgba(0,0,0,0.16)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.07)'; }}>
+                          <img src={t.image} alt={t.label} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
+                          <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+                            <div className="px-1.5 pb-1.5"><div className="rounded-full py-0.5 text-center text-[8px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)' }}>✦ Try</div></div>
+                          </div>
+                          <span className="absolute inset-x-0 bottom-0 px-1.5 pb-1.5 pt-6 text-[9px] font-semibold text-white group-hover:opacity-0 transition-opacity" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>{t.label}</span>
+                        </button>
+                      ))}
                     </div>
-                    <div>
-                      <p className="text-white/70 text-[10px] leading-snug line-clamp-2 mb-2">{msg.content}</p>
-                      <button onClick={(e) => { e.stopPropagation(); setExpandImg(msg.imageUrl!); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium"
-                        style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)' }}>
-                        <Maximize2 className="w-3 h-3" /> View
-                      </button>
+                  </div>
+                  {/* Row 2 — right */}
+                  <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' }}>
+                    <div className="flex gap-2 w-max" style={{ animation: 'mobile-mq-right 85s linear infinite' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}>
+                      {[...MOBILE_STUDIO_TEMPLATES.slice(17), ...MOBILE_STUDIO_TEMPLATES.slice(17)].map((t, i) => (
+                        <button key={`m2-${i}`} onClick={() => setInput(t.prompt)}
+                          className="group relative shrink-0 overflow-hidden text-left"
+                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(5deg) rotateX(-3deg) translateY(-3px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 32px rgba(0,0,0,0.16)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.07)'; }}>
+                          <img src={t.image} alt={t.label} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
+                          <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
+                            <div className="px-1.5 pb-1.5"><div className="rounded-full py-0.5 text-center text-[8px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)' }}>✦ Try</div></div>
+                          </div>
+                          <span className="absolute inset-x-0 bottom-0 px-1.5 pb-1.5 pt-6 text-[9px] font-semibold text-white group-hover:opacity-0 transition-opacity" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>{t.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
-              ))}
+              </section>
+
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {messages.length > 2 && <ScrollButtons scrollAreaRef={scrollAreaRef} />}
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-48" style={{ overscrollBehavior: "contain" }}>
+            <>
+              {messages.map((m, i) => {
+                const isLatestAI = m.role === "ai" && i === messages.length - 1;
+                return <MsgBubble key={m.id} msg={m} onExpandImg={s => setExpandImg(s)} isLatest={isLatestAI}
+                  onNewChat={onNewChat} onRetry={m.role === "ai" ? onRetry : undefined}
+                  onRetryUser={m.role === "user" ? (content) => { setInput(content); } : undefined}
+                  onFollowUp={setInput} isStreaming={isLatestAI && isTyping}
+                  showUserMsgActions={studioMobileSettingToggles.showUserMsgActions ?? false}
+                  showAiMsgActions={studioMobileSettingToggles.showAiMsgActions ?? false} />;
+              })}
+              {isTyping && <ThinkingCloud />}
+              <div ref={endRef} />
+            </>
+          </div>
+          {documentModeActive && (
+            <div className="flex items-center gap-2 mx-3 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 w-fit">
+              <FileSignature className="w-3.5 h-3.5" />
+              Document mode — type a topic
+              <button onClick={onCancelDocumentMode} className="ml-1 hover:text-red-500 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
-        </div>
-
-        {/* Active template chip */}
-        {activeTemplate && (
-          <div className="flex items-center gap-2 px-5 pb-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-              style={{ background: 'rgba(139,92,246,0.18)', border: '1px solid rgba(167,139,250,0.35)' }}>
-              <span className="text-purple-300 text-[11px] font-medium">
-                {STUDIO_TEMPLATES.find(t => t.id === activeTemplate)?.name}
-              </span>
-              <button onClick={() => { setActiveTemplate(null); setInput(''); }}
-                className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors">
-                <X className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Create an image — template cards ── */}
-        <div className="pb-10">
-          <div className="flex items-center justify-between px-5 mb-3.5">
-            <span className="text-white text-base font-semibold tracking-tight">Create an image</span>
-            <div className="flex gap-1.5">
-              <button onClick={() => scrollTemplates('left')}
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <ChevronLeft className="w-3.5 h-3.5 text-zinc-300" />
-              </button>
-              <button onClick={() => scrollTemplates('right')}
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
-              </button>
-            </div>
-          </div>
-
-          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto pl-5 pr-3" style={{ scrollbarWidth: 'none' }}>
-            {STUDIO_TEMPLATES.map(t => (
-              <button key={t.id}
-                onClick={() => { setActiveTemplate(t.id); setInput(t.prompt); }}
-                className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.96]"
-                style={{
-                  width: 130, height: 180, borderRadius: 16,
-                  background: t.bg,
-                  border: activeTemplate === t.id
-                    ? '2px solid rgba(167,139,250,0.9)'
-                    : '2px solid rgba(255,255,255,0.07)',
-                  boxShadow: activeTemplate === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
-                }}>
-                {/* Local thumbnail — loads immediately */}
-                <img src={t.thumb} alt={t.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]" />
-                {/* Label gradient */}
-                <div className="absolute inset-0 flex flex-col justify-end"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 35%, transparent 70%)' }}>
-                  <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
-                </div>
-                {activeTemplate === t.id && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: 'rgba(139,92,246,0.9)' }}>
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── App message bar at bottom ── */}
-      <MobileMessageBar value={input} onChange={setInput} onSend={onSend} isTyping={isTyping}
-        placeholder="Describe a new image…" tab="imagine" showEnhance showModel={false}
-        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration}
-        onVoiceMode={onVoiceMode} onSettings={onSettings} />
+          <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
+            placeholder="Imagine anything…" tab="imagine" model={model} onModelChange={setModel}
+            fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
+            onSettings={onSettings} onEducation={onEducation} showEnhance showModel
+            onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
+            hasMessages={messages.length > 0 || isTyping} />
+        </>
+      )}
     </>
   );
 }
@@ -3002,13 +3498,13 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         {/* Header */}
         <div className="flex-shrink-0 px-4 pt-3 pb-2">
           <div className="text-center mb-3">
-            <h2 className="text-xl font-bold text-foreground">Philosophers & Minds</h2>
+            <h2 className="text-xl font-bold text-foreground">Minds</h2>
             <p className="text-muted-foreground text-sm mt-0.5">Choose a historical figure to converse with</p>
           </div>
           <div className="flex items-center gap-2 mb-2">
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search personalities…"
-              className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              className="flex-1 bg-card border border-border rounded-2xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0" />
             <button onClick={() => setShowFilter(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-accent/70 border border-border/50 text-xs font-semibold text-foreground transition-all active:scale-95 hover:bg-accent flex-shrink-0">
               <Filter className="w-3.5 h-3.5" />
@@ -3081,23 +3577,36 @@ function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, p
         <div ref={endRef} />
       </div>
       <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
-        placeholder={`Talk with ${personality.name}...`} tab="philosopher" showEnhance={false} showModel={false} />
+        placeholder={`Talk with ${personality.name}...`} tab="philosopher" showEnhance={false} showModel={false}
+        hasMessages={messages.length > 0 || isTyping} />
     </>
   );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) {
+  const { resolvedTheme: mciTheme } = useTheme();
   const { toast } = useToast();
   const { usage: planUsage } = useUsage();
   const isFreePlan = !planUsage || planUsage.plan === "free";
-  const freeNomadModels = planUsage?.freeNomadModels ?? ["gpt-4o", "gemini-pro", "fius-ai"];
+  // Free plan's 5 messages are used up — the whole app locks down except the
+  // sidebar (to open Settings/upgrade) and logging out.
+  const isFreePlanExhausted = isFreePlan && typeof planUsage?.messagesRemaining === 'number' && planUsage.messagesRemaining <= 0;
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const showUpgradeLockToast = useCallback(() => {
+    setIsUpgradeModalOpen(true);
+  }, []);
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["fius-ai"];
   const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
+  // Free plan: only Fius Lite is usable in the Ask tab. Everything else needs Ultimate.
+  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'fius-lite', [isFreePlan]);
   const { data: user } = useQuery<{ username: string; email: string; id: string; displayName?: string }>({ queryKey: ["/api/auth/user"], retry: false });
   const { data: convList = [] } = useQuery<Conv[]>({ queryKey: ["/api/conversations"], enabled: !!user });
 
   const [tab, setTab] = useState<MobileTab>("ask");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpenMode, setSidebarOpenMode] = useState<'mini' | 'full'>('mini');
+  const centerEmptyBars = sidebarOpen && sidebarOpenMode === 'mini';
   const minimalMode = false;
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -3107,17 +3616,32 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizTitle, setQuizTitle] = useState("Fius Examination");
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
+  const [ownMode, setOwnMode] = useState(false);
   const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() => localStorage.getItem("profilePicture") || undefined);
+  const [mobileSettingToggles, setMobileSettingToggles] = useState(() => { try { const s = localStorage.getItem("settingsToggles"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
+  // sync mobile settings when they change
+  useEffect(() => { const handler = () => { try { const s = localStorage.getItem("settingsToggles"); setMobileSettingToggles(s ? JSON.parse(s) : {}); } catch {} }; window.addEventListener("storage", handler); return () => window.removeEventListener("storage", handler); }, []);
 
   // Ask
   const [askMsgs, setAskMsgs] = useState<Msg[]>([]);
   const [askInput, setAskInput] = useState("");
   const [askTyping, setAskTyping] = useState(false);
   const [askDocumentMode, setAskDocumentMode] = useState(false);
-  const [askModel, setAskModel] = useState("fius-lite");
+  const [askModel, setAskModelRaw] = useState("fius-lite");
+  const setAskModel = useCallback((m: string) => {
+    if (isChatModelLocked(m)) {
+      toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+      return;
+    }
+    setAskModelRaw(m);
+  }, [isChatModelLocked, toast]);
   const [topModelSheetOpen, setTopModelSheetOpen] = useState(false);
+  useEffect(() => {
+    if (isFreePlan) setAskModelRaw('fius-lite');
+  }, [isFreePlan]);
   const [currentConvId, setCurrentConvId] = useState<string | undefined>(() => localStorage.getItem('currentProjectId') || undefined);
+  const welcomeGreetingM = useMemo(() => pickGreetingIndexM(currentConvId), [currentConvId]);
   const askAbortRef = useRef<AbortController | null>(null);
 
   // Studio
@@ -3136,6 +3660,18 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadInput, setNomadInput] = useState("");
   const [nomadTyping, setNomadTyping] = useState(false);
   const [nomadMessages, setNomadMessages] = useState<Record<string, { id: string; role: "user" | "ai"; content: string }[]>>({});
+  // Nomad history — lifted so sidebar can display it
+  const [nomadHistSessions, setNomadHistSessions] = useState<NomadSession[]>(() => {
+    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
+  });
+
+  // Warm the Philosophers avatar cache and the Fius Games leaderboard/logo
+  // data as soon as the mobile interface mounts — not when the user opens
+  // those tabs — so both render instantly with no pop-in/blank state.
+  useEffect(() => {
+    preloadWikiImages(PHILOSOPHERS.map(p => p.wikiTitle || p.name), 3);
+    preloadGamesData();
+  }, []);
   const [nomadIsTyping, setNomadIsTyping] = useState<Record<string, boolean>>({});
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
   const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral", "fius-ai"]));
@@ -3186,6 +3722,15 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, [loadConv]);
 
   const handleSelectConv = useCallback((id: string) => { setCurrentConvId(id); localStorage.setItem('currentProjectId', id); setAskMsgs([]); setTab("ask"); loadConv(id); }, [loadConv]);
+  const handleToggleOwlMode = useCallback(() => {
+    if (ownMode) {
+      setOwnMode(false);
+      const latest = convList[0];
+      if (latest) handleSelectConv(latest.id);
+    } else {
+      setOwnMode(true);
+    }
+  }, [ownMode, convList, handleSelectConv]);
   const handleNewChat = useCallback(() => { setCurrentConvId(undefined); localStorage.removeItem('currentProjectId'); setAskMsgs([]); setAskInput(""); setTab("ask"); }, []);
 
   const handleChatInNewChat = useCallback(async (content: string) => {
@@ -3229,7 +3774,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (!res.ok) throw new Error("Could not create conversation");
     const data = await res.json();
     const newId = data.id || data.conversation?.id;
-    if (newId) { setCurrentConvId(newId); localStorage.setItem('currentProjectId', newId); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); return newId; }
+    if (newId) { assignLogoStyleToConversation(newId); setCurrentConvId(newId); localStorage.setItem('currentProjectId', newId); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); return newId; }
     throw new Error("No ID");
   }, [currentConvId, askModel]);
 
@@ -3291,6 +3836,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const handleAskSend = useCallback(async () => {
     if (tab !== "ask") return;
+    if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
     const text = askInput.trim(); if (!text || askTyping) return;
     const isDocRequest = askDocumentMode;
     setAskInput(""); setAskTyping(true);
@@ -3298,7 +3844,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     // instead of it silently switching off after one message.
     setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
     try {
-      const convId = await ensureConv(text);
+      // In Own Mode skip conversation creation — no data is saved
+      const convId = ownMode ? '' : await ensureConv(text);
       askAbortRef.current?.abort();
       const ctrl = new AbortController(); askAbortRef.current = ctrl;
       // DuckDuckGo web search — same as PC
@@ -3346,8 +3893,13 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       setAskMsgs(p => [...p, { id: uid(), role: "ai", content, timestamp: new Date(), isDocument: !!data.metadata?.isDocument, documentTitle: data.metadata?.documentTitle }]);
     } catch (e: any) {
       if (e?.name !== "AbortError") setAskMsgs(p => [...p, { id: uid(), role: "ai", content: "Something went wrong. Please try again.", timestamp: new Date() }]);
-    } finally { setAskTyping(false); }
-  }, [askInput, askTyping, askDocumentMode, ensureConv]);
+    } finally {
+      setAskTyping(false);
+      // Refresh usage right away so the free-plan lock engages immediately
+      // after the message that exhausts the limit, not after the next 30s poll.
+      queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
+    }
+  }, [askInput, askTyping, askDocumentMode, ensureConv, ownMode]);
 
   const handleImagSend = useCallback(async () => {
     const text = imagInput.trim(); if (!text || imagTyping) return;
@@ -3361,7 +3913,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       setImagMsgs(p => p.map(m => m.id === aiMsgId ? { ...m, imageUrl: data.success && data.url ? data.url : undefined, content: data.success && data.url ? "" : "Image generation failed.", isGenerating: false } : m));
     } catch {
       setImagMsgs(p => p.map(m => m.id === aiMsgId ? { ...m, content: "Image generation failed.", imageUrl: undefined, isGenerating: false } : m));
-    } finally { setImagTyping(false); }
+    } finally {
+      setImagTyping(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
+    }
   }, [imagInput, imagTyping]);
 
   const handlePhilSend = useCallback(async () => {
@@ -3378,7 +3933,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       setPhilMsgs(p => [...p, { id: uid(), role: "ai", content: data.response || data.message || "…", timestamp: new Date() }]);
     } catch (e: any) {
       if (e?.name !== "AbortError") setPhilMsgs(p => [...p, { id: uid(), role: "ai", content: "Something went wrong.", timestamp: new Date() }]);
-    } finally { setPhilTyping(false); }
+    } finally {
+      setPhilTyping(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
+    }
   }, [philInput, philTyping, philPerson]);
 
   const handleNomadSend = useCallback(async () => {
@@ -3397,6 +3955,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     });
     // Start typing for all
     setNomadIsTyping(prev => { const u = { ...prev }; activeIds.forEach(id => { u[id] = true; }); return u; });
+    // Collect responses for history save
+    const multiResponses: Record<string, { id: string; role: "user" | "ai"; content: string }[]> = {};
     await Promise.allSettled(activeIds.map(async (modelId) => {
       try {
         // Build per-model conversation history for memory
@@ -3407,7 +3967,12 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         const res = await authFetch("/api/test-ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text, activeTab: "nomad", history: prevMsgs }) });
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
-        setNomadMessages(prev => ({ ...prev, [modelId]: [...(prev[modelId] || []), { id: uid(), role: "ai" as const, content: data.response || data.message || "No response" }] }));
+        const aiContent = data.response || data.message || "No response";
+        setNomadMessages(prev => ({ ...prev, [modelId]: [...(prev[modelId] || []), { id: uid(), role: "ai" as const, content: aiContent }] }));
+        multiResponses[modelId] = [
+          { id: uid(), role: "user", content: text },
+          { id: uid(), role: "ai", content: aiContent.slice(0, 400) },
+        ];
       } catch {
         setNomadMessages(prev => ({ ...prev, [modelId]: [...(prev[modelId] || []), { id: uid(), role: "ai" as const, content: "Failed to get response." }] }));
       } finally {
@@ -3415,6 +3980,17 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       }
     }));
     setNomadTyping(false);
+    // Save multi-mode session to history
+    if (Object.keys(multiResponses).length > 0) {
+      const sess: NomadSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: text.slice(0, 60), autoMsgs: [], multiMsgs: multiResponses };
+      setNomadHistSessions(prevH => {
+        const next = [sess, ...prevH].slice(0, 20);
+        try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch {}
+        authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {});
+        return next;
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
   }, [nomadInput, nomadTyping, activeModels, nomadMessages, nomadSoloModel]);
 
   const handleToggleModel = useCallback((id: string) => {
@@ -3438,30 +4014,75 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   // background handled by overlay components, not inline style
   const getChatBgStyle = (): React.CSSProperties => ({});
 
-  const voiceHandlers = { onVoiceMode: () => setVoiceModalOpen(true), onSettings: () => setSettingsOpen(true), onIntegration: () => setFiusIntegrationMode(v => !v), fiusIntegrationMode };
+  const openVoiceMode = useCallback(() => {
+    if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
+    if (isFreePlan) {
+      toast({ title: "Locked on Free plan", description: "Voice Mode requires Fius Ultimate.", variant: "destructive" });
+      return;
+    }
+    setVoiceModalOpen(true);
+  }, [isFreePlan, isFreePlanExhausted, showUpgradeLockToast, toast]);
+
+  const changeMobileTab = useCallback((t: MobileTab) => {
+    if (isFreePlanExhausted && t !== tab) {
+      showUpgradeLockToast();
+      return;
+    }
+    if (isFreePlan && (t === "nomad" || t === "imagine" || t === "philosopher" || t === "games")) {
+      const lockedLabel = t === "nomad" ? "Nomad (multi-AI compare)"
+        : t === "imagine" ? "Imagine Studio"
+        : t === "philosopher" ? "Fius Minds"
+        : "Fius Games";
+      toast({
+        title: "Locked on Free plan",
+        description: `${lockedLabel} requires Fius Ultimate.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setTab(t);
+  }, [isFreePlan, isFreePlanExhausted, showUpgradeLockToast, tab, toast]);
+
+  const voiceHandlers = { onVoiceMode: openVoiceMode, onSettings: () => setSettingsOpen(true), onIntegration: () => setFiusIntegrationMode(v => !v), fiusIntegrationMode };
 
   return (
     <MinimalModeCtx.Provider value={minimalMode}>
     <ErrorBoundary>
       <TooltipProvider delayDuration={400}>
-        <div className="fixed inset-0 bg-background flex flex-col overflow-hidden"
+        <div className={`fixed inset-0 bg-background flex flex-col overflow-hidden transition-[padding] duration-300 ${sidebarOpen && sidebarOpenMode === 'mini' ? 'md:pl-[76px]' : ''}`}
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
 
+          {isFreePlanExhausted && (
+            <div
+              className="absolute inset-0 z-[45] cursor-not-allowed"
+              onClick={showUpgradeLockToast}
+            >
+              <div className="absolute top-0 inset-x-0 flex justify-center pt-2 px-3" style={{ marginTop: "env(safe-area-inset-top)" }}>
+                <div className="pointer-events-none text-[11px] font-semibold text-white bg-destructive/90 backdrop-blur px-4 py-2 rounded-full shadow-lg text-center">
+                  Free plan limit reached — tap to upgrade
+                </div>
+              </div>
+            </div>
+          )}
+          <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
+
           <Sidebar
-            isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} onLogout={handleLogout}
+            isOpen={sidebarOpen} openMode={sidebarOpenMode} onModeChange={setSidebarOpenMode} onClose={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); }} onLogout={handleLogout}
             projects={projects} currentProjectId={currentConvId}
-            onProjectSelect={id => { handleSelectConv(id); setSidebarOpen(false); }}
-            onNewProject={() => { handleNewChat(); setSidebarOpen(false); }}
+            onProjectSelect={id => { handleSelectConv(id); setSidebarOpen(false); setSidebarOpenMode('mini'); }}
+            onNewProject={() => { handleNewChat(); setSidebarOpen(false); setSidebarOpenMode('mini'); }}
             onDeleteProject={handleDeleteConv}
             onEditProject={async (id, title) => { try { await apiRequest("PATCH", `/api/conversations/${id}`, { title }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); } catch { } }}
             onUpdateAiRole={async (id, aiRole) => { try { await apiRequest("PATCH", `/api/conversations/${id}`, { aiRole }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); } catch { } }}
             onOpenSettings={() => setSettingsOpen(true)}
-            onVoiceClick={() => { setSidebarOpen(false); setVoiceModalOpen(true); }}
-            onImagineClick={() => { setSidebarOpen(false); setTab("imagine"); }}
+            onVoiceClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
+            onImagineClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("imagine"); }}
             user={user ? { email: user.email, username: user.username } : undefined}
             onUserRename={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
             profilePicture={profilePicture}
             onProfilePictureChange={d => { setProfilePicture(d); localStorage.setItem("profilePicture", d); }}
+            nomadHistory={nomadHistSessions.map(s => ({ id: s.id, ts: s.ts, mode: s.mode, preview: s.preview }))}
+            onNomadHistorySelect={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("nomad"); }}
           />
 
           <VoiceModeModal isOpen={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
@@ -3523,7 +4144,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           {/* Header + model strip wrapped so we can add the bottom fade */}
           <div className="relative flex-shrink-0">
-            <PCHeader activeTab={tab} onTabChange={setTab} onMenuClick={() => setSidebarOpen(true)} />
+            <PCHeader activeTab={tab} onTabChange={changeMobileTab} onMenuClick={() => { setSidebarOpenMode('full'); setSidebarOpen(true); }} ownMode={ownMode} onToggleOwnMode={handleToggleOwlMode} />
 
             {/* Model strip — top-left under nav bar, only on Ask tab */}
             {tab === "ask" && (
@@ -3531,7 +4152,9 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 {topModelSheetOpen && (
                   <ModelSheet models={ASK_MODELS} current={askModel}
                     onSelect={m => { setAskModel(m); setTopModelSheetOpen(false); }}
-                    onClose={() => setTopModelSheetOpen(false)} />
+                    onClose={() => setTopModelSheetOpen(false)}
+                    isLocked={isChatModelLocked}
+                    onLockedSelect={() => toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" })} />
                 )}
                 <div className="flex items-center px-3 pt-1.5 pb-0.5 flex-shrink-0">
                   <button onClick={() => setTopModelSheetOpen(true)}
@@ -3561,6 +4184,16 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "ask" ? 1 : 0, pointerEvents: tab === "ask" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <ChatBg bg={chatBg} />
+              {/* Owl Mode star-field — always rendered; opacity transition handles enter/exit */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden"
+                   style={{zIndex:0, opacity: ownMode ? 1 : 0, transition:'opacity 0.45s cubic-bezier(0.4,0,0.2,1)'}}>
+                {OWL_BG_DATA_M.map((o, i) => (
+                  <img key={i} src={mciTheme === 'dark' ? '/owl-dark.png' : '/owl-light.png'} alt=""
+                    style={{position:'absolute',left:o.l,top:o.t,width:o.sz,height:o.sz,
+                      animation:`own-owl-twinkle ${o.dur} ease-in-out infinite, star-drift-${(i%4)+1} ${o.ddur} ease-in-out infinite`,
+                      animationDelay:`${o.d}, ${o.dd}`,opacity:0}} />
+                ))}
+              </div>
               <AskTab messages={askMsgs} isTyping={askTyping} input={askInput} setInput={setAskInput}
                 onSend={handleAskSend} onStop={() => { askAbortRef.current?.abort(); setAskTyping(false); }}
                 onNewChat={handleChatInNewChat}
@@ -3573,24 +4206,27 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 onDocumentMode={() => { setAskDocumentMode(true); toast({ title: "Document mode: type a topic and I'll write the full document." }); }}
                 documentModeActive={askDocumentMode}
                 onCancelDocumentMode={() => setAskDocumentMode(false)}
-                onEducation={() => setEducationOpen(true)} {...voiceHandlers} />
+                onEducation={() => setEducationOpen(true)} {...voiceHandlers}
+                ownMode={ownMode} onSwitchTab={changeMobileTab} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
                 isTyping={nomadTyping} nomadMessages={nomadMessages} nomadTyping={nomadIsTyping}
                 activeModels={activeModels} onToggleModel={handleToggleModel} nomadGrid={localStorage.getItem("nomadGrid") !== "false"}
-                soloModel={nomadSoloModel} setSoloModel={setNomadSoloModel} {...voiceHandlers} />
+                soloModel={nomadSoloModel} setSoloModel={setNomadSoloModel}
+                nomadHistSessionsProp={nomadHistSessions} setNomadHistSessionsProp={setNomadHistSessions}
+                 {...voiceHandlers} centerViewport={centerEmptyBars} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "imagine" ? 1 : 0, pointerEvents: tab === "imagine" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <StudioTab messages={imagMsgs} isTyping={imagTyping} input={imagInput} setInput={setImagInput}
-                onSend={handleImagSend} {...voiceHandlers} />
+                 onSend={handleImagSend} {...voiceHandlers} centerViewport={centerEmptyBars} isActive={tab === "imagine"} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "philosopher" ? 1 : 0, pointerEvents: tab === "philosopher" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <PhilosopherTab messages={philMsgs} isTyping={philTyping} input={philInput} setInput={setPhilInput}
                 onSend={handlePhilSend} onStop={() => { philAbortRef.current?.abort(); setPhilTyping(false); }}
                 personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} {...voiceHandlers} />
             </div>
-            <div className="absolute inset-0 overflow-hidden bg-background px-4 pt-4 pb-2" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
+            <div className="absolute inset-0 overflow-hidden bg-background" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
             </div>
           </div>

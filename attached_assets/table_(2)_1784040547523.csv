@@ -1,0 +1,4 @@
+﻿Aspect,AI Fiesta,Fius AI
+Persistent Memory,✅ Yes — across sessions,✅ Yes
+Per-Chat Role Assignment,✅ Workspace-level system instructions (1000 chars limit),"✅ Per-chat roles — click settings icon on hover, assign role, unique per chat"
+Multiple Projects,✅ Projects with separate histories & system instructions,✅ Multiple projects

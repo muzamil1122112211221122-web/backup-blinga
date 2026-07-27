@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* Fius Text System — Inter Variable for sharp, optical-size-aware rendering */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 :root {
   --background: hsl(220, 22%, 96%);
@@ -38,10 +40,12 @@
   --macos-gray-light: hsl(220, 14%, 96%);
   --macos-gray-dark: hsl(220, 13%, 18%);
   --macos-border-light: hsl(220, 8%, 75%);
+  /* UI accent color — overridden by JS when accent is enabled */
+  --fius-ui-accent: #3b82f6;
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
+  --background: hsl(0, 0%, 0%);
   --foreground: hsl(0, 0%, 98%);
   --muted: hsl(240, 3.7%, 15.9%);
   --muted-foreground: hsl(240, 5%, 64.9%);
@@ -65,11 +69,40 @@
 @layer base {
   * {
     @apply border-border;
+    /* Universal optical sizing — prevents resets in shadcn/radix portals */
+    font-optical-sizing: auto;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground font-sans;
+    font-family: var(--fius-app-font, 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif);
+    /* geometricPrecision = SVG-level rendering: glyphs are pure vector curves,
+       zero pixel-grid hinting → smooth at every size and zoom level.
+       auto smoothing: lets the browser use subpixel antialiasing which keeps
+       stroke weight natural (antialiased alone thins strokes → slim text).  */
+    text-rendering: geometricPrecision;
+    font-optical-sizing: auto;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    font-kerning: normal;
+    font-synthesis: none;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+  }
+
+  input, textarea, select {
+    text-rendering: geometricPrecision;
+    font-optical-sizing: auto;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+  }
+
+  /* Code blocks — monospace chars must stay distinct, no ligatures */
+  code, pre, kbd, samp {
+    font-feature-settings: 'kern' 0, 'liga' 0, 'calt' 0;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
   }
 }
 
@@ -125,8 +158,8 @@
   .dark [role="listbox"],
   .dark [role="menu"],
   .dark .select-content {
-    background-color: #303030 !important;
-    background: #303030 !important;
+    background-color: #383838 !important;
+    background: #383838 !important;
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
   }
 
@@ -148,6 +181,14 @@
   /* Fix dialog and modal borders in dark theme */
   .dark [role="dialog"] {
     border: 1px solid hsl(240, 3.7%, 15.9%) !important;
+  }
+
+  /* Spotlight search modal — no border ever */
+  .spotlight-modal,
+  .dark .spotlight-modal {
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 25px 60px -10px rgba(0,0,0,0.6) !important;
   }
 
   /* Fix button borders in dark theme */
@@ -179,7 +220,7 @@
   .theme-toggle-premium {
     background: linear-gradient(135deg, #fbbf24, #3b82f6);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
   .theme-toggle-premium:hover {
@@ -195,7 +236,7 @@
 
   .premium-toggle-inactive {
     background: #e2e8f0;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease;
   }
 
   .dark .premium-toggle-inactive {
@@ -379,7 +420,10 @@
   }
 
   .chat-bubble {
-    animation: fadeInUp 0.3s ease-out;
+    /* Keep message bubbles visually stable while ChatInterface updates
+       response state. Entrance animations on this shared class restart or
+       replay during response rendering and look like flicker. */
+    animation: none;
   }
 
   .glassmorphism {
@@ -459,7 +503,7 @@
     line-height: 27px;
     font-size: 18px;
     border: none !important;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease;
     padding-top: 8px !important;
     padding-left: 16px !important;
     letter-spacing: 0px;
@@ -504,7 +548,7 @@
     line-height: 27px;
     font-size: 18px;
     border: none !important;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease;
     padding-top: 8px !important;
     padding-left: 16px !important;
     letter-spacing: 0px;
@@ -525,7 +569,66 @@
     border: none !important;
     border-width: 0 !important;
     box-shadow: none !important;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  /*
+   * The chat transcript is an absolute scrolling layer.  Once a response
+   * exists, the function bar must paint an opaque surface over that layer;
+   * otherwise transcript text can show through the transparent gaps between
+   * the controls.
+   */
+  .macos-function-bar-with-messages {
+    position: relative;
+    z-index: 30 !important;
+    isolation: isolate;
+  }
+
+  .macos-function-bar-with-messages::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    /* Fade in from the transcript into the solid function-bar surface. */
+    top: -30px;
+    right: -100vw;
+    bottom: -18px;
+    left: -100vw;
+    background: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--background) 30px,
+      var(--background) 100%
+    );
+    pointer-events: none;
+  }
+
+  .macos-function-bar-with-messages > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .message-composer-with-messages {
+    position: relative;
+    z-index: 40 !important;
+    isolation: isolate;
+  }
+
+  .message-composer-with-messages::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    /* Start at the composer edge (not inside the rounded input) and continue
+       below it so the transcript cannot show through beneath the bar. */
+    top: 0;
+    right: -100vw;
+    bottom: -56px;
+    left: -100vw;
+    background: var(--background);
+    pointer-events: none;
+  }
+
+  .message-composer-with-messages > * {
+    position: relative;
+    z-index: 1;
   }
 
   .dark .macos-function-bar {
@@ -534,7 +637,8 @@
   }
 
   .macos-button {
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 0.22s ease, color 0.22s ease, opacity 0.22s ease;
     transform-origin: center;
     will-change: transform;
     backface-visibility: hidden;
@@ -544,13 +648,15 @@
   /* First normalize all buttons when function bar is hovered */
   .macos-function-bar:hover .macos-button {
     transform: scale3d(1.0, 1.0, 1) translateZ(0);
-    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 0.22s ease, color 0.22s ease, opacity 0.22s ease;
   }
 
   /* Then apply hover effect to specific button */
   .macos-function-bar:hover .macos-button:hover {
     transform: scale3d(1.35, 1.35, 1) translateZ(0) !important;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 0.22s ease, color 0.22s ease, opacity 0.22s ease;
   }
 
   /* Direct hover when not in function bar context */
@@ -560,7 +666,8 @@
 
   .macos-button:active {
     transform: scale3d(1.2, 1.2, 1) translateZ(0);
-    transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 0.15s ease, color 0.15s ease;
   }
 
   /* macOS-style dialog animations */
@@ -667,6 +774,61 @@
     font-size: 14px;
     font-weight: 400;
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FIUS TEXT SYSTEM — SVG-level sharpness across the entire app.
+     geometricPrecision = pure vector curves, no pixel-grid hinting,
+     smooth at every size and zoom level — exactly like SVG text.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ── Universal: every non-code element gets SVG-mode rendering ── */
+  *:not(code):not(pre):not(kbd):not(samp) {
+    text-rendering: geometricPrecision;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+  }
+
+  /* ── AI message prose ── */
+  .prose {
+    font-optical-sizing: auto;
+    text-rendering: geometricPrecision;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  }
+
+  /* Inline code inside prose — no ligatures, mono chars stay distinct */
+  .prose :not(pre) > code {
+    font-feature-settings: 'kern' 0, 'liga' 0;
+  }
+
+  .prose pre {
+    font-feature-settings: 'kern' 0, 'liga' 0;
+  }
+
+  /* ── Message input ── */
+  .message-input,
+  .dark .message-input {
+    font-optical-sizing: auto;
+    text-rendering: geometricPrecision;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  }
+
+  /* ── Radix/shadcn portals (dropdowns, dialogs, tooltips, sheets) ──
+     These render outside the body subtree so they need explicit coverage */
+  [data-radix-popper-content-wrapper],
+  [data-radix-popper-content-wrapper] *:not(code):not(pre),
+  [role="dialog"] *:not(code):not(pre),
+  [role="menu"] *,
+  [role="listbox"] *,
+  [role="tooltip"] {
+    text-rendering: geometricPrecision;
+    font-optical-sizing: auto;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+  }
 }
 
 @layer utilities {
@@ -683,6 +845,15 @@
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popup-slide-up {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)  scale(1);    }
+}
+@keyframes popup-slide-down {
+  from { opacity: 1; transform: translateY(0)  scale(1);    }
+  to   { opacity: 0; transform: translateY(8px) scale(0.97); }
 }
 
 @keyframes slideUpSheet {
@@ -749,6 +920,17 @@
   100% { filter: hue-rotate(360deg); }
 }
 
+@keyframes own-owl-twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.82); }
+  50%       { opacity: 0.55; transform: scale(1.12); }
+}
+@keyframes own-mode-pulse {
+  0%, 100% { opacity: 0.88; transform: scale(1); }
+  50%       { opacity: 1;    transform: scale(1.05); }
+}
+.own-mode-icon-pc { animation: own-mode-pulse 3s ease-in-out infinite; }
+.own-mode-icon-m  { animation: own-mode-pulse 3s ease-in-out infinite; }
+
 @keyframes star-drift-1 {
   0%   { translate: 0px 0px; }
   25%  { translate: 6px -8px; }
@@ -780,18 +962,56 @@
   100% { translate: 0px 0px; }
 }
 
-/* Typing message — words appear smoothly word-by-word. A soft fade mask on
-   the trailing edge keeps freshly-revealed text from "popping" in with a hard
-   edge, which is what reads as buttery rather than mechanical. */
+/* CTA click feedback — instant squash then overshoot-grow, then settle. */
+@keyframes btnClickPop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.86); }
+  60%  { transform: scale(1.1); }
+  80%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.btn-click-pop {
+  animation: btnClickPop 0.48s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Legacy streaming text styles. Responses now render as stable markdown. */
+.ai-stream-text {
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--foreground);
+  white-space: normal;
+  word-break: break-word;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+/* Keep this class safe for any older caller, but do not animate response text. */
+.ai-stream-cursor::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+   animation: none;
+  opacity: 0.7;
+}
+
+@keyframes ai-cursor-blink {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 0; }
+}
+
+/* Completed responses must not fade/replay on parent state updates. */
 .typing-message {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.18) 100%);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 14px), rgba(0, 0, 0, 0.18) 100%);
-  animation: typingTextIn 0.18s ease-out;
+  animation: none;
 }
 
 @keyframes typingTextIn {
-  from { opacity: 0.55; transform: translateY(2px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
 }
 
 
@@ -880,6 +1100,62 @@
   background: rgba(220, 220, 220, 0.45);
 }
 
+/* Settings content panel — thinner scrollbar */
+.settings-content-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.25) transparent;
+}
+.dark .settings-content-scroll {
+  scrollbar-color: rgba(200, 200, 200, 0.15) transparent;
+}
+.settings-content-scroll::-webkit-scrollbar {
+  width: 2px;
+}
+.settings-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.settings-content-scroll::-webkit-scrollbar-thumb {
+  background: rgba(155, 155, 155, 0.30);
+  border-radius: 999px;
+}
+.dark .settings-content-scroll::-webkit-scrollbar-thumb {
+  background: rgba(210, 210, 210, 0.15);
+}
+
+/* Nomad horizontal scroller — always-visible bar */
+.nomad-hscroll {
+  overflow-x: scroll !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.70) rgba(100, 100, 100, 0.10);
+}
+.dark .nomad-hscroll {
+  scrollbar-color: rgba(200, 200, 200, 0.55) rgba(255, 255, 255, 0.06);
+}
+.nomad-hscroll::-webkit-scrollbar {
+  height: 5px;
+  display: block;
+}
+.nomad-hscroll::-webkit-scrollbar-track {
+  background: rgba(100, 100, 100, 0.10);
+  border-radius: 999px;
+}
+.nomad-hscroll::-webkit-scrollbar-thumb {
+  background: rgba(155, 155, 155, 0.70);
+  border-radius: 999px;
+}
+.dark .nomad-hscroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+.dark .nomad-hscroll::-webkit-scrollbar-thumb {
+  background: rgba(200, 200, 200, 0.55);
+}
+.nomad-hscroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.90);
+}
+.dark .nomad-hscroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 220, 220, 0.80);
+}
+
 /* Utility: fully hidden scrollbar */
 .no-scrollbar {
   scrollbar-width: none;
@@ -897,8 +1173,22 @@
 }
 
 @keyframes pop-in {
-  0%   { transform: scale(0.85) translateY(12px); opacity: 0; }
+  0%   { transform: scale(0.82) translateY(14px); opacity: 0; }
+  48%  { transform: scale(1.08) translateY(-5px); opacity: 1; }
+  70%  { transform: scale(0.96) translateY(2px);  opacity: 1; }
+  86%  { transform: scale(1.02) translateY(-1px); opacity: 1; }
   100% { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+/* Spring-settle: slides in, overshoots hard, bounces to rest — feels physical */
+@keyframes spring-in {
+  0%   { transform: translateY(18px) scale(0.88); opacity: 0; }
+  38%  { transform: translateY(-10px) scale(1.07);opacity: 1; }
+  58%  { transform: translateY(5px)  scale(0.97); opacity: 1; }
+  74%  { transform: translateY(-3px) scale(1.02); opacity: 1; }
+  86%  { transform: translateY(1.5px)scale(0.995);opacity: 1; }
+  94%  { transform: translateY(-0.5px) scale(1);  opacity: 1; }
+  100% { transform: translateY(0)    scale(1);    opacity: 1; }
 }
 
 .animate-pop-out {
@@ -909,7 +1199,30 @@
 }
 
 .animate-pop-in {
-  animation: pop-in 0.28s ease-out forwards;
+  animation: pop-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-spring-in {
+  animation: spring-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Pill squish-bounce: plays when pill arrives at new position — single overshoot */
+@keyframes pill-squish {
+  0%   { transform: scaleX(1); }
+  38%  { transform: scaleX(1.12); }
+  100% { transform: scaleX(1); }
+}
+
+/* Global: Radix dropdown/menu close — instant fade, no zoom shake */
+/* Only target menu CONTENT, never trigger buttons or sub-trigger items */
+[role="menu"][data-state="closed"],
+[role="listbox"][data-state="closed"],
+[data-radix-popper-content-wrapper] [data-state="closed"]:not([role="menuitem"]),
+[data-radix-dropdown-menu-content][data-state="closed"],
+[data-radix-select-content][data-state="closed"] {
+  animation: none !important;
+  transition: opacity 0.08s ease !important;
+  opacity: 0 !important;
 }
 
 .hero-btn {
@@ -926,13 +1239,65 @@
   filter: brightness(0) invert(1) brightness(0.85);
 }
 
+.composer-message-icon {
+  filter: brightness(0);
+  transition: filter 0.42s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dark .composer-message-icon {
+  filter: brightness(0) invert(1) brightness(0.68);
+}
+
+.composer-send-button {
+  background: linear-gradient(to bottom, #a3a3a3 0%, #000000 100%) !important;
+  transition: background 0.48s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.3s ease, transform 0.3s ease !important;
+}
+
+.dark .composer-send-button {
+  background: linear-gradient(to bottom, #ffffff 0%, #a3a3a3 100%) !important;
+}
+
 
 .glossy-outline {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.09), inset 0 -3px 0 rgba(0,0,0,0.10) !important;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.18), inset 0 -4px 0 rgba(0,0,0,0.42) !important;
 }
 
 .dark .glossy-outline {
-  box-shadow: 0 6px 18px rgba(180,180,180,0.18), inset 0 -3px 0 rgba(255,255,255,0.55), inset 0 -8px 18px rgba(255,255,255,0.10) !important;
+  box-shadow: 0 6px 18px rgba(255,255,255,0.10), inset 0 -4px 0 rgba(255,255,255,1), inset 0 -12px 20px rgba(255,255,255,0.10) !important;
+}
+
+.flat-shadow {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.92), inset 0 1px 0 rgba(255,255,255,0.60) !important;
+}
+
+.dark .flat-shadow {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.82), inset 0 1px 0 rgba(0,0,0,0.55) !important;
+}
+
+/* Game card banner outline — ::after overlay so it works over overflow:hidden children */
+.game-card-outline {
+  position: relative;
+}
+.game-card-outline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem; /* rounded-2xl = 16px */
+  box-shadow: 0 2px 14px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.18), inset 0 -4px 0 rgba(0,0,0,0.45);
+  pointer-events: none;
+  z-index: 10;
+}
+.dark .game-card-outline::after {
+  box-shadow: 0 6px 18px rgba(255,255,255,0.08), 0 0 0 1px rgba(255,255,255,0.12), inset 0 -4px 0 rgba(255,255,255,1), inset 0 -14px 22px rgba(255,255,255,0.10);
+}
+
+/* Radix SubTrigger text color fix — visible at rest, not just on hover */
+[role="menu"] [role="menuitem"][aria-haspopup="menu"] {
+  color: #111 !important;
+}
+.dark [role="menu"] [role="menuitem"][aria-haspopup="menu"] {
+  color: #fff !important;
 }
 
 /* Hide message bar and function bar immediately when voice mode is active.
@@ -942,6 +1307,7 @@ body.voice-mode-active .macos-function-bar,
 body.voice-mode-active [data-message-bar] {
   display: none !important;
 }
+
 
 /* Nomad notification: slide down first, then pop bounce */
 @keyframes nomad-pop-slide-in {
@@ -970,6 +1336,11 @@ body.voice-mode-active [data-message-bar] {
 }
 
 /* ─── Logo wavy circle (traveling-wave style) ─── */
+/* Light mode: dark gray ring + letter; Dark mode: full white */
+:root .fius-logo-ring   { stroke-opacity: 1; }
+:root .fius-logo-letter { fill-opacity:   1; }
+.dark .fius-logo-ring   { stroke-opacity: 1; }
+.dark .fius-logo-letter { fill-opacity:   1; }
 /* Animation is handled entirely via SVG <animateTransform> in logo.tsx */
 
 /* ─── Thinking cloud animation ─── */
@@ -1042,6 +1413,18 @@ html:not(.preload) img {
   transition: opacity 0.25s ease;
 }
 
+/* ── Word-by-word streaming fade-in ───────────────────────────────────────── */
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Light mode: dark shimmer on light cloud */
 :root:not(.dark) .thinking-label {
   background: linear-gradient(
@@ -1058,3 +1441,27 @@ html:not(.preload) img {
   background-clip: text;
 }
 
+
+/* ─── Accent Color ───────────────────────────────────────────────────────────── */
+/* When uiAccentEnabled=true & a specific color is chosen, body gets .fius-accent-on */
+
+/* Switches: checked = accent bg + always-white thumb so on/off is always clear */
+.fius-accent-on [data-state=checked] {
+  background-color: var(--fius-ui-accent) !important;
+}
+.fius-accent-on [data-state=checked] > span {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
+}
+/* Unchecked: subtle accent border so you can clearly see checked vs unchecked */
+.fius-accent-on [data-state=unchecked] {
+  border: 2px solid color-mix(in srgb, var(--fius-ui-accent) 35%, transparent) !important;
+}
+
+.fius-accent-on .user-msg-bubble {
+  background-color: var(--fius-ui-accent) !important;
+  color: #fff !important;
+}
+.fius-accent-on .user-msg-bubble * {
+  color: #fff !important;
+}

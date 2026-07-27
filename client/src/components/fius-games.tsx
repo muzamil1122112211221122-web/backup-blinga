@@ -1,14 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { playTabClick } from "@/lib/appearance-settings";
 import { Button } from "@/components/ui/button";
-import { Brain, Calculator, BookOpen, Gamepad2, ShoppingBag, Gem, ChevronRight, ChevronLeft, Star, Lock, Check, Layers, Zap, Car, HelpCircle, Shuffle } from "lucide-react";
-import imgCoins    from "@assets/pngaaa.com-2802597_1780326509539.png";
+import { Brain, Calculator, BookOpen, Gamepad2, ChevronRight, ChevronLeft, Star, Layers, Zap, Car, HelpCircle, Shuffle, X } from "lucide-react";
 // Game logos — new high-quality versions
-const logoMemory  = '/game-memory-match.png';
-const logoMaths   = '/game-speed-math.png';
-const logoWord    = '/game-word-scramble.png';
-const logoQuiz    = '/game-brain-quiz.png';
-const logoCar     = '/game-car-dodge.png';
-const logoOddword = '/game-odd-one-out.png';
+const memoryBanner = '/game-memory-banner.png';
+const memoryLogo   = '/game-memory-logo.png';
+const mathsBanner  = '/game-maths-banner.png';
+const logoMaths    = '/game-maths-logo.png';
+const wordBanner   = '/game-word-banner.png';
+const logoWord     = '/game-word-logo.png';
+const quizBanner   = '/game-quiz-banner.png';
+const logoQuiz     = '/game-quiz-logo.png';
+const carBanner    = '/game-car-banner.png';
+const logoCar      = '/game-car-logo.png';
+const oddwordBanner = '/game-oddword-banner.png';
+const logoOddword  = '/game-oddword-logo.png';
 const logoRPS     = '/game-rps.png';
 const logoTTT     = '/game-tictactoe.png';
 
@@ -17,27 +23,20 @@ type GameId = 'maths' | 'word' | 'memory' | 'quiz' | 'car' | 'oddword'
             | 'tictactoe' | 'hangman' | 'rps' | 'connectfour' | 'mastermind'
             | 'wordchain' | 'truefalse' | 'speedmath';
 
-interface GameProps { playerName: string; gameLevel: number; onWin: (score: number) => void; onLose: () => void; onBack: () => void; }
+interface GameProps { playerName: string; gameLevel: number; onWin: (score: number) => void; onLose: () => void; onBack: () => void; paused?: boolean; }
 interface ScoreEntry { id: string; game: string; score: number; level: number; date: string; }
 
-// ─── Fragment & Progress Storage (localStorage fallback) ──────────────────────
-const FRAG_KEY  = 'fius_fragments_v2';
-const OWNED_KEY = 'fius_owned_games_v2';
-const LEVEL_KEY = 'fius_game_levels_v2';
+// ─── Progress Storage (localStorage fallback) ────────────────────────────────
+const LEVEL_KEY  = 'fius_game_levels_v2';
 const SCORES_KEY = 'fius_scores_v2';
 
-function loadFragments(): number { try { return parseInt(localStorage.getItem(FRAG_KEY) || '0', 10) || 0; } catch { return 0; } }
-function saveFragments(n: number) { localStorage.setItem(FRAG_KEY, String(n)); }
-function loadOwned(): string[] { try { return JSON.parse(localStorage.getItem(OWNED_KEY) || '[]'); } catch { return []; } }
-function saveOwned(ids: string[]) { localStorage.setItem(OWNED_KEY, JSON.stringify(ids)); }
 function loadLevels(): Record<string, number> { try { return JSON.parse(localStorage.getItem(LEVEL_KEY) || '{}'); } catch { return {}; } }
 function saveLevels(l: Record<string, number>) { localStorage.setItem(LEVEL_KEY, JSON.stringify(l)); }
 function getGameLevel(id: string): number { const l = loadLevels(); return l[id] || 1; }
 function persistGameLevel(id: string, lv: number) { const l = loadLevels(); l[id] = lv; saveLevels(l); }
-function fragmentsForLevel(lv: number): number { return 4 + lv; }
 
 // ─── Server Sync ───────────────────────────────────────────────────────────────
-async function loadGamesFromServer(): Promise<{ownedGames:string[];fragments:number;levels:Record<string,number>;scores:ScoreEntry[]}|null> {
+async function loadGamesFromServer(): Promise<{levels:Record<string,number>;scores:ScoreEntry[]}|null> {
   try {
     const r = await fetch('/api/games/data');
     if (!r.ok) return null;
@@ -45,7 +44,7 @@ async function loadGamesFromServer(): Promise<{ownedGames:string[];fragments:num
   } catch { return null; }
 }
 let _syncTimer: ReturnType<typeof setTimeout>|null = null;
-function syncToServer(data: {ownedGames:string[];fragments:number;levels:Record<string,number>;scores:ScoreEntry[]}) {
+function syncToServer(data: {levels:Record<string,number>;scores:ScoreEntry[]}) {
   if (_syncTimer) clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => {
     fetch('/api/games/data', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }).catch(() => {});
@@ -54,12 +53,52 @@ function syncToServer(data: {ownedGames:string[];fragments:number;levels:Record<
 
 // ─── Level Difficulty Mapping ─────────────────────────────────────────────────
 function getDifficulty(lv: number): 'easy' | 'medium' | 'hard' {
-  if (lv <= 3) return 'easy';
-  if (lv <= 7) return 'medium';
+  if (lv <= 4) return 'easy';
+  if (lv <= 9) return 'medium';
   return 'hard';
 }
-function getRounds(lv: number, base: number): number { return Math.min(base + Math.floor(lv / 2), base + 8); }
-function getTimer(lv: number, baseTime: number): number { return Math.max(4, baseTime - lv); }
+// Rounds grow slowly: +1 per 4 levels, cap at base+5
+function getRounds(lv: number, base: number): number { return Math.min(base + Math.floor(lv / 4), base + 5); }
+// Timer: starts generous, loses ~1s every 4 levels, floor at 55% of base or 8s (whichever is higher)
+function getTimer(lv: number, baseTime: number): number {
+  return Math.max(Math.round(baseTime * 0.55), baseTime - Math.floor(lv / 4));
+}
+// Memory-specific: pairs grow 1 per 2 levels (4→10), time from 80s down to 30s floor
+function getMemoryConfig(lv: number): { pairs: number; time: number } {
+  const pairs = Math.min(4 + Math.floor(lv / 2), 10);
+  const time  = Math.max(30, 80 - lv * 3);
+  return { pairs, time };
+}
+
+// ─── Question History (anti-repeat for 25 games) ─────────────────────────────
+const MAX_Q_HIST = 130; // 25 games × ~5 questions
+function qHistKey(game: string, diff: string) { return `fius_qhist_${game}_${diff}`; }
+function getQHistory(game: string, diff: string): string[] {
+  try { return JSON.parse(localStorage.getItem(qHistKey(game, diff)) || '[]'); } catch { return []; }
+}
+function addToQHistory(game: string, diff: string, fingerprints: string[]) {
+  const hist = [...getQHistory(game, diff), ...fingerprints].slice(-MAX_Q_HIST);
+  localStorage.setItem(qHistKey(game, diff), JSON.stringify(hist));
+}
+function filterByQHistory<T>(pool: T[], hist: string[], fingerprint: (item: T) => string): T[] {
+  const histSet = new Set(hist);
+  const fresh = pool.filter(item => !histSet.has(fingerprint(item).slice(0, 45)));
+  return fresh.length >= 3 ? fresh : pool; // if pool depleted, allow reuse
+}
+
+// ─── AI Question Fetcher ──────────────────────────────────────────────────────
+async function fetchAIQuestions(game: string, difficulty: string, count: number, exclude: string[]): Promise<any[]> {
+  try {
+    const res = await fetch('/api/games/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game, difficulty, count, exclude: exclude.slice(-30) }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.questions) ? data.questions : [];
+  } catch { return []; }
+}
 
 // ─── Word Data ────────────────────────────────────────────────────────────────
 const WORD_EASY = [
@@ -185,8 +224,39 @@ const ODD_HARD: OddWordQ[] = [
   { text: "Schrödinger proposed his famous cat paradox to support quantum superposition", words: ["Schrödinger","support","cat paradox","quantum"], wrongIdx: 1, fix: "Schrödinger devised the paradox to CRITIQUE quantum superposition." },
 ];
 
-// ─── Memory Emojis ────────────────────────────────────────────────────────────
-const ALL_EMOJIS = ['🦁','🐬','🦊','🐸','🦋','🌺','⚡','🎸','🍕','🚀','🎯','🌈','🐙','🎃','🏆','🦄','🍀','🎭','🔮','🎪'];
+// ─── Memory Card Symbols — minimal geometric SVG paths ───────────────────────
+const CARD_SYMBOLS: string[][] = [
+  ['M12 2a10 10 0 100 20A10 10 0 0012 2z'],                                           // Circle
+  ['M12 3L2 21h20z'],                                                                  // Triangle
+  ['M12 2L2 12l10 10 10-10z'],                                                         // Diamond
+  ['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'], // Star
+  ['M12 2l8.66 5v10L12 22l-8.66-5V7z'],                                               // Hexagon
+  ['M12 5v14', 'M5 12h14'],                                                            // Plus
+  ['M6 6l12 12', 'M18 6L6 18'],                                                       // Cross X
+  ['M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z'], // Heart
+  ['M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z'],                                    // Moon
+  ['M13 2L3 14h9l-1 8 10-12h-9z'],                                                    // Lightning
+  ['M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4z', 'M12 12c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z'], // Infinity
+  ['M12 19V5', 'M5 12l7-7 7 7'],                                                      // Arrow up
+  ['M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z', 'M12 9a3 3 0 100 6 3 3 0 000-6z'], // Eye
+  ['M2 19h20', 'M5 19V9l7-6 7 6v10'],                                                // Crown
+  ['M12 2l9.5 6.9-3.6 11.1H6.1L2.5 8.9z'],                                           // Pentagon
+  ['M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86z'],                        // Octagon
+  ['M2 12c2-5 5-5 7 0s5 5 7 0 5-5 6 0'],                                             // Wave
+  ['M12 2a10 10 0 100 20A10 10 0 0012 2z', 'M12 7a5 5 0 100 10A5 5 0 0012 7z', 'M12 10a2 2 0 100 4 2 2 0 000-4z'], // Target
+  ['M17 8C8 10 5.9 16.17 3.82 22c0 0 3.63-1 7.18-3.32C14 16.67 17 12 17 8z'],      // Leaf
+  ['M5 2h14', 'M5 22h14', 'M5 2c0 7 7 10 7 10s7-3 7-10', 'M5 22c0-7 7-10 7-10s7 3 7 10'], // Hourglass
+];
+
+// ─── Per-game accent colour for countdown GO! ─────────────────────────────────
+const GAME_ACCENT_COLOR: Record<string, string> = {
+  memory:  '#f59e0b',
+  maths:   '#84cc16',
+  word:    '#60a5fa',
+  quiz:    '#f472b6',
+  car:     '#c084fc',
+  oddword: '#fb7185',
+};
 
 // ─── Hangman Words ────────────────────────────────────────────────────────────
 const HANG_EASY = ['CAT','DOG','SUN','MAP','RED','BAG','CUP','HAT','RUN','PIG','BEE','OWL','FOX','JAM','NET'];
@@ -260,11 +330,23 @@ function scramble(word: string): string {
 }
 
 // ─── UI Components ─────────────────────────────────────────────────────────────
-function TimerBar({ timeLeft, total }: { timeLeft: number; total: number }) {
-  const pct = (timeLeft / total) * 100;
+function TimerBar({ timeLeft, total, accent = '#60a5fa' }: { timeLeft: number; total: number; accent?: string }) {
+  const pct = Math.max(0, (timeLeft / total) * 100);
+  const danger = pct <= 28;
   return (
-    <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-3">
-      <div className={`h-full rounded-full transition-all duration-1000 ${pct <= 30 ? 'bg-gradient-to-r from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-r from-blue-400 to-purple-500'}`} style={{ width: `${pct}%` }} />
+    <div className="w-full flex-shrink-0 mb-2" style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+      <div
+        style={{
+          height: '100%',
+          width: `${pct}%`,
+          borderRadius: 99,
+          background: danger
+            ? 'linear-gradient(90deg,#ef4444,#f97316)'
+            : accent,
+          transition: 'width 1s linear, background 0.4s ease',
+          boxShadow: danger ? '0 0 8px rgba(239,68,68,0.6)' : `0 0 8px ${accent}60`,
+        }}
+      />
     </div>
   );
 }
@@ -277,23 +359,15 @@ function StatPill({ children, red }: { children: React.ReactNode; red?: boolean 
   );
 }
 
-function FragmentBadge({ count }: { count: number }) {
-  return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)', border: '1px solid rgba(96,165,250,0.5)' }}>
-      <img src={imgCoins} alt="coins" className="w-5 h-5 object-contain" />
-      <span className="text-white font-bold text-sm">{count}</span>
-    </div>
-  );
-}
-
 // ─── Level Badge (compact pill used inside games) ──────────────────────────────
 function LevelBadge({ level }: { level: number }) {
   const diff = getDifficulty(level);
-  const colors: Record<string, string> = { easy: 'from-green-500 to-emerald-600', medium: 'from-yellow-500 to-orange-500', hard: 'from-red-500 to-pink-600' };
+  const dotColor: Record<string, string> = { easy: '#4ade80', medium: '#fbbf24', hard: '#f87171' };
   return (
-    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r ${colors[diff]} text-white text-xs font-bold`}>
-      <Star size={10} fill="white" />
-      <span>Level {level}</span>
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0"
+      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dotColor[diff] }} />
+      <span className="text-[11px] font-bold text-white/75 tabular-nums tracking-wide">LV {level}</span>
     </div>
   );
 }
@@ -312,29 +386,39 @@ function LevelPill({ level }: { level: number }) {
 }
 
 // ─── Win Modal ─────────────────────────────────────────────────────────────────
-function WinModal({ level, score, fragsEarned, onContinue, onLeave }: { level: number; score: number; fragsEarned: number; onContinue: () => void; onLeave: () => void; }) {
+function WinModal({ level, score, onContinue, onLeave }: { level: number; score: number; onContinue: () => void; onLeave: () => void; }) {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-blue-500/40 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center" style={{ boxShadow: '0 0 40px rgba(59,130,246,0.25)' }}>
-        <div className="text-6xl mb-2">🏆</div>
-        <h3 className="text-2xl font-extrabold text-white mb-1">Level {level} Complete!</h3>
-        <p className="text-zinc-400 text-sm mb-4">Score: <span className="text-white font-bold">{score}</span></p>
-        <div className="flex items-center justify-center gap-2 p-3 rounded-xl mb-5" style={{ background: 'linear-gradient(135deg, rgba(30,64,175,0.4), rgba(59,130,246,0.2))', border: '1px solid rgba(96,165,250,0.3)' }}>
-          <span className="text-2xl">🔷</span>
-          <div>
-            <div className="text-white font-extrabold text-xl">+{fragsEarned} Fragments</div>
-            <div className="text-blue-300 text-xs">Added to your wallet</div>
+    <div className="fixed inset-0 flex items-center justify-center z-[60] p-4" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(160deg,#0f0f1a,#111827)', border: '1px solid rgba(251,191,36,0.30)' }}>
+        {/* gold accent bar */}
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#f59e0b,#fcd34d,#f59e0b)' }} />
+        <div className="p-6 text-center">
+          {/* trophy SVG */}
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.35)' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                <path d="M6 9H4a2 2 0 00-2 2v1a4 4 0 004 4h1"/><path d="M18 9h2a2 2 0 012 2v1a4 4 0 01-4 4h-1"/>
+                <path d="M6 2h12v10a6 6 0 01-12 0V2z"/><path d="M9 21h6"/><path d="M12 17v4"/>
+              </svg>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <button onClick={onContinue}
-            className="w-full py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)' }}>
-            Continue to Level {level + 1} <ChevronRight size={16} />
-          </button>
-          <button onClick={onLeave} className="w-full py-2.5 rounded-xl font-semibold text-zinc-400 text-sm hover:text-white transition-colors border border-zinc-700 hover:border-zinc-500">
-            Back to Menu
-          </button>
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-yellow-400/70 mb-1">Level Complete</p>
+          <h3 className="text-2xl font-black text-white mb-1">Level {level} ✦</h3>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-5" style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.25)' }}>
+            <svg viewBox="0 0 24 24" fill="#fbbf24" className="w-3 h-3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span className="text-xs font-bold text-yellow-300">{score.toLocaleString()} pts</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <button onClick={onContinue}
+              className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)', color: '#fff' }}>
+              <span>Level {level + 1}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <button onClick={onLeave} className="w-full py-2.5 rounded-xl font-semibold text-xs transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              Back to Menu
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -343,29 +427,41 @@ function WinModal({ level, score, fragsEarned, onContinue, onLeave }: { level: n
 
 // ─── Lose Modal ────────────────────────────────────────────────────────────────
 function LoseModal({ level, onRetry, onLeave }: { level: number; onRetry: () => void; onLeave: () => void; }) {
-  const encouragements = [
-    "You're so close! Give it one more try!",
-    "Every expert was once a beginner. Keep going!",
-    "Don't stop now — you've got this!",
-    "A little more practice and Level " + level + " is yours!",
-    "Failure is just the first step to success. Retry!",
+  const msgs = [
+    "So close! One more attempt and it's yours.",
+    "Every expert started exactly where you are now.",
+    "The best players retry — you've got this.",
+    `Level ${level} isn't done with you yet. Fight back!`,
+    "A stumble forward is still progress. Retry!",
   ];
-  const msg = encouragements[Math.floor(Math.random() * encouragements.length)];
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-        <div className="text-6xl mb-2">💪</div>
-        <h3 className="text-xl font-extrabold text-white mb-1">Don't Give Up!</h3>
-        <p className="text-zinc-400 text-sm mb-5 leading-relaxed">{msg}</p>
-        <div className="flex flex-col gap-2">
-          <button onClick={onRetry}
-            className="w-full py-3 rounded-xl font-bold text-white text-sm"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
-            🔄 Retry Level {level}
-          </button>
-          <button onClick={onLeave} className="w-full py-2.5 rounded-xl font-semibold text-zinc-400 text-sm hover:text-white transition-colors border border-zinc-700 hover:border-zinc-500">
-            Leave to Menu
-          </button>
+    <div className="fixed inset-0 flex items-center justify-center z-[60] p-4" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(160deg,#0f0f1a,#111827)', border: '1px solid rgba(168,85,247,0.30)' }}>
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#7c3aed,#a855f7,#7c3aed)' }} />
+        <div className="p-6 text-center">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(168,85,247,0.12)', border: '1.5px solid rgba(168,85,247,0.35)' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                <path d="M12 8v4l2 2"/><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8M21 3v5h-5"/>
+              </svg>
+            </div>
+          </div>
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: 'rgba(168,85,247,0.7)' }}>Not Yet</p>
+          <h3 className="text-xl font-black text-white mb-2">Keep Going!</h3>
+          <p className="text-sm mb-5 leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>{msg}</p>
+          <div className="flex flex-col gap-2">
+            <button onClick={onRetry}
+              className="w-full py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+              Retry Level {level}
+            </button>
+            <button onClick={onLeave} className="w-full py-2.5 rounded-xl font-semibold text-xs transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              Back to Menu
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -375,18 +471,31 @@ function LoseModal({ level, onRetry, onLeave }: { level: number; onRetry: () => 
 // ─── Continue Modal ────────────────────────────────────────────────────────────
 function ContinueModal({ nextLevel, onYes, onNo }: { nextLevel: number; onYes: () => void; onNo: () => void; }) {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 border border-blue-500/40 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-        <div className="text-5xl mb-3">🎯</div>
-        <h3 className="text-xl font-extrabold text-white mb-2">Ready for Level {nextLevel}?</h3>
-        <p className="text-zinc-400 text-sm mb-5">Difficulty is higher — think you can handle it?</p>
-        <div className="flex gap-3">
-          <button onClick={onYes} className="flex-1 py-3 rounded-xl font-bold text-white text-sm" style={{ background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)' }}>
-            Let's Go! 🚀
-          </button>
-          <button onClick={onNo} className="flex-1 py-3 rounded-xl font-semibold text-zinc-400 text-sm hover:text-white transition-colors border border-zinc-700">
-            Maybe Later
-          </button>
+    <div className="fixed inset-0 flex items-center justify-center z-[60] p-4" style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl" style={{ background: 'linear-gradient(160deg,#0f0f1a,#111827)', border: '1px solid rgba(59,130,246,0.30)' }}>
+        <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg,#1d4ed8,#60a5fa,#1d4ed8)' }} />
+        <div className="p-6 text-center">
+          <div className="flex items-center justify-center mb-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.12)', border: '1.5px solid rgba(59,130,246,0.35)' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/>
+                <path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/>
+                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M15 12v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+              </svg>
+            </div>
+          </div>
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: 'rgba(96,165,250,0.7)' }}>Up Next</p>
+          <h3 className="text-xl font-black text-white mb-2">Level {nextLevel}</h3>
+          <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>Harder questions, tighter timer — ready?</p>
+          <div className="flex gap-3">
+            <button onClick={onYes} className="flex-1 py-3 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-1.5 transition-all hover:brightness-110 active:scale-95" style={{ background: 'linear-gradient(135deg,#1d4ed8,#3b82f6)' }}>
+              Let's Go
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <button onClick={onNo} className="flex-1 py-3 rounded-xl font-semibold text-xs transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.10)' }}>
+              Not Now
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -394,11 +503,17 @@ function ContinueModal({ nextLevel, onYes, onNo }: { nextLevel: number; onYes: (
 }
 
 // ─── FIUS MATHS ──────────────────────────────────────────────────────────────
-function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusMaths({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 6);
-  const cfg = { easy: { maxA: 20, maxB: 20, ops: ['+','-'] }, medium: { maxA: 50, maxB: 50, ops: ['+','-','×','÷'] }, hard: { maxA: 100, maxB: 100, ops: ['+','-','×','÷'] } }[diff];
+  const Q_TIME = getTimer(gameLevel, 12);
+  // Difficulty configs — numbers scale with level, ops unlock gradually
+  const cfg = {
+    easy:   { maxA: 10 + gameLevel * 2, maxB: 10 + gameLevel * 2, ops: ['+', '-'] },
+    medium: { maxA: 20 + gameLevel * 3, maxB: 20 + gameLevel * 3, ops: ['+', '-', '×'] },
+    hard:   { maxA: 30 + gameLevel * 5, maxB: 30 + gameLevel * 5, ops: ['+', '-', '×', '÷'] },
+  }[diff];
+  const ACCENT = '#84cc16';
   const [score, setScore] = useState(0);
   const [round, setRound] = useState(0);
   const [timeLeft, setTimeLeft] = useState(Q_TIME);
@@ -406,40 +521,39 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const [feedback, setFeedback] = useState<'correct'|'wrong'|'timeout'|null>(null);
   const [streak, setStreak] = useState(0);
   const [question, setQuestion] = useState({ text: '', correct: 0 });
-  const [correct, setCorrect] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const scoreRef = useRef(0);
   const correctRef = useRef(0);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout>|null>(null);
 
   const newQuestion = useCallback(() => {
     const op = cfg.ops[Math.floor(Math.random() * cfg.ops.length)];
     let a: number, b: number, ans: number;
     if (op === '+') { a = Math.floor(Math.random() * cfg.maxA) + 1; b = Math.floor(Math.random() * cfg.maxB) + 1; ans = a + b; }
-    else if (op === '-') { a = Math.floor(Math.random() * cfg.maxA) + 10; b = Math.floor(Math.random() * a); ans = a - b; }
-    else if (op === '×') { a = Math.floor(Math.random() * 12) + 1; b = Math.floor(Math.random() * 12) + 1; ans = a * b; }
-    else { a = Math.floor(Math.random() * 10) + 1; b = a * (Math.floor(Math.random() * 10) + 1); ans = b / a; [a, b] = [b, a]; }
+    else if (op === '-') { a = Math.floor(Math.random() * cfg.maxA) + 10; b = Math.floor(Math.random() * Math.min(a, cfg.maxA)); ans = a - b; }
+    else if (op === '×') { a = Math.floor(Math.random() * Math.min(12, gameLevel + 3)) + 1; b = Math.floor(Math.random() * Math.min(12, gameLevel + 3)) + 1; ans = a * b; }
+    else { a = Math.floor(Math.random() * 9) + 2; b = a * (Math.floor(Math.random() * 9) + 2); ans = b / a; [a, b] = [b, a]; }
     setQuestion({ text: `${a} ${op} ${b} = ?`, correct: ans });
     setAnswer(''); setTimeLeft(Q_TIME);
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [cfg, Q_TIME]);
+  }, [cfg, Q_TIME, gameLevel]);
 
   useEffect(() => { newQuestion(); }, []);
 
   useEffect(() => {
-    if (feedback) return;
-    if (timeLeft === 0) { setStreak(0); setFeedback('timeout'); advance(); return; }
+    if (paused || feedback) return;
+    if (timeLeft === 0) { setStreak(0); setFeedback('timeout'); doAdvance(); return; }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, feedback]);
+  }, [timeLeft, feedback, paused]);
 
-  const advance = () => {
-    setTimeout(() => {
+  const doAdvance = () => {
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = setTimeout(() => {
       setFeedback(null);
       const next = round + 1;
       if (next >= ROUNDS) {
-        const finalScore = scoreRef.current;
-        const finalCorrect = correctRef.current;
-        if (finalCorrect >= Math.ceil(ROUNDS * 0.6)) onWin(finalScore);
+        if (correctRef.current >= Math.ceil(ROUNDS * 0.6)) onWin(scoreRef.current);
         else onLose();
       } else { setRound(next); newQuestion(); }
     }, 900);
@@ -450,42 +564,74 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
     const val = parseInt(answer);
     if (isNaN(val)) return;
     if (val === question.correct) {
-      const newStreak = streak + 1;
-      const pts = 10 + (newStreak >= 3 ? 5 : 0);
+      const ns = streak + 1;
+      const pts = 10 + (ns >= 3 ? 10 : 0) + Math.max(0, timeLeft - 3) * 2;
       scoreRef.current += pts; setScore(scoreRef.current);
-      correctRef.current++; setCorrect(correctRef.current);
-      setStreak(newStreak); setFeedback('correct');
+      correctRef.current++;
+      setStreak(ns); setFeedback('correct');
     } else { setStreak(0); setFeedback('wrong'); }
-    advance();
+    doAdvance();
   };
 
+  const urgent = timeLeft <= 5 && !feedback;
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex gap-2 items-center">
-          <LevelBadge level={gameLevel} />
-          {streak >= 3 && <StatPill>🔥 {streak}x</StatPill>}
-          <StatPill>Q {Math.min(round+1,ROUNDS)}/{ROUNDS}</StatPill>
-          <StatPill>⭐ {score}</StatPill>
-          <StatPill red={timeLeft <= 3}>⏱ {timeLeft}s</StatPill>
+    <div className="flex flex-col h-full gap-2.5 px-1">
+      {/* Stats bar */}
+      <div className="flex items-center justify-between gap-2 flex-shrink-0">
+        <LevelBadge level={gameLevel} />
+        <div className="flex items-center gap-1.5">
+          {streak >= 3 && (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.30)' }}>
+              <svg viewBox="0 0 24 24" fill="#fbbf24" className="w-3 h-3"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+              <span className="text-[11px] font-bold text-yellow-300">{streak}x</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2.5 2.5"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{Math.min(round+1,ROUNDS)}<span className="opacity-40">/{ROUNDS}</span></span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="#84cc16" className="w-3 h-3 opacity-80"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{score}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors" style={{ background: urgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${urgent ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.09)'}` }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-3 h-3 ${urgent ? 'text-red-400' : 'opacity-50'}`}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span className={`text-[11px] font-semibold tabular-nums ${urgent ? 'text-red-400' : 'text-foreground'}`}>{timeLeft}s</span>
+          </div>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={Q_TIME} />
-      <div className="flex-1 flex flex-col items-center justify-center">
+
+      <TimerBar timeLeft={timeLeft} total={Q_TIME} accent="#84cc16" />
+
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="w-full max-w-sm">
-          <div className={`text-center p-8 rounded-2xl border-2 mb-5 transition-all ${feedback === 'correct' ? 'border-green-400 bg-green-500/10' : feedback === 'wrong' || feedback === 'timeout' ? 'border-red-400 bg-red-500/10' : 'border-white/10 bg-white/5'}`}>
-            <p className="text-4xl font-bold text-white">{question.text}</p>
-            {feedback === 'correct' && <p className="text-green-400 text-sm mt-2">✓ Correct! {streak >= 3 ? '+15' : '+10'} pts</p>}
-            {feedback === 'wrong' && <p className="text-red-400 text-sm mt-2">✗ Answer was {question.correct}</p>}
-            {feedback === 'timeout' && <p className="text-orange-400 text-sm mt-2">⏱ Time up! Answer was {question.correct}</p>}
+          {/* Question card */}
+          <div className="text-center rounded-2xl p-8 mb-5 transition-all duration-200"
+            style={{
+              background: feedback === 'correct' ? 'rgba(132,204,22,0.10)' : feedback === 'wrong' || feedback === 'timeout' ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${feedback === 'correct' ? 'rgba(132,204,22,0.45)' : feedback === 'wrong' || feedback === 'timeout' ? 'rgba(239,68,68,0.45)' : 'rgba(255,255,255,0.09)'}`,
+            }}>
+            <p className="text-[11px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: `${ACCENT}80` }}>Speed Maths</p>
+            <p className="text-4xl font-black text-white mb-2" style={{ letterSpacing: '-0.02em' }}>{question.text || '…'}</p>
+            {feedback === 'correct' && <p className="text-xs font-bold mt-2" style={{ color: ACCENT }}>✓ Correct{streak >= 3 ? ` · ${streak}× streak!` : ''}</p>}
+            {feedback === 'wrong'   && <p className="text-xs font-bold text-red-400 mt-2">✗ Answer was {question.correct}</p>}
+            {feedback === 'timeout' && <p className="text-xs font-bold text-orange-400 mt-2">Time's up — answer was {question.correct}</p>}
           </div>
+          {/* Input row — type=text + inputMode=numeric kills browser +/- spinner arrows */}
           <div className="flex gap-2">
-            <input ref={inputRef} type="number" value={answer} onChange={e => setAnswer(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Your answer..."
-              className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <style>{`input.fius-num::-webkit-outer-spin-button,input.fius-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}input.fius-num{-moz-appearance:textfield}`}</style>
+            <input ref={inputRef} type="text" inputMode="numeric" pattern="[0-9-]*" value={answer}
+              onChange={e => { const v = e.target.value; if (/^-?\d*$/.test(v)) setAnswer(v); }}
+              onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Your answer…"
+              className="fius-num flex-1 rounded-xl px-4 py-3 text-lg text-center font-bold text-white focus:outline-none transition-all"
+              style={{ background: 'rgba(255,255,255,0.06)', border: `1.5px solid ${feedback ? 'rgba(255,255,255,0.06)' : 'rgba(132,204,22,0.30)'}`, caretColor: ACCENT }}
               disabled={!!feedback} />
-            <Button onClick={submit} size="lg" className="px-6 bg-blue-500 hover:bg-blue-600" disabled={!!feedback}>Go</Button>
+            <button onClick={submit} disabled={!!feedback || !answer.trim()}
+              className="px-5 rounded-xl font-black text-sm text-white transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
+              style={{ background: `linear-gradient(135deg,#4d7c0f,${ACCENT})`, minWidth: 64 }}>
+              Go
+            </button>
           </div>
         </div>
       </div>
@@ -494,93 +640,151 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ─── FIUS WORD ───────────────────────────────────────────────────────────────
-function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 6);
-  const wordList = { easy: WORD_EASY, medium: WORD_MEDIUM, hard: WORD_HARD }[diff];
+  const Q_TIME = getTimer(gameLevel, 14);
+  const staticPool = { easy: WORD_EASY, medium: WORD_MEDIUM, hard: WORD_HARD }[diff];
   const noHints = diff === 'hard';
+  const ACCENT = '#3b82f6';
+
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct'|'wrong'|'timeout'|null>(null);
-  const [words, setWords] = useState<typeof WORD_EASY>([]);
+  const [words, setWords] = useState<{word:string;hint:string}[]>([]);
   const [scrambled, setScrambled] = useState('');
   const [showHint, setShowHint] = useState(false);
   const [timeLeft, setTimeLeft] = useState(Q_TIME);
+  const [qLoading, setQLoading] = useState(true);
   const correctRef = useRef(0);
   const scoreRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const letterColors = ['bg-blue-500','bg-purple-500','bg-pink-500','bg-red-500','bg-orange-500','bg-yellow-500','bg-green-500','bg-teal-500'];
+  // blue tile gradient pairs per letter position
+  const tileGrads = [
+    'linear-gradient(135deg,#1d4ed8,#3b82f6)','linear-gradient(135deg,#5b21b6,#7c3aed)',
+    'linear-gradient(135deg,#0e7490,#0891b2)','linear-gradient(135deg,#166534,#16a34a)',
+    'linear-gradient(135deg,#1d4ed8,#60a5fa)','linear-gradient(135deg,#7c3aed,#a78bfa)',
+    'linear-gradient(135deg,#0e7490,#38bdf8)','linear-gradient(135deg,#9a3412,#ea580c)',
+  ];
 
   useEffect(() => {
-    const picked = shuffleArray(wordList).slice(0, ROUNDS);
-    setWords(picked); setScrambled(scramble(picked[0].word));
-    setTimeout(() => inputRef.current?.focus(), 50);
+    let cancelled = false;
+    async function loadQuestions() {
+      const hist = getQHistory('word', diff);
+      const aiQs = await fetchAIQuestions('word', diff, ROUNDS + 3, hist.slice(-30));
+      if (cancelled) return;
+      let picked: {word:string;hint:string}[];
+      if (aiQs.length >= ROUNDS && aiQs.every((q: any) => q.word && q.hint)) {
+        const normalized = aiQs.map((q: any) => ({ word: String(q.word).toUpperCase().trim(), hint: String(q.hint) }));
+        addToQHistory('word', diff, normalized.slice(0, ROUNDS).map(q => q.word));
+        picked = normalized.slice(0, ROUNDS);
+      } else {
+        const fresh = filterByQHistory(staticPool, hist, w => w.word);
+        picked = shuffleArray(fresh).slice(0, ROUNDS);
+        addToQHistory('word', diff, picked.map(q => q.word));
+      }
+      setWords(picked);
+      setScrambled(scramble(picked[0].word));
+      setQLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+    loadQuestions();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (feedback || !words.length) return;
-    if (timeLeft === 0) { setFeedback('timeout'); advance(); return; }
+    if (paused || feedback || !words.length || qLoading) return;
+    if (timeLeft === 0) { setFeedback('timeout'); doAdvance(); return; }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, feedback, words]);
+  }, [timeLeft, feedback, words, paused, qLoading]);
 
-  const advance = () => {
+  const doAdvance = () => {
     setTimeout(() => {
       setFeedback(null); setShowHint(false); setAnswer('');
       const next = round + 1;
       if (next >= ROUNDS) {
-        if (correctRef.current >= Math.ceil(ROUNDS * 0.6)) onWin(scoreRef.current);
-        else onLose();
+        if (correctRef.current >= Math.ceil(ROUNDS * 0.6)) onWin(scoreRef.current); else onLose();
       } else { setRound(next); setScrambled(scramble(words[next].word)); setTimeLeft(Q_TIME); setTimeout(() => inputRef.current?.focus(), 50); }
     }, 1000);
   };
 
   const submit = () => {
-    if (feedback) return;
-    const w = words[round]; if (!w) return;
-    const isCorrect = answer.toUpperCase().trim() === w.word;
-    if (isCorrect) { const pts = showHint ? 5 : 10; scoreRef.current += pts; setScore(scoreRef.current); correctRef.current++; }
+    if (feedback || !words[round]) return;
+    const isCorrect = answer.toUpperCase().trim() === words[round].word;
+    if (isCorrect) { const pts = (showHint ? 6 : 12) + Math.max(0, timeLeft - 4) * 2; scoreRef.current += pts; setScore(scoreRef.current); correctRef.current++; }
     setFeedback(isCorrect ? 'correct' : 'wrong');
-    advance();
+    doAdvance();
   };
 
+  const urgent = timeLeft <= 5 && !feedback;
+
+  if (qLoading) return (
+    <div className="flex-1 flex items-center justify-center flex-col gap-3">
+      <div className="w-7 h-7 rounded-full" style={{ border: '2.5px solid rgba(59,130,246,0.25)', borderTopColor: ACCENT, animation: 'spin 0.8s linear infinite' }} />
+      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Generating words…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex gap-2 items-center">
-          <LevelBadge level={gameLevel} />
-          <StatPill>Word {Math.min(round+1,ROUNDS)}/{ROUNDS}</StatPill>
-          <StatPill>⭐ {score}</StatPill>
-          <StatPill red={timeLeft<=3}>⏱ {timeLeft}s</StatPill>
+    <div className="flex flex-col h-full gap-2.5 px-1">
+      <div className="flex items-center justify-between gap-2 flex-shrink-0">
+        <LevelBadge level={gameLevel} />
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-50"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{Math.min(round+1,ROUNDS)}<span className="opacity-40">/{ROUNDS}</span></span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="#3b82f6" className="w-3 h-3 opacity-80"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{score}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors" style={{ background: urgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${urgent ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.09)'}` }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-3 h-3 ${urgent ? 'text-red-400' : 'opacity-50'}`}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span className={`text-[11px] font-semibold tabular-nums ${urgent ? 'text-red-400' : 'text-foreground'}`}>{timeLeft}s</span>
+          </div>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={Q_TIME} />
-      <div className="flex-1 flex flex-col items-center justify-center">
+      <TimerBar timeLeft={timeLeft} total={Q_TIME} accent="#60a5fa" />
+      <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="w-full max-w-sm">
-          <div className={`text-center p-6 rounded-2xl border-2 mb-5 transition-all ${feedback === 'correct' ? 'border-green-400 bg-green-500/10' : feedback === 'wrong' || feedback === 'timeout' ? 'border-red-400 bg-red-500/10' : 'border-white/10 bg-white/5'}`}>
-            <p className="text-xs text-zinc-400 mb-3 uppercase tracking-widest">Unscramble this word</p>
+          <div className="rounded-2xl p-5 mb-4 text-center transition-all duration-200"
+            style={{
+              background: feedback === 'correct' ? 'rgba(59,130,246,0.10)' : feedback ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${feedback === 'correct' ? 'rgba(59,130,246,0.45)' : feedback ? 'rgba(239,68,68,0.45)' : 'rgba(255,255,255,0.09)'}`,
+            }}>
+            <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-3" style={{ color: `${ACCENT}80` }}>Unscramble the word</p>
+            {/* Scrambled letter tiles */}
             <div className="flex justify-center gap-1.5 mb-3 flex-wrap">
               {scrambled.split('').map((l, i) => (
-                <div key={i} className={`w-10 h-10 ${letterColors[i % letterColors.length]} rounded-lg flex items-center justify-center text-xl font-bold text-white shadow-lg`}>{l}</div>
+                <div key={i} className="w-9 h-9 rounded-xl flex items-center justify-center text-base font-black text-white shadow-lg" style={{ background: tileGrads[i % tileGrads.length] }}>{l}</div>
               ))}
             </div>
-            {showHint && <p className="text-xs text-zinc-400 italic mb-1">💡 {words[round]?.hint}</p>}
-            {feedback === 'correct' && <p className="text-green-400 text-sm">✓ +{showHint ? 5 : 10} pts!</p>}
-            {feedback === 'wrong' && <p className="text-red-400 text-sm">✗ Was: <b>{words[round]?.word}</b></p>}
-            {feedback === 'timeout' && <p className="text-orange-400 text-sm">⏱ Time up! Was: <b>{words[round]?.word}</b></p>}
+            {showHint && <p className="text-xs italic mb-1" style={{ color: 'rgba(255,255,255,0.50)' }}>Hint: {words[round]?.hint}</p>}
+            {feedback === 'correct' && <p className="text-xs font-bold mt-1" style={{ color: ACCENT }}>✓ Correct!</p>}
+            {feedback === 'wrong'   && <p className="text-xs font-bold text-red-400 mt-1">✗ Was: {words[round]?.word}</p>}
+            {feedback === 'timeout' && <p className="text-xs font-bold text-orange-400 mt-1">Time's up — was: {words[round]?.word}</p>}
           </div>
           <div className="flex gap-2 mb-2">
             <input ref={inputRef} type="text" value={answer} onChange={e => setAnswer(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === 'Enter' && !feedback && submit()}
-              placeholder="Type your answer..." maxLength={12} disabled={!!feedback}
-              className="flex-1 bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-lg text-white text-center uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-green-400" />
+              placeholder="Your answer…" maxLength={14} disabled={!!feedback}
+              className="flex-1 rounded-xl px-4 py-3 text-base text-center font-black text-white uppercase tracking-widest focus:outline-none transition-all"
+              style={{ background: 'rgba(255,255,255,0.06)', border: `1.5px solid ${feedback ? 'rgba(255,255,255,0.06)' : 'rgba(59,130,246,0.30)'}`, caretColor: ACCENT }} />
           </div>
           <div className="flex gap-2">
-            <Button onClick={submit} className="flex-1 bg-green-500 hover:bg-green-600" disabled={!!feedback || !answer.trim()}>Submit</Button>
-            {!noHints && !showHint && !feedback && <Button onClick={() => setShowHint(true)} variant="outline" className="text-xs px-3">💡 Hint</Button>}
+            <button onClick={submit} disabled={!!feedback || !answer.trim()}
+              className="flex-1 py-3 rounded-xl font-black text-sm text-white transition-all hover:brightness-110 active:scale-95 disabled:opacity-40"
+              style={{ background: `linear-gradient(135deg,#1d4ed8,${ACCENT})` }}>Submit</button>
+            {!noHints && !showHint && !feedback && (
+              <button onClick={() => setShowHint(true)}
+                className="px-4 py-3 rounded-xl font-bold text-xs transition-all hover:brightness-110"
+                style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: ACCENT }}>
+                Hint
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -590,12 +794,11 @@ function FiusWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
 
 // ─── FIUS MEMORY ─────────────────────────────────────────────────────────────
 interface MemoryCard { id: number; emoji: string; flipped: boolean; matched: boolean; }
-function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
-  const pairCount = Math.min(4 + Math.floor(gameLevel * 0.8), 10);
-  const totalTime = Math.max(15, 45 - gameLevel * 3);
+function FiusMemory({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+  const { pairs: pairCount, time: totalTime } = getMemoryConfig(gameLevel);
   const cols = pairCount >= 8 ? 5 : 4;
-  const [emojis] = useState(() => shuffleArray(ALL_EMOJIS).slice(0, pairCount));
-  const [cards, setCards] = useState<MemoryCard[]>([]);
+  const [symbols] = useState(() => shuffleArray([...Array(CARD_SYMBOLS.length).keys()]).slice(0, pairCount));
+  const [cards, setCards] = useState<{ id: number; symbol: number; flipped: boolean; matched: boolean }[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState(0);
   const [moves, setMoves] = useState(0);
@@ -604,17 +807,17 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
   const [done, setDone] = useState(false);
   const startTimeRef = useRef(Date.now());
 
-  const buildDeck = (emojiList: string[]) =>
-    shuffleArray([...emojiList, ...emojiList]).map((emoji, id) => ({ id, emoji, flipped: false, matched: false }));
+  const buildDeck = (syms: number[]) =>
+    shuffleArray([...syms, ...syms]).map((symbol, id) => ({ id, symbol, flipped: false, matched: false }));
 
-  useEffect(() => { setCards(buildDeck(emojis)); }, [emojis]);
+  useEffect(() => { setCards(buildDeck(symbols)); }, [symbols]);
 
   useEffect(() => {
-    if (done) return;
+    if (paused || done) return;
     if (timeLeft === 0) { setDone(true); onLose(); return; }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, done]);
+  }, [timeLeft, done, paused]);
 
   const flipCard = (id: number) => {
     if (!canFlip || done) return;
@@ -627,7 +830,7 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
       setMoves(m => m + 1); setCanFlip(false);
       const [a, b] = newFlipped;
       setTimeout(() => {
-        if (cards[a].emoji === cards[b].emoji) {
+        if (cards[a].symbol === cards[b].symbol) {
           setCards(prev => prev.map(c => newFlipped.includes(c.id) ? { ...c, matched: true } : c));
           const nm = matched + 1;
           setMatched(nm);
@@ -642,29 +845,76 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
     }
   };
 
+  const urgent = timeLeft <= 10;
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex gap-2 items-center">
-          <LevelBadge level={gameLevel} />
-          <StatPill>🃏 {matched}/{pairCount}</StatPill>
-          <StatPill>👆 {moves}</StatPill>
-          <StatPill red={timeLeft <= 10}>⏱ {timeLeft}s</StatPill>
+    <div className="flex flex-col h-full gap-2 px-1">
+      {/* ── Premium stats bar ── */}
+      <div className="flex items-center justify-between gap-2 flex-shrink-0">
+        <LevelBadge level={gameLevel} />
+        <div className="flex items-center gap-1.5">
+          {/* Pairs */}
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-60"><rect x="2" y="4" width="8" height="10" rx="1.5"/><rect x="14" y="4" width="8" height="10" rx="1.5"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{matched}<span className="opacity-40">/{pairCount}</span></span>
+          </div>
+          {/* Moves */}
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-60"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{moves}</span>
+          </div>
+          {/* Timer */}
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors" style={{ background: urgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${urgent ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.09)'}` }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-3 h-3 ${urgent ? 'text-red-400' : 'opacity-60'}`}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span className={`text-[11px] font-semibold tabular-nums ${urgent ? 'text-red-400' : 'text-foreground'}`}>{timeLeft}s</span>
+          </div>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={totalTime} />
+
+      {/* ── Progress bar ── */}
+      <TimerBar timeLeft={timeLeft} total={totalTime} accent="#f59e0b" />
+
+      {/* ── Card grid ── */}
       <div className="flex-1 flex flex-col items-center justify-center">
-        <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: cols === 5 ? '300px' : '250px', width: '100%' }}>
-          {cards.map((card, idx) => {
-            const colors = ['bg-blue-500/30','bg-purple-500/30','bg-green-500/30','bg-orange-500/30','bg-pink-500/30'];
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: cols === 5 ? '310px' : '260px', width: '100%' }}>
+          {cards.map((card) => {
+            const sym = CARD_SYMBOLS[card.symbol] ?? CARD_SYMBOLS[0];
+            const isVisible = card.flipped || card.matched;
             return (
-              <button key={card.id} onClick={() => flipCard(card.id)}
-                className={`aspect-square rounded-xl text-2xl flex items-center justify-center transition-all duration-300 border-2 font-bold
-                  ${card.matched ? 'bg-green-500/20 border-green-400 scale-95 cursor-default' :
-                    card.flipped ? `${colors[idx % colors.length]} border-purple-400 scale-105` :
-                    'bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer active:scale-95'}`}>
-                {(card.flipped || card.matched) ? card.emoji : <span className="text-zinc-600 text-base">?</span>}
+              <button
+                key={card.id}
+                onClick={() => flipCard(card.id)}
+                className="aspect-square rounded-xl flex items-center justify-center transition-all duration-300"
+                style={{
+                  background: card.matched
+                    ? 'rgba(251,191,36,0.12)'
+                    : isVisible
+                      ? 'rgba(255,255,255,0.07)'
+                      : 'rgba(255,255,255,0.04)',
+                  border: card.matched
+                    ? '1.5px solid rgba(251,191,36,0.45)'
+                    : isVisible
+                      ? '1.5px solid rgba(255,255,255,0.22)'
+                      : '1.5px solid rgba(255,255,255,0.08)',
+                  transform: card.matched ? 'scale(0.94)' : isVisible ? 'scale(1.04)' : 'scale(1)',
+                  cursor: card.matched ? 'default' : 'pointer',
+                  boxShadow: isVisible && !card.matched ? '0 0 12px rgba(255,255,255,0.06)' : 'none',
+                }}
+              >
+                {isVisible ? (
+                  <svg
+                    viewBox="0 0 24 24" fill="none"
+                    stroke={card.matched ? '#fbbf24' : 'rgba(255,255,255,0.88)'}
+                    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ width: '45%', height: '45%' }}
+                  >
+                    {sym.map((d, i) => <path key={i} d={d} />)}
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ width: '38%', height: '38%' }}>
+                    <circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/>
+                  </svg>
+                )}
               </button>
             );
           })}
@@ -675,73 +925,128 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ─── FIUS QUIZ ───────────────────────────────────────────────────────────────
-function FiusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusQuiz({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
-  const pool = { easy: QUIZ_EASY, medium: QUIZ_MEDIUM, hard: QUIZ_HARD }[diff];
+  const staticPool = { easy: QUIZ_EASY, medium: QUIZ_MEDIUM, hard: QUIZ_HARD }[diff];
   const total = getRounds(gameLevel, 5);
-  const Q_TIME = getTimer(gameLevel, 6);
-  const [questions] = useState(() => shuffleArray(pool).slice(0, total));
+  const Q_TIME = getTimer(gameLevel, 14);
+  const ACCENT = '#ec4899';
+  const OPT_COLORS = ['#3b82f6','#a855f7','#f59e0b','#14b8a6'];
+
+  const [questions, setQuestions] = useState<{q:string;options:string[];answer:number}[]>([]);
+  const [qLoading, setQLoading] = useState(true);
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<number|null>(null);
-  const [correct, setCorrect] = useState(0);
   const [timeLeft, setTimeLeft] = useState(Q_TIME);
   const correctRef = useRef(0); const scoreRef = useRef(0);
-  const optLabels = ['A','B','C','D'];
 
   useEffect(() => {
-    if (selected !== null) return;
+    let cancelled = false;
+    async function load() {
+      const hist = getQHistory('quiz', diff);
+      const aiQs = await fetchAIQuestions('quiz', diff, total + 3, hist.slice(-30));
+      if (cancelled) return;
+      let picked: {q:string;options:string[];answer:number}[];
+      if (aiQs.length >= total && aiQs.every((q: any) => q.q && Array.isArray(q.options) && q.options.length === 4 && typeof q.answer === 'number')) {
+        addToQHistory('quiz', diff, aiQs.slice(0, total).map((q: any) => String(q.q).slice(0, 45)));
+        picked = aiQs.slice(0, total);
+      } else {
+        const fresh = filterByQHistory(staticPool, hist, q => q.q);
+        picked = shuffleArray(fresh).slice(0, total);
+        addToQHistory('quiz', diff, picked.map(q => q.q.slice(0, 45)));
+      }
+      setQuestions(picked);
+      setQLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (paused || selected !== null || qLoading) return;
     if (timeLeft === 0) { handleAnswer(-1); return; }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, selected]);
+  }, [timeLeft, selected, paused, qLoading]);
 
   const handleAnswer = (idx: number) => {
-    if (selected !== null) return;
+    if (selected !== null || !questions[qIndex]) return;
     const q = questions[qIndex]; setSelected(idx);
-    if (idx === q.answer) { const bonus = timeLeft >= 7 ? 5 : 0; scoreRef.current += 10 + bonus; setScore(scoreRef.current); correctRef.current++; setCorrect(correctRef.current); }
+    if (idx === q.answer) {
+      const pts = 12 + Math.max(0, timeLeft - 4) * 2;
+      scoreRef.current += pts; setScore(scoreRef.current); correctRef.current++;
+    }
     setTimeout(() => {
       setSelected(null);
       if (qIndex + 1 >= total) {
-        if (correctRef.current >= Math.ceil(total * 0.6)) onWin(scoreRef.current);
-        else onLose();
-      } else { setQIndex(q => q + 1); setTimeLeft(Q_TIME); }
-    }, 1000);
+        if (correctRef.current >= Math.ceil(total * 0.6)) onWin(scoreRef.current); else onLose();
+      } else { setQIndex(i => i + 1); setTimeLeft(Q_TIME); }
+    }, 1100);
   };
 
   const q = questions[qIndex];
+  const urgent = timeLeft <= 5 && selected === null;
+
+  if (qLoading) return (
+    <div className="flex-1 flex items-center justify-center flex-col gap-3">
+      <div className="w-7 h-7 rounded-full" style={{ border: '2.5px solid rgba(236,72,153,0.25)', borderTopColor: ACCENT, animation: 'spin 0.8s linear infinite' }} />
+      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Generating questions…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex gap-2 items-center">
-          <LevelBadge level={gameLevel} />
-          <StatPill>Q {Math.min(qIndex+1,total)}/{total}</StatPill>
-          <StatPill>⭐ {score}</StatPill>
-          <StatPill red={timeLeft<=3}>⏱ {timeLeft}s</StatPill>
+    <div className="flex flex-col h-full gap-2.5 px-1">
+      <div className="flex items-center justify-between gap-2 flex-shrink-0">
+        <LevelBadge level={gameLevel} />
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-50"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{Math.min(qIndex+1,total)}<span className="opacity-40">/{total}</span></span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="#ec4899" className="w-3 h-3 opacity-80"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{score}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors" style={{ background: urgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${urgent ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.09)'}` }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-3 h-3 ${urgent ? 'text-red-400' : 'opacity-50'}`}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span className={`text-[11px] font-semibold tabular-nums ${urgent ? 'text-red-400' : 'text-foreground'}`}>{timeLeft}s</span>
+          </div>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={Q_TIME} />
+      <TimerBar timeLeft={timeLeft} total={Q_TIME} accent="#ec4899" />
       <div className="flex-1 flex flex-col items-center justify-center">
         {q && (
           <div className="w-full max-w-md">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-4 text-center">
-              <p className="text-lg font-semibold text-white leading-snug">{q.q}</p>
+            {/* Question card */}
+            <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: 'rgba(236,72,153,0.06)', border: '1.5px solid rgba(236,72,153,0.18)' }}>
+              <p className="text-[10px] font-bold tracking-[0.18em] uppercase mb-2" style={{ color: `${ACCENT}70` }}>Brain Quiz</p>
+              <p className="text-base font-bold text-white leading-snug">{q.q}</p>
             </div>
+            {/* Options */}
             <div className="grid grid-cols-1 gap-2">
               {q.options.map((opt, i) => {
                 const isCorrect = i === q.answer;
                 const isSelected = i === selected;
-                let cls = 'bg-white/5 border-white/15 hover:bg-white/10 cursor-pointer';
+                const col = OPT_COLORS[i];
+                let bg = 'rgba(255,255,255,0.04)', border = 'rgba(255,255,255,0.09)', textCol = 'rgba(255,255,255,0.85)';
                 if (selected !== null) {
-                  if (isCorrect) cls = 'bg-green-500/20 border-green-400 cursor-default';
-                  else if (isSelected) cls = 'bg-red-500/20 border-red-400 cursor-default';
-                  else cls = 'bg-white/5 border-white/10 opacity-40 cursor-default';
+                  if (isCorrect)     { bg = 'rgba(34,197,94,0.15)';  border = 'rgba(34,197,94,0.6)';  textCol = '#86efac'; }
+                  else if (isSelected){ bg = 'rgba(239,68,68,0.15)';  border = 'rgba(239,68,68,0.6)';  textCol = '#fca5a5'; }
+                  else               { bg = 'rgba(255,255,255,0.02)'; border = 'rgba(255,255,255,0.05)'; textCol = 'rgba(255,255,255,0.30)'; }
                 }
                 return (
                   <button key={i} onClick={() => handleAnswer(i)} disabled={selected !== null}
-                    className={`w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-medium text-white transition-all ${cls}`}>
-                    <span className="mr-2 font-bold text-zinc-400">{optLabels[i]}.</span>{opt}
+                    className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-all duration-150 hover:brightness-110"
+                    style={{ background: bg, border: `1.5px solid ${border}` }}>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
+                      style={{ background: selected !== null ? 'rgba(255,255,255,0.08)' : col }}>
+                      {['A','B','C','D'][i]}
+                    </span>
+                    <span className="text-sm font-medium transition-colors" style={{ color: textCol }}>{opt}</span>
+                    {selected !== null && isCorrect && <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-auto flex-shrink-0"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {selected !== null && isSelected && !isCorrect && <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-auto flex-shrink-0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
                   </button>
                 );
               })}
@@ -754,74 +1059,135 @@ function FiusQuiz({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ─── FIUS ODD WORD ───────────────────────────────────────────────────────────
-function FiusOddWord({ gameLevel, onWin, onLose, onBack }: GameProps) {
+function FiusOddWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
-  const pool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[diff];
+  const staticPool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[diff];
   const ROUNDS = getRounds(gameLevel, 5);
-  const ROUND_TIME = getTimer(gameLevel, 8);
-  const [questions] = useState<OddWordQ[]>(() => shuffleArray(pool).slice(0, ROUNDS));
+  const ROUND_TIME = getTimer(gameLevel, 16);
+  const ACCENT = '#f43f5e';
+
+  const [questions, setQuestions] = useState<OddWordQ[]>([]);
+  const [qLoading, setQLoading] = useState(true);
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<number|null>(null);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(ROUND_TIME);
   const correctRef = useRef(0); const scoreRef = useRef(0);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const hist = getQHistory('oddword', diff);
+      const aiQs = await fetchAIQuestions('oddword', diff, ROUNDS + 2, hist.slice(-25));
+      if (cancelled) return;
+      let picked: OddWordQ[];
+      if (
+        aiQs.length >= ROUNDS &&
+        aiQs.every((q: any) => q.text && Array.isArray(q.words) && q.words.length === 4 && typeof q.wrongIdx === 'number' && q.fix)
+      ) {
+        addToQHistory('oddword', diff, aiQs.slice(0, ROUNDS).map((q: any) => String(q.text).slice(0, 45)));
+        picked = aiQs.slice(0, ROUNDS) as OddWordQ[];
+      } else {
+        const fresh = filterByQHistory(staticPool, hist, q => q.text);
+        picked = shuffleArray(fresh).slice(0, ROUNDS);
+        addToQHistory('oddword', diff, picked.map(q => q.text.slice(0, 45)));
+      }
+      setQuestions(picked);
+      setQLoading(false);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
   const advance = useCallback((wasCorrect: boolean, tl: number) => {
-    if (wasCorrect) { const pts = 10 + tl * 2; scoreRef.current += pts; setScore(scoreRef.current); correctRef.current++; }
+    if (wasCorrect) { const pts = 12 + tl * 2; scoreRef.current += pts; setScore(scoreRef.current); correctRef.current++; }
     if (qIdx + 1 >= ROUNDS) {
       setTimeout(() => {
-        if (correctRef.current >= Math.ceil(ROUNDS * 0.6)) onWin(scoreRef.current);
-        else onLose();
+        if (correctRef.current >= Math.ceil(ROUNDS * 0.6)) onWin(scoreRef.current); else onLose();
       }, 900);
     } else { setTimeout(() => { setQIdx(i => i + 1); setSelected(null); setTimeLeft(ROUND_TIME); }, 900); }
   }, [qIdx, ROUNDS, ROUND_TIME, onWin, onLose]);
 
   useEffect(() => {
-    if (selected !== null) return;
+    if (paused || selected !== null || qLoading) return;
     if (timeLeft <= 0) { setSelected(-1); advance(false, 0); return; }
     const t = setTimeout(() => setTimeLeft(x => x - 1), 1000);
     return () => clearTimeout(t);
-  }, [timeLeft, selected, advance]);
+  }, [timeLeft, selected, advance, paused, qLoading]);
 
-  const handleSelect = (idx: number) => { if (selected !== null) return; setSelected(idx); advance(idx === questions[qIdx].wrongIdx, timeLeft); };
-  const q = questions[Math.min(qIdx, ROUNDS - 1)];
+  const handleSelect = (idx: number) => {
+    if (selected !== null || !questions[qIdx]) return;
+    setSelected(idx);
+    advance(idx === questions[qIdx].wrongIdx, timeLeft);
+  };
+  const q = questions.length > 0 ? questions[Math.min(qIdx, ROUNDS - 1)] : null;
+  const urgent = timeLeft <= 5 && selected === null;
+
+  if (qLoading) return (
+    <div className="flex-1 flex items-center justify-center flex-col gap-3">
+      <div className="w-7 h-7 rounded-full" style={{ border: '2.5px solid rgba(244,63,94,0.25)', borderTopColor: ACCENT, animation: 'spin 0.8s linear infinite' }} />
+      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Generating questions…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-2">
-        <div />
-        <div className="flex gap-2 items-center">
-          <LevelBadge level={gameLevel} />
-          <StatPill>Q {Math.min(qIdx+1,ROUNDS)}/{ROUNDS}</StatPill>
-          <StatPill>⭐ {score}</StatPill>
-          <StatPill red={timeLeft<=4}>⏱ {timeLeft}s</StatPill>
+    <div className="flex flex-col h-full gap-2.5 px-1">
+      <div className="flex items-center justify-between gap-2 flex-shrink-0">
+        <LevelBadge level={gameLevel} />
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 opacity-50"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{Math.min(qIdx+1,ROUNDS)}<span className="opacity-40">/{ROUNDS}</span></span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <svg viewBox="0 0 24 24" fill="#f43f5e" className="w-3 h-3 opacity-80"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span className="text-[11px] font-semibold text-foreground tabular-nums">{score}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors" style={{ background: urgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${urgent ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.09)'}` }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`w-3 h-3 ${urgent ? 'text-red-400' : 'opacity-50'}`}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            <span className={`text-[11px] font-semibold tabular-nums ${urgent ? 'text-red-400' : 'text-foreground'}`}>{timeLeft}s</span>
+          </div>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={ROUND_TIME} />
+      <TimerBar timeLeft={timeLeft} total={ROUND_TIME} accent="#f43f5e" />
       <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-lg">
-          <p className="text-zinc-500 text-[11px] text-center mb-3 font-semibold uppercase tracking-widest">Which word makes this statement WRONG?</p>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-5 text-center">
-            <p className="text-base font-semibold text-white leading-relaxed">{q.text}</p>
+        {q && (
+          <div className="w-full max-w-lg">
+            {/* Instruction label */}
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-center mb-3" style={{ color: `${ACCENT}70` }}>Spot the wrong word</p>
+            {/* Statement card */}
+            <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: 'rgba(244,63,94,0.06)', border: '1.5px solid rgba(244,63,94,0.18)' }}>
+              <p className="text-base font-semibold text-white leading-relaxed">{q.text}</p>
+            </div>
+            {/* Word buttons */}
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
+              {q.words.map((word, i) => {
+                let bg = 'rgba(255,255,255,0.04)', border = 'rgba(255,255,255,0.09)', textCol = 'rgba(255,255,255,0.85)';
+                let icon = null;
+                if (selected !== null) {
+                  if (i === q.wrongIdx)     { bg = 'rgba(34,197,94,0.14)';  border = 'rgba(34,197,94,0.5)';  textCol = '#86efac'; icon = '✓'; }
+                  else if (i === selected)  { bg = 'rgba(239,68,68,0.14)';  border = 'rgba(239,68,68,0.5)';  textCol = '#fca5a5'; icon = '✗'; }
+                  else                     { bg = 'rgba(255,255,255,0.02)'; border = 'rgba(255,255,255,0.05)'; textCol = 'rgba(255,255,255,0.25)'; }
+                }
+                return (
+                  <button key={i} onClick={() => handleSelect(i)} disabled={selected !== null}
+                    className="px-4 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-150 hover:brightness-110"
+                    style={{ background: bg, border: `1.5px solid ${border}`, color: textCol }}>
+                    {icon && <span className="font-black">{icon}</span>}
+                    {word}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Correction */}
+            {selected !== null && (
+              <div className="rounded-xl px-4 py-3 text-sm text-center" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.55)' }}>
+                {q.fix}
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-2.5 mb-4">
-            {q.words.map((word, i) => {
-              let cls = 'bg-white/5 border-white/15 hover:bg-white/10 cursor-pointer';
-              if (selected !== null) {
-                if (i === q.wrongIdx) cls = 'bg-green-500/20 border-green-400 cursor-default';
-                else if (i === selected) cls = 'bg-red-500/20 border-red-400 cursor-default';
-                else cls = 'bg-white/5 border-white/10 opacity-40 cursor-default';
-              }
-              return (
-                <button key={i} onClick={() => handleSelect(i)} disabled={selected !== null}
-                  className={`px-4 py-3 rounded-xl border-2 text-sm font-bold text-white transition-all ${cls}`}>
-                  {word}
-                </button>
-              );
-            })}
-          </div>
-          {selected !== null && <div className="text-center text-sm text-zinc-400 bg-white/5 rounded-xl px-4 py-2.5 border border-white/10">{q.fix}</div>}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -1722,7 +2088,7 @@ function TrueFalseBlitz({ gameLevel, onWin, onLose, onBack }: GameProps) {
           <StatPill red={timeLeft<=2}>⏱ {timeLeft}s</StatPill>
         </div>
       </div>
-      <TimerBar timeLeft={timeLeft} total={Q_TIME} />
+      <TimerBar timeLeft={timeLeft} total={Q_TIME} accent="#a78bfa" />
       <div className="flex-1 flex flex-col items-center justify-center gap-5">
         <div className={`w-full max-w-md p-6 rounded-2xl border-2 text-center transition-all
           ${isCorrect ? 'border-green-400 bg-green-500/10' : isWrong || (answered===null&&timeLeft===0) ? 'border-red-400 bg-red-500/10' : 'border-white/15 bg-white/5'}`}>
@@ -1853,16 +2219,6 @@ function SpeedMathRace({ gameLevel, onWin, onLose, onBack }: GameProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ─── GAME STORE ───────────────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const STORE_CATALOG = [
-  { id: 'tictactoe' as GameId, name: 'Tic-Tac-Toe',        img: logoTTT, price: 30, desc: 'Classic X vs O against AI',  category: 'vs AI' },
-  { id: 'rps' as GameId,       name: 'Rock Paper Scissors', img: logoRPS, price: 15, desc: 'Best of rounds vs clever AI', category: 'vs AI' },
-];
-
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // ─── LEADERBOARD STORAGE ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1882,52 +2238,120 @@ function addScore(gameId: string, gameName: string, rawScore: number, level: num
 
 interface FiusGamesProps { playerName: string; userId?: string; }
 
+// ── Module-level cache so the leaderboard + owned/fragment/score data survive
+// unmount/remount (the tab content is conditionally rendered, so switching
+// away and back used to always start from a blank scoreboard while a fresh
+// fetch ran). Also exposes an eager `preloadGamesData` so callers can warm
+// this cache as soon as the app/chat surface mounts — well before the user
+// opens the Fius Games tab — for both desktop and mobile.
+type LeaderboardEntry = { userId: string; name: string; totalScore: number; bestGame: any | null; gameLevels?: Record<string, number> };
+let _leaderboardCache: LeaderboardEntry[] | null = null;
+let _serverDataCache: {levels:Record<string,number>;scores:ScoreEntry[]} | null = null;
+let _preloadStarted = false;
+
+export function preloadGamesData() {
+  if (_preloadStarted) return;
+  _preloadStarted = true;
+  loadGamesFromServer().then(data => { if (data) _serverDataCache = data; });
+  fetch('/api/games/leaderboard', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : [])
+    .then((board: any[]) => { if (Array.isArray(board)) _leaderboardCache = board; })
+    .catch(() => {});
+}
+
 type FreeGameIcon = { Icon: React.ComponentType<{className?: string}>; gradient: string; shadow: string };
-const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; logo: string; desc: string; category: string}> = [
-  { id: 'memory',  label: 'Memory Match',  logo: logoMemory,  icon: { Icon: Layers,      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.5)'  }, desc: 'Match pairs before time runs out',   category: 'Solo'   },
-  { id: 'maths',   label: 'Speed Maths',   logo: logoMaths,   icon: { Icon: Calculator,  gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', shadow: 'rgba(59,130,246,0.5)'  }, desc: 'Solve arithmetic against the clock', category: 'Solo'   },
-  { id: 'word',    label: 'Word Scramble', logo: logoWord,    icon: { Icon: BookOpen,    gradient: 'linear-gradient(135deg,#10b981,#34d399)', shadow: 'rgba(16,185,129,0.5)'  }, desc: 'Unscramble hidden words fast',       category: 'Solo'   },
-  { id: 'quiz',    label: 'Brain Quiz',    logo: logoQuiz,    icon: { Icon: HelpCircle,  gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', shadow: 'rgba(245,158,11,0.5)'  }, desc: 'Test your general knowledge',        category: 'Solo'   },
-  { id: 'car',     label: 'Car Dodge',     logo: logoCar,     icon: { Icon: Zap,         gradient: 'linear-gradient(135deg,#ef4444,#f43f5e)', shadow: 'rgba(239,68,68,0.5)'   }, desc: 'Dodge obstacles at high speed',      category: 'Arcade' },
-  { id: 'oddword', label: 'Odd One Out',   logo: logoOddword, icon: { Icon: Shuffle,     gradient: 'linear-gradient(135deg,#ec4899,#a855f7)', shadow: 'rgba(236,72,153,0.5)'  }, desc: "Find the word that doesn't fit",    category: 'Solo'   },
+const FREE_GAMES: Array<{id: GameId; label: string; icon: FreeGameIcon; logo: string; banner: string; desc: string; longDesc: string; howToPlay: string; category: string; tags: string[]}> = [
+  { id: 'memory',  label: 'Memory Match',  logo: memoryLogo,  banner: memoryBanner,  icon: { Icon: Layers,      gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', shadow: 'rgba(99,102,241,0.5)'  }, desc: 'Match pairs before time runs out',   longDesc: 'Exercise your working memory and visual pattern recognition by observing and recreating increasingly complex patterns. The grids get bigger and trickier as you advance through levels!', howToPlay: 'A grid of face-down cards is revealed briefly, then hidden. Tap card pairs to find matches. Clear all pairs before time runs out to win. Each level adds more cards!', category: 'Memory', tags: ['MEMORY', 'PATTERN RECOGNITION']   },
+  { id: 'maths',   label: 'Speed Maths',   logo: logoMaths,   banner: mathsBanner,   icon: { Icon: Calculator,  gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', shadow: 'rgba(59,130,246,0.5)'  }, desc: 'Solve arithmetic against the clock', longDesc: 'Race against the clock to solve arithmetic challenges. From simple addition to complex multi-step problems, your mental math skills are put to the ultimate test at every level.', howToPlay: 'A math question appears on screen. Type your answer and press Go before the timer runs out. Get it right to score points and advance to harder questions!', category: 'Math', tags: ['SPEED', 'ARITHMETIC']   },
+  { id: 'word',    label: 'Word Scramble', logo: logoWord,    banner: wordBanner,    icon: { Icon: BookOpen,    gradient: 'linear-gradient(135deg,#10b981,#34d399)', shadow: 'rgba(16,185,129,0.5)'  }, desc: 'Unscramble hidden words fast',       longDesc: 'Jumbled letters, hidden words — can you unscramble them all? Each round presents a scrambled word with a hint. Type the correct word before time runs out to keep your streak alive.', howToPlay: 'A scrambled word and a hint are shown. Type the correct unscrambled word and press Submit. Use the Hint button if you get stuck — but it costs points!', category: 'Word', tags: ['VOCABULARY', 'WORD SCRAMBLE']   },
+  { id: 'quiz',    label: 'Brain Quiz',    logo: logoQuiz,    banner: quizBanner,    icon: { Icon: HelpCircle,  gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', shadow: 'rgba(245,158,11,0.5)'  }, desc: 'Test your general knowledge',        longDesc: 'Put your general knowledge to the test across science, history, geography, pop culture and more. Questions get harder as you level up, and every wrong answer ends your run.', howToPlay: 'A question with 4 answer choices appears. Tap the correct answer. Get it right to move to the next question. Wrong answers deduct lives — lose all lives and the game ends!', category: 'Trivia', tags: ['TRIVIA', 'KNOWLEDGE']   },
+  { id: 'car',     label: 'Car Dodge',     logo: logoCar,     banner: carBanner,     icon: { Icon: Zap,         gradient: 'linear-gradient(135deg,#ef4444,#f43f5e)', shadow: 'rgba(239,68,68,0.5)'   }, desc: 'Dodge obstacles at high speed',      longDesc: 'Speed through a busy highway dodging oncoming traffic. The road gets faster and more chaotic at higher levels. How long can you survive?', howToPlay: 'Tap left/right or use arrow keys to switch lanes. Avoid collisions with other cars. Survive as long as possible — your score is based on distance traveled!', category: 'Arcade', tags: ['ARCADE', 'REFLEXES'] },
+  { id: 'oddword', label: 'Odd One Out',   logo: logoOddword, banner: oddwordBanner, icon: { Icon: Shuffle,     gradient: 'linear-gradient(135deg,#ec4899,#a855f7)', shadow: 'rgba(236,72,153,0.5)'  }, desc: "Find the word that doesn't fit",    longDesc: "Four words appear on screen — three belong to the same category and one is the odd one out. Identify the intruder before time runs out! Categories get tricky at higher levels.", howToPlay: "Four words are displayed — three share a common theme and one doesn't belong. Tap the odd word out as fast as possible. The quicker you answer, the more points you score!", category: 'Word', tags: ['LOGIC', 'WORD PLAY']   },
 ];
 
+const GAME_BANNERS: Record<string, string> = {
+  memory: memoryBanner, maths: mathsBanner, word: wordBanner,
+  quiz: quizBanner, car: carBanner, oddword: oddwordBanner,
+};
+
+type GameDetailInfo = typeof FREE_GAMES[0];
+
+function GameCard({ game, onShowDetail }: { game: GameDetailInfo; onShowDetail: (g: GameDetailInfo) => void }) {
+  return (
+    <div className="rounded-2xl game-card-outline" style={{ transform: 'translateZ(0)' }}>
+      <div
+        className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden cursor-pointer"
+        style={{ transform: 'translateZ(0)', contain: 'paint' }}
+        onClick={() => onShowDetail(game)}
+      >
+        <img src={game.banner} alt={game.label} className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-x-2 bottom-2 flex items-center gap-2 rounded-[20px] px-2.5 py-2"
+          style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+            <img src={game.logo} alt="" className="w-full h-full object-contain drop-shadow-lg" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-white font-medium text-[11px] leading-tight truncate">{game.label}</div>
+            <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[7px] font-bold uppercase tracking-wide whitespace-nowrap"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#e5e7eb' }}>{game.category}</span>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onShowDetail(game); }}
+            className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white flex-shrink-0 transition-transform duration-200 hover:scale-105 active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }}>
+            View
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Kept for backwards-compat with memoised wrappers below
+const MemoryMatchCard  = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'memory')!}  onShowDetail={onShowDetail} />);
+const SpeedMathCard    = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'maths')!}   onShowDetail={onShowDetail} />);
+const WordScrambleCard = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'word')!}    onShowDetail={onShowDetail} />);
+const BrainQuizCard    = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'quiz')!}    onShowDetail={onShowDetail} />);
+const CarDodgeCard     = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'car')!}     onShowDetail={onShowDetail} />);
+const OddOneOutCard    = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'oddword')!} onShowDetail={onShowDetail} />);
+
 export function FiusGames({ playerName, userId }: FiusGamesProps) {
-  const [tab, setTab] = useState<'games' | 'store'>('games');
-  const [screen, setScreen] = useState<'menu'|'game'>('menu');
+  const [screen, setScreen] = useState<'menu'|'detail'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
   const [activeGameLabel, setActiveGameLabel] = useState('');
   const [gameLevel, setGameLevel] = useState(1);
-  const [fragments, setFragments] = useState(() => loadFragments());
-  const [ownedGames, setOwnedGames] = useState<string[]>(() => loadOwned());
   const [modal, setModal] = useState<'win'|'lose'|'continue'|null>(null);
   const [lastScore, setLastScore] = useState(0);
-  const [lastFrags, setLastFrags] = useState(0);
   const [key, setKey] = useState(0);
   const [search, setSearch] = useState('');
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores());
-  const [exitConfirm, setExitConfirm] = useState(false);
-  const [selectedGameInfo, setSelectedGameInfo] = useState<{id: GameId; label: string; desc: string; img?: string; logo?: string; icon?: FreeGameIcon; category: string} | null>(null);
-  const [globalLeaders, setGlobalLeaders] = useState<Array<{ userId: string; name: string; totalScore: number; bestGame: any | null; gameLevels?: Record<string, number> }>>([]);
-  const [lbTimeFilter, setLbTimeFilter] = useState<'day'|'week'|'month'|'all'>('all');
+  const [gameSettings, setGameSettings] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [detailGame, setDetailGame] = useState<GameDetailInfo | null>(null);
+  const [globalLeaders, setGlobalLeaders] = useState<LeaderboardEntry[]>(() => _leaderboardCache ?? []);
   const [lbCatFilter, setLbCatFilter] = useState<string>('All');
+  const [howToPlayOpen, setHowToPlayOpen] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   // ── Load from server on mount + leaderboard polling ───────────────────────
   useEffect(() => {
-    loadGamesFromServer().then(data => {
-      if (!data) return;
-      if (data.ownedGames?.length > 0) { setOwnedGames(data.ownedGames); saveOwned(data.ownedGames); }
-      if (data.fragments > 0) { setFragments(data.fragments); saveFragments(data.fragments); }
+    if (_serverDataCache) {
+      const data = _serverDataCache;
       if (data.levels && Object.keys(data.levels).length > 0) { saveLevels(data.levels); }
-      if (data.scores?.length > 0) {
-        localStorage.setItem(SCORES_KEY, JSON.stringify(data.scores));
-        setScores(data.scores);
-      }
-    });
+      if (data.scores?.length > 0) { localStorage.setItem(SCORES_KEY, JSON.stringify(data.scores)); setScores(data.scores); }
+    } else {
+      loadGamesFromServer().then(data => {
+        if (!data) return;
+        _serverDataCache = data;
+        if (data.levels && Object.keys(data.levels).length > 0) { saveLevels(data.levels); }
+        if (data.scores?.length > 0) { localStorage.setItem(SCORES_KEY, JSON.stringify(data.scores)); setScores(data.scores); }
+      });
+    }
     const fetchLb = () => {
       fetch('/api/games/leaderboard', { credentials: 'include' })
         .then(r => r.ok ? r.json() : [])
-        .then((board: any[]) => { if (Array.isArray(board)) setGlobalLeaders(board); })
+        .then((board: any[]) => { if (Array.isArray(board)) { _leaderboardCache = board; setGlobalLeaders(board); } })
         .catch(() => {});
     };
     fetchLb();
@@ -1935,44 +2359,46 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
     return () => clearInterval(lbTimer);
   }, []);
 
-  // ── Sync helper ───────────────────────────────────────────────────────────
-  const doSync = (overrides: {ownedGames?:string[];fragments?:number;scores?:ScoreEntry[]}) => {
-    const owned  = overrides.ownedGames ?? ownedGames;
-    const frags  = overrides.fragments  ?? fragments;
-    const sc     = overrides.scores     ?? scores;
-    syncToServer({ ownedGames: owned, fragments: frags, levels: loadLevels(), scores: sc });
+  const doSync = (overrides: {scores?:ScoreEntry[]}) => {
+    syncToServer({ levels: loadLevels(), scores: overrides.scores ?? scores });
   };
 
   const handleWin = (score: number) => {
-    const earned = fragmentsForLevel(gameLevel);
-    const newFrags = fragments + earned;
-    setFragments(newFrags); saveFragments(newFrags);
-    setLastScore(score); setLastFrags(earned);
+    setLastScore(score);
     let newScores = scores;
     if (activeGame) { addScore(activeGame, activeGameLabel, score, gameLevel); newScores = loadScores(); setScores(newScores); }
     setModal('win');
-    doSync({ fragments: newFrags, scores: newScores });
+    doSync({ scores: newScores });
   };
   const handleLose = () => setModal('lose');
   const handleRetry = () => { setModal(null); setKey(k => k + 1); };
   const handleLeave = () => { setModal(null); goToMenu(); };
-  const goToMenu = () => { setScreen('menu'); setActiveGame(null); setModal(null); setExitConfirm(false); };
 
-  const handleBuy = (id: string, price: number) => {
-    const nf = fragments - price; const no = [...ownedGames, id];
-    setFragments(nf); saveFragments(nf); setOwnedGames(no); saveOwned(no);
-    doSync({ fragments: nf, ownedGames: no });
-  };
+  const onShowDetail = useCallback((g: GameDetailInfo) => {
+    setDetailGame(g);
+    setScreen('detail');
+  }, []);
 
-  const onStartGame = (id: GameId, label: string) => {
+  // Countdown timer — 3 → 2 → 1 → 0 (GO!) → null (game live)
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown < 0) { setCountdown(null); return; }
+    const t = setTimeout(() => setCountdown(c => c !== null ? c - 1 : null), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const onStartGame = useCallback((id: GameId, label: string) => {
     const lv = getGameLevel(id);
     setActiveGame(id); setActiveGameLabel(label); setGameLevel(lv);
-    setScreen('game'); setKey(k => k + 1); setModal(null); setExitConfirm(false);
-  };
+    setScreen('game'); setKey(k => k + 1); setModal(null); setGameSettings(false);
+    setCountdown(3); // kick off 3-2-1-GO
+  }, []);
 
-  const renderGame = () => {
+  const goToMenu = () => { setScreen('menu'); setActiveGame(null); setModal(null); setGameSettings(false); setDetailGame(null); };
+
+  const renderGame = (isPaused = false) => {
     if (!activeGame) return null;
-    const props: GameProps = { playerName, gameLevel, onWin: handleWin, onLose: handleLose, onBack: goToMenu };
+    const props: GameProps = { playerName, gameLevel, onWin: handleWin, onLose: handleLose, onBack: goToMenu, paused: isPaused };
     switch (activeGame) {
       case 'maths':       return <FiusMaths key={key} {...props} />;
       case 'word':        return <FiusWord key={key} {...props} />;
@@ -1992,52 +2418,301 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
     }
   };
 
+  // ─── GAME DETAIL PAGE ─────────────────────────────────────────────────────
+  // Light theme palette per game (bg colour + text colour)
+  const GAME_LIGHT_THEMES: Record<string, { bg: string; text: string }> = {
+    memory:  { bg: '#fef9c3', text: '#78350f' }, // light yellow
+    maths:   { bg: '#d9f99d', text: '#365314' }, // lime green
+    word:    { bg: '#dbeafe', text: '#1e40af' }, // light blue
+    quiz:    { bg: '#fce7f3', text: '#9d174d' }, // light pink
+    car:     { bg: '#ede9fe', text: '#5b21b6' }, // light purple
+    oddword: { bg: '#fce7f3', text: '#9d174d' }, // light pink
+  };
+
+  if (screen === 'detail' && detailGame) {
+    const myLevel = getGameLevel(detailGame.id);
+    const myScores = scores.filter(s => s.id === detailGame.id);
+    const bestScore = myScores.length > 0 ? Math.max(...myScores.map(s => s.score)) : 0;
+    const lt = GAME_LIGHT_THEMES[detailGame.id] ?? { bg: '#f3f4f6', text: '#374151' };
+
+    // Fixed full-screen overlay — covers the nav bar (z-[46]) completely
+    return (
+      <div
+        className="flex flex-col overflow-y-auto bg-background"
+        style={{ position: 'fixed', inset: 0, zIndex: 50, scrollbarWidth: 'thin' }}
+      >
+        {/* ── Hero banner — tall, full bleed ── */}
+        <div
+          className="relative flex-shrink-0 overflow-hidden"
+          style={{
+            height: 460,
+            /* entrance animation */
+            animation: 'bannerSlideIn 0.45s cubic-bezier(0.22,1,0.36,1) both',
+          }}
+        >
+          <style>{`
+            @keyframes bannerSlideIn {
+              from { opacity: 0; transform: translateY(-18px) scale(1.04); }
+              to   { opacity: 1; transform: translateY(0)      scale(1);    }
+            }
+            @keyframes contentFadeUp {
+              from { opacity: 0; transform: translateY(14px); }
+              to   { opacity: 1; transform: translateY(0);    }
+            }
+          `}</style>
+
+          <img
+            src={detailGame.banner}
+            alt={detailGame.label}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'blur(4px) saturate(1.25) brightness(0.80)', transform: 'scale(1.08)', transformOrigin: 'center' }}
+          />
+          {/* Top dark fade */}
+          <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.70) 0%, transparent 100%)' }} />
+          {/* Bottom fade — deep, smooth transition into bg */}
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none"
+            style={{ height: 200, background: 'linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.70) 40%, transparent 100%)' }} />
+          {/* Mid vignette */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(0,0,0,0.12)' }} />
+
+          {/* Back */}
+          <button
+            onClick={() => { setScreen('menu'); setDetailGame(null); setHowToPlayOpen(false); }}
+            className="absolute top-5 left-5 flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-sm font-bold z-20"
+            style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.22)' }}
+          >
+            ← Back
+          </button>
+
+          {/* Centred content — logo → title → tags → button */}
+          <div
+            className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3 px-8 z-10"
+            style={{ animation: 'contentFadeUp 0.5s 0.15s cubic-bezier(0.22,1,0.36,1) both' }}
+          >
+            <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-2xl">
+              <img src={detailGame.logo} alt="" className="w-full h-full object-cover" />
+            </div>
+            <h2
+              className="text-white font-black text-center tracking-tight"
+              style={{ fontSize: '2rem', lineHeight: 1.1, textShadow: '0 3px 18px rgba(0,0,0,0.95)' }}
+            >{detailGame.label}</h2>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              {detailGame.tags.map(t => (
+                <span key={t} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(6px)', color: '#fff' }}>{t}</span>
+              ))}
+            </div>
+            <button
+              onClick={(e) => {
+                const btn = e.currentTarget;
+                btn.classList.remove('btn-click-pop');
+                void btn.offsetWidth;
+                btn.classList.add('btn-click-pop');
+                onStartGame(detailGame.id, detailGame.label);
+              }}
+              className="mt-2 rounded-full font-black text-base hover:scale-105"
+              style={{ background: '#fff', color: '#111', padding: '12px 48px', minWidth: 200, boxShadow: '0 4px 24px rgba(0,0,0,0.35)', transition: 'transform 0.2s' }}
+            >
+              Start Game
+            </button>
+          </div>
+        </div>
+
+        {/* ── Info — centred column ── */}
+        <div
+          className="flex flex-col items-center px-6 py-6 gap-4 w-full max-w-lg mx-auto"
+          style={{ animation: 'contentFadeUp 0.5s 0.25s cubic-bezier(0.22,1,0.36,1) both' }}
+        >
+          {/* Stats + Level */}
+          <div className="flex flex-col gap-2 w-full max-w-sm">
+            <div className="rounded-xl overflow-hidden" style={{ background: lt.bg }}>
+              <div className="grid grid-cols-2 divide-x" style={{ borderColor: `${lt.text}22` }}>
+                <div className="px-6 py-3 text-center">
+                  <p className="text-xl font-black leading-none" style={{ color: lt.text }}>{myScores.length}</p>
+                  <p className="text-[10px] mt-1 uppercase tracking-wider font-semibold" style={{ color: `${lt.text}88` }}>Total Plays</p>
+                </div>
+                <div className="px-6 py-3 text-center">
+                  <p className="text-xl font-black leading-none" style={{ color: lt.text }}>{bestScore}</p>
+                  <p className="text-[10px] mt-1 uppercase tracking-wider font-semibold" style={{ color: `${lt.text}88` }}>Best Score</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl px-5 py-3 flex items-center justify-between" style={{ background: lt.bg }}>
+              <span className="text-sm font-semibold" style={{ color: `${lt.text}aa` }}>Your Level</span>
+              <LevelBadge level={myLevel} />
+            </div>
+          </div>
+
+          {/* About heading */}
+          <div className="w-full max-w-sm">
+            <h3 className="font-bold text-foreground text-lg text-center">About the game</h3>
+          </div>
+
+          {/* How to Play */}
+          <div className="w-full max-w-sm">
+            <div className="rounded-xl overflow-hidden" style={{ background: lt.bg }}>
+              <button
+                onClick={() => setHowToPlayOpen(o => !o)}
+                className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold select-none"
+                style={{ color: lt.text }}
+              >
+                <span>How to Play?</span>
+                <ChevronRight
+                  className="w-4 h-4 transition-transform duration-300"
+                  style={{ transform: howToPlayOpen ? 'rotate(90deg)' : 'rotate(0deg)', color: lt.text }}
+                />
+              </button>
+              <div
+                style={{
+                  maxHeight: howToPlayOpen ? '300px' : '0px',
+                  opacity: howToPlayOpen ? 1 : 0,
+                  overflow: 'hidden',
+                  background: lt.bg,
+                  transitionProperty: 'max-height, opacity',
+                  transitionDuration: '320ms',
+                  transitionTimingFunction: 'cubic-bezier(0.4,0,0.2,1)',
+                }}
+              >
+                <div className="px-5 pb-4 pt-1 text-sm leading-relaxed border-t" style={{ color: lt.text, borderColor: `${lt.text}22` }}>
+                  {detailGame.howToPlay}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ─── GAME SCREEN ──────────────────────────────────────────────────────────
   if (screen === 'game') {
+    const _gameAccent = GAME_ACCENT_COLOR[activeGame ?? ''] ?? '#60a5fa';
     return (
       <div className="flex flex-col h-full relative">
-        {/* Slim game title bar */}
-        <div className="flex items-center gap-2 pb-2 mb-1 border-b border-white/10 flex-shrink-0">
-          <button onClick={() => setExitConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-800/80 border border-zinc-700/60 text-zinc-400 hover:text-white hover:border-zinc-500 text-xs font-medium transition-all">
-            ← Exit
+        {/* ── Game screen top bar ── */}
+        <div className="flex items-center gap-2.5 pb-2.5 mb-1 flex-shrink-0"
+          style={{ borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
+          {/* Menu / pause button */}
+          <button onClick={() => setGameSettings(true)}
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:brightness-110 active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)' }}
+            aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5 text-white/60">
+              <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>
+            </svg>
           </button>
-          <span className="text-zinc-600 text-xs flex-1 truncate">{activeGameLabel} · Level {gameLevel}</span>
+          {/* Accent left-border game label */}
+          <div className="flex-1 min-w-0 flex items-center gap-2">
+            <div className="w-0.5 h-4 rounded-full flex-shrink-0" style={{ background: _gameAccent }} />
+            <span className="text-[13px] font-bold text-white/85 truncate leading-none">{activeGameLabel}</span>
+          </div>
+          {/* Level chip */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg flex-shrink-0"
+            style={{ background: `${_gameAccent}14`, border: `1px solid ${_gameAccent}35` }}>
+            <span className="text-[10px] font-black tabular-nums" style={{ color: _gameAccent }}>LV {gameLevel}</span>
+          </div>
         </div>
+        <div className="flex-1 min-h-0 overflow-auto">{renderGame(countdown !== null)}</div>
 
-        <div className="flex-1 min-h-0 overflow-auto">
-          {renderGame()}
-        </div>
+        {/* ── 3-2-1-GO countdown overlay ── */}
+        {countdown !== null && countdown >= 0 && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
+            style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)' }}
+          >
+            <style>{`
+              @keyframes cdPop {
+                0%   { transform: scale(0.4); opacity: 0; }
+                40%  { transform: scale(1.18); opacity: 1; }
+                70%  { transform: scale(0.93); }
+                100% { transform: scale(1);    opacity: 1; }
+              }
+              @keyframes cdFadeOut {
+                0%   { opacity: 1; transform: scale(1); }
+                100% { opacity: 0; transform: scale(1.5); }
+              }
+            `}</style>
+            <div
+              key={countdown}
+              style={{
+                animation: 'cdPop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards',
+                fontFamily: 'inherit',
+                fontWeight: 900,
+                fontSize: countdown === 0 ? '5rem' : '8rem',
+                lineHeight: 1,
+                color: countdown === 0 ? (GAME_ACCENT_COLOR[activeGame ?? ''] ?? '#4ade80') : '#ffffff',
+                textShadow: countdown === 0
+                  ? `0 0 40px ${GAME_ACCENT_COLOR[activeGame ?? ''] ?? '#4ade80'}cc, 0 4px 24px rgba(0,0,0,0.9)`
+                  : '0 4px 32px rgba(0,0,0,0.9)',
+                userSelect: 'none',
+              }}
+            >
+              {countdown === 0 ? 'GO!' : countdown}
+            </div>
+          </div>
+        )}
 
-        {/* ── Quit confirmation overlay (proper GUI) ── */}
-        {exitConfirm && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}>
-            <div className="w-72 rounded-3xl text-center overflow-hidden"
-              style={{ background: 'linear-gradient(160deg,rgba(18,18,30,0.99),rgba(38,16,58,0.99))', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 32px 80px rgba(0,0,0,0.9)' }}>
-              <div className="pt-8 px-6 pb-6">
-                <div className="text-6xl mb-3">🎮</div>
-                <h3 className="text-2xl font-black text-white mb-1">Quit Game?</h3>
-                <p className="text-zinc-400 text-sm mb-1">{activeGameLabel}</p>
-                <p className="text-zinc-600 text-xs mb-6">Level {gameLevel} · Progress will be lost</p>
-                <button onClick={goToMenu}
-                  className="w-full py-3.5 mb-2.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.97]"
-                  style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)', boxShadow: '0 6px 20px rgba(220,38,38,0.45)' }}>
-                  🚪 Leave Game
-                </button>
-                <button onClick={() => setExitConfirm(false)}
-                  className="w-full py-3.5 rounded-2xl font-bold text-zinc-200 text-sm transition-all hover:scale-[1.02] active:scale-[0.97]"
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  🎯 Keep Playing
-                </button>
+        {/* ── Game Settings (pause) modal ── */}
+        {gameSettings && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(8px)' }} onClick={() => setGameSettings(false)}>
+            <div className="w-80 rounded-2xl bg-card border border-border shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+                <span className="font-bold text-foreground text-base">Game Settings</span>
+                <button onClick={() => setGameSettings(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
               </div>
-              <div className="px-6 pb-5 pt-0">
-                <div className="text-zinc-700 text-[10px] font-medium tracking-wide uppercase">Fius Game Zone</div>
+              <div className="px-4 py-3 space-y-1.5">
+                {([
+                  {
+                    svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+                    label: 'Resume', action: () => setGameSettings(false),
+                  },
+                  {
+                    svg: isMuted
+                      ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                      : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>,
+                    label: isMuted ? 'Unmute' : 'Mute', action: () => setIsMuted(m => !m),
+                  },
+                  {
+                    svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>,
+                    label: 'How to Play', action: () => { setShowHowToPlay(true); setGameSettings(false); },
+                  },
+                  {
+                    svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+                    label: 'Restart', action: () => { setGameSettings(false); setKey(k => k + 1); },
+                  },
+                  {
+                    svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+                    label: 'Quit', action: () => goToMenu(),
+                  },
+                ]).map(item => (
+                  <button key={item.label} onClick={item.action}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left hover:bg-accent"
+                    style={{ border: '1px solid transparent' }}>
+                    <span className="text-muted-foreground w-4 flex-shrink-0">{item.svg}</span>
+                    <span className="text-sm font-medium text-foreground">{item.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {modal === 'win' && <WinModal level={gameLevel} score={lastScore} fragsEarned={lastFrags} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
+        {/* ── How to Play overlay ── */}
+        {showHowToPlay && activeGame && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.70)', backdropFilter: 'blur(8px)' }}>
+            <div className="w-80 rounded-2xl bg-card border border-border shadow-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-bold text-foreground">How to Play</span>
+                <button onClick={() => setShowHowToPlay(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">{FREE_GAMES.find(g => g.id === activeGame)?.howToPlay ?? 'Play to win!'}</p>
+              <button onClick={() => setShowHowToPlay(false)} className="mt-4 w-full py-2.5 rounded-xl bg-foreground text-background text-sm font-semibold">Got it</button>
+            </div>
+          </div>
+        )}
+
+        {modal === 'win' && <WinModal level={gameLevel} score={lastScore} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
         {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
         {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); doSync({}); }} onNo={() => { setModal(null); goToMenu(); }} />}
       </div>
@@ -2045,408 +2720,222 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
   }
 
   // ─── MENU SCREEN ──────────────────────────────────────────────────────────
-  const filteredFree = FREE_GAMES.filter(g =>
-    !search || g.label.toLowerCase().includes(search.toLowerCase()) || g.desc.toLowerCase().includes(search.toLowerCase())
-  );
-  const myPurchased = STORE_CATALOG.filter(g => ownedGames.includes(g.id)).filter(g =>
-    !search || g.name.toLowerCase().includes(search.toLowerCase()) || g.desc.toLowerCase().includes(search.toLowerCase())
-  );
-  const storeAvail = STORE_CATALOG.filter(g => !ownedGames.includes(g.id));
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden" style={{ minHeight: 0 }}>
+    <div className="relative flex flex-col h-full overflow-hidden px-3" style={{ minHeight: 0 }}>
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-3 flex-shrink-0 max-w-2xl w-full mx-auto">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0 w-full">
         <div>
-          <h2 className="text-xl font-black text-foreground tracking-tight">Fius Game Zone</h2>
-          <p className="text-muted-foreground text-[11px] mt-0.5">{playerName} · Win games · Earn fragments</p>
-        </div>
-        <FragmentBadge count={fragments} />
-      </div>
-
-      {/* ── Tab switcher: Games / Store — unified sliding bar ── */}
-      <div className="mb-4 flex-shrink-0 max-w-2xl w-full mx-auto">
-        <div style={{ position: 'relative', display: 'flex', background: 'rgba(128,128,128,0.12)', borderRadius: 14, padding: 3 }}>
-          <div style={{
-            position: 'absolute', top: 3, bottom: 3,
-            left: `calc(${tab === 'store' ? 1 : 0} * (100% / 2) + 3px)`,
-            width: 'calc(100% / 2 - 6px)',
-            background: '#fff',
-            borderRadius: 11,
-            boxShadow: '0 1px 6px rgba(0,0,0,0.13)',
-            transition: 'left 0.28s cubic-bezier(0.23, 1, 0.32, 1)',
-            pointerEvents: 'none',
-          }} />
-          <button onClick={() => setTab('games')} style={{
-            flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
-            background: 'transparent', borderRadius: 11, fontSize: 12, fontWeight: 700,
-            color: tab === 'games' ? '#111' : 'rgba(128,128,128,0.65)',
-            position: 'relative', zIndex: 1, transition: 'color 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          }}>
-            <Gamepad2 size={13} />Games
-          </button>
-          <button onClick={() => setTab('store')} style={{
-            flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
-            background: 'transparent', borderRadius: 11, fontSize: 12, fontWeight: 700,
-            color: tab === 'store' ? '#111' : 'rgba(128,128,128,0.65)',
-            position: 'relative', zIndex: 1, transition: 'color 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          }}>
-            <ShoppingBag size={13} />Store
-          </button>
+          <h2 className="text-xl font-black text-foreground tracking-tight">Fius Game Hub</h2>
+          <p className="text-muted-foreground text-[11px] mt-0.5">{playerName} · Play games · Climb the ranks</p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-        <div className="max-w-2xl mx-auto w-full">
+        <div className="w-full">
 
-        {/* ── GAMES TAB ── */}
-        {tab === 'games' && (
-          <div className="flex flex-col gap-5">
-            {/* Search bar */}
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search games…"
-                className="w-full pl-9 pr-4 py-2 rounded-full text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
-                style={{ background: 'rgba(128,128,128,0.10)', border: '1px solid rgba(128,128,128,0.18)' }}
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </div>
+        {/* ── GAMES ── */}
+        <div className="flex flex-col lg:flex-row lg:items-start gap-5">
 
-            {/* Free games — responsive grid */}
-            <div>
-              <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Free Games</div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                {FREE_GAMES.map(g => (
-                  <button key={g.id}
-                    onClick={() => setSelectedGameInfo({ id: g.id, label: g.label, desc: g.desc, logo: g.logo, icon: g.icon, category: g.category })}
-                    className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2">
-                    <div className="w-full aspect-square">
-                      <img src={g.logo} alt={g.label}
-                        className="w-full h-full rounded-2xl object-cover group-hover:brightness-110 transition-all" />
-                    </div>
-                    <span className="text-muted-foreground text-[10px] font-semibold leading-tight text-center truncate w-full">{g.label}</span>
-                  </button>
-                ))}
+            {/* ── LEFT: search + game cards 2-col grid ── */}
+            <div className="flex flex-col gap-4 flex-1 min-w-0">
+              {/* Search bar — compact */}
+              <div className="relative w-fit">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search…"
+                  className="pl-8 pr-3 py-1.5 rounded-full text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  style={{ background: 'rgba(128,128,128,0.10)', border: '1px solid rgba(128,128,128,0.18)', width: 140 }}
+                />
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+
+              {/* Game cards — 2-per-row grid, 3 on large screens */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <MemoryMatchCard onShowDetail={onShowDetail} />
+                <SpeedMathCard onShowDetail={onShowDetail} />
+                <WordScrambleCard onShowDetail={onShowDetail} />
+                <BrainQuizCard onShowDetail={onShowDetail} />
+                <CarDodgeCard onShowDetail={onShowDetail} />
+                <OddOneOutCard onShowDetail={onShowDetail} />
               </div>
             </div>
 
-            {/* Owned Games — responsive grid (only if purchased) */}
-            {myPurchased.length > 0 && (
-              <div>
-                <div className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-2.5">Owned Games</div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                  {myPurchased.map(g => (
-                    <button key={g.id}
-                      onClick={() => setSelectedGameInfo({ id: g.id, label: g.name, desc: g.desc, img: g.img, category: g.category })}
-                      className="group transition-all duration-150 active:scale-90 flex flex-col items-center gap-2 relative">
-                      <div className="relative w-full aspect-square">
-                        <img src={g.img} alt={g.name}
-                          className="w-full h-full rounded-2xl object-cover group-hover:brightness-110 transition-all"
-                          onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                      </div>
-                      <span className="text-muted-foreground text-[10px] font-semibold leading-tight text-center truncate w-full">{g.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* ── RIGHT: Leaderboard — sticky on PC, normal flow on mobile ── */}
+            <div className="lg:w-[300px] lg:flex-shrink-0 lg:sticky lg:top-0">
+              {(() => {
+                const CAT_TABS = ['All', 'Mem', 'Math', 'Word', 'Quiz', 'Car', 'Odd'];
+                const CAT_TO_GAME: Record<string, string> = { Mem: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz', Car: 'car', Odd: 'oddword', TTT: 'tictactoe', RPS: 'rps' };
+                const catIdx = CAT_TABS.indexOf(lbCatFilter);
 
-            {/* ── LEADERBOARD ── reference-match premium podium */}
-            {(() => {
-              const CAT_TABS = ['All', 'Mem', 'Math', 'Word', 'Quiz', 'Car', 'Odd', 'TTT', 'RPS'];
-              const CAT_TO_GAME: Record<string, string> = { Mem: 'memory', Math: 'maths', Word: 'word', Quiz: 'quiz', Car: 'car', Odd: 'oddword', TTT: 'tictactoe', RPS: 'rps' };
-              const catIdx = CAT_TABS.indexOf(lbCatFilter);
+                const getScore = (l: typeof globalLeaders[0]) =>
+                  lbCatFilter === 'All'
+                    ? l.totalScore
+                    : l.gameLevels?.[CAT_TO_GAME[lbCatFilter]] || 0;
 
-              // Compute per-leader score for active filter
-              const getScore = (l: typeof globalLeaders[0]) =>
-                lbCatFilter === 'All'
-                  ? l.totalScore
-                  : l.gameLevels?.[CAT_TO_GAME[lbCatFilter]] || 0;
+                const leaders = [...globalLeaders]
+                  .map(l => ({ ...l, filteredScore: getScore(l) }))
+                  .filter(l => l.filteredScore > 0)
+                  .sort((a, b) => b.filteredScore - a.filteredScore)
+                  .slice(0, 10);
 
-              // Filtered + re-sorted leaders
-              const leaders = [...globalLeaders]
-                .map(l => ({ ...l, filteredScore: getScore(l) }))
-                .filter(l => l.filteredScore > 0)
-                .sort((a, b) => b.filteredScore - a.filteredScore)
-                .slice(0, 10);
+                const top3 = leaders.slice(0, 3);
+                const rank4and5 = leaders.slice(3, 5);
 
-              const top3 = leaders.slice(0, 3);
+                const podSlots = [
+                  { leader: top3[1] ?? null, rank: 2 },
+                  { leader: top3[0] ?? null, rank: 1 },
+                  { leader: top3[2] ?? null, rank: 3 },
+                ] as const;
 
-              // slot[0]=silver(#2 left), slot[1]=gold(#1 center), slot[2]=bronze(#3 right)
-              const podSlots = [
-                { leader: top3[1] ?? null, rank: 2 },
-                { leader: top3[0] ?? null, rank: 1 },
-                { leader: top3[2] ?? null, rank: 3 },
-              ] as const;
+                const meUserRank = leaders.findIndex(l => l.userId === userId);
+                const meInTop    = meUserRank !== -1;
+                const myLevels   = loadLevels();
+                const myLevel    = lbCatFilter === 'All'
+                  ? Math.max(0, ...Object.values(myLevels).map(v => Number(v) || 0))
+                  : myLevels[CAT_TO_GAME[lbCatFilter]] || 1;
+                const myFilteredScore = lbCatFilter === 'All'
+                  ? Object.values(myLevels).reduce((s, v) => s + (Number(v) || 0), 0)
+                  : myLevels[CAT_TO_GAME[lbCatFilter]] || 0;
 
-              const meUserRank = leaders.findIndex(l => l.userId === userId);
-              const meInTop    = meUserRank !== -1;
-              const myLevels   = loadLevels();
-              const myFilteredScore = lbCatFilter === 'All'
-                ? Object.values(myLevels).reduce((s, v) => s + (Number(v) || 0), 0)
-                : myLevels[CAT_TO_GAME[lbCatFilter]] || 0;
+                const podTextPos = [
+                  { cx: '17%', cy: '74%', scoreSz: 11, nameSz: 8.5 },
+                  { cx: '50%', cy: '54%', scoreSz: 14, nameSz: 9.5 },
+                  { cx: '81%', cy: '73%', scoreSz: 10, nameSz: 8 },
+                ];
 
-              // Text overlay positions on the podium image (% of container width/height)
-              // slot[0]=silver left, slot[1]=gold center, slot[2]=bronze right
-              const podTextPos = [
-                { cx: '17%', cy: '74%', scoreSz: 11, nameSz: 8.5 },  // silver #2 — moved down
-                { cx: '50%', cy: '54%', scoreSz: 14, nameSz: 9.5 },  // gold #1
-                { cx: '81%', cy: '73%', scoreSz: 10, nameSz: 8 },    // bronze #3 — moved down
-              ];
+                const rankMedal = (r: number) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `#${r}`;
 
-              return (
-                <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)' }}>
-
-                  {/* ── Header ── */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
-                    <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: -0.3 }}>Leaderboard</span>
-                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>ALL TIME</span>
-                  </div>
-
-                  {/* ── Category segmented bar (unified + sliding animation) ── */}
-                  <div style={{ padding: '0 14px 14px' }}>
-                    <div style={{ position: 'relative', display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 3, overflow: 'hidden' }}>
-                      {/* Sliding active indicator */}
-                      <div style={{
-                        position: 'absolute',
-                        top: 3, bottom: 3,
-                        left: `calc(${catIdx} * (100% / ${CAT_TABS.length}) + 3px)`,
-                        width: `calc(100% / ${CAT_TABS.length} - 6px)`,
-                        background: 'rgba(255,255,255,0.92)',
-                        borderRadius: 9,
-                        transition: 'left 0.28s cubic-bezier(0.23, 1, 0.32, 1)',
-                        pointerEvents: 'none',
-                      }} />
-                      {CAT_TABS.map((cat, i) => (
-                        <button key={cat} onClick={() => setLbCatFilter(cat)} style={{
-                          flex: 1, padding: '6px 0', border: 'none', cursor: 'pointer',
-                          background: 'transparent', borderRadius: 9,
-                          fontSize: 10, fontWeight: 700,
-                          color: lbCatFilter === cat ? '#111' : 'rgba(255,255,255,0.5)',
-                          position: 'relative', zIndex: 1,
-                          transition: 'color 0.2s',
-                        }}>{cat}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ── Podium area ── */}
-                  <div style={{ position: 'relative', background: 'transparent', padding: '0 10px', overflow: 'hidden', marginBottom: 0, lineHeight: 0 }}>
-
-                    {/* Light rays — fan out from bottom-centre behind platforms */}
-                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                      {[-75,-57,-40,-24,-10,0,10,24,40,57,75].map((angle, ri) => (
-                        <div key={ri} style={{
-                          position: 'absolute', bottom: 0, left: '50%', width: Math.abs(angle) < 15 ? 4 : 2,
-                          height: '130%', transformOrigin: 'bottom center',
-                          transform: `translateX(-50%) rotate(${angle}deg)`,
-                          background: Math.abs(angle) < 12
-                            ? 'linear-gradient(to top, rgba(251,191,36,0.22), rgba(251,191,36,0.04), transparent)'
-                            : 'linear-gradient(to top, rgba(251,191,36,0.10), rgba(251,191,36,0.02), transparent)',
-                        }} />
-                      ))}
-                    </div>
-
-                    {/* Radial glow behind #1 */}
-                    <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 200, height: 200, pointerEvents: 'none',
-                      background: 'radial-gradient(ellipse at 50% 90%, rgba(251,191,36,0.22) 0%, transparent 65%)', filter: 'blur(18px)' }} />
-
-                    {/* Podium image + text overlays */}
-                    <div style={{ position: 'relative', width: '100%' }}>
-                      {/* The 3D podium image */}
-                      <img
-                        src="/podium-bars.png"
-                        alt="podium"
-                        style={{ width: '100%', display: 'block', userSelect: 'none', pointerEvents: 'none', marginBottom: 0, verticalAlign: 'bottom' }}
-                      />
-
-                      {/* Text overlays — score + name on each bar */}
-                      {podSlots.map((slot, si) => {
-                        const pos = podTextPos[si];
-                        const isMe = slot.leader?.userId === userId;
-                        return (
-                          <div key={`pod-txt-${slot.rank}`} style={{
-                            position: 'absolute',
-                            left: pos.cx,
-                            top: pos.cy,
-                            transform: 'translateX(-50%)',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center',
-                            pointerEvents: 'none',
-                            zIndex: 10,
-                          }}>
-                            {slot.leader ? (
-                              <>
-                                <span style={{
-                                  color: '#fff', fontWeight: 900, fontSize: pos.scoreSz,
-                                  lineHeight: 1.1, textShadow: '0 1px 6px rgba(0,0,0,0.8)',
-                                  whiteSpace: 'nowrap',
-                                }}>
-                                  {(slot.leader as any).filteredScore?.toLocaleString() ?? slot.leader.totalScore.toLocaleString()}
-                                </span>
-                                <span style={{
-                                  color: 'rgba(255,255,255,0.92)', fontWeight: 700,
-                                  fontSize: pos.nameSz, textAlign: 'center',
-                                  lineHeight: 1.25, marginTop: 2,
-                                  textShadow: '0 1px 5px rgba(0,0,0,0.8)',
-                                  maxWidth: 70, wordBreak: 'break-word',
-                                }}>
-                                  {slot.leader.name}{isMe ? ' ✦' : ''}
-                                </span>
-                              </>
-                            ) : (
-                              <span style={{
-                                color: 'rgba(255,255,255,0.55)', fontWeight: 900,
-                                fontSize: pos.scoreSz, textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-                              }}>—</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* ── Your score row at the bottom — flush, no gap ── */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '13px 16px',
-                      borderLeft: '3px solid #6366f1',
-                    }}>
-                      <span style={{ color: '#818cf8', fontSize: 11, fontWeight: 800, width: 26, flexShrink: 0 }}>
-                        #{meInTop ? meUserRank + 1 : '—'}
-                      </span>
-                      <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 13, textTransform: 'uppercase' as const, letterSpacing: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                        {playerName}
-                      </span>
-                      <span style={{ padding: '2px 8px', borderRadius: 20, background: '#4f46e5', color: '#fff', fontSize: 9, fontWeight: 900, flexShrink: 0, letterSpacing: 0.3 }}>You</span>
-                      <span style={{ color: '#818cf8', fontWeight: 800, fontSize: 13, flexShrink: 0, minWidth: 24, textAlign: 'right' as const }}>{myFilteredScore}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-
-        {/* ── STORE TAB ── */}
-        {tab === 'store' && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Premium Games</span>
-              <span className="text-zinc-600 text-[10px] flex items-center gap-1">
-                <img src={imgCoins} alt="" className="w-3.5 h-3.5" />
-                <span className="text-blue-400 font-bold">{fragments}</span> fragments
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {STORE_CATALOG.map(game => {
-                const owned = ownedGames.includes(game.id);
-                const canAfford = fragments >= game.price;
                 return (
-                  <div key={game.id} className="flex flex-col items-center gap-2">
-                    <button
-                      onClick={() => {
-                        if (owned) {
-                          setSelectedGameInfo({ id: game.id, label: game.name, desc: game.desc, img: game.img, category: game.category });
-                        } else if (canAfford) {
-                          handleBuy(game.id, game.price);
-                        }
-                      }}
-                      disabled={!owned && !canAfford}
-                      className="flex flex-col items-center gap-0 group w-full transition-all duration-200 active:scale-95 disabled:opacity-50">
-                      <div className="w-20 h-20 rounded-full overflow-hidden relative transition-all duration-200 group-hover:scale-110 flex-shrink-0"
-                        style={{
-                          border: owned ? '2.5px solid rgba(16,185,129,0.7)' : canAfford ? '2.5px solid rgba(59,130,246,0.6)' : '2.5px solid rgba(255,255,255,0.15)',
-                          boxShadow: owned ? '0 0 18px rgba(16,185,129,0.3)' : canAfford ? '0 6px 20px rgba(59,130,246,0.3)' : '0 6px 20px rgba(0,0,0,0.5)'
-                        }}>
-                        <img src={game.img} alt={game.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                        {!owned && !canAfford && (
-                          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-                            <Lock size={16} className="text-zinc-400" />
-                          </div>
-                        )}
-                        {owned && (
-                          <div className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.95)' }}>
-                            <Check size={10} className="text-white" />
-                          </div>
-                        )}
+                  <div style={{ background: 'linear-gradient(180deg, #6e6e6e 0%, #2e2e2e 40%, #111111 75%, #000000 100%)', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)' }}>
+
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
+                      <span style={{ color: '#fff', fontWeight: 900, fontSize: 17, letterSpacing: -0.3 }}>Leaderboard</span>
+                      <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>ALL TIME</span>
+                    </div>
+
+                    {/* Category segmented bar */}
+                    <div style={{ padding: '0 14px 14px' }}>
+                      <div style={{ position: 'relative', display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 3, overflow: 'hidden' }}>
+                        <div style={{
+                          position: 'absolute', top: 3, bottom: 3,
+                          left: `calc(${catIdx} * (100% / ${CAT_TABS.length}) + 3px)`,
+                          width: `calc(100% / ${CAT_TABS.length} - 6px)`,
+                          background: 'rgba(255,255,255,0.92)', borderRadius: 9,
+                          transition: 'left 0.28s cubic-bezier(0.23, 1, 0.32, 1)',
+                          pointerEvents: 'none',
+                        }} />
+                        {CAT_TABS.map((cat) => (
+                          <button key={cat} onClick={() => { if (cat !== lbCatFilter) playTabClick(); setLbCatFilter(cat); }} style={{
+                            flex: 1, padding: '6px 0', border: 'none', cursor: 'pointer',
+                            background: 'transparent', borderRadius: 9,
+                            fontSize: 10, fontWeight: 700,
+                            color: lbCatFilter === cat ? '#111' : 'rgba(255,255,255,0.5)',
+                            position: 'relative', zIndex: 1, transition: 'color 0.2s',
+                          }}>{cat}</button>
+                        ))}
                       </div>
-                      <div className="text-center mt-1.5">
-                        <div className="text-white font-bold text-[11px] leading-tight truncate max-w-[72px]">{game.name}</div>
-                        {owned ? (
-                          <div className="text-[9px] text-emerald-500 font-bold mt-0.5">Tap to play</div>
-                        ) : canAfford ? (
-                          <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                            <img src={imgCoins} alt="" className="w-2.5 h-2.5" />
-                            <span className="text-[9px] text-blue-400 font-bold">{game.price}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                            <img src={imgCoins} alt="" className="w-2.5 h-2.5" />
-                            <span className="text-[9px] text-zinc-600 font-bold">{game.price}</span>
-                          </div>
-                        )}
+                    </div>
+
+                    {/* Podium — top 3 */}
+                    <div style={{ position: 'relative', background: 'transparent', padding: '0 10px', overflow: 'hidden', marginBottom: 0, lineHeight: 0 }}>
+                      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                        {[-75,-57,-40,-24,-10,0,10,24,40,57,75].map((angle, ri) => (
+                          <div key={ri} style={{
+                            position: 'absolute', bottom: 0, left: '50%', width: Math.abs(angle) < 15 ? 4 : 2,
+                            height: '130%', transformOrigin: 'bottom center',
+                            transform: `translateX(-50%) rotate(${angle}deg)`,
+                            background: Math.abs(angle) < 12
+                              ? 'linear-gradient(to top, rgba(251,191,36,0.22), rgba(251,191,36,0.04), transparent)'
+                              : 'linear-gradient(to top, rgba(251,191,36,0.10), rgba(251,191,36,0.02), transparent)',
+                          }} />
+                        ))}
                       </div>
-                    </button>
+                      <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 200, height: 200, pointerEvents: 'none',
+                        background: 'radial-gradient(ellipse at 50% 90%, rgba(251,191,36,0.22) 0%, transparent 65%)', filter: 'blur(18px)' }} />
+                      <div style={{ position: 'relative', width: '100%' }}>
+                        <img src="/podium-bars.png" alt="podium"
+                          style={{ width: '100%', display: 'block', userSelect: 'none', pointerEvents: 'none', marginBottom: 0, verticalAlign: 'bottom' }}
+                        />
+                        {podSlots.map((slot, si) => {
+                          const pos = podTextPos[si];
+                          const isMe = slot.leader?.userId === userId;
+                          return (
+                            <div key={`pod-txt-${slot.rank}`} style={{
+                              position: 'absolute', left: pos.cx, top: pos.cy,
+                              transform: 'translateX(-50%)',
+                              display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              pointerEvents: 'none', zIndex: 10,
+                            }}>
+                              {slot.leader ? (
+                                <>
+                                  <span style={{ color: '#fff', fontWeight: 900, fontSize: pos.scoreSz, lineHeight: 1.1, textShadow: '0 1px 6px rgba(0,0,0,0.8)', whiteSpace: 'nowrap' }}>
+                                    {(slot.leader as any).filteredScore?.toLocaleString() ?? slot.leader.totalScore.toLocaleString()}
+                                  </span>
+                                  <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 700, fontSize: pos.nameSz, textAlign: 'center', lineHeight: 1.25, marginTop: 2, textShadow: '0 1px 5px rgba(0,0,0,0.8)', maxWidth: 70, wordBreak: 'break-word' }}>
+                                    {slot.leader.name}{isMe ? ' ✦' : ''}
+                                  </span>
+                                </>
+                              ) : (
+                                <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 900, fontSize: pos.scoreSz, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>—</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Ranks #4 and #5 — always render both rows */}
+                    {[4, 5].map(rankNum => {
+                      const l = leaders[rankNum - 1] ?? null;
+                      const isMe = l?.userId === userId;
+                      return (
+                        <div key={`rank-${rankNum}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 800, width: 22, flexShrink: 0 }}>#{rankNum}</span>
+                          {l ? (
+                            <>
+                              <span style={{ flex: 1, color: isMe ? '#fff' : 'rgba(255,255,255,0.75)', fontWeight: isMe ? 900 : 600, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                                {l.name}{isMe ? ' ✦' : ''}
+                              </span>
+                              <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                                {(l as any).filteredScore?.toLocaleString() ?? l.totalScore.toLocaleString()}
+                              </span>
+                            </>
+                          ) : (
+                            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, fontWeight: 500, flex: 1 }}>—</span>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Your level + rank row */}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderLeft: '3px solid #555' }}>
+                        <span style={{ color: '#aaa', fontSize: 11, fontWeight: 800, width: 26, flexShrink: 0 }}>
+                          {meInTop ? rankMedal(meUserRank + 1) : '—'}
+                        </span>
+                        <span style={{ flex: 1, color: '#fff', fontWeight: 900, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                          {playerName}
+                        </span>
+                        <span style={{ padding: '2px 7px', borderRadius: 20, background: '#333', color: '#ddd', fontSize: 9, fontWeight: 900, flexShrink: 0 }}>You</span>
+                        <span style={{ color: '#ccc', fontWeight: 800, fontSize: 11, flexShrink: 0, textAlign: 'right' as const }}>
+                          Lv {myLevel}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
-              })}
+              })()}
             </div>
-          </div>
-        )}
 
-        </div>{/* end max-w-2xl wrapper */}
+          </div>
+
+        </div>{/* end w-full wrapper */}
       </div>
 
-      {/* ── Game Info Modal ── */}
-      {selectedGameInfo && (
-        <>
-          {/* Full-screen blur overlay — fixed so it covers the entire page */}
-          <div className="fixed inset-0 z-[998] backdrop-blur-md bg-black/30" onClick={() => setSelectedGameInfo(null)} />
-          {/* Card centered over the full screen */}
-          <div className="fixed inset-0 z-[999] flex items-center justify-center pointer-events-none">
-          <div className="w-full max-w-[280px] mx-4 rounded-3xl overflow-hidden flex flex-col items-center text-center border border-border shadow-2xl pointer-events-auto bg-card"
-            onClick={e => e.stopPropagation()}>
-            <div className="pt-8 pb-0 flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full overflow-hidden">
-                <img
-                  src={selectedGameInfo.logo ?? selectedGameInfo.img}
-                  alt={selectedGameInfo.label}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-            <div className="px-6 pt-4 pb-6 w-full">
-              <h3 className="text-xl font-black text-foreground mb-1 tracking-tight">{selectedGameInfo.label}</h3>
-              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-3 bg-accent text-accent-foreground">
-                {selectedGameInfo.category}
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4">{selectedGameInfo.desc}</p>
-              <div className="flex items-center justify-center gap-2 mb-5">
-                <span className="text-muted-foreground text-xs">Your level:</span>
-                <LevelBadge level={getGameLevel(selectedGameInfo.id)} />
-              </div>
-              <button
-                onClick={() => { onStartGame(selectedGameInfo.id, selectedGameInfo.label); setSelectedGameInfo(null); }}
-                className="w-full py-3.5 rounded-2xl font-bold text-white text-sm transition-all hover:scale-[1.02] active:scale-[0.97] mb-2"
-                style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)' }}>
-                ▶ Play Game
-              </button>
-              <button
-                onClick={() => setSelectedGameInfo(null)}
-                className="w-full py-2.5 rounded-2xl text-sm text-muted-foreground hover:text-foreground transition-colors bg-accent/50">
-                Close
-              </button>
-            </div>
-          </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { FiusLogo, Logo } from "./logo";
 import { getVibrantColor } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -13,6 +14,27 @@ import { Input } from "@/components/ui/input";
 import { useUsage } from "@/hooks/use-usage";
 import { Crown, Sparkles as SparklesIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { UltimatePlanCard } from "@/components/ultimate-plan-card";
+import {
+  APP_FONT_OPTIONS,
+  DEFAULT_APP_FONT,
+  DEFAULT_GLOW_ACCENT,
+  GLOW_ACCENT_OPTIONS,
+  UI_ACCENT_OPTIONS,
+  applyAppFont,
+  applyUiAccent,
+  getStoredGlowAccent,
+  getStoredUiAccentEnabled,
+  getStoredUiAccentColor,
+  getStoredLogoStyle,
+  getStoredAutoRotateLogo,
+  persistLogoStyle,
+  persistAutoRotateLogo,
+  LOGO_STYLE_OPTIONS,
+  type LogoStyle,
+  persistGlowAccent,
+  playTabClick,
+} from "@/lib/appearance-settings";
 
 // ─── Settings scroll-to-top/bottom buttons — hide completely at limits ──────
 function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HTMLDivElement | null } }) {
@@ -98,7 +120,7 @@ function LearnedBehaviorsSection() {
             placeholder="e.g. Prefers short concise answers"
             className="h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800" autoFocus />
           <button onClick={add}
-            className="px-2.5 py-1 rounded-md bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-semibold hover:opacity-80 transition-opacity">
+            className="px-2.5 py-1 rounded-md bg-zinc-200 dark:bg-white text-zinc-900 dark:text-black text-xs font-semibold hover:opacity-80 transition-opacity">
             Save
           </button>
         </div>
@@ -159,78 +181,64 @@ function PlanUsageSection() {
     );
   };
 
-  return (
-    <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isUltimate ? <Crown className="w-4 h-4 text-amber-500" /> : <SparklesIcon className="w-4 h-4 text-zinc-400" />}
-          <span className="text-sm font-bold text-zinc-900 dark:text-white">
-            {isUltimate ? "Fius Ultimate" : "Fius Free"}
-          </span>
-        </div>
-        {!isUltimate && (
-          <Button
-            size="sm"
-            disabled={upgrade.isPending}
-            onClick={handleUpgrade}
-            className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold flex items-center gap-1.5"
-          >
-            {upgrade.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
-            Upgrade — ${usage.priceUsd}/mo
-          </Button>
-        )}
-      </div>
+  if (!isUltimate) {
+    // ── Free plan: exact same Fius Ultimate card as the landing page ────────
+    return (
+      <div className="space-y-3">
+        <UltimatePlanCard onUpgrade={handleUpgrade} ctaBusy={upgrade.isPending} />
 
-      {isUltimate ? (
-        <div className="space-y-3">
+        {/* Current free usage */}
+        <div className="space-y-2.5 px-1">
+          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Current Usage</p>
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Tokens remaining</span>
-              <span className="font-medium text-zinc-900 dark:text-white">
-                {(usage.tokensRemaining ?? 0).toLocaleString()} / {(usage.tokensLimit ?? 0).toLocaleString()}
-              </span>
-            </div>
-            <Bar used={usage.tokensUsed ?? 0} limit={usage.tokensLimit ?? 1} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Images remaining</span>
-              <span className="font-medium text-zinc-900 dark:text-white">
-                {usage.imagesRemaining} / {usage.imagesLimit}
-              </span>
-            </div>
-            <Bar used={usage.imagesUsed} limit={usage.imagesLimit} />
-          </div>
-          <p className="text-[10px] text-zinc-400">Resets monthly. Full access to all Nomad models.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Messages remaining</span>
-              <span className="font-medium text-zinc-900 dark:text-white">
-                {usage.messagesRemaining} / {usage.messagesLimit}
-              </span>
+              <span className="text-zinc-500">Messages</span>
+              <span className="font-medium text-zinc-900 dark:text-white">{usage.messagesRemaining} / {usage.messagesLimit}</span>
             </div>
             <Bar used={usage.messagesUsed ?? 0} limit={usage.messagesLimit ?? 1} />
           </div>
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-zinc-500">Images remaining</span>
-              <span className="font-medium text-zinc-900 dark:text-white">
-                {usage.imagesRemaining} / {usage.imagesLimit}
-              </span>
+              <span className="text-zinc-500">Images</span>
+              <span className="font-medium text-zinc-900 dark:text-white">{usage.imagesRemaining} / {usage.imagesLimit}</span>
             </div>
             <Bar used={usage.imagesUsed} limit={usage.imagesLimit} />
           </div>
-          <p className="text-[10px] text-zinc-400">
-            Nomad is limited to {Object.values(usage.freeNomadModelLabels).join(", ")}. Upgrade for all models, 3M tokens & 250 images/mo.
-          </p>
         </div>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  // ── Ultimate plan: exact same perks card, "activated" state with usage ──────
+  return (
+    <UltimatePlanCard
+      activated
+      usage={{
+        tokensRemaining: usage.tokensRemaining ?? 0,
+        tokensLimit: usage.tokensLimit ?? 0,
+        imagesRemaining: usage.imagesRemaining,
+        imagesLimit: usage.imagesLimit,
+      }}
+    />
   );
 }
+
+// ── Nomad sub-model options (Normal & Flagship) ────────────────────────────
+const NOMAD_SUB_MODELS: Record<string, { normal: string[]; flagship: string[]; default: string }> = {
+  'fius-ai':          { normal: ['Fius Lite'],                                                                  flagship: ['Fius Pro'],                                                default: 'Fius Lite' },
+  'gpt-4o':           { normal: ['GPT-5 mini'],                                                                 flagship: ['GPT-5', 'GPT-5 Pro'],                                      default: 'GPT-5 mini' },
+  'claude-3.5-sonnet':{ normal: ['Claude Haiku 4.5'],                                                           flagship: ['Claude Sonnet 5', 'Claude Opus 4.8'],                      default: 'Claude Haiku 4.5' },
+  'gemini-pro':       { normal: ['Gemini 3.5 Flash-Lite', 'Gemini 3.6 Flash'],                                 flagship: ['Gemini 3.1 Pro'],                                          default: 'Gemini 3.5 Flash-Lite' },
+  'perplexity':       { normal: ['Perplexity Sonar', 'Perplexity Sonar Pro'],                                  flagship: ['Perplexity Sonar Reasoning Pro', 'Perplexity Sonar Deep Research'], default: 'Perplexity Sonar' },
+  'grok-4':           { normal: ['Grok Build 0.1', 'Grok 4.3'],                                                flagship: ['Grok 4.5'],                                                default: 'Grok Build 0.1' },
+  'deepseek-r1':      { normal: ['DeepSeek V4 Flash'],                                                          flagship: ['DeepSeek V4 Pro'],                                         default: 'DeepSeek V4 Flash' },
+  'doubao':           { normal: ['Doubao Seed 2.0 Mini', 'Doubao Seed 2.0 Lite'],                              flagship: ['Doubao Seed 2.0 Pro'],                                     default: 'Doubao Seed 2.0 Mini' },
+  'kimi':             { normal: ['Kimi K2.6', 'Kimi K2.7 Code'],                                               flagship: ['Kimi K3'],                                                 default: 'Kimi K2.6' },
+  'qwen':             { normal: ['Qwen Flash', 'Qwen Plus', 'Qwen Coder'],                                     flagship: ['Qwen Max'],                                                default: 'Qwen Flash' },
+  'llama-4':          { normal: ['Llama 4 Scout', 'Llama 4 Maverick'],                                         flagship: ['Llama 4 Behemoth'],                                        default: 'Llama 4 Scout' },
+  'mistral':          { normal: ['Ministral 3', 'Ministral 3 14B', 'Mistral Small 4', 'Mistral Medium 3.5'],   flagship: ['Mistral Large 3'],                                         default: 'Ministral 3' },
+  'copilot':          { normal: ['GPT-5 mini', 'GPT-5.4 mini / GPT-5.4 nano', 'GPT-5.5'],                     flagship: ['Claude Haiku / Sonnet'],                                   default: 'GPT-5 mini' },
+};
 
 interface CustomizeModalProps {
   isOpen: boolean;
@@ -246,7 +254,88 @@ interface CustomizeModalProps {
   onProfilePictureChange?: (dataUrl: string) => void;
 }
 
-type SettingsSection = 'account' | 'appearance' | 'behavior' | 'customize' | 'data';
+type SettingsSection = 'profile' | 'looks' | 'general' | 'nomad' | 'subscription';
+
+// ─── Shared sliding-pill selector ────────────────────────────────────────────
+function SlidingPillSelector({
+  value,
+  onChange,
+  options,
+  isDark,
+  tall = false,
+  withSound = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; iconBlack?: string; iconGray?: string }[];
+  isDark: boolean;
+  tall?: boolean;
+  withSound?: boolean;
+}) {
+  const activeIdx = Math.max(0, options.findIndex(o => o.value === value));
+  const n = options.length;
+  return (
+    <div className="relative flex items-center rounded-full bg-zinc-200 dark:bg-[#2a2a2a] p-1">
+      {/* sliding pill */}
+      <div
+        aria-hidden
+        className="absolute top-1 bottom-1 rounded-full pointer-events-none"
+        style={{
+          width: `${100 / n}%`,
+          left: `${(activeIdx / n) * 100}%`,
+          transition: 'left 0.55s cubic-bezier(0.34,1.56,0.64,1)',
+          background: isDark ? '#ffffff' : 'rgba(0,0,0,0.09)',
+          boxShadow: isDark ? '0 2px 12px rgba(255,255,255,0.18), 0 1px 4px rgba(0,0,0,0.15)' : '0 2px 10px rgba(0,0,0,0.12)',
+        }}
+      />
+      {options.map((opt) => {
+        const active = value === opt.value;
+        const iconSrc = (!active && isDark && opt.iconGray) ? opt.iconGray : opt.iconBlack;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => { if (withSound && opt.value !== value) playTabClick(); onChange(opt.value); }}
+            style={{ width: `${100 / n}%` }}
+            className={`relative z-10 flex flex-col items-center justify-center gap-1 ${tall ? 'py-3' : 'py-2.5'} rounded-xl transition-all duration-300 select-none ${
+              active ? 'text-zinc-900' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+            }`}
+          >
+            {iconSrc && (
+              <img src={iconSrc} alt={opt.label} className="w-5 h-5 object-contain transition-all duration-300" />
+            )}
+            <span className="text-[12px] font-semibold leading-none transition-all duration-300">{opt.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Theme Segmented Tab ─────────────────────────────────────────────────────
+function ThemeSegmentedTab({
+  value,
+  onChange,
+  isDark,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  isDark: boolean;
+}) {
+  const options = [
+    { value: 'light',  label: 'Light',  iconBlack: '/icon-sun-black.png',    iconGray: '/icon-sun-gray.png'    },
+    { value: 'dark',   label: 'Dark',   iconBlack: '/icon-moon-black.png',   iconGray: '/icon-moon-gray.png'   },
+    { value: 'system', label: 'System', iconBlack: '/icon-laptop-black.png', iconGray: '/icon-laptop-gray.png' },
+  ];
+  return (
+    <div>
+      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Theme</span>
+      <div className="mt-3 rounded-full bg-zinc-200 dark:bg-[#2a2a2a]">
+        <SlidingPillSelector value={value} onChange={onChange} options={options} isDark={isDark} tall withSound />
+      </div>
+    </div>
+  );
+}
 
 export function CustomizeModal({
   isOpen,
@@ -262,28 +351,54 @@ export function CustomizeModal({
   onProfilePictureChange
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState<SettingsSection>('account');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>('fius-prime');
-  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'fius-ai']);
+  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'fius-ai']);
+  // Per-model default sub-model selection (synced with localStorage)
+  const [nomadDefaultModels, setNomadDefaultModels] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}'); } catch { return {}; }
+  });
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [localTheme, setLocalTheme] = useState<string>(theme);
   const [functionBarStyle, setFunctionBarStyle] = useState<string>(
-    () => localStorage.getItem('functionBarStyle') || 'circle'
+    () => localStorage.getItem('functionBarStyle') || 'pill'
   );
   const [messageBarStyle, setMessageBarStyle] = useState<string>(
     () => localStorage.getItem('messageBarStyle') || 'compact'
   );
+  const [logoStyle, setLogoStyle] = useState<string>(() => getStoredLogoStyle());
+  const [autoRotateLogo, setAutoRotateLogo] = useState<boolean>(() => getStoredAutoRotateLogo());
   const [chatBg, setChatBg] = useState<string>(
     () => localStorage.getItem('chatBg') || 'plain'
   );
+  const [glowAccentColor, setGlowAccentColor] = useState<string>(
+    () => getStoredGlowAccent()
+  );
+  const [appFont, setAppFont] = useState<string>(
+    () => localStorage.getItem('appFont') || DEFAULT_APP_FONT
+  );
+  const [uiAccentEnabled, setUiAccentEnabled] = useState<boolean>(
+    () => getStoredUiAccentEnabled()
+  );
+  const [uiAccentColor, setUiAccentColor] = useState<string>(
+    () => getStoredUiAccentColor()
+  );
+  const [uiSoundsEnabled, setUiSoundsEnabled] = useState<boolean>(
+    () => localStorage.getItem('uiSoundsEnabled') !== 'false'
+  );
   const originalTheme = useRef<string>(theme);
-  const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'circle');
+  const originalFunctionBarStyle = useRef<string>(localStorage.getItem('functionBarStyle') || 'pill');
   const originalMessageBarStyle = useRef<string>(localStorage.getItem('messageBarStyle') || 'compact');
+  const originalLogoStyle = useRef<string>(getStoredLogoStyle());
+  const originalAutoRotateLogo = useRef<boolean>(getStoredAutoRotateLogo());
   const originalChatBg = useRef<string>(localStorage.getItem('chatBg') || 'plain');
+  const originalGlowAccentColor = useRef<string>(getStoredGlowAccent());
+  const originalAppFont = useRef<string>(localStorage.getItem('appFont') || DEFAULT_APP_FONT);
+  const [openSettingsModelDropdown, setOpenSettingsModelDropdown] = useState<string | null>(null);
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
@@ -302,27 +417,84 @@ export function CustomizeModal({
     personalize: true,
     linkSharing: true,
     sidebarCloseTop: true,
-    showFiusLogo: true
+    showFiusLogo: true,
+    hideFiusLogo: false,
+    hideFlyWithUs: false,
+    showUserMsgActions: true,
+    glossyOutline: true,
   });
 
   const settingsContentRef = useRef<HTMLDivElement | null>(null);
+
+  // ── Vertical sliding pill for settings sidebar ────────────────────────────
+  const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Pre-initialised so the pill renders on the very first paint (never null).
+  // The approximate height (36 px) is overwritten by the first useLayoutEffect.
+  const [settingsPill, setSettingsPill] = useState<{ top: number; height: number }>({ top: 0, height: 36 });
+  // Tracks whether the pill has been measured at least once this open session.
+  // While false we suppress the CSS transition so the pill snaps to its
+  // correct position on mount instead of sliding in from (0,0).
+  // Must be state (not ref) so the pill div re-renders with transition enabled.
+  const [pillMeasured, setPillMeasured] = useState(false);
+
+  // Measure the pill position after the dialog has fully animated in.
+  // useLayoutEffect alone fires too early when Radix Dialog has an open
+  // animation — the buttons are in the DOM but offsetTop can be stale/0.
+  // Double-rAF ensures we measure after the browser has painted the final
+  // dialog layout, so the pill snaps exactly onto the active tab button.
+  useEffect(() => {
+    if (!isOpen) return;
+    let raf1: number, raf2: number;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const idx = menuItems.findIndex(m => m.id === activeSection);
+        const el = tabButtonRefs.current[idx];
+        if (!el) return;
+        setSettingsPill({ top: el.offsetTop, height: el.offsetHeight });
+        setPillMeasured(true);
+      });
+    });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, isOpen]);
+
+  // Reset measured flag when modal closes so next open starts fresh
+  useEffect(() => {
+    if (!isOpen) { setPillMeasured(false); setSettingsPill({ top: 0, height: 36 }); }
+  }, [isOpen]);
 
   // Only reset local state when modal transitions from closed → open
   const prevIsOpen = useRef(false);
   useEffect(() => {
     if (isOpen && !prevIsOpen.current) {
+      setActiveSection('profile');
       setSelectedPreset(currentPreset);
       setInstructions(customInstructions);
       setLocalToggles({ ...toggles });
       setLocalAiOrder([...aiOrder]);
       setLocalTheme(theme);
       originalTheme.current = theme;
-      const savedStyle = localStorage.getItem('functionBarStyle') || 'circle';
+      const savedStyle = localStorage.getItem('functionBarStyle') || 'pill';
       setFunctionBarStyle(savedStyle);
       originalFunctionBarStyle.current = savedStyle;
       const savedMsgStyle = localStorage.getItem('messageBarStyle') || 'compact';
       setMessageBarStyle(savedMsgStyle);
       originalMessageBarStyle.current = savedMsgStyle;
+       const savedLogoStyle = getStoredLogoStyle();
+       setLogoStyle(savedLogoStyle);
+       originalLogoStyle.current = savedLogoStyle;
+       const savedAutoRotateLogo = getStoredAutoRotateLogo();
+       setAutoRotateLogo(savedAutoRotateLogo);
+       originalAutoRotateLogo.current = savedAutoRotateLogo;
+       const savedChatBg = localStorage.getItem('chatBg') || 'plain';
+       setChatBg(savedChatBg);
+       originalChatBg.current = savedChatBg;
+       const savedGlowAccent = getStoredGlowAccent();
+       setGlowAccentColor(savedGlowAccent);
+       originalGlowAccentColor.current = savedGlowAccent;
+       const savedFont = localStorage.getItem('appFont') || DEFAULT_APP_FONT;
+       setAppFont(savedFont);
+       originalAppFont.current = savedFont;
       setIsDirty(false);
       setShowExitDialog(false);
     }
@@ -344,12 +516,63 @@ export function CustomizeModal({
     setIsDirty(true);
   };
 
+  const handleLogoStyleChange = (val: string) => {
+    setLogoStyle(val);
+    persistLogoStyle(val as LogoStyle);
+    window.dispatchEvent(new Event('logoStyleChanged'));
+    setIsDirty(true);
+  };
+
+  const handleAutoRotateLogoChange = (enabled: boolean) => {
+    setAutoRotateLogo(enabled);
+    persistAutoRotateLogo(enabled);
+    window.dispatchEvent(new Event('logoStyleChanged'));
+    setIsDirty(true);
+  };
+
   const handleChatBgChange = (val: string) => {
     setChatBg(val);
     setIsDirty(true);
     // Apply immediately so user sees the change without hitting Save
     localStorage.setItem('chatBg', val);
     window.dispatchEvent(new Event('chatBgChanged'));
+  };
+
+  const handleGlowAccentColorChange = (val: string) => {
+    setGlowAccentColor(val);
+    setIsDirty(true);
+    persistGlowAccent(val);
+    window.dispatchEvent(new Event('glowAccentColorChanged'));
+  };
+
+  const handleUiAccentEnabledChange = (enabled: boolean) => {
+    setUiAccentEnabled(enabled);
+    setIsDirty(true);
+    localStorage.setItem('uiAccentEnabled', enabled ? 'true' : 'false');
+    applyUiAccent();
+    window.dispatchEvent(new Event('uiAccentChanged'));
+  };
+
+  const handleUiAccentColorChange = (val: string) => {
+    setUiAccentColor(val);
+    setIsDirty(true);
+    localStorage.setItem('uiAccentColor', val);
+    applyUiAccent();
+    window.dispatchEvent(new Event('uiAccentChanged'));
+  };
+
+  const handleUiSoundsChange = (enabled: boolean) => {
+    setUiSoundsEnabled(enabled);
+    setIsDirty(true);
+    localStorage.setItem('uiSoundsEnabled', enabled ? 'true' : 'false');
+  };
+
+  const handleAppFontChange = (val: string) => {
+    setAppFont(val);
+    setIsDirty(true);
+    localStorage.setItem('appFont', val);
+    applyAppFont(val);
+    window.dispatchEvent(new Event('appFontChanged'));
   };
 
   const moveOrder = (index: number, direction: 'up' | 'down') => {
@@ -383,13 +606,24 @@ export function CustomizeModal({
     setDragOffsetY(0);
     const startY = e.clientY;
 
+    // Snapshot the other rows' midpoints once, before any movement. Sibling
+    // rows don't reflow while dragging (only the dragged row gets a CSS
+    // translateY), so re-measuring live via getBoundingClientRect() would
+    // include the dragged row's own translating rect — which tracks the
+    // cursor and therefore "wins" almost every comparison, making drops
+    // silently no-op or land on the wrong slot. Exclude it and use a static
+    // snapshot instead.
+    const staticMids = orderRowRefs.current.map((el, idx) => {
+      if (!el || idx === index) return null;
+      const rect = el.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    });
+
     const findIndexAtY = (clientY: number): number => {
       let best = index;
       let bestDist = Infinity;
-      orderRowRefs.current.forEach((el, idx) => {
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const mid = rect.top + rect.height / 2;
+      staticMids.forEach((mid, idx) => {
+        if (mid === null) return;
         const dist = Math.abs(clientY - mid);
         if (dist < bestDist) { bestDist = dist; best = idx; }
       });
@@ -437,8 +671,16 @@ export function CustomizeModal({
     window.dispatchEvent(new Event('functionBarStyleChanged'));
     localStorage.setItem('messageBarStyle', messageBarStyle);
     window.dispatchEvent(new Event('messageBarStyleChanged'));
+    persistLogoStyle(logoStyle as LogoStyle);
+    persistAutoRotateLogo(autoRotateLogo);
+    window.dispatchEvent(new Event('logoStyleChanged'));
     localStorage.setItem('chatBg', chatBg);
     window.dispatchEvent(new Event('chatBgChanged'));
+    persistGlowAccent(glowAccentColor);
+    window.dispatchEvent(new Event('glowAccentColorChanged'));
+    localStorage.setItem('appFont', appFont);
+    applyAppFont(appFont);
+    window.dispatchEvent(new Event('appFontChanged'));
     onSave(selectedPreset, instructions, isEnabled, selectedModel, localToggles, localAiOrder);
     setIsDirty(false);
     onClose();
@@ -449,105 +691,295 @@ export function CustomizeModal({
     setTheme(originalTheme.current);
     setFunctionBarStyle(originalFunctionBarStyle.current);
     setMessageBarStyle(originalMessageBarStyle.current);
+    setLogoStyle(originalLogoStyle.current);
+    persistLogoStyle(originalLogoStyle.current as LogoStyle);
+    setAutoRotateLogo(originalAutoRotateLogo.current);
+    persistAutoRotateLogo(originalAutoRotateLogo.current);
+    window.dispatchEvent(new Event('logoStyleChanged'));
     setChatBg(originalChatBg.current);
+    setGlowAccentColor(originalGlowAccentColor.current);
+    persistGlowAccent(originalGlowAccentColor.current);
+    window.dispatchEvent(new Event('glowAccentColorChanged'));
+    setAppFont(originalAppFont.current);
+    localStorage.setItem('appFont', originalAppFont.current);
+    applyAppFont(originalAppFont.current);
+    window.dispatchEvent(new Event('appFontChanged'));
     setIsDirty(false);
     setShowExitDialog(false);
     onClose();
   };
 
+  // Icon paths: gray = dark theme, black = light theme (as specified)
   const menuItems = [
-    { id: 'account', label: 'Account', icon: User },
-    { id: 'customize', label: 'General', icon: Sliders },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'behavior', label: 'Behavior', icon: Zap },
-    { id: 'data', label: 'Nomad Settings', icon: Database },
+    { id: 'profile',      label: 'Profile',            imgD: '/settings-account-gray.png',      imgL: '/settings-account-black.png' },
+    { id: 'looks',        label: 'Looks',              imgD: '/settings-appearance-gray.png',   imgL: '/settings-appearance-black.png' },
+    { id: 'general',      label: 'General',            imgD: '/settings-general-gray.png',      imgL: '/settings-general-black.png' },
+    { id: 'nomad',        label: 'Nomad Preferences',  imgD: '/settings-nomad-gray.png',        imgL: '/settings-nomad-black.png' },
+    { id: 'subscription', label: 'Subscription Plan',  imgD: '/settings-subscription-gray.png', imgL: '/settings-subscription-black.png' },
   ];
+
+  // Save button label & visibility per section
+  const saveLabel: Record<SettingsSection, string | null> = {
+    profile: 'Save Profile',
+    looks: 'Save Looks',
+    general: 'Save Changes',
+    nomad: 'Save Preferences',
+    subscription: null,
+  };
 
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) handleCloseAttempt();
     }}>
-      <DialogContent className="macos-dialog-content bg-white dark:bg-[#0d0d0d] border-zinc-200 dark:border-zinc-800/50 max-w-3xl h-[580px] shadow-2xl rounded-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row z-[50]">
+      <DialogContent className="macos-dialog-content bg-[#f5f5f5] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-800/50 max-w-4xl h-[680px] shadow-2xl rounded-3xl [&>button]:hidden p-0 overflow-hidden flex flex-row z-[50]">
+        {/* Close button — absolute top-right of whole modal */}
+        <div className="absolute top-1 right-1 z-[70]">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCloseAttempt}
+            className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white h-7 w-7 rounded-full"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         {/* Sidebar */}
-        <div className="w-56 bg-zinc-50 dark:bg-[#161616] p-4 flex flex-col border-r border-zinc-200 dark:border-[#2a2a2a] flex-shrink-0 z-[60]">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-zinc-900 dark:text-white text-lg font-bold">Settings</h2>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleCloseAttempt}
-              className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white h-6 w-6 rounded-full"
-            >
-              <X className="h-3 w-3" />
-            </Button>
+        <div className="w-56 bg-[#ebebeb] dark:bg-[#252525] p-4 flex flex-col border-r border-zinc-200/60 dark:border-[#333] flex-shrink-0 z-[60]">
+          <div className="flex items-center mb-5 px-2">
+            <h2 className="text-zinc-900 dark:text-white text-xl font-bold">Settings</h2>
           </div>
-          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto min-h-0">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id as SettingsSection)}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all text-sm font-medium flex-shrink-0 ${
-                  activeSection === item.id 
-                    ? 'bg-zinc-800 text-white' 
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200'
-                }`}
-              >
-                <item.icon className={`w-4 h-4 ${activeSection === item.id ? 'text-white' : 'text-zinc-500 dark:text-zinc-400'}`} />
-                <span>{item.label}</span>
-              </button>
-            ))}
+          <div className="flex-1 flex flex-col space-y-1 overflow-y-auto min-h-0 relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+            {/* vertical sliding pill — spring overshoot on top gives the "fast brake" feel */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: 0, right: 0,
+                top: settingsPill.top,
+                height: settingsPill.height,
+                // Suppress transition on first placement so pill snaps to the
+                // correct position; enable it after the first measurement so
+                // subsequent tab clicks slide smoothly.
+                transition: pillMeasured
+                  ? 'top 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1)'
+                  : 'none',
+                pointerEvents: 'none',
+                zIndex: 0,
+                background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
+                borderRadius: 10,
+              }}
+            />
+            {menuItems.map((item, idx) => {
+              const isActive = activeSection === item.id;
+              // Always use the black icon as base; invert to white when active in light theme
+              // Active dark theme  → black pill is white  → show black icon (imgL)
+              // Active light theme → black pill           → show white icon (imgL + invert)
+              // Inactive dark      → show gray icon (imgD)
+              // Inactive light     → show black icon (imgL, dimmed)
+              return (
+                <button
+                  key={item.id}
+                  ref={el => { tabButtonRefs.current[idx] = el; }}
+                  onClick={() => { playTabClick(); setActiveSection(item.id as SettingsSection); }}
+                  className={`relative z-10 w-full flex items-center space-x-3 px-2.5 py-2 rounded-xl text-sm font-bold flex-shrink-0 transition-none ${isActive ? 'text-zinc-900' : 'text-zinc-900 dark:text-zinc-100'}`}
+                >
+                  <img
+                    src={theme === 'dark' && !isActive ? item.imgD : item.imgL}
+                    alt=""
+                    className={`object-contain flex-shrink-0 ${item.id === 'subscription' ? 'w-6 h-6' : 'w-5 h-5'}`}
+                  />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="mt-auto pt-4 flex flex-col space-y-2 border-t border-zinc-200 dark:border-[#2a2a2a]">
-            <Button
-              onClick={handleSave}
-              className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs h-9 font-bold"
-            >
-              Save Changes
-            </Button>
+            {saveLabel[activeSection] !== null && (
+              <Button
+                onClick={handleSave}
+                className="w-full bg-zinc-200 dark:bg-white text-zinc-900 dark:text-black hover:bg-zinc-300 dark:hover:bg-zinc-200 text-xs h-9 font-bold"
+              >
+                {saveLabel[activeSection]}
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={handleCloseAttempt}
               className="w-full bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs h-9"
             >
-              Cancel
+              {activeSection === 'subscription' ? 'Close' : 'Cancel'}
             </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div ref={settingsContentRef} className="flex-1 p-8 overflow-y-auto relative bg-white dark:bg-[#0d0d0d]">
+        <div ref={settingsContentRef} className="settings-content-scroll flex-1 p-8 overflow-y-auto relative bg-[#f5f5f5] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
           {/* SettingsScrollButtons removed — max-up/max-down disabled */}
-          {activeSection === 'appearance' && (
+          {activeSection === 'looks' && (
             <div className="space-y-8">
-              <div className="grid grid-cols-3 gap-3">
-                <Button 
-                  variant="outline" 
-                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'light' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
-                  onClick={() => { setLocalTheme('light'); setTheme('light'); setIsDirty(true); }}
-                >
-                  <Sun className="w-5 h-5 mb-1" />
-                  <span className="text-xs">Light</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'dark' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
-                  onClick={() => { setLocalTheme('dark'); setTheme('dark'); setIsDirty(true); }}
-                >
-                  <Moon className="w-5 h-5 mb-1" />
-                  <span className="text-xs">Dark</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className={`flex flex-col h-20 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 ${localTheme === 'system' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-400 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900'}`}
-                  onClick={() => { setLocalTheme('system'); setTheme('system'); setIsDirty(true); }}
-                >
-                  <Laptop className="w-5 h-5 mb-1" />
-                  <span className="text-xs">System</span>
-                </Button>
+              <ThemeSegmentedTab
+                value={localTheme}
+                onChange={(v) => { setLocalTheme(v); setTheme(v as any); setIsDirty(true); }}
+                isDark={theme === 'dark'}
+              />
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Message Bar Glow Color</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose the soft glow behind the message bar on the Ask tab</p>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+                  {GLOW_ACCENT_OPTIONS.map(opt => {
+                    const selected = glowAccentColor === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        aria-label={opt.label}
+                        aria-pressed={selected}
+                        onClick={() => handleGlowAccentColorChange(opt.value)}
+                        className={`group flex flex-col items-center gap-2 rounded-xl border bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent p-3 transition-all ${
+                          selected
+                            ? 'border-zinc-500 dark:border-zinc-400'
+                            : 'border-transparent hover:border-zinc-200 dark:hover:border-zinc-800'
+                        }`}
+                      >
+                        <span
+                          className={`relative h-12 w-12 rounded-full border border-black/10 dark:border-white/15 transition-transform group-hover:scale-105 ${opt.swatch ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                          style={opt.swatch ? { backgroundColor: opt.swatch } : undefined}
+                        >
+                          {!opt.swatch && <span className="absolute left-1/2 top-1/2 h-px w-8 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-zinc-500" />}
+                        </span>
+                        <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 text-center leading-tight">{opt.label.replace('Light ', '')}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Accent Color ─────────────────────────────────────────────── */}
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Accent Color</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Color for messages, toggles, logo &amp; welcome text</p>
+                  </div>
+                  <Switch checked={uiAccentEnabled} onCheckedChange={handleUiAccentEnabledChange} />
+                </div>
+                {uiAccentEnabled && (
+                  <div className="space-y-3">
+                    {/* Multicolor option */}
+                    <button
+                      type="button"
+                      aria-label="Multicolor"
+                      aria-pressed={uiAccentColor === 'multicolor'}
+                      onClick={() => handleUiAccentColorChange('multicolor')}
+                      className={`w-full text-left rounded-xl border px-4 py-2.5 transition-all flex items-center gap-3 ${
+                        uiAccentColor === 'multicolor'
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900'
+                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {/* Rainbow swatch */}
+                      <span className="h-8 w-8 rounded-full flex-shrink-0 border border-black/10 dark:border-white/15" style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Multicolor <span className="text-xs font-normal text-zinc-400">(same as default)</span></span>
+                    </button>
+                    {/* Color options grid */}
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                      {UI_ACCENT_OPTIONS.map(opt => {
+                        const selected = uiAccentColor === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            aria-label={opt.label}
+                            aria-pressed={selected}
+                            onClick={() => handleUiAccentColorChange(opt.value)}
+                            className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition-all ${
+                              selected
+                                ? 'border-zinc-500 dark:border-zinc-400'
+                                : 'border-transparent hover:border-zinc-200 dark:hover:border-zinc-800'
+                            }`}
+                          >
+                            <span
+                              className="h-8 w-8 rounded-full border border-black/10 dark:border-white/15 transition-transform group-hover:scale-105"
+                              style={{ backgroundColor: opt.swatch }}
+                            />
+                            <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400">{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Global App Font</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Use this font throughout Fius</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {APP_FONT_OPTIONS.map(opt => {
+                    const selected = appFont === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        aria-label={`Use ${opt.label}`}
+                        aria-pressed={selected}
+                        onClick={() => handleAppFontChange(opt.value)}
+                        className={`text-left rounded-xl border px-4 py-3 transition-all ${
+                          selected
+                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900'
+                            : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{opt.label}</span>
+                          {opt.value === DEFAULT_APP_FONT && (
+                            <span className="text-[10px] text-zinc-400 uppercase tracking-wide">Default</span>
+                          )}
+                        </div>
+                        <div className="text-xl text-zinc-900 dark:text-zinc-100 truncate" style={{ fontFamily: opt.css }}>
+                          Aa Bb Cc 123
+                        </div>
+                        <div className="mt-1 text-xs text-zinc-500 truncate" style={{ fontFamily: opt.css }}>
+                          The quick brown fox jumps
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-6">
+                {/* ── Sounds ─────────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Glossy Outline</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Shiny border effect on the message bar, function bar &amp; top bar</p>
+                  </div>
+                  <Switch checked={localToggles.glossyOutline ?? true} onCheckedChange={() => handleToggle('glossyOutline')} />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">UI Sounds</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Play a click sound when switching tabs &amp; pill options</p>
+                  </div>
+                  <Switch checked={uiSoundsEnabled} onCheckedChange={handleUiSoundsChange} />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Actions on User Messages</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Show copy &amp; redo buttons when hovering over your messages</p>
+                  </div>
+                  <Switch checked={localToggles.showUserMsgActions ?? false} onCheckedChange={() => handleToggle('showUserMsgActions')} />
+                </div>
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-700 dark:text-zinc-200">Wrap Long Lines For Code Blocks By Default</span>
                   <Switch checked={localToggles.wrapLines} onCheckedChange={() => handleToggle('wrapLines')} />
@@ -565,10 +997,31 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Hide Fius Logo</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Hide the Fius logo from the welcome screen</p>
+                  </div>
+                  <Switch checked={localToggles.hideFiusLogo ?? false} onCheckedChange={() => handleToggle('hideFiusLogo')} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Hide Fly With Us</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Hide the "Fly With Us!" tagline from the welcome screen</p>
+                  </div>
+                  <Switch checked={localToggles.hideFlyWithUs ?? false} onCheckedChange={() => handleToggle('hideFlyWithUs')} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
                     <span className="text-sm text-zinc-700 dark:text-zinc-200">Nomad Grid Background</span>
                     <p className="text-xs text-zinc-500 mt-0.5">Show an animated grid pattern in the Nomad multi-AI tab</p>
                   </div>
                   <Switch checked={localToggles.nomadGrid ?? true} onCheckedChange={() => handleToggle('nomadGrid')} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Minds Grid Background</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Show a subtle grid pattern behind the Fius Minds personality cards</p>
+                  </div>
+                  <Switch checked={localToggles.mindsGrid ?? true} onCheckedChange={() => handleToggle('mindsGrid')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -579,8 +1032,8 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Philosophers Notifications</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Include the Philosophers variant in periodic pop-ups</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Minds Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Fius Minds variant in periodic pop-ups</p>
                   </div>
                   <Switch checked={localToggles.philosopherNotification ?? true} onCheckedChange={() => handleToggle('philosopherNotification')} />
                 </div>
@@ -598,67 +1051,123 @@ export function CustomizeModal({
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Function Bar Style</span>
                   <p className="text-xs text-zinc-500 mt-0.5">Choose how the quick-action buttons appear</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                {/* Function bar style — 4-option grid with shape previews */}
+                <div className="grid grid-cols-4 gap-2">
                   {[
-                    { value: 'square', label: 'Square' },
-                    { value: 'circle', label: 'Circle' },
-                    { value: 'message-bar', label: 'In Message Bar' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleFunctionBarStyleChange(opt.value)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                        functionBarStyle === opt.value
-                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                      }`}
-                    >
-                      {opt.value === 'square' && (
-                        <div className="w-8 h-8 bg-zinc-400 rounded" />
-                      )}
-                      {opt.value === 'circle' && (
-                        <div className="w-8 h-8 bg-zinc-400 rounded-full" />
-                      )}
-                      {opt.value === 'message-bar' && (
-                        <div className="w-8 h-8 flex items-center justify-center gap-0.5">
-                          <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
-                          <div className="w-2.5 h-2.5 bg-zinc-400 rounded-full" />
-                        </div>
-                      )}
-                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
-                    </button>
-                  ))}
+                    { value: 'square',      label: 'Square' },
+                    { value: 'circle',      label: 'Circle' },
+                    { value: 'message-bar', label: 'In Bar'  },
+                    { value: 'pill',        label: 'Pill Row'},
+                  ].map(opt => {
+                    const active = functionBarStyle === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleFunctionBarStyleChange(opt.value)}
+                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                          active
+                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
+                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        {opt.value === 'square' && (
+                          <div className="w-8 h-8 bg-zinc-400 dark:bg-zinc-500 rounded" />
+                        )}
+                        {opt.value === 'circle' && (
+                          <div className="w-8 h-8 bg-zinc-400 dark:bg-zinc-500 rounded-full" />
+                        )}
+                        {opt.value === 'message-bar' && (
+                          <div className="w-8 h-8 flex items-center justify-center gap-0.5">
+                            <div className="w-2.5 h-2.5 bg-zinc-400 dark:bg-zinc-500 rounded-full" />
+                            <div className="w-2.5 h-2.5 bg-zinc-400 dark:bg-zinc-500 rounded-full" />
+                          </div>
+                        )}
+                        {opt.value === 'pill' && (
+                          <div className="w-8 h-8 flex items-center justify-center gap-1">
+                            <div className="h-2 w-3 bg-zinc-400 dark:bg-zinc-500 rounded-full" />
+                            <div className="h-2 w-3 bg-zinc-400 dark:bg-zinc-500 rounded-full opacity-50" />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
                 <div>
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Message Bar Style</span>
-                  <p className="text-xs text-zinc-500 mt-0.5">Choose the height and size of the message input area</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose the height and layout of the message input area</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
+                <SlidingPillSelector
+                  value={messageBarStyle}
+                  onChange={handleMessageBarStyleChange}
+                  isDark={theme === 'dark'}
+                  withSound
+                  options={[
                     { value: 'default', label: 'Default' },
                     { value: 'compact', label: 'Compact' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleMessageBarStyleChange(opt.value)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                        messageBarStyle === opt.value
-                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                      }`}
-                    >
-                      {opt.value === 'default' && (
-                        <div className="w-24 h-8 bg-zinc-300 dark:bg-zinc-600 rounded-xl" />
-                      )}
-                      {opt.value === 'compact' && (
-                        <div className="w-24 h-4 bg-zinc-300 dark:bg-zinc-600 rounded-lg" />
-                      )}
-                      <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
-                    </button>
-                  ))}
+                  ]}
+                />
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-4">
+                <div>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Logo Style</span>
+                  <p className="text-xs text-zinc-500 mt-0.5">Choose the Fius logo shown in welcome screens and responses</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {LOGO_STYLE_OPTIONS.map(opt => {
+                    const active = logoStyle === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleLogoStyleChange(opt.value)}
+                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                          active
+                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
+                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <FiusLogo
+                          size="md"
+                          styleOverride={opt.value}
+                          className={theme === 'dark' ? 'text-white' : 'text-black'}
+                        />
+                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Auto-rotate Logo</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Use a different logo style for each new chat</p>
+                  </div>
+                  <Switch checked={autoRotateLogo} onCheckedChange={handleAutoRotateLogoChange} />
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Sidebar Close Button Position</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Choose where the close button appears in the sidebar</p>
+                  </div>
+                  <Select
+                    value={localToggles.sidebarCloseTop ? 'top' : 'bottom'}
+                    onValueChange={(val) => { setLocalToggles(prev => ({ ...prev, sidebarCloseTop: val === 'top' })); setIsDirty(true); }}
+                  >
+                    <SelectTrigger className="w-28 h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top">Top</SelectItem>
+                      <SelectItem value="bottom">Bottom</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -760,18 +1269,11 @@ export function CustomizeModal({
             </div>
           )}
 
-          {activeSection === 'behavior' && (
+          {activeSection === 'general' && (
             <div className="space-y-6 text-zinc-700 dark:text-zinc-200">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Auto Scroll</span>
-                <Switch checked={localToggles.autoScroll} onCheckedChange={() => handleToggle('autoScroll')} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Enable Rich Text Editor</span>
-                  <p className="text-xs text-zinc-500">Enable code blocks and lists in the query bar</p>
-                </div>
-                <Switch checked={localToggles.richText} onCheckedChange={() => handleToggle('richText')} />
+                <Switch checked={localToggles.autoScroll ?? true} onCheckedChange={() => handleToggle('autoScroll')} />
               </div>
 
               {/* Learned Behaviors */}
@@ -779,103 +1281,86 @@ export function CustomizeModal({
             </div>
           )}
 
-          {activeSection === 'customize' && (
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-4">Sidebar</h4>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Sidebar Close Button Position</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Choose where the close button appears in the sidebar</p>
-                  </div>
-                  <Select
-                    value={localToggles.sidebarCloseTop ? 'top' : 'bottom'}
-                    onValueChange={(val) => { setLocalToggles(prev => ({ ...prev, sidebarCloseTop: val === 'top' })); setIsDirty(true); }}
-                  >
-                    <SelectTrigger className="w-28 h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="top">Top</SelectItem>
-                      <SelectItem value="bottom">Bottom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4">Customize Fius's Response</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(CHAT_PRESETS).map(([key, preset]) => (
-                  <Card
-                    key={key}
-                    className={`cursor-pointer transition-colors border ${
-                      selectedPreset === key
-                        ? 'border-zinc-400 dark:border-zinc-500 bg-zinc-50 dark:bg-zinc-800'
-                        : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#161616] hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                    }`}
-                    onClick={() => { setSelectedPreset(key as ChatPreset); setIsDirty(true); }}
-                  >
-                    <CardContent className="p-3">
-                      <div className="font-medium text-sm text-zinc-900 dark:text-white">
-                        {preset.name}
-                      </div>
-                      <div className="text-xs text-zinc-500 mt-1">
-                        {preset.description}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <div className="pt-4 space-y-4">
-                <label className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Custom Instructions</label>
-                <Textarea 
-                  value={instructions}
-                  onChange={(e) => { setInstructions(e.target.value); setIsDirty(true); }}
-                  placeholder="Tell Fius how to behave..."
-                  className="bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white min-h-[100px]"
-                />
-              </div>
-              <p className="text-xs text-zinc-500 flex items-center space-x-2">
-                <Settings className="w-3 h-3" />
-                <span>Select an instruction set from above or write your own to customize Fius's responses.</span>
-              </p>
-              </div>
-            </div>
-          )}
 
-          {activeSection === 'data' && (
+          {activeSection === 'nomad' && (
             <div className="space-y-6">
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-zinc-900 dark:text-white">Order Switcher</h4>
+                {(() => {
+                  const modelDisplayNames: Record<string, string> = {
+                    'gpt-4o': 'ChatGPT',
+                    'claude-3.5-sonnet': 'Claude',
+                    'gemini-pro': 'Gemini',
+                    'perplexity': 'Perplexity',
+                    'grok-4': 'Grok',
+                    'deepseek-r1': 'DeepSeek',
+                    'doubao': 'Doubao',
+                    'kimi': 'Kimi',
+                    'qwen': 'Qwen',
+                    'llama-4': 'Llama',
+                    'mistral': 'Mistral',
+                    'copilot': 'Copilot',
+                    'fius-ai': 'Fius',
+                  };
+                  const modelLogos: Record<string, string | null> = {
+                    'gpt-4o': theme === 'dark' ? '/chatgpt-logo-white.png' : '/chatgpt-logo.png',
+                    'claude-3.5-sonnet': '/claude-logo.png',
+                    'gemini-pro': '/gemini-logo.png',
+                    'perplexity': '/perplexity-logo.png',
+                    'grok-4': '/grok-logo.png',
+                    'deepseek-r1': '/deepseek-logo.png',
+                    'doubao': '/doubao-logo.png',
+                    'kimi': '/kimi-logo.png',
+                    'qwen': '/qwen-logo.png',
+                    'llama-4': '/llama-logo.png',
+                    'mistral': '/mistral-logo.png',
+                    'copilot': '/copilot-logo.png',
+                    'fius-ai': null,
+                  };
+                  return (
                 <div className="space-y-2">
                   {localAiOrder.map((name, index) => {
-                    const modelDisplayNames: Record<string, string> = {
-                      'gpt-4o': 'ChatGPT 5',
-                      'claude-3.5-sonnet': 'Claude Sonnet 4',
-                      'gemini-pro': 'Gemini 3.1 Pro',
-                      'perplexity': 'Perplexity Sonar Pro',
-                      'grok-4': 'Grok 4',
-                      'deepseek-r1': 'Deepseek v3',
-                      'fius-ai': 'Fius Pro',
-                    };
+                    const subModels = NOMAD_SUB_MODELS[name];
+                    const selectedModel = nomadDefaultModels[name] || subModels?.default || '';
+                    const isOpen = openSettingsModelDropdown === name;
                     return (
+                    <div key={name} className="relative">
                     <div
-                      key={name}
                       ref={el => { orderRowRefs.current[index] = el; }}
                       className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border ${draggingIndex === index ? '' : 'transition-all'} ${dragOverIndex === index && draggingIndex !== index ? 'border-indigo-400 dark:border-indigo-500' : 'border-zinc-200 dark:border-zinc-800'} ${draggingIndex === index ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10 cursor-grabbing' : ''}`}
                       style={draggingIndex === index ? { transform: `translateY(${dragOffsetY}px)` } : undefined}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
                           onPointerDown={handleOrderPointerDown(index)}
                           style={{ touchAction: 'none' }}
-                          className="cursor-grab active:cursor-grabbing text-zinc-400 dark:text-zinc-600 p-1 -m-1"
+                          className="cursor-grab active:cursor-grabbing text-zinc-400 dark:text-zinc-600 p-1 -m-1 flex-shrink-0"
                         >
                           <GripVertical className="h-4 w-4" />
                         </span>
-                        <span className="text-sm text-zinc-900 dark:text-white capitalize">{modelDisplayNames[name] || name.replace(/-/g, ' ')}</span>
+                        {name === 'fius-ai'
+                          ? <Logo size="sm" />
+                          : modelLogos[name] && (
+                            <img
+                              src={modelLogos[name]!}
+                              alt=""
+                              className="w-5 h-5 object-contain flex-shrink-0"
+                              style={(name === 'grok-4' || name === 'gpt-4o') && theme !== 'dark' ? { filter: 'invert(1)' } : undefined}
+                            />
+                          )
+                        }
+                        <span className="text-sm text-zinc-900 dark:text-white flex-shrink-0">{modelDisplayNames[name] || name.replace(/-/g, ' ')}</span>
+                        {subModels && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenSettingsModelDropdown(isOpen ? null : name); }}
+                            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-transparent text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all"
+                          >
+                            <span>{selectedModel}</span>
+                            <ChevronDown className={`h-2.5 w-2.5 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 flex-shrink-0">
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -896,9 +1381,58 @@ export function CustomizeModal({
                         </Button>
                       </div>
                     </div>
+                    {/* Model sub-selector dropdown */}
+                    {isOpen && subModels && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#383838] rounded-xl shadow-2xl overflow-hidden py-1" style={{ border: 'none' }}>
+                        <div className="px-3 pt-2 pb-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Normal Models</span>
+                        </div>
+                        {subModels.normal.map(sm => {
+                          const isSel = selectedModel === sm;
+                          return (
+                            <button key={sm}
+                              onClick={() => {
+                                const updated = { ...nomadDefaultModels, [name]: sm };
+                                setNomadDefaultModels(updated);
+                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(updated)); } catch {}
+                                setOpenSettingsModelDropdown(null);
+                                setIsDirty(true);
+                              }}
+                              className={`flex items-center gap-2 px-3 py-1.5 text-left text-[11px] transition-all rounded-full mx-1 hover:bg-black/10 dark:hover:bg-white/10 ${isSel ? 'text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSel ? 'bg-zinc-900 dark:bg-white' : 'border border-zinc-400'}`} />
+                              <span className="flex-1">{sm}</span>
+                              {sm === subModels.default && !isSel && <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-full px-1.5 py-0.5">default</span>}
+                            </button>
+                          );
+                        })}
+                        <div className="px-3 pb-1 mt-1">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">Flagship Models</span>
+                        </div>
+                        {subModels.flagship.map(sm => {
+                          const isSel = selectedModel === sm;
+                          return (
+                            <button key={sm}
+                              onClick={() => {
+                                const updated = { ...nomadDefaultModels, [name]: sm };
+                                setNomadDefaultModels(updated);
+                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(updated)); } catch {}
+                                setOpenSettingsModelDropdown(null);
+                                setIsDirty(true);
+                              }}
+                              className={`flex items-center gap-2 px-3 py-1.5 text-left text-[11px] transition-all rounded-full mx-1 hover:bg-black/10 dark:hover:bg-white/10 ${isSel ? 'text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSel ? 'bg-amber-500' : 'border border-amber-400'}`} />
+                              <span className="flex-1">{sm}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    </div>
                   );
                   })}
                 </div>
+                  );
+                })()}
 
                 <div className="pt-6 border-t border-zinc-200 dark:border-[#2a2a2a] space-y-4">
                   <div className="flex items-center justify-between">
@@ -935,7 +1469,7 @@ export function CustomizeModal({
             </div>
           )}
 
-          {activeSection === 'account' && (
+          {activeSection === 'profile' && (
             <div className="space-y-4">
               <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
@@ -965,7 +1499,7 @@ export function CustomizeModal({
                     }}
                   >
                     <Pencil className="w-3 h-3" />
-                    Customize
+                    Edit Profile
                   </Button>
                 </div>
 
@@ -1028,7 +1562,7 @@ export function CustomizeModal({
                       </Button>
                       <Button
                         size="sm"
-                        className="h-8 text-xs bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center gap-1.5"
+                        className="h-8 text-xs bg-zinc-200 dark:bg-white text-zinc-900 dark:text-zinc-900 flex items-center gap-1.5"
                         onClick={() => {
                           if (editName.trim()) onUserRename?.(editName.trim());
                           if (previewPic) onProfilePictureChange?.(previewPic);
@@ -1036,13 +1570,17 @@ export function CustomizeModal({
                         }}
                       >
                         <Check className="w-3 h-3" />
-                        Save
+                        Save Profile
                       </Button>
                     </div>
                   </div>
                 )}
               </div>
+            </div>
+          )}
 
+          {activeSection === 'subscription' && (
+            <div className="space-y-4">
               <PlanUsageSection />
             </div>
           )}
@@ -1068,7 +1606,7 @@ export function CustomizeModal({
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-bold"
+              className="bg-zinc-200 dark:bg-white text-zinc-900 dark:text-black hover:bg-zinc-300 dark:hover:bg-zinc-200 font-bold"
             >
               Save
             </Button>

@@ -20,6 +20,37 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
+function applyThemeClass(theme: Theme) {
+  const root = window.document.documentElement
+  root.classList.remove("light", "dark")
+  if (theme === "system") {
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    root.classList.add(systemTheme)
+  } else {
+    root.classList.add(theme)
+  }
+}
+
+/** One reusable overlay div — opacity-only animation, GPU-composited, zero layout cost. */
+function getOverlay(): HTMLDivElement {
+  let el = document.getElementById("fius-theme-overlay") as HTMLDivElement | null
+  if (!el) {
+    el = document.createElement("div")
+    el.id = "fius-theme-overlay"
+    Object.assign(el.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "99999",
+      pointerEvents: "none",
+      opacity: "0",
+      background: "var(--background)",
+      willChange: "opacity",
+    })
+    document.body.appendChild(el)
+  }
+  return el
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",
@@ -31,21 +62,28 @@ export function ThemeProvider({
   )
 
   useEffect(() => {
-    const root = window.document.documentElement
+    const overlay = getOverlay()
+    let swap: ReturnType<typeof setTimeout>
+    let timers: ReturnType<typeof setTimeout>[] = []
 
-    root.classList.remove("light", "dark")
+    // Freeze the current background colour NOW (before theme swap changes the CSS var)
+    const frozenBg = getComputedStyle(document.body).backgroundColor
+    overlay.style.background = frozenBg
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
+    // Step 1 — fast cover (invisible because it matches current bg exactly)
+    overlay.style.transition = "opacity 0.22s ease-in"
+    overlay.style.opacity = "1"
 
-      root.classList.add(systemTheme)
-      return
-    }
+    // Step 2 — swap theme while fully covered
+    swap = setTimeout(() => {
+      applyThemeClass(theme)
+      // Step 3 — slow reveal of the new theme
+      overlay.style.transition = "opacity 1.4s cubic-bezier(0.4,0,0.2,1)"
+      overlay.style.opacity = "0"
+    }, 240)
 
-    root.classList.add(theme)
+    timers.push(swap)
+    return () => timers.forEach(clearTimeout)
   }, [theme])
 
   const value = {
@@ -65,9 +103,7 @@ export function ThemeProvider({
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
-
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider")
-
   return context
 }

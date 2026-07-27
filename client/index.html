@@ -13,8 +13,26 @@
     </style>
     <title>Fius - AI Chat Platform</title>
     <meta name="description" content="Fius - Advanced AI chat platform with multiple model support. Fius from Plant M." />
-    <!-- Preload all static icons and avatars so they are ready instantly -->
+
+    <!-- Settings sidebar tab icons -->
+    <link rel="preload" as="image" href="/settings-account-gray.png" />
+    <link rel="preload" as="image" href="/settings-account-black.png" />
+    <link rel="preload" as="image" href="/settings-appearance-gray.png" />
+    <link rel="preload" as="image" href="/settings-appearance-black.png" />
+    <link rel="preload" as="image" href="/settings-behaviour-gray.png" />
+    <link rel="preload" as="image" href="/settings-behaviour-black.png" />
+    <link rel="preload" as="image" href="/settings-nomad-gray.png" />
+    <link rel="preload" as="image" href="/settings-nomad-black.png" />
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         GLOBAL IMAGE PRELOAD — browser fetches ALL custom PNGs before
+         JavaScript even parses, so images are cache-warm by the time
+         any component renders (before login, before navigation).
+         ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- AI model logos -->
     <link rel="preload" as="image" href="/chatgpt-logo.png" />
+    <link rel="preload" as="image" href="/chatgpt-logo-white.png" />
     <link rel="preload" as="image" href="/claude-logo.png" />
     <link rel="preload" as="image" href="/gemini-logo.png" />
     <link rel="preload" as="image" href="/grok-logo.png" />
@@ -26,15 +44,121 @@
     <link rel="preload" as="image" href="/llama-logo.png" />
     <link rel="preload" as="image" href="/doubao-logo.png" />
     <link rel="preload" as="image" href="/fius-logo.png" />
+    <link rel="preload" as="image" href="/bytedance-logo.png" />
+    <link rel="preload" as="image" href="/copilot-logo.png" />
+    <link rel="preload" as="image" href="/meta-ai-logo.png" />
+    <link rel="preload" as="image" href="/forus-logo.png" />
+
+    <!-- Mode / avatar icons -->
     <link rel="preload" as="image" href="/nomad-avatar.png" />
+    <link rel="preload" as="image" href="/nomad-auto-icon.png" />
+    <link rel="preload" as="image" href="/nomad-multi-icon.png" />
+    <link rel="preload" as="image" href="/nomad-multi-dark.png" />
+    <link rel="preload" as="image" href="/nomad-multi-light.png" />
     <link rel="preload" as="image" href="/philosopher-avatar.png" />
     <link rel="preload" as="image" href="/fius-games-avatar.png" />
+    <link rel="preload" as="image" href="/forus-games-avatar.png" />
     <link rel="preload" as="image" href="/lumin-avatar.png" />
+    <link rel="preload" as="image" href="/incognito-dark.png" />
+    <link rel="preload" as="image" href="/incognito-light.png" />
+    <link rel="preload" as="image" href="/owl-dark.png" />
+    <link rel="preload" as="image" href="/owl-light.png" />
+
+    <!-- Sidebar icons -->
+    <link rel="preload" as="image" href="/sb-search-icon.png" />
+    <link rel="preload" as="image" href="/sb-chat-icon.png" />
+    <link rel="preload" as="image" href="/sb-voice-icon.png" />
+    <link rel="preload" as="image" href="/sb-imagine-icon.png" />
+    <link rel="preload" as="image" href="/sb-history-icon.png" />
+    <link rel="preload" as="image" href="/creativity-icon.png" />
     <link rel="preload" as="image" href="/integration-icon.png" />
     <link rel="preload" as="image" href="/settings-icon.png" />
     <link rel="preload" as="image" href="/brain-icon.png" />
-    <link rel="preload" as="image" href="/nomad-auto-icon.png" />
+
+    <!-- General UI icons -->
+    <link rel="preload" as="image" href="/audio-icon.png" />
+    <link rel="preload" as="image" href="/chat-ai-icon.png" />
+    <link rel="preload" as="image" href="/copy-icon.png" />
+    <link rel="preload" as="image" href="/dislike-icon.png" />
+    <link rel="preload" as="image" href="/downloads-icon.png" />
+    <link rel="preload" as="image" href="/high-volume-icon.png" />
+    <link rel="preload" as="image" href="/mute-icon.png" />
+    <link rel="preload" as="image" href="/thumbs-up-icon.png" />
+    <link rel="preload" as="image" href="/icon-edit-image.png" />
+    <link rel="preload" as="image" href="/icon-remove-bg.png" />
+    <link rel="preload" as="image" href="/icon-orient-none.png" />
+    <link rel="preload" as="image" href="/icon-orient-portrait.png" />
+    <link rel="preload" as="image" href="/icon-orient-square.png" />
+    <link rel="preload" as="image" href="/icon-orient-wide.png" />
     <link rel="preload" as="image" href="/podium-bars.png" />
+    <link rel="preload" as="image" href="/leaderboard-bg.png" />
+
+    <!-- Quick action button icons (Ask tab empty state) -->
+    <link rel="preload" as="image" href="/quick-visuals-light.png" />
+    <link rel="preload" as="image" href="/quick-visuals-dark.png" />
+    <link rel="preload" as="image" href="/quick-websearch-light.png" />
+    <link rel="preload" as="image" href="/quick-websearch-dark.png" />
+    <link rel="preload" as="image" href="/quick-files-light.png" />
+    <link rel="preload" as="image" href="/quick-files-dark.png" />
+    <link rel="preload" as="image" href="/quick-games-light.png" />
+    <link rel="preload" as="image" href="/quick-games-dark.png" />
+
+    <!-- Imagine style thumbnails -->
+    <link rel="preload" as="image" href="/style-anime.png" />
+
+    <!-- Fius Games — banner + logo for every game -->
+    <link rel="preload" as="image" href="/game-memory-banner.png" />
+    <link rel="preload" as="image" href="/game-memory-logo.png" />
+    <link rel="preload" as="image" href="/game-maths-banner.png" />
+    <link rel="preload" as="image" href="/game-maths-logo.png" />
+    <link rel="preload" as="image" href="/game-word-banner.png" />
+    <link rel="preload" as="image" href="/game-word-logo.png" />
+    <link rel="preload" as="image" href="/game-quiz-banner.png" />
+    <link rel="preload" as="image" href="/game-quiz-logo.png" />
+    <link rel="preload" as="image" href="/game-car-banner.png" />
+    <link rel="preload" as="image" href="/game-car-logo.png" />
+    <link rel="preload" as="image" href="/game-oddword-banner.png" />
+    <link rel="preload" as="image" href="/game-oddword-logo.png" />
+    <link rel="preload" as="image" href="/game-rps.png" />
+    <link rel="preload" as="image" href="/game-tictactoe.png" />
+
+    <!-- Fius Imagine templates -->
+    <link rel="preload" as="image" href="/templates/anime.png" />
+    <link rel="preload" as="image" href="/templates/ceo.png" />
+    <link rel="preload" as="image" href="/templates/redecorate.png" />
+    <link rel="preload" as="image" href="/templates/restore.png" />
+    <link rel="preload" as="image" href="/templates/sketch.png" />
+    <link rel="preload" as="image" href="/templates/style-upgrade.png" />
+    <link rel="preload" as="image" href="/templates/winter.png" />
+
+    <!-- Fius Minds — personality avatars (all 27) -->
+    <link rel="preload" as="image" href="/personalities/akbar.png" />
+    <link rel="preload" as="image" href="/personalities/alexander.png" />
+    <link rel="preload" as="image" href="/personalities/aristotle.png" />
+    <link rel="preload" as="image" href="/personalities/caesar.png" />
+    <link rel="preload" as="image" href="/personalities/confucius.png" />
+    <link rel="preload" as="image" href="/personalities/da_vinci.png" />
+    <link rel="preload" as="image" href="/personalities/einstein.png" />
+    <link rel="preload" as="image" href="/personalities/gandhi.png" />
+    <link rel="preload" as="image" href="/personalities/genghis.png" />
+    <link rel="preload" as="image" href="/personalities/hawking.png" />
+    <link rel="preload" as="image" href="/personalities/jinnah.png" />
+    <link rel="preload" as="image" href="/personalities/kant.png" />
+    <link rel="preload" as="image" href="/personalities/machiavelli.png" />
+    <link rel="preload" as="image" href="/personalities/mandela.png" />
+    <link rel="preload" as="image" href="/personalities/marx.png" />
+    <link rel="preload" as="image" href="/personalities/napoleon.png" />
+    <link rel="preload" as="image" href="/personalities/newton.png" />
+    <link rel="preload" as="image" href="/personalities/nietzsche.png" />
+    <link rel="preload" as="image" href="/personalities/plato.png" />
+    <link rel="preload" as="image" href="/personalities/rumi.png" />
+    <link rel="preload" as="image" href="/personalities/shakespeare.png" />
+    <link rel="preload" as="image" href="/personalities/socrates.png" />
+    <link rel="preload" as="image" href="/personalities/suleiman.png" />
+    <link rel="preload" as="image" href="/personalities/suntzu.png" />
+    <link rel="preload" as="image" href="/personalities/tesla.png" />
+    <link rel="preload" as="image" href="/personalities/tipu.png" />
+    <link rel="preload" as="image" href="/personalities/turing.png" />
   </head>
   <body>
     <div id="root"></div>

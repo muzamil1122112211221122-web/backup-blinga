@@ -1,0 +1,5 @@
+﻿Aspect,AI Fiesta,Fius AI
+Total Models,"9+ premium models (GPT-5, Claude Sonnet 4, Gemini 2.5 Pro, Grok 4, DeepSeek, Perplexity Sonar Pro, Kimi K2, Qwen 3 Max, Mistral) + 7 smaller variants (nano, mini, light, flash) = 16+ models","10+ Frontier Models (GPT-5, Claude 4, Gemini 3, Grok 4 & more) + Fius Pro & Lite proprietary models"
+Side-by-Side Comparison,✅ Yes — all models answer in one window,✅ Yes — Nomad Mode (real-time multi-AI comparison)
+Auto Best-Model Selection,✅ Super Fiesta — intelligent routing per query,✅ Auto Mode — automatically picks best AI per request
+Model toggling mid-chat,✅ Toggle on/off without losing history,✅ Implied through Nomad Mode

@@ -8,3 +8,12 @@
 - [Fius per-conversation settings persistence](fius-conversation-settings-persistence.md) — a client PATCH to a per-record settings endpoint can silently 404 forever if the server route was never added; check route existence before debugging client state.
 - [Search-enrichment can dilute system-prompt instructions](fius-search-enrichment-dilutes-instructions.md) — wrapping the user's message in web-search snippets before sending to the AI can override/dilute a mode-specific system instruction; skip enrichment for non-lookup request modes.
 - [Guest-mode auth bypass pattern](fius-guest-mode-auth-bypass.md) — temporary testing-only guest login implemented via a custom header bypass in requireAuth, independent of the real Supabase JWT flow.
+- [Eager preload for tab content](eager-preload-tabs.md) — share one cache module across desktop/mobile and preload on mount (not tab-open) to kill pop-in; seed React state from module cache to survive remount.
+- [Fius mobile-chat-interface also serves PC widths](fius-mobile-interface-serves-pc-widths.md) — breakpoint is <1024px, so many "PC" bug reports are actually about the mobile component; check/fix both files.
+- [Logo pixelation fixes & honoring user assets](logo-pixelation-and-asset-swaps.md) — sharp trim+lanczos3+sharpen fixes "pixelated" logos; don't strip a user's branded background without confirming they meant that.
+- [Appearance preference wiring](appearance-preference-wiring.md) — keep glow colors and global fonts in one shared config, persisted in localStorage and synced with browser events across desktop/mobile.
+- [Accent color & UI sounds features](accent-color-ui-sounds.md) — accent color: CSS var --fius-ui-accent + .fius-accent-on body class; sounds via Web Audio API in playTabClick().
+- [Large JSX render-tree debugging](large-jsx-render-tree-debugging.md) — cascading parser errors often come from one missing or extra wrapper; audit conditional branches from the outer return inward.
+- [Viewport-fixed controls](viewport-fixed-controls.md) — fixed overlays inside transformed/scrolling shells may need a body portal to stay stationary.
+- [Chat composer stacking](chat-composer-stacking.md) — absolute transcript layers need an opaque composer cover after messages exist, with controls in a higher stacking layer.
+- [AI response flicker prevention](ai-response-flicker-prevention.md) — render complete API responses directly; nested typing effects and replayed bubble animations can cause black/white jitter on parent updates.

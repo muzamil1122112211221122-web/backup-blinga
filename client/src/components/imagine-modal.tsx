@@ -1,17 +1,133 @@
-import { useState, useRef, useMemo } from "react";
-import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic } from "lucide-react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic, Plus, Image as ImageIcon, SlidersHorizontal, ZoomIn } from "lucide-react";
 import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
 import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
 import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
 import animeBoy4 from "@assets/Vwmyh9_1780491124350.jpg";
 import animeBoy5 from "@assets/HD-wallpaper-handsome-anime-boy-handsome-boy-anime_1780491124350.jpg";
 import animeBoy6 from "@assets/HD-wallpaper-handsome-anime-boy-hōtarō-oreki-handsome-boy-anim_1780491124351.jpg";
+import studioHero from "@assets/Gemini_Generated_Image_rdsaverdsaverdsa_1784927084436.png";
 
 const ANIME_BOY_IMAGES = [animeBoy1, animeBoy2, animeBoy3, animeBoy4, animeBoy5, animeBoy6];
 
 function shuffleArray<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
+
+/* ── High-quality Unsplash template images ── */
+const U = (id: string, w = 320, h = 420) =>
+  `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&q=90&auto=format`;
+
+/* ── Category definitions ── */
+const TEMPLATE_CATEGORIES = [
+  { id: 'all',      label: 'All',           emoji: '✦' },
+  { id: 'organic',  label: 'Organic Living', emoji: '🌿' },
+  { id: 'portrait', label: 'Portraits',      emoji: '🖼️' },
+  { id: 'fantasy',  label: 'Fantasy',        emoji: '🐉' },
+  { id: 'fashion',  label: 'Fashion',        emoji: '👗' },
+  { id: 'traditional', label: 'Traditional', emoji: '🕌' },
+  { id: 'travel',   label: 'Travel',         emoji: '✈️' },
+  { id: 'products', label: 'Products',       emoji: '📦' },
+  { id: 'nature',   label: 'Nature',         emoji: '🌄' },
+];
+
+const VISUAL_TEMPLATES = [
+  /* ── ORGANIC LIVING (10) ── */
+  { id: 'pottery-studio',    category: 'organic',  name: 'Pottery Studio',          thumb: U('1565193545992-8a6d1d4a9420'), prompt: 'close-up of hands crafting pottery on a wheel, warm sunlight streaming through a window, ceramic pieces on wooden shelves in background, artisan workshop, craftsman vibe, natural earthy tones, cinematic photography' },
+  { id: 'japandi-bath',      category: 'organic',  name: 'Japandi Sanctuary',       thumb: U('1552321554-5fefe8c9ef14'), prompt: 'minimalist Japandi bathroom, freestanding stone bathtub, bamboo flooring, living green wall with plants, soft diffused natural light, luxury spa vibe, peaceful minimalism, architectural photography' },
+  { id: 'foraged-kitchen',   category: 'organic',  name: 'Foraged Kitchen Shelf',   thumb: U('1556910097-d8a37b0c1df4'), prompt: 'rustic wooden kitchen shelves with hanging dried herbs and lavender bundles, hand-carved wooden utensils, ambient green backlighting, warm earthy tones, farm-to-table aesthetic, editorial food photography' },
+  { id: 'terracotta-oasis',  category: 'organic',  name: 'Terracotta Oasis',        thumb: U('1416879595882-3373a0480b5b'), prompt: 'cozy urban corner filled with terracotta pots of varying sizes, exotic large-leaf tropical indoor plants, warm afternoon light, boho urban jungle vibe, interior lifestyle photography' },
+  { id: 'textile-loom',      category: 'organic',  name: 'Artisanal Textile Loom',  thumb: U('1558769132-cb1aea458c5e'), prompt: 'handmade woolen rug on a traditional wooden loom, raw cotton bundles and hand-dyed colorful yarns scattered nearby, earthy fiber textures, artisan textile craft, warm natural light, editorial lifestyle photography' },
+  { id: 'desert-bloom',      category: 'organic',  name: 'Dry Desert Bloom',        thumb: U('1509316785-6f68b7b8f1e2'), prompt: 'resilient succulent and cactus plants growing from arid desert earth, mud-brick dwelling in the background, golden hour desert light, minimalist desert aesthetic, National Geographic quality photography' },
+  { id: 'basket-market',     category: 'organic',  name: 'Woven Basketry Market',   thumb: U('1513475382585-d06e58bcb0e0'), prompt: 'artistic boho display of natural fiber baskets, rattan mats, jute and bamboo woven wares, earthy neutral tones, warm market light, bohemian lifestyle photography' },
+  { id: 'root-cellar',       category: 'organic',  name: 'Root Cellar Harvest',     thumb: U('1512621776951-a57141f2eefd'), prompt: 'fresh root vegetables, carrots, potatoes and farm produce resting in an old stone cellar, rustic earthy tones, ambient damp cellar light, farm-to-table editorial photography' },
+  { id: 'geode-collection',  category: 'organic',  name: 'Earthy Geode Collection', thumb: U('1464822759023-fed107ef2236'), prompt: 'curated collection of raw geological crystals, sparkling geodes and natural gemstones on a wooden surface, macro detail photography, earthy mineral textures, geological lifestyle photography' },
+  { id: 'monsoon-window',    category: 'organic',  name: 'Monsoon Mood Window',     thumb: U('1534438327276-14e5300c3a48'), prompt: 'cozy rain-streaked window pane looking out at lush green forest, steaming mug of coffee on wooden windowsill, warm glowing candle, soft knit blanket, moody monsoon atmospheric lighting, cinematic photography' },
+
+  /* ── PORTRAITS (10) ── */
+  { id: 'artisan-portrait',  category: 'portrait', name: 'The Artisan at Work',     thumb: U('1507003211169-0a1dd7228f2d'), prompt: 'candid warm portrait of a leatherworker in a cluttered artisan workshop, focused on stitching, rich leather textures and tools visible, natural workshop lighting, authentic documentary portrait photography' },
+  { id: 'ballet-portrait',   category: 'portrait', name: 'Ballet Dancer',           thumb: U('1518611012118-696072aa579a'), prompt: 'dramatic low-key portrait of a ballerina in a dance studio looking into a mirror, tension and grace before performance, chiaroscuro theatrical lighting, emotional dance portrait photography' },
+  { id: 'aviator-portrait',  category: 'portrait', name: 'Vintage Aviator',         thumb: U('1567784177951-6fa58317e16b'), prompt: 'sepia-toned portrait of a 1930s pilot in a worn leather jacket and goggles, vintage biplane background, warm amber tones, historical evocative portrait, analog film grain texture' },
+  { id: 'cyberpunk-portrait',category: 'portrait', name: 'Cyberpunk Hacker',        thumb: U('1548081875-7b979b37b86e'), prompt: 'neon-lit portrait of a young person with reflective cyberpunk glasses and subtle tech implants, rainy futuristic urban alley background, electric blues and magentas, sci-fi moody atmosphere' },
+  { id: 'elder-portrait',    category: 'portrait', name: 'Tribal Elder',            thumb: U('1531746020798-e6953c6e8e04'), prompt: 'dignified portrait of a wise tribal elder with intricate traditional jewelry, weathered expressive features, deep wise gaze, natural window lighting, cultural respectful portrait photography' },
+  { id: 'editorial-portrait',category: 'portrait', name: 'Fashion Editorialist',   thumb: U('1515886657613-9f3515b0c78f'), prompt: 'bold high-fashion editorial portrait, avant-garde makeup and clothing, strong geometric color blocks, minimalist set design, Vogue magazine quality editorial photography' },
+  { id: 'jazz-portrait',     category: 'portrait', name: 'The Jazz Musician',       thumb: U('1415201364774-f6f0bb35f28f'), prompt: 'smoky atmospheric portrait of a saxophonist in a jazz club, bathed in warm golden spotlight, saxophone gleaming, ambient club smoke, classic moody jazz photography' },
+  { id: 'explorer-portrait', category: 'portrait', name: 'Victorian Explorer',      thumb: U('1560250097-0b93528c311a'), prompt: 'studio portrait of a Victorian explorer in a tweed suit and pith helmet, holding an antique compass, adventurous gaze off-camera, warm studio lighting, costumed thematic portrait photography' },
+  { id: 'polymath-portrait', category: 'portrait', name: 'Modern Polymath',         thumb: U('1506794778202-cad84cf45f1d'), prompt: 'split dramatic lighting portrait of a person, one side surrounded by stacked books and spectacles, other side holding a paintbrush, conceptual dual-nature portrait, cinematic editorial photography' },
+  { id: 'runner-portrait',   category: 'portrait', name: 'Marathon Runner',         thumb: U('1571019613454-1cb2f99b2d8b'), prompt: 'sweaty post-race portrait of a marathon athlete, face showing raw exhaustion and triumph, emotion-filled authentic moment, dramatic natural light, sports portrait photography' },
+
+  /* ── FANTASY (10) ── */
+  { id: 'elven-spy',         category: 'fantasy',  name: 'Elven Spymaster',         thumb: U('1518020382113-a7e8fc38eac9'), prompt: 'sharp low-key fantasy portrait of a high elf in dark intricate leather armor and hooded cloak, subtle scars and one piercing golden eye, holding a coded message, stealth intellect fantasy art, digital painting' },
+  { id: 'gnome-artificer',   category: 'fantasy',  name: 'Gnomish Artificer',       thumb: U('1535083534998-4d2e7f4fd0fe'), prompt: 'cheerful older gnome with wild white hair and goggles pushed on forehead, grease-stained vest, tinkering with a small glowing magical automaton, steampunk cheerful fantasy portrait, digital art' },
+  { id: 'undead-lich',       category: 'fantasy',  name: 'The Undead Lich',         thumb: U('1519074069444-1ba4fff66d16'), prompt: 'dramatic high-contrast portrait of an ancient skeletal sorcerer lich, tattered robes, empty eye sockets burning with cold blue fire, one hand raised crackling with dark necromantic magic, horror fantasy digital art' },
+  { id: 'celestial-paladin', category: 'fantasy',  name: 'Celestial Paladin',       thumb: U('1551369560-54c9b0a67c17'), prompt: 'heroic fantasy portrait of a human warrior in polished gilded armor adorned with sun and celestial motifs, radiant holy glow, determined expression, leaning on a massive two-handed sword, lawful good cinematic fantasy art' },
+  { id: 'shapeshifter-druid',category: 'fantasy',  name: 'Shapeshifter Druid',      thumb: U('1506905925346-21bda4d32df4'), prompt: 'striking semi-feral portrait of a female druid in earthy mossy armor, glowing green eyes, one arm visibly transforming into a bear claw, nature magic wild transformation, detailed fantasy digital painting' },
+  { id: 'shadow-sorcerer',   category: 'fantasy',  name: 'Shadow Sorcerer',         thumb: U('1518709268805-4e9042af9f05'), prompt: 'brooding low-key portrait of a young sorcerer surrounded by swirling inky black shadows, face obscured, eyes glowing with intense purple arcane power, moody chaos magic fantasy art, dramatic lighting' },
+  { id: 'centaur-huntress',  category: 'fantasy',  name: 'Centaur Huntress',        thumb: U('1542359170-ba7602195723'), prompt: 'powerful dynamic portrait of a centaur archer in practical travel-worn armor, intense gaze while nocking an arrow, vast windswept plains in background, action fantasy digital painting, epic scale' },
+  { id: 'vampire-lord',      category: 'fantasy',  name: 'Vampire Lord',            thumb: U('1474698235027-7b07975a21cd'), prompt: 'opulent classic portrait of a vampire aristocrat in rich velvet and antique lace, enigmatic pale expression, single drop of blood on lip, candlelit historical mansion interior, dark romance fantasy art' },
+  { id: 'dragonborn-barb',   category: 'fantasy',  name: 'Dragonborn Barbarian',    thumb: U('1478720568477-152d9b164e26'), prompt: 'fierce detailed portrait of a red-scaled dragonborn warrior with curved horns and broken warhammer, roaring with fury, steam rising from scales, raw intense fantasy digital art, dramatic fiery background' },
+  { id: 'kitsune-illusionist',category: 'fantasy', name: 'Kitsune Illusionist',     thumb: U('1607604276583-eef5d076aa5f'), prompt: 'vibrant playful portrait of a kitsune fox spirit in traditional stylized Japanese robes, multiple shimmering magical tails, holding a glowing illusionary orb, anime-esque cultural fantasy art, vivid colors' },
+
+  /* ── FASHION (10) ── */
+  { id: 'monochrome-fashion', category: 'fashion', name: 'Monochrome Minimalist',   thumb: U('1509631928397-ab05e70f7c0a'), prompt: 'sleek high-fashion editorial portrait of a model in head-to-toe crisp cream tailoring, stark architectural concrete wall backdrop, clean geometric lines, high-fashion minimalist photography, Vogue quality' },
+  { id: 'boho-resort',        category: 'fashion', name: 'Bohemian Summer Resort',  thumb: U('1524504388868-5c1ead8b1f01'), prompt: 'breezy sun-dappled fashion shot of a model in flowing linen separates and wide-brim straw hat, Mediterranean pergola with climbing vines, golden hour resort lifestyle photography, relaxed boho chic' },
+  { id: 'cyber-goth',         category: 'fashion', name: 'Edgy Cyber-Goth',         thumb: U('1515630278258-407f994537ee'), prompt: 'moody neon-accented fashion portrait with structural black faux-leather apparel, silver hardware and chains, dramatic split neon lighting, alternative avant-garde fashion editorial photography' },
+  { id: 'retro-70s',          category: 'fashion', name: 'Vintage Retro 70s',       thumb: U('1516466723902-9b53e71d8f3e'), prompt: 'warm nostalgic portrait of a model styled in a patterned turtleneck, corduroy blazer and amber tinted frames, vintage film grain, Kodachrome color palette, 1970s retro fashion photography' },
+  { id: 'trench-heritage',    category: 'fashion', name: 'Classic Trench Heritage', thumb: U('1441986300917-64674bd600d8'), prompt: 'sophisticated moody street-style portrait of a model wearing a classic double-breasted beige trench coat on a misty city morning, rain-slicked cobblestones, timeless outerwear fashion editorial' },
+  { id: 'winter-layering',    category: 'fashion', name: 'Winter Layering',         thumb: U('1521335629-1e9b37c3da49'), prompt: 'cozy stylish mountain-chic fashion look, chunky cable-knit sweater under a quilted puffer vest, snowy alpine backdrop with pine trees, seasonal winter fashion lifestyle photography' },
+  { id: 'velvet-renaissance', category: 'fashion', name: 'Velvet Renaissance',      thumb: U('1469334031814-1c9a3d60b1b9'), prompt: 'opulent rich-toned portrait of a model draped in a deep emerald velvet suit, antique dimly lit interior with oil paintings, candlelight glow, luxurious dramatic fashion editorial photography' },
+  { id: 'denim-studio',       category: 'fashion', name: 'Denim-on-Denim Studio',   thumb: U('1582418702059-97ebba07a46e'), prompt: 'cool modern editorial portrait featuring structured dark-wash denim jacket and jeans, minimalist grey studio backdrop, dramatic side lighting, casual edgy fashion photography' },
+  { id: 'pastel-spring',      category: 'fashion', name: 'Pastel Spring Elegance',  thumb: U('1483985988355-763728e1935b'), prompt: 'soft glowing outdoor portrait of a model in a light lavender pastel structured suit, surrounded by blooming cherry blossoms and spring flowers, bright fresh fashion editorial photography' },
+  { id: 'techwear-future',    category: 'fashion', name: 'Futuristic Techwear',     thumb: U('1633356122544-f134324a6cee'), prompt: 'dynamic high-utility futuristic techwear fashion look, multi-pocket cargo straps and matte black technical fabrics, industrial warehouse lighting, modern functional fashion editorial photography' },
+
+  /* ── TRADITIONAL (10) ── */
+  { id: 'royal-sherwani',    category: 'traditional', name: 'Royal Sherwani',       thumb: U('1583404670296-7e18e19c8d0e'), prompt: 'regal portrait of a groom in heavy embroidered velvet sherwani with traditional kalgi and ornate safa turban, antique royal palace jharokha arch background, warm golden lighting, cinematic wedding photography' },
+  { id: 'saree-elegance',    category: 'traditional', name: 'Ethereal Saree',       thumb: U('1519741497674-611481863552'), prompt: 'soft golden-hour portrait of a woman in a handloom organza saree with minimal kundan jewellery, standing in a heritage sandstone courtyard, warm afternoon light, elegant traditional fashion photography' },
+  { id: 'qawwali-night',     category: 'traditional', name: 'Qawwali Night Vibe',   thumb: U('1415201364774-f6f0bb35f28f'), prompt: 'moody warm-lit portrait of a qawwali musician in traditional kurta-pajama with a fine shawl, sitting with harmonium or tabla, amber candlelight and diyas, atmospheric Sufi music photography' },
+  { id: 'shalwar-classic',   category: 'traditional', name: 'Shalwar Kameez Classic', thumb: U('1560250097-0b93528c311a'), prompt: 'rugged sophisticated portrait of a man in crisp white shalwar kameez with a fine leather waistcoat, textured brick wall background, dramatic natural light, South Asian traditional fashion editorial' },
+  { id: 'bandhgala-festive', category: 'traditional', name: 'Festive Bandhgala',    thumb: U('1541643600914-78b084683702'), prompt: 'sharp modern-traditional portrait of a model in a dark jewel-toned bandhgala suit, surrounded by Diwali or Eid festive string lights and bokeh, warm celebratory editorial photography' },
+  { id: 'bridal-zardosi',    category: 'traditional', name: 'Bridal Zardosi',       thumb: U('1583496661160-7bb26c72bb64'), prompt: 'cinematic close-up portrait of a South Asian bride in heavy zardosi embroidered lehenga with traditional matha patti headpiece, shy downward gaze, warm golden backlight, luxury bridal photography' },
+  { id: 'sufi-whirling',     category: 'traditional', name: 'Sufi Whirling',        thumb: U('1545156521-f9ba09b60c42'), prompt: 'dynamic atmospheric shot of a Sufi whirling dervish dancer in flowing white traditional attire, motion blur capturing the spin, deep blue and indigo atmospheric lighting, spiritual dance photography' },
+  { id: 'phulkari-punjabi',  category: 'traditional', name: 'Phulkari & Kurta',     thumb: U('1607604276583-eef5d076aa5f'), prompt: 'vibrant outdoor rural-chic portrait featuring bright Phulkari embroidery dupatta and traditional Punjabi kurta, golden field backdrop, rich cultural embroidery textures, joyful lifestyle photography' },
+  { id: 'mughal-miniature',  category: 'traditional', name: 'Mughal Miniature',     thumb: U('1578321272176-b7bbc0679853'), prompt: 'art-inspired portrait with lighting and composition inspired by Mughal miniature paintings, ornate royal staging, fine jewellery and brocade fabrics, rich jewel-toned palette, heritage art photography' },
+  { id: 'indo-western',      category: 'traditional', name: 'Indo-Western Fusion',  thumb: U('1515886657613-9f3515b0c78f'), prompt: 'contemporary ethnic fashion look with an asymmetrical kurta combined with a structured blazer jacket, modern studio lighting, clean editorial background, fusion fashion shoot, South Asian contemporary style' },
+
+  /* ── TRAVEL (10) ── */
+  { id: 'dubai-luxury',      category: 'travel', name: 'Dubai Skyline Luxury',      thumb: U('1512453979798-5ea266f8880c'), prompt: 'sleek travel portrait of a person on a luxury glass balcony or rooftop, Burj Khalifa towering in background, golden hour sunset glow over Dubai skyline, aspirational luxury travel photography' },
+  { id: 'paris-elegance',    category: 'travel', name: 'Parisian Street Elegance',  thumb: U('1502602915148-a1b04b4d1bea'), prompt: 'cinematic travel shot with classic Haussmann buildings and a misty morning view of the Eiffel Tower, model wearing a chic beige trench coat, cobblestone street, romantic Paris editorial travel photography' },
+  { id: 'hill-station-mist', category: 'travel', name: 'Misty Hill Station',        thumb: U('1501854140801-50d01698950b'), prompt: 'atmospheric travel portrait of a person in a woollen scarf and coat standing in a misty green hill station, rolling fog over lush mountains, cozy monsoon mountain travel photography' },
+  { id: 'santorini-dream',   category: 'travel', name: 'Santorini Dream',           thumb: U('1533105079780-92b9be4f5494'), prompt: 'sunny Santorini travel shot with iconic whitewashed architecture and blue-domed churches, sparkling Aegean Sea background, vibrant Mediterranean light, editorial travel photography' },
+  { id: 'kyoto-bamboo',      category: 'travel', name: 'Kyoto Bamboo Forest',       thumb: U('1528360983277-13d401cdc186'), prompt: 'peaceful travel portrait in Arashiyama bamboo grove Kyoto, tall green bamboo stalks filtering soft dappled light, traditional stone pathway, serene Japanese travel photography' },
+  { id: 'swiss-alps',        category: 'travel', name: 'Swiss Alps Snow Peak',      thumb: U('1491555103944-7c647fd857e6'), prompt: 'winter adventure travel aesthetic, snow-capped Swiss Alps mountain peaks, pine trees blanketed in fresh snow, person in cozy winter gear, crisp clean alpine photography' },
+  { id: 'amalfi-terrace',    category: 'travel', name: 'Amalfi Coast Terrace',      thumb: U('1533662635785-9a64e2d44be6'), prompt: 'Mediterranean travel vibe with colorful cliffside Amalfi Coast houses, deep azure sea, lemon grove terrace, golden afternoon light, dreamy Italian coastal travel photography' },
+  { id: 'venice-canal',      category: 'travel', name: 'Venetian Canal Romance',    thumb: U('1523906834658-6fe1e1a83e52'), prompt: 'atmospheric evening travel shot in Venice, gondola gliding past a historic arched bridge, warm glowing lanterns reflecting on water, moody romantic travel photography' },
+  { id: 'kyoto-autumn',      category: 'travel', name: 'Kyoto Autumn Maple',        thumb: U('1534008757030-27842be8b78e'), prompt: 'vibrant Japanese Koyo autumn travel shot, brilliant red and orange maple leaves surrounding a traditional wooden temple, warm autumn light, cultural travel photography' },
+  { id: 'iceland-black-sand',category: 'travel', name: 'Iceland Black Sand Beach',  thumb: U('1474506001-20a08b28dce6'), prompt: 'dramatic moody Iceland landscape, black volcanic sand beach with massive basalt rock columns, dark brooding ocean waves, cinematic wide travel photography, powerful natural drama' },
+
+  /* ── PRODUCTS (10) ── */
+  { id: 'skincare-flatlay',  category: 'products', name: 'Botanical Skincare',      thumb: U('1556228578-0d85751db95e'), prompt: 'clean minimalist skincare product flatlay on white marble surface, organic glass bottles with botanical labels, fresh green eucalyptus leaves, jade facial roller, soft natural morning light, professional product photography' },
+  { id: 'diya-mithai',       category: 'products', name: 'Festive Mithai & Diya',   thumb: U('1545063328-c8e464f61b7b'), prompt: 'luxury Indian festival product shot, ornate sweet mithai box on rich velvet fabric with marigold flowers, glowing clay diyas arranged around, warm golden festive glow, editorial product photography' },
+  { id: 'iced-coffee-splash',category: 'products', name: 'Iced Coffee Splash',      thumb: U('1461023058943-b2a38cbda07d'), prompt: 'dynamic beverage product shot of a tall iced latte in a glass with swirling milk and coffee, dramatic milk splash droplets frozen in motion, dark background, high-speed commercial beverage photography' },
+  { id: 'dark-perfume',      category: 'products', name: 'Dark Luxury Perfume',     thumb: U('1541643600914-78b084683702'), prompt: 'sleek moody luxury perfume bottle on dark textured volcanic stones, subtle golden rim light from behind creating dramatic halo, deep shadow, high-end commercial fragrance product photography' },
+  { id: 'coffee-beans',      category: 'products', name: 'Artisan Coffee Beans',    thumb: U('1447933601652-59aef7800a54'), prompt: 'dark rustic wooden table with freshly roasted coffee beans artfully spilled, antique brass coffee grinder, steaming espresso cup, rich earthy brown tones, moody artisan coffee product photography' },
+  { id: 'luxury-watch',      category: 'products', name: 'Luxury Watch & Leather',  thumb: U('1523275335684-37898b6baf30'), prompt: 'matte black surface product shot of a sleek executive luxury watch, folded premium leather wallet, and fountain pen, sharp geometric shadows, professional minimalist corporate product photography' },
+  { id: 'honey-jar',         category: 'products', name: 'Organic Honey & Dipper',  thumb: U('1558618047-3c86b58e8d14'), prompt: 'golden-hued honey product shot of a glass honey jar with honey dripping from a wooden honeycomb dipper, fresh wildflowers arranged nearby, warm glowing sunlight, natural organic lifestyle product photography' },
+  { id: 'clay-mask',         category: 'products', name: 'Artisanal Clay Mask',     thumb: U('1571019614259-a05ef14d2d11'), prompt: 'spa aesthetic product shot of earthy green clay mask in a ceramic bowl, wooden application brush, fresh eucalyptus branch, white marble surface, clean natural beauty product photography' },
+  { id: 'tech-gadget',       category: 'products', name: 'Tech Gadget Minimalist',  thumb: U('1505740420928-5e560c06d30e'), prompt: 'pastel matte studio backdrop product shot of sleek wireless headphones, clean geometric cast shadows, minimal composition, modern tech lifestyle product photography, soft studio lighting' },
+  { id: 'citrus-splash',     category: 'products', name: 'Citrus Refreshment',      thumb: U('1587440871838-bc42dc90e7f4'), prompt: 'bright vibrant summer beverage product shot with citrus juice glass surrounded by sliced fresh oranges and lemons, dramatic water splash droplets in motion, high-speed commercial photography, vivid colors' },
+
+  /* ── NATURE (10) ── */
+  { id: 'golden-mountain',   category: 'nature', name: 'Golden Hour Peak',          thumb: U('1506905925346-21bda4d32df4'), prompt: 'breathtaking golden hour mountain peak landscape, warm amber and orange light painting the snow-capped summits, dramatic cloud formations, National Geographic quality nature photography' },
+  { id: 'misty-waterfall',   category: 'nature', name: 'Misty Waterfall Forest',    thumb: U('1432251010-f2e1db8c0e74'), prompt: 'magical misty waterfall cascading through a lush tropical forest, soft diffused green light filtering through dense canopy, moss-covered rocks, serene nature photography' },
+  { id: 'desert-dunes',      category: 'nature', name: 'Desert Dunes at Sunrise',   thumb: U('1509826994-4ec08f8a7f51'), prompt: 'sweeping golden sand dunes at sunrise, long shadows creating dramatic wave-like patterns, vast silence and minimalism, Sahara or Arabian desert, cinematic nature landscape photography' },
+  { id: 'tropical-ocean',    category: 'nature', name: 'Tropical Ocean Wave',       thumb: U('1505118380757-91f5f5632de0'), prompt: 'stunning turquoise tropical ocean wave crashing, crystal clear water revealing sandy seafloor, vibrant blue and teal tones, paradise beach, National Geographic ocean photography' },
+  { id: 'cherry-blossom',    category: 'nature', name: 'Cherry Blossom Path',       thumb: U('1522383817417-8e3cb01c1c4c'), prompt: 'dreamy sakura cherry blossom tunnel path in Japan, pink petals falling gently, soft pastel pink light, romantic spring atmosphere, Japanese nature travel photography' },
+  { id: 'aurora-borealis',   category: 'nature', name: 'Aurora Borealis',           thumb: U('1531366936337-7c912a4589a7'), prompt: 'spectacular northern lights aurora borealis dancing across a dark Arctic sky, vivid green and purple ribbons of light, starry sky reflection on a still lake, Iceland night nature photography' },
+  { id: 'autumn-forest',     category: 'nature', name: 'Autumn Forest Carpet',      thumb: U('1448375240414-ae4ab7d91e33'), prompt: 'golden autumn forest with a thick carpet of fallen red and orange maple leaves, tall trees creating a canopy of fire colors, misty morning light, peaceful fall nature photography' },
+  { id: 'monsoon-jungle',    category: 'nature', name: 'Monsoon Tropical Rain',     thumb: U('1504196606672-aef5c9cefc2b'), prompt: 'lush monsoon tropical jungle during heavy rain, vibrant emerald green vegetation glistening with raindrops, dramatic rain curtain, moody atmospheric tropical nature photography' },
+  { id: 'snow-pine-forest',  category: 'nature', name: 'Snow Pine Forest',          thumb: U('1418065460487-3e41a6a32e12'), prompt: 'magical snow-covered pine forest in winter, heavy white snow bending the branches, silent peaceful atmosphere, soft blue-white winter light, fairy tale winter nature photography' },
+  { id: 'underwater-coral',  category: 'nature', name: 'Underwater Coral Reef',     thumb: U('1507525428034-b723cf961d3e'), prompt: 'stunning underwater coral reef ecosystem, vibrant tropical fish swimming through colorful coral formations, crystal clear blue water, sunlight rays piercing from above, marine nature photography' },
+];
 
 const TEMPLATES = [
   { id: 'realistic-portrait', icon: '📸', name: 'Realistic Portrait', desc: 'Ultra-HD photo', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
@@ -100,31 +216,6 @@ const SAFE_NEGATIVE = encodeURIComponent(
   'nsfw, nude, nudity, naked, sexual, explicit, pornographic, hentai, ecchi, fan service, sexy, seductive, cleavage, lingerie, underwear, bikini, revealing, adult content, inappropriate'
 );
 
-const ANIME_SHOWCASE_URL = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-  'anime landscape background art, glowing sunset over floating islands, vibrant 2D cel animation style, Studio Ghibli Makoto Shinkai inspired, bold ink outlines, flat color shading, no characters no people'
-)}?width=600&height=400&nologo=true&seed=55501&model=flux&negative_prompt=${SAFE_NEGATIVE}`;
-
-const SHOWCASE_IMAGES = [
-  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('breathtaking mountain sunset golden clouds volumetric lighting ultra realistic landscape photography')}?width=600&height=400&nologo=true&seed=42001&model=flux`, prompt: 'breathtaking mountain sunset with golden clouds' },
-  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('futuristic neon cyberpunk city rain reflections cinematic wide shot')}?width=600&height=400&nologo=true&seed=42002&model=flux`, prompt: 'futuristic neon-lit cyberpunk city at night' },
-  { url: ANIME_SHOWCASE_URL, prompt: 'shonen anime boy hero in action' },
-  { url: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art village landscape sunset 16-bit SNES style isometric pixel art vibrant colors retro game')}?width=600&height=400&nologo=true&seed=42004&model=flux`, prompt: 'pixel art village at sunset' },
-];
-
-// Visual templates with photo preview thumbnails (fixed seeds → stable images)
-const VISUAL_TEMPLATES = [
-  { id: 'portrait',  name: 'Realistic Portrait', prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('beautiful realistic portrait photography professional studio lighting 8K photorealistic sharp')}?width=240&height=320&nologo=true&seed=77001&model=flux` },
-  { id: 'anime',     name: 'Anime Style',         prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art, no characters',             thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('anime scenic landscape glowing sunset floating islands Studio Ghibli cel animation art')}?width=240&height=320&nologo=true&seed=77002&model=flux` },
-  { id: 'cinematic', name: 'Cinematic',            prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded, ARRI cinema',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cinematic movie shot dramatic lighting film quality anamorphic lens Hollywood')}?width=240&height=320&nologo=true&seed=77003&model=flux` },
-  { id: '3d',        name: '3D Render',            prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination, studio HDRI lighting', thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('photorealistic 3D render character Blender Cycles ray tracing HDRI lighting subsurface scattering')}?width=240&height=320&nologo=true&seed=77004&model=flux` },
-  { id: 'interior',  name: 'Interior Design',     prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality',             thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('modern interior design visualization cozy living room natural lighting Architectural Digest')}?width=240&height=320&nologo=true&seed=77005&model=flux` },
-  { id: 'cyberpunk', name: 'Cyberpunk',            prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas',    thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('cyberpunk neon city rain reflections electric blues magentas futuristic street cinematic')}?width=240&height=320&nologo=true&seed=77007&model=flux` },
-  { id: 'oil',       name: 'Oil Painting',        prompt: 'classical oil painting, impressionist brushwork, rich warm colors, textured canvas, old master technique, museum quality',   thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('classical oil painting impressionist brushwork rich warm colors textured canvas old master')}?width=240&height=320&nologo=true&seed=77006&model=flux` },
-  { id: 'fantasy',   name: 'Fantasy Art',         prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('epic fantasy art dramatic magical lighting mystical dragon castle painterly digital art')}?width=240&height=320&nologo=true&seed=77010&model=flux` },
-  { id: 'nature',    name: 'Nature Photo',        prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape',          thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('golden hour nature photography ultra-sharp National Geographic breathtaking landscape')}?width=240&height=320&nologo=true&seed=77008&model=flux` },
-  { id: 'pixel',     name: 'Pixel Art',           prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style',        thumb: `https://image.pollinations.ai/prompt/${encodeURIComponent('pixel art 16-bit retro game landscape vibrant colors isometric SNES style')}?width=240&height=320&nologo=true&seed=77009&model=flux` },
-];
-
 function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number, model = 'flux'): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=${model}&negative_prompt=${SAFE_NEGATIVE}`;
@@ -132,8 +223,6 @@ function buildPollinationsUrl(prompt: string, w = 1024, h = 1024, seed?: number,
 
 function buildAnimeUrl(basePrompt: string, w = 1024, h = 1024, seed?: number): string {
   const s = seed ?? Math.floor(Math.random() * 9_999_999);
-  // flux-anime is unsafe — use flux with very specific anime ART STYLE descriptors
-  // Default to scenery/environment to avoid any character-based content issues
   const safePrompt = `${basePrompt}, anime 2D illustration art style, cel animation flat shading, bold ink outlines, vibrant anime color palette, Studio Ghibli Makoto Shinkai aesthetic, no people no characters no humans`;
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${w}&height=${h}&nologo=true&seed=${s}&model=flux&negative_prompt=${SAFE_NEGATIVE}`;
 }
@@ -207,10 +296,119 @@ function loadPersistedImages(): GenImage[] {
 
 function persistImages(imgs: GenImage[]) {
   try {
-    // Only persist completed (non-loading) images, max 30
     const toSave = imgs.filter(i => !i.loading && i.url).slice(0, 30);
     localStorage.setItem(IMAGINE_STORAGE_KEY, JSON.stringify(toSave));
   } catch {}
+}
+
+/* ── Template Card for marquee rows ── */
+function TemplateCard({
+  t,
+  isActive,
+  onClick,
+}: {
+  t: typeof VISUAL_TEMPLATES[0];
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative shrink-0 overflow-hidden text-left"
+      style={{
+        width: 108,
+        height: 148,
+        borderRadius: 16,
+        border: isActive ? '2px solid #f3b94b' : '1.5px solid rgba(0,0,0,0.09)',
+        boxShadow: isActive
+          ? '0 0 0 3px rgba(243,185,75,0.18), 0 8px 24px rgba(0,0,0,0.12)'
+          : '0 4px 16px rgba(0,0,0,0.08)',
+        transform: 'perspective(600px)',
+        transition: 'transform 0.35s ease, box-shadow 0.35s ease',
+        background: '#f0f0f0',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-4px) scale(1.03)';
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.18)';
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)';
+        (e.currentTarget as HTMLElement).style.boxShadow = isActive
+          ? '0 0 0 3px rgba(243,185,75,0.18), 0 8px 24px rgba(0,0,0,0.12)'
+          : '0 4px 16px rgba(0,0,0,0.08)';
+      }}
+    >
+      <img
+        src={t.thumb}
+        alt={t.name}
+        className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+        loading="lazy"
+      />
+      {/* "Try this look" overlay */}
+      <div
+        className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}
+      >
+        <div className="px-2 pb-2.5 pt-8">
+          <div
+            className="flex items-center justify-center gap-1 rounded-full py-1 text-[10px] font-semibold text-white"
+            style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
+          >
+            <span className="text-[9px]">✦</span> Try this look
+          </div>
+        </div>
+      </div>
+      {/* Name label always visible at bottom */}
+      <span
+        className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-8 text-[10px] font-semibold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
+      >
+        {t.name}
+      </span>
+      {isActive && (
+        <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">✓</span>
+      )}
+    </button>
+  );
+}
+
+/* ── Infinite 3D marquee row ── */
+function MarqueeRow({
+  templates,
+  direction,
+  activeId,
+  onSelect,
+}: {
+  templates: typeof VISUAL_TEMPLATES;
+  direction: 'left' | 'right';
+  activeId: string | undefined;
+  onSelect: (t: typeof VISUAL_TEMPLATES[0]) => void;
+}) {
+  const doubled = [...templates, ...templates]; // duplicate for seamless loop
+  const duration = templates.length * 5; // speed proportional to count
+
+  return (
+    <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+      <div
+        className="flex gap-2.5 w-max"
+        style={{
+          animation: `marquee-${direction} ${duration}s linear infinite`,
+          willChange: 'transform',
+        }}
+        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'paused')}
+        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.animationPlayState = 'running')}
+      >
+        {doubled.map((t, i) => (
+          <TemplateCard
+            key={`${t.id}-${i}`}
+            t={t}
+            isActive={activeId === t.id}
+            onClick={() => onSelect(t)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
@@ -219,6 +417,8 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [generatedImages, setGeneratedImages] = useState<GenImage[]>(() => loadPersistedImages());
   const [isGenerating, setIsGenerating]       = useState(false);
   const [activeTemplate, setActiveTemplate]   = useState<typeof TEMPLATES[0] | null>(null);
+  const [activeVisualId, setActiveVisualId]   = useState<string | undefined>(undefined);
+  const [activeCatFilter, setActiveCatFilter] = useState('all');
   const [imageCount, setImageCount]           = useState(1);
   const shuffledAnime = useMemo(() => shuffleArray(ANIME_BOY_IMAGES), []);
   const [editTarget, setEditTarget]           = useState<GenImage | null>(null);
@@ -227,38 +427,29 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [editAccessories, setEditAccessories] = useState<string[]>([]);
   const [editHistory, setEditHistory]         = useState<string[]>([]);
   const [isEditGenerating, setIsEditGenerating] = useState(false);
+  const [lightboxImg, setLightboxImg]         = useState<GenImage | null>(null);
 
   const textareaRef     = useRef<HTMLTextAreaElement>(null);
   const uploadRef       = useRef<HTMLInputElement>(null);
-  const templateScrollRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
 
-  /* ── Smart URL picker based on style keywords in prompt ── */
+  /* ── Smart URL picker ── */
   function smartPollinationsUrl(fullPrompt: string, pw: number, ph: number, s: number): string {
     const p = fullPrompt.toLowerCase();
     const isAnime    = p.includes('anime') || p.includes('manga') || p.includes('ghibli') || p.includes('cel-shad') || p.includes('cel shad');
     const isPixelArt = p.includes('pixel art') || p.includes('8-bit') || p.includes('16-bit') || p.includes('pixelated') || p.includes('pixel grid');
-
-    if (isAnime) {
-      return buildAnimeUrl(fullPrompt, pw, ph, s);
-    }
-    if (isPixelArt) {
-      return buildPixelArtUrl(fullPrompt, pw, ph, s);
-    }
+    if (isAnime) return buildAnimeUrl(fullPrompt, pw, ph, s);
+    if (isPixelArt) return buildPixelArtUrl(fullPrompt, pw, ph, s);
     return buildPollinationsUrl(fullPrompt, pw, ph, s);
   }
 
-  /* ── Image generation: smart Pollinations primary, backend fallback ── */
   async function generateSingle(fullPrompt: string, size: string, seed?: number): Promise<string> {
     const [w, h] = size.split('x').map(Number);
     const pw = w || 1024;
     const ph = h || 1024;
     const s = seed ?? Math.floor(Math.random() * 9_999_999);
-
     const pollinationsUrl = smartPollinationsUrl(fullPrompt, pw, ph, s);
-
-    // Try backend (Gemini/Imagen) as enhancement if available
     try {
       const res = await fetch('/api/generate-image', {
         method: 'POST',
@@ -270,10 +461,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         const data = await res.json();
         if (data.success && data.url) return data.url;
       }
-    } catch {
-      // Backend unavailable – fall through to Pollinations
-    }
-
+    } catch {}
     return pollinationsUrl;
   }
 
@@ -281,7 +469,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     return RESOLUTIONS.find(r => r.id === resId)?.apiSize ?? '1024x1024';
   }
 
-  /* ── Main generate (supports 1–4 images in parallel) ── */
   async function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
     setIsGenerating(true);
@@ -290,7 +477,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     const fullPrompt = base + templateSuffix;
     const size = getApiSize('1:1');
 
-    // Create placeholder entries with loading state
     const placeholders: GenImage[] = Array.from({ length: imageCount }, (_, i) => ({
       id: `${Date.now()}-${i}`,
       url: '',
@@ -300,13 +486,11 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     }));
     setGeneratedImages(prev => [...placeholders, ...prev].slice(0, 20));
 
-    // Generate all images in parallel with different seeds
     const seeds = placeholders.map(() => Math.floor(Math.random() * 9_999_999));
     const promises = seeds.map((seed, i) =>
       generateSingle(fullPrompt, size, seed).then(url => ({ id: placeholders[i].id, url }))
     );
 
-    // Update each image as it resolves
     for (const p of promises) {
       p.then(({ id, url }) => {
         setGeneratedImages(prev => {
@@ -323,9 +507,10 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     setIsGenerating(false);
   }
 
-  function handleTemplateClick(t: typeof TEMPLATES[0]) {
-    setActiveTemplate(t);
-    setPrompt(t.name);
+  function handleTemplateSelect(t: typeof VISUAL_TEMPLATES[0]) {
+    setActiveVisualId(t.id);
+    setPrompt(t.prompt);
+    setActiveTemplate({ id: t.id, icon: '', name: t.name, desc: '', prompt: t.prompt });
     textareaRef.current?.focus();
   }
 
@@ -342,10 +527,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     a.href = url; a.download = `${label}.png`; a.target = '_blank'; a.click();
   }
 
-  function handleShare(url: string) {
-    navigator.clipboard.writeText(url).catch(() => {});
-  }
-
   function openEdit(img: GenImage) {
     setEditTarget(img);
     setEditHistory(img.history?.length ? img.history : [img.url]);
@@ -354,7 +535,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     setEditResolution('1:1');
   }
 
-  /* ── Edit apply ── */
   async function handleEditApply() {
     if (!editTarget || isEditGenerating) return;
     setIsEditGenerating(true);
@@ -381,8 +561,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col"
         style={{ background: '#080810', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
-
-        {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <button onClick={() => setEditTarget(null)}
             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors text-sm">
@@ -396,9 +574,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
             <span className="text-white/70 text-sm font-medium">Edit Image</span>
           </div>
         </div>
-
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Left sidebar — images + history */}
           <div className="flex flex-col w-72 flex-shrink-0 overflow-y-auto p-4 gap-4" style={{ borderRight: '1px solid rgba(255,255,255,0.07)', scrollbarWidth: 'none' }}>
             <div>
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Original</p>
@@ -406,7 +582,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 <ImageWithLoader src={originalUrl} alt="original" className="w-full h-full object-cover" />
               </div>
             </div>
-
             <div>
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Current Preview</p>
               <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 relative" style={{ aspectRatio: '1' }}>
@@ -424,7 +599,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 <Download size={13} /> Download
               </button>
             </div>
-
             {editHistory.length > 1 && (
               <div>
                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">History ({editHistory.length} versions)</p>
@@ -446,10 +620,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
               </div>
             )}
           </div>
-
-          {/* Right — controls */}
           <div className="flex-1 overflow-y-auto p-6 space-y-7" style={{ scrollbarWidth: 'none' }}>
-            {/* Art Style */}
             <div>
               <p className="text-white text-sm font-semibold mb-3">🎨 Art Style <span className="text-zinc-500 font-normal text-xs">(select to convert)</span></p>
               <div className="flex flex-wrap gap-2">
@@ -464,8 +635,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 ))}
               </div>
             </div>
-
-            {/* Resolution */}
             <div>
               <p className="text-white text-sm font-semibold mb-3">📐 Resolution</p>
               <div className="grid grid-cols-3 gap-2">
@@ -482,8 +651,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 ))}
               </div>
             </div>
-
-            {/* Accessories */}
             <div>
               <p className="text-white text-sm font-semibold mb-3">✨ Add Accessories <span className="text-zinc-500 font-normal text-xs">(for human subjects)</span></p>
               <div className="flex flex-wrap gap-2">
@@ -499,8 +666,6 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 ))}
               </div>
             </div>
-
-            {/* Apply */}
             <button onClick={handleEditApply} disabled={isEditGenerating}
               className="w-full py-3.5 rounded-2xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
@@ -515,225 +680,359 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   }
 
   /* ────────────────────────────────────────────────────
-     MAIN STUDIO — revamped: clean black, big prompt bar,
-     tall template cards, large 2-col image grid
+     LIGHTBOX
   ──────────────────────────────────────────────────── */
-  const scrollTemplates = (dir: 'left' | 'right') => {
-    const el = templateScrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
-  };
-
-  const completedImages = generatedImages.filter(i => !i.loading && i.url);
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: '#000', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
-
-      {/* ── Header ── */}
-      <div className="flex items-center px-5 pt-6 pb-1 flex-shrink-0">
-        <h2 className="text-white font-bold text-2xl flex-1 tracking-tight">Images</h2>
-        <button onClick={onClose}
-          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{ background: 'rgba(255,255,255,0.10)' }}>
-          <X size={17} className="text-zinc-300" />
-        </button>
-      </div>
-
-      {/* ── Prompt bar ── */}
-      <div className="px-4 pt-4 pb-5 flex-shrink-0">
-        {/* Active chips */}
-        {(uploadedImage || activeTemplate) && (
-          <div className="flex flex-wrap items-center gap-2 mb-2.5">
-            {uploadedImage && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <img src={uploadedImage.preview} alt="" className="w-4 h-4 rounded object-cover" />
-                <span className="text-zinc-300 text-[11px] max-w-[120px] truncate">{uploadedImage.name}</span>
-                <button onClick={() => setUploadedImage(null)} className="text-zinc-500 hover:text-white ml-0.5 transition-colors"><X size={10} /></button>
-              </div>
-            )}
-            {activeTemplate && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(167,139,250,0.35)' }}>
-                <span className="text-purple-300 text-[11px] font-medium">{(activeTemplate as any).name}</span>
-                <button onClick={() => setActiveTemplate(null)} className="text-purple-500 hover:text-purple-200 ml-0.5 transition-colors"><X size={10} /></button>
-              </div>
-            )}
+  if (lightboxImg) {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)' }}
+        onClick={() => setLightboxImg(null)}
+      >
+        <div
+          className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl"
+          onClick={e => e.stopPropagation()}
+          style={{ border: '1.5px solid rgba(255,255,255,0.1)' }}
+        >
+          <img src={lightboxImg.url} alt="Full view" className="max-w-[90vw] max-h-[85vh] object-contain" />
+          <div className="absolute top-3 right-3 flex gap-2">
+            <button
+              onClick={() => handleDownload(lightboxImg.url, 'fius-imagine')}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80 transition"
+            >
+              <Download size={15} />
+            </button>
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80 transition"
+            >
+              <X size={15} />
+            </button>
           </div>
-        )}
-
-        {/* Main pill input */}
-        <div className="flex items-center gap-2.5 rounded-full px-4 py-3.5"
-          style={{ background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.13)' }}>
-          <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
-          <button onClick={() => uploadRef.current?.click()} className="flex-shrink-0 transition-all active:scale-90">
-            <Mic size={18} className="text-zinc-500" />
-          </button>
-          <input
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGenerate(); } }}
-            placeholder="Describe a new image"
-            className="flex-1 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-[14px] leading-none"
-            style={{ border: 'none', outline: 'none' }}
-          />
-          {/* Count selector */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {[1, 2, 4].map(n => (
-              <button key={n} onClick={() => setImageCount(n)}
-                className="w-[22px] h-[22px] rounded-full text-[10px] font-bold transition-all flex items-center justify-center"
-                style={imageCount === n
-                  ? { background: 'rgba(139,92,246,0.7)', color: '#fff' }
-                  : { background: 'rgba(255,255,255,0.07)', color: '#52525b' }}>
-                {n}
-              </button>
-            ))}
-          </div>
-          {/* Send button */}
-          <button onClick={handleGenerate} disabled={!prompt.trim() || isGenerating}
-            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-25"
-            style={{ background: 'rgba(255,255,255,0.15)' }}>
-            {isGenerating
-              ? <Loader2 size={14} className="text-white animate-spin" />
-              : <ArrowUp size={14} className="text-white" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Scrollable body ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-
-        {/* ── Create an image — tall photo cards ── */}
-        <div className="mb-7">
-          <div className="flex items-center justify-between px-5 mb-3.5">
-            <span className="text-white text-base font-semibold tracking-tight">Create an image</span>
-            <div className="flex gap-1.5">
-              <button onClick={() => scrollTemplates('left')}
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <ChevronLeft size={14} className="text-zinc-300" />
-              </button>
-              <button onClick={() => scrollTemplates('right')}
-                className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <ChevronRight size={14} className="text-zinc-300" />
-              </button>
-            </div>
-          </div>
-
-          <div ref={templateScrollRef} className="flex gap-3 overflow-x-auto pl-5 pr-3" style={{ scrollbarWidth: 'none' }}>
-            {VISUAL_TEMPLATES.map(t => (
-              <button key={t.id}
-                onClick={() => { setPrompt(t.prompt); setActiveTemplate({ id: t.id, icon: '', name: t.name, desc: '', prompt: t.prompt }); }}
-                className="flex-shrink-0 relative overflow-hidden group transition-all active:scale-[0.96]"
-                style={{
-                  width: 130, height: 180,
-                  borderRadius: 16,
-                  border: activeTemplate?.id === t.id
-                    ? '2px solid rgba(167,139,250,0.9)'
-                    : '2px solid rgba(255,255,255,0.06)',
-                  boxShadow: activeTemplate?.id === t.id ? '0 0 0 3px rgba(139,92,246,0.2)' : 'none',
-                }}>
-                <ImageWithLoader
-                  src={t.thumb}
-                  alt={t.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.05]"
-                />
-                {/* Gradient label */}
-                <div className="absolute inset-0 flex items-end"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.88) 35%, rgba(0,0,0,0.1) 70%, transparent 100%)' }}>
-                  <span className="px-3 pb-3 text-white text-[11.5px] font-semibold leading-tight block w-full">{t.name}</span>
-                </div>
-                {/* Active checkmark */}
-                {activeTemplate?.id === t.id && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: 'rgba(139,92,246,0.9)' }}>
-                    <span className="text-white text-[9px] font-bold">✓</span>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── My images — large 2-col grid ── */}
-        <div className="pb-8">
-          <div className="flex items-center justify-between px-5 mb-3.5">
-            <span className="text-white text-base font-semibold tracking-tight">My images</span>
-            {completedImages.length > 0 && (
-              <button
-                onClick={() => { if (confirm('Clear all generated images?')) { setGeneratedImages([]); persistImages([]); } }}
-                className="text-zinc-600 hover:text-zinc-400 text-[11px] transition-colors">
-                Clear all
-              </button>
-            )}
-          </div>
-
-          {generatedImages.length === 0 ? (
-            <div className="flex flex-col items-center py-16 gap-4 px-5">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <Sparkles size={26} className="text-zinc-700" />
-              </div>
-              <div className="text-center">
-                <p className="text-zinc-300 text-[15px] font-semibold">No images yet</p>
-                <p className="text-zinc-600 text-[12px] mt-1">Describe an image above to get started</p>
-              </div>
-            </div>
-          ) : (
-            /* 2-col large grid — edge-to-edge, no side padding */
-            <div className="grid grid-cols-2 gap-[3px]">
-              {generatedImages.map((img, idx) => (
-                <div key={img.id} className="relative group bg-zinc-950"
-                  style={{ aspectRatio: '1/1' }}>
-                  {img.loading || !img.url ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2.5">
-                      <Loader2 size={22} className="animate-spin text-purple-400" />
-                      <span className="text-zinc-600 text-[10px] font-medium">Generating…</span>
-                    </div>
-                  ) : (
-                    <>
-                      <img src={img.url} alt="generated" className="w-full h-full object-cover" />
-                      {/* Hover / tap overlay */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-all duration-200 flex flex-col justify-between p-3"
-                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 45%, rgba(0,0,0,0.15) 100%)' }}>
-                        {/* Top actions */}
-                        <div className="flex justify-end">
-                          <button onClick={() => handleDownload(img.url, `image-${idx + 1}`)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                            style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }} title="Save">
-                            <Download size={13} className="text-white" />
-                          </button>
-                        </div>
-                        {/* Bottom — prompt + actions */}
-                        <div>
-                          <p className="text-white/80 text-[10px] leading-snug line-clamp-2 mb-2">{img.prompt}</p>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => {
-                              const updated = generatedImages.map(x => x.id === img.id ? { ...x, liked: !x.liked } : x);
-                              setGeneratedImages(updated); persistImages(updated);
-                            }}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all"
-                              style={{ background: img.liked ? 'rgba(236,72,153,0.35)' : 'rgba(255,255,255,0.12)', color: img.liked ? '#f9a8d4' : 'rgba(255,255,255,0.55)', backdropFilter: 'blur(6px)' }}>
-                              ❤️ {img.liked ? 'Liked' : 'Like'}
-                            </button>
-                            <button onClick={() => !img.loading && openEdit(img)} disabled={img.loading}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-30"
-                              style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(6px)' }}>
-                              ✏️ Edit
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+          {lightboxImg.prompt && (
+            <div className="absolute inset-x-0 bottom-0 p-4" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)' }}>
+              <p className="text-white/80 text-[11px] leading-relaxed line-clamp-2">{lightboxImg.prompt}</p>
             </div>
           )}
         </div>
       </div>
-    </div>
+    );
+  }
+
+  const completedImages = generatedImages.filter(i => !i.loading && i.url);
+
+  return (
+    <>
+      {/* ── CSS keyframes injected once ── */}
+      <style>{`
+        @keyframes marquee-left {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee-right {
+          0%   { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
+      `}</style>
+
+      <div className="fixed inset-0 z-50 flex flex-col"
+        style={{ background: '#fff', color: '#171717', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
+
+        {/* ── Scrollable content area ── */}
+        <div className="relative flex-1 overflow-y-auto">
+          {/* Hero backdrop */}
+          <div style={{ position: 'absolute', inset: '0 0 auto 0', height: 'clamp(170px,27vw,290px)', overflow: 'hidden', pointerEvents: 'none' }}>
+            <img src={studioHero} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 30%, rgba(255,255,255,0.4) 60%, #ffffff 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0.7) 40%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: '20%', background: 'linear-gradient(to right, #ffffff 0%, rgba(255,255,255,0.8) 40%, transparent 100%)' }} />
+            <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: '20%', background: 'linear-gradient(to left, #ffffff 0%, rgba(255,255,255,0.8) 40%, transparent 100%)' }} />
+          </div>
+
+          <div className="relative mx-auto flex w-full max-w-[1120px] flex-col px-4 pb-6 sm:px-8">
+            <header className="flex items-center justify-between pt-5 sm:pt-7">
+              <div className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/85 shadow-sm ring-1 ring-black/[0.06] backdrop-blur">
+                  <Sparkles size={15} className="text-amber-400" />
+                </div>
+                <span>Fius Studio</span>
+              </div>
+              <button onClick={onClose} aria-label="Close Image Studio"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-500 shadow-sm ring-1 ring-black/[0.07] transition hover:bg-white hover:text-neutral-900 active:scale-95">
+                <X size={17} />
+              </button>
+            </header>
+
+            {/* ── Hero heading ── */}
+            <div className="mx-auto flex w-full max-w-[640px] flex-col items-center pt-[clamp(112px,18vw,190px)] sm:pt-[clamp(126px,17vw,182px)]">
+              <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1 }}>
+                <span className="font-extrabold">Fius Labs</span>{' '}
+                <span className="font-extrabold">Imagine Studio</span>
+              </h2>
+              <p className="mt-2 text-center font-medium text-neutral-500" style={{ fontSize: 'clamp(15px,1.8vw,18px)' }}>
+                The Canvas of Tomorrow ✦
+              </p>
+            </div>
+
+            {/* ── Template section: category tabs + dual 3D marquee rows ── */}
+            <section className="mt-9 sm:mt-11">
+              <div className="mb-3 flex items-center justify-between px-0.5">
+                <h3 className="text-[14px] font-bold tracking-[-0.02em] text-neutral-800 sm:text-[15px]">Templates</h3>
+                <span className="text-[10px] font-medium text-neutral-400">
+                  {activeCatFilter === 'all' ? VISUAL_TEMPLATES.length : VISUAL_TEMPLATES.filter(t => t.category === activeCatFilter).length} styles
+                </span>
+              </div>
+
+              {/* Category filter pills */}
+              <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {TEMPLATE_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCatFilter(cat.id)}
+                    className="shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200"
+                    style={activeCatFilter === cat.id
+                      ? { background: '#171717', color: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }
+                      : { background: 'rgba(0,0,0,0.05)', color: '#525252', border: '1px solid rgba(0,0,0,0.07)' }
+                    }
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Marquee rows — filtered by category */}
+              {(() => {
+                const filtered = activeCatFilter === 'all'
+                  ? VISUAL_TEMPLATES
+                  : VISUAL_TEMPLATES.filter(t => t.category === activeCatFilter);
+                const mid = Math.ceil(filtered.length / 2);
+                const row1 = filtered.slice(0, mid);
+                const row2 = filtered.slice(mid);
+                return (
+                  <div className="flex flex-col gap-2.5">
+                    {row1.length > 0 && (
+                      <MarqueeRow
+                        templates={row1}
+                        direction="left"
+                        activeId={activeVisualId}
+                        onSelect={handleTemplateSelect}
+                      />
+                    )}
+                    {row2.length > 0 && (
+                      <MarqueeRow
+                        templates={row2}
+                        direction="right"
+                        activeId={activeVisualId}
+                        onSelect={handleTemplateSelect}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
+            </section>
+
+            {/* ── Gallery: only real persisted images ── */}
+            <section className="mt-8 sm:mt-10">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-[14px] font-bold tracking-[-0.02em] text-neutral-800 sm:text-[15px]">
+                  My Gallery
+                  {completedImages.length > 0 && (
+                    <span className="ml-2 text-[11px] font-medium text-neutral-400">({completedImages.length} images)</span>
+                  )}
+                </h3>
+                {completedImages.length > 0 && (
+                  <button
+                    onClick={() => { if (confirm('Clear all generated images?')) { setGeneratedImages([]); persistImages([]); } }}
+                    className="text-[10px] text-neutral-400 transition hover:text-neutral-700"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {generatedImages.length === 0 ? (
+                <div className="flex min-h-[150px] items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/70">
+                  <div className="text-center">
+                    <ImageIcon size={22} className="mx-auto text-neutral-300" />
+                    <p className="mt-2 text-[12px] font-medium text-neutral-500">Your generated images appear here</p>
+                    <p className="mt-1 text-[11px] text-neutral-400">All images from every session are preserved</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {generatedImages.map((img, idx) => (
+                    <div
+                      key={img.id}
+                      className="group relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 cursor-pointer"
+                      style={{
+                        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px) scale(1.015)';
+                        (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(0,0,0,0.14)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.transform = '';
+                        (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                      }}
+                      onClick={() => img.url && !img.loading && setLightboxImg(img)}
+                    >
+                      {img.loading || !img.url ? (
+                        <div className="flex h-full flex-col items-center justify-center gap-2 text-neutral-400">
+                          <Loader2 size={19} className="animate-spin text-amber-400" />
+                          <span className="text-[10px]">Generating…</span>
+                        </div>
+                      ) : (
+                        <>
+                          <img src={img.url} alt="Generated image" className="h-full w-full object-cover" />
+                          {/* Hover overlay */}
+                          <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/80 via-transparent to-black/10 p-2.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                onClick={e => { e.stopPropagation(); handleDownload(img.url, `image-${idx + 1}`); }}
+                                aria-label="Download image"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/80"
+                              >
+                                <Download size={12} />
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setLightboxImg(img); }}
+                                aria-label="View full size"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/80"
+                              >
+                                <ZoomIn size={12} />
+                              </button>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  const updated = generatedImages.map(x => x.id === img.id ? { ...x, liked: !x.liked } : x);
+                                  setGeneratedImages(updated);
+                                  persistImages(updated);
+                                }}
+                                className="rounded-full px-2.5 py-1 text-[10px] font-semibold transition"
+                                style={{
+                                  background: img.liked ? 'rgba(239,68,68,0.85)' : 'rgba(255,255,255,0.85)',
+                                  color: img.liked ? 'white' : '#374151',
+                                }}
+                              >
+                                {img.liked ? '♥ Liked' : '♡ Like'}
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); openEdit(img); }}
+                                className="rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-semibold text-neutral-700 transition hover:bg-white"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+
+        {/* ── Fixed bottom bar ── */}
+        <div className="flex-shrink-0 border-t border-neutral-100 bg-white/98 px-4 py-3 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur sm:px-8">
+          <div className="mx-auto w-full max-w-[640px]">
+            {/* Composer */}
+            <div className="w-full rounded-[20px] border border-neutral-200 bg-white/95 p-3 shadow-[0_8px_30px_rgba(0,0,0,0.05)] sm:p-4">
+              {(uploadedImage || activeTemplate) && (
+                <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  {uploadedImage && (
+                    <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-2 py-1 text-[10px] text-neutral-600">
+                      <img src={uploadedImage.preview} alt="" className="h-4 w-4 rounded object-cover" />
+                      <span className="max-w-[140px] truncate">{uploadedImage.name}</span>
+                      <button onClick={() => setUploadedImage(null)} aria-label="Remove"><X size={11} /></button>
+                    </div>
+                  )}
+                  {activeTemplate && (
+                    <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium text-amber-700">
+                      {activeTemplate.name}
+                      <button onClick={() => { setActiveTemplate(null); setActiveVisualId(undefined); }} aria-label="Remove active template"><X size={11} /></button>
+                    </div>
+                  )}
+                </div>
+              )}
+              <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                rows={2}
+                onChange={e => setPrompt(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
+                placeholder="Create a cozy anime café on a rainy evening"
+                className="min-h-[52px] w-full resize-none bg-transparent px-0.5 py-0.5 text-[13px] leading-5 text-neutral-800 outline-none placeholder:text-neutral-400 sm:min-h-[58px] sm:text-sm"
+              />
+              <div className="flex items-center justify-between border-t border-neutral-100 pt-2">
+                <div className="flex items-center gap-1 text-neutral-400">
+                  <button onClick={() => uploadRef.current?.click()} aria-label="Upload reference image"
+                    className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-neutral-100 hover:text-neutral-700">
+                    <Plus size={17} />
+                  </button>
+                  <button onClick={() => uploadRef.current?.click()} aria-label="Add image"
+                    className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-neutral-100 hover:text-neutral-700">
+                    <ImageIcon size={15} />
+                  </button>
+                  <div className="mx-1 h-4 w-px bg-neutral-200" />
+                  <div className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium text-neutral-500">
+                    <span className="h-2 w-2 rounded-sm border border-neutral-400" /> 1:1
+                  </div>
+                  <div className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium text-neutral-500">
+                    <ImageIcon size={12} /> {imageCount}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button aria-label="Voice input" className="hidden text-neutral-400 transition hover:text-neutral-700 sm:block"><Mic size={15} /></button>
+                  <div className="flex items-center gap-1 rounded-full bg-neutral-50 px-2 py-1 text-[10px] font-medium text-neutral-500">
+                    Auto <ChevronRight size={11} className="rotate-90" />
+                  </div>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!prompt.trim() || isGenerating}
+                    aria-label="Generate image"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm transition hover:bg-neutral-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+                  >
+                    {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <ArrowUp size={15} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Quick-action cards: bigger curves, no icon bg, colored icons ── */}
+            <div className="mt-3 grid w-full grid-cols-2 gap-2.5 sm:gap-3">
+              <button
+                onClick={() => completedImages[0] ? openEdit(completedImages[0]) : uploadRef.current?.click()}
+                className="group flex items-center gap-3 border border-neutral-200 bg-white/90 px-3 py-2.5 text-left shadow-[0_3px_14px_rgba(0,0,0,0.025)] transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md sm:px-4"
+                style={{ borderRadius: 20 }}
+              >
+                <Wand2 size={20} className="shrink-0 transition group-hover:scale-110" style={{ color: '#38bdf8' }} />
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-semibold text-neutral-800 sm:text-[13px]">Editor</span>
+                  <span className="mt-0.5 block truncate text-[10px] text-neutral-400 sm:text-[11px]">Transform a photo</span>
+                </span>
+              </button>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="group flex items-center gap-3 border border-neutral-200 bg-white/90 px-3 py-2.5 text-left shadow-[0_3px_14px_rgba(0,0,0,0.025)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md sm:px-4"
+                style={{ borderRadius: 20 }}
+              >
+                <SlidersHorizontal size={20} className="shrink-0 transition group-hover:scale-110" style={{ color: '#a78bfa' }} />
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-semibold text-neutral-800 sm:text-[13px]">Templates</span>
+                  <span className="mt-0.5 block truncate text-[10px] text-neutral-400 sm:text-[11px]">Styles for every occasion</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
