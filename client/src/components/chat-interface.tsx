@@ -930,7 +930,7 @@ const STUDIO_VISUAL_TEMPLATES = [
   { id: 'vintage-film',        category: 'Portraits',   name: 'Classic Vintage Film Portrait',   thumb: '/templates/thumb-26.jpg', prompt: 'Vertical 9:16 vintage style portrait photo, a timeless portrait of an individual captured with 35mm analog film grain, soft muted color tones, nostalgic warm lighting, classic 1970s aesthetic, authentic texture.' },
   { id: 'urban-street-style',  category: 'Portraits',   name: 'Urban Street Style Portrait',     thumb: '/templates/thumb-27.jpg', prompt: 'Vertical 9:16 street style portrait photo, a cool young adult posing against a raw concrete urban wall, wearing modern streetwear jacket and accessories, overcast natural daylight, sharp focus, fashion lookbook style.' },
   { id: 'elven-fantasy',       category: 'Portraits',   name: 'Ethereal Fantasy Elven Portrait', thumb: '/templates/thumb-28.jpg', prompt: 'Vertical 9:16 fantasy portrait photo, an ethereal mystical elf with delicate pointed ears and subtle glowing silver facial markings, wearing an ornate silver circlet, magical forest background with floating dust motes.' },
-  { id: 'business-woman',      category: 'Portraits',   name: 'Confident Business Woman',        thumb: '/templates/thumb-29.jpg', prompt: 'Vertical 9:16 executive portrait photo, a powerful and confident business woman in a sharp charcoal blazer, standing against a modern glass high-rise corporate backdrop, natural soft daylight, professional editorial look.' },
+  { id: 'business-woman',      category: 'Portraits',   name: 'Confident Business Woman Portrait',thumb: '/templates/thumb-29.jpg', prompt: 'Vertical 9:16 executive portrait photo, a powerful and confident business woman in a sharp charcoal blazer, standing against a modern glass high-rise corporate backdrop, natural soft daylight, professional editorial look.' },
   /* ── FANTASY (10) — thumb-30 to thumb-39 ── */
   { id: 'floating-islands',    category: 'Fantasy',     name: 'Floating Islands Fantasy',        thumb: '/templates/thumb-30.jpg', prompt: 'Vertical 9:16 digital art fantasy landscape, majestic floating islands with cascading waterfalls pouring into the clouds below, ancient stone ruins covered in glowing moss, magical glowing airships flying past, 8k.' },
   { id: 'cyberpunk-city',      category: 'Fantasy',     name: 'Cyberpunk Neon Cityscape',        thumb: '/templates/thumb-31.jpg', prompt: 'Vertical 9:16 cyberpunk concept art, a towering futuristic metropolis at night filled with massive holographic advertisements, flying vehicles streaming between glowing skyscrapers, neon lights reflecting on wet streets, highly detailed.' },
@@ -985,7 +985,7 @@ const STUDIO_VISUAL_TEMPLATES = [
   { id: 'coffee-mug-scene',    category: 'Products',    name: 'Lifestyle Coffee Mug Scene',      thumb: '/templates/thumb-76.jpg', prompt: 'Vertical 9:16 product photo, a dark ceramic coffee mug with creamy latte art sitting on a warm wooden cafe table near a sunlit window with potted green plants in blurry background, warm cozy morning atmosphere.' },
   { id: 'food-hero-shot',      category: 'Products',    name: 'Aromatic Food Hero Shot',         thumb: '/templates/thumb-77.jpg', prompt: 'Vertical 9:16 food photography, a traditional brass bowl filled with steaming hot spiced chicken biryani garnished with mint leaves, surrounding copper bowls of raita and fresh salad, warm rustic lighting, high-end culinary photography.' },
   { id: 'tech-device-hero',    category: 'Products',    name: 'Tech Device Hero Shot',           thumb: '/templates/thumb-78.jpg', prompt: 'Vertical 9:16 product photo, a matte black premium smartphone resting vertically on a dark textured pedestal, dramatic edge studio rim lighting highlighting sleek metallic edges and camera lenses, dark minimalist aesthetic, 8k resolution.' },
-  { id: 'breakfast-flatlay',   category: 'Products',    name: 'Overhead Breakfast Bowl Flat Lay',thumb: '/templates/thumb-70.jpg', prompt: 'Vertical 9:16 top-down flat lay food photo, a colorful acai smoothie bowl topped with sliced strawberries, blueberries, kiwi, and granola, sitting next to a cup of coffee and honey dipper on a white wooden table, bright appetizing daylight.' },
+  { id: 'breakfast-flatlay',   category: 'Products',    name: 'Overhead Breakfast Bowl Flat Lay',thumb: '/templates/thumb-76.jpg', prompt: 'Vertical 9:16 top-down flat lay food photo, a colorful acai smoothie bowl topped with sliced strawberries, blueberries, kiwi, and granola, sitting next to a cup of coffee and honey dipper on a white wooden table, bright appetizing daylight.' },
 ]
 const STUDIO_ROW1 = STUDIO_VISUAL_TEMPLATES.slice(0, 40);
 const STUDIO_ROW2 = STUDIO_VISUAL_TEMPLATES.slice(40);
@@ -7320,70 +7320,143 @@ Let's start the self-listen session!`;
         />
 
 
-        {/* ── Browse All Templates Modal ──────────────────────────────────── */}
-        {showAllTemplates && (
-          <div
-            className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-0 sm:p-4"
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
-            onClick={(e) => { if (e.target === e.currentTarget) setShowAllTemplates(false); }}
-          >
-            <div className="relative w-full max-w-5xl bg-zinc-950 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col" style={{ maxHeight: '90vh' }}>
+        {/* ── Browse All Templates — FULLSCREEN ───────────────────────────── */}
+        {showAllTemplates && (() => {
+          const GALLERY_CATS: { id: string; label: string; emoji: string; accent: string; bg: string }[] = [
+            { id: 'Spaces',      label: 'Spaces',      emoji: '🏠', accent: '#70a8e8', bg: 'linear-gradient(155deg,#0d1a2e,#1a3050,#2a5080,#3a70aa)' },
+            { id: 'Nature',      label: 'Nature',      emoji: '🌄', accent: '#58c870', bg: 'linear-gradient(155deg,#071408,#0f3016,#1a5828,#2e8840)' },
+            { id: 'Portraits',   label: 'Portraits',   emoji: '🖼️', accent: '#f0a855', bg: 'linear-gradient(155deg,#2a1506,#5c300f,#8f5220,#c47c3a)' },
+            { id: 'Fantasy',     label: 'Fantasy',     emoji: '🐉', accent: '#b06af0', bg: 'linear-gradient(155deg,#12062e,#2e1060,#5a2090,#8840c8)' },
+            { id: 'Fashion',     label: 'Fashion',     emoji: '👗', accent: '#cccccc', bg: 'linear-gradient(155deg,#080808,#1e1e1e,#3a3a3a,#666)' },
+            { id: 'Traditional', label: 'Traditional', emoji: '🕌', accent: '#f0a030', bg: 'linear-gradient(155deg,#2e0800,#6e1c00,#aa3800,#d46020)' },
+            { id: 'Travel',      label: 'Travel',      emoji: '✈️', accent: '#60a0f8', bg: 'linear-gradient(155deg,#050e2e,#0c2464,#1840a8,#3068d8)' },
+            { id: 'Products',    label: 'Products',    emoji: '📦', accent: '#8888e8', bg: 'linear-gradient(155deg,#080818,#181830,#2c2c58,#4848a0)' },
+          ];
+          const activeCat = imagineTemplateCategory;
+          const setActiveCat = setImagineTemplateCategory;
+          const filteredTpls = activeCat === 'All' ? STUDIO_VISUAL_TEMPLATES : STUDIO_VISUAL_TEMPLATES.filter(t => t.category === activeCat);
+
+          return (
+            <div className="fixed inset-0 z-[999] flex flex-col" style={{ background: '#07070e', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
               {/* Header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-white/10 flex-shrink-0">
-                <div>
-                  <h3 className="text-lg font-bold text-white">All Templates</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">{STUDIO_VISUAL_TEMPLATES.length} styles — click any to generate</p>
+              <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                <button onClick={() => setShowAllTemplates(false)} className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                  <ChevronLeft className="w-4 h-4" /> Back to Studio
+                </button>
+                <div className="flex-1 text-center">
+                  <span className="text-white/90 font-bold text-base tracking-tight">All Templates</span>
+                  <span className="ml-2 text-zinc-500 text-sm">{filteredTpls.length} styles</span>
                 </div>
-                <button onClick={() => setShowAllTemplates(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
+                <button onClick={() => setShowAllTemplates(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              {/* Category filter pills */}
-              <div className="flex gap-2 overflow-x-auto px-6 py-3 flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
-                {['All', ...Array.from(new Set(STUDIO_VISUAL_TEMPLATES.map(t => t.category)))].map(cat => (
+
+              {/* Body: sidebar + grid */}
+              <div className="flex flex-1 min-h-0 overflow-hidden">
+                {/* Left sidebar */}
+                <div className="flex-shrink-0 w-[190px] overflow-y-auto py-4 px-3 flex flex-col gap-1" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
                   <button
-                    key={cat}
-                    onClick={() => setImagineTemplateCategory(cat)}
-                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
-                    style={imagineTemplateCategory === cat
-                      ? { background: '#7c3aed', color: 'white' }
-                      : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.1)' }
-                    }
-                  >{cat}</button>
-                ))}
-              </div>
-              {/* Grid */}
-              <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarWidth: 'thin' }}>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {STUDIO_VISUAL_TEMPLATES
-                    .filter(t => imagineTemplateCategory === 'All' || t.category === imagineTemplateCategory)
-                    .map(t => (
+                    onClick={() => setActiveCat('All')}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+                    style={activeCat === 'All'
+                      ? { background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }
+                      : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }}
+                  >
+                    <span style={{ fontSize: 16 }}>✦</span>
+                    <span>All</span>
+                    <span className="ml-auto text-[10px] font-normal opacity-50">{STUDIO_VISUAL_TEMPLATES.length}</span>
+                  </button>
+                  {GALLERY_CATS.map(cat => {
+                    const count = STUDIO_VISUAL_TEMPLATES.filter(t => t.category === cat.id).length;
+                    const isActive = activeCat === cat.id;
+                    return (
                       <button
-                        key={t.id}
-                        onClick={() => {
-                          setShowAllTemplates(false);
-                          setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt });
-                          setTemplateUploadPhoto(null);
-                        }}
-                        className="group relative overflow-hidden rounded-2xl text-left"
-                        style={{ aspectRatio: '3/4', border: '1.5px solid rgba(255,255,255,0.08)', background: '#1c1c1e' }}
+                        key={cat.id}
+                        onClick={() => setActiveCat(cat.id)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+                        style={isActive
+                          ? { background: `${cat.accent}18`, color: cat.accent, border: `1px solid ${cat.accent}35` }
+                          : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }}
                       >
-                        <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 55%)' }} />
-                        <div className="absolute inset-x-0 bottom-0 p-2">
-                          <span className="block text-[10px] font-semibold text-white leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
-                          <span className="block text-[9px] text-white/50 mt-0.5">{t.category}</span>
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200" style={{ background: 'rgba(124,58,237,0.25)' }}>
-                          <span className="text-[11px] font-bold text-white bg-violet-600 px-2.5 py-1 rounded-full">✦ Use</span>
-                        </div>
+                        <span style={{ fontSize: 15 }}>{cat.emoji}</span>
+                        <span>{cat.label}</span>
+                        <span className="ml-auto text-[10px] font-normal opacity-50">{count}</span>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+
+                {/* Main grid */}
+                <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: 'none' }}>
+                  {activeCat === 'All' ? (
+                    <div className="flex flex-col gap-10">
+                      {GALLERY_CATS.map(cat => {
+                        const catTpls = STUDIO_VISUAL_TEMPLATES.filter(t => t.category === cat.id);
+                        return (
+                          <div key={cat.id}>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span style={{ fontSize: 18 }}>{cat.emoji}</span>
+                              <h3 className="font-bold text-white text-base tracking-tight">{cat.label}</h3>
+                              <div className="h-px flex-1 ml-2" style={{ background: `linear-gradient(to right,${cat.accent}40,transparent)` }} />
+                              <span className="text-[11px] font-medium" style={{ color: `${cat.accent}80` }}>{catTpls.length} templates</span>
+                            </div>
+                            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))' }}>
+                              {catTpls.map(t => (
+                                <button
+                                  key={t.id}
+                                  onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
+                                  className="group relative overflow-hidden text-left"
+                                  style={{ aspectRatio: '9/12', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.08)', background: cat.bg, boxShadow: '0 4px 14px rgba(0,0,0,0.35)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.55)'; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(0,0,0,0.35)'; }}
+                                >
+                                  <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 1, transition: 'opacity 0.3s ease' }} loading="lazy" />
+                                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.06) 50%,transparent 100%)' }} />
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}>
+                                    <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)' }}>✦ Use this style</div>
+                                  </div>
+                                  <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 group-hover:opacity-0 transition-opacity duration-200">
+                                    <span className="block text-[10px] font-semibold leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))' }}>
+                      {filteredTpls.map(t => {
+                        const catMeta = GALLERY_CATS.find(c => c.id === t.category);
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
+                            className="group relative overflow-hidden text-left"
+                            style={{ aspectRatio: '9/12', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.08)', background: catMeta?.bg ?? '#1c1c1e', boxShadow: '0 4px 14px rgba(0,0,0,0.35)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.55)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(0,0,0,0.35)'; }}
+                          >
+                            <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.06) 50%,transparent 100%)' }} />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}>
+                              <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)' }}>✦ Use this style</div>
+                            </div>
+                            <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 group-hover:opacity-0 transition-opacity duration-200">
+                              <span className="block text-[10px] font-semibold leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Imagine Gallery Modal ───────────────────────────────────────── */}
         {imagineGalleryOpen && (
