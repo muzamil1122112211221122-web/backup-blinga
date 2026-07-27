@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
-import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic, Plus, Image as ImageIcon, SlidersHorizontal, ZoomIn } from "lucide-react";
+import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic, Plus, Image as ImageIcon, SlidersHorizontal, ZoomIn, LayoutGrid } from "lucide-react";
 import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
 import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
 import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
@@ -314,6 +314,191 @@ function persistImages(imgs: GenImage[]) {
   } catch {}
 }
 
+/* ── Fullscreen Template Gallery Overlay ── */
+function TemplateGalleryOverlay({
+  onClose,
+  onSelect,
+  activeId,
+}: {
+  onClose: () => void;
+  onSelect: (t: typeof VISUAL_TEMPLATES[0]) => void;
+  activeId: string | undefined;
+}) {
+  const [activeCat, setActiveCat] = useState('all');
+  const cats = TEMPLATE_CATEGORIES.filter(c => c.id !== 'all');
+  const filtered = activeCat === 'all' ? VISUAL_TEMPLATES : VISUAL_TEMPLATES.filter(t => t.category === activeCat);
+
+  return (
+    <div
+      className="fixed inset-0 z-[55] flex flex-col"
+      style={{ background: '#07070e', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}
+    >
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+        >
+          <ChevronLeft size={16} /> Back to Studio
+        </button>
+        <div className="flex-1 text-center">
+          <span className="text-white/90 font-bold text-base tracking-tight">All Templates</span>
+          <span className="ml-2 text-zinc-500 text-sm">{filtered.length} styles</span>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Body: sidebar + grid */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Left sidebar — categories */}
+        <div className="flex-shrink-0 w-[180px] overflow-y-auto py-4 px-3 flex flex-col gap-1" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setActiveCat('all')}
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+            style={activeCat === 'all'
+              ? { background: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.12)' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }
+            }
+          >
+            <span style={{ fontSize: 16 }}>✦</span>
+            <span>All</span>
+            <span className="ml-auto text-[10px] font-normal opacity-50">{VISUAL_TEMPLATES.length}</span>
+          </button>
+          {cats.map(cat => {
+            const count = VISUAL_TEMPLATES.filter(t => t.category === cat.id).length;
+            const isActive = activeCat === cat.id;
+            const accentColor = CAT_STYLE[cat.id]?.accent ?? '#aaa';
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCat(cat.id)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+                style={isActive
+                  ? { background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}35` }
+                  : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }
+                }
+              >
+                <span style={{ fontSize: 15 }}>{cat.emoji}</span>
+                <span>{cat.label}</span>
+                <span className="ml-auto text-[10px] font-normal opacity-50">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main grid */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7" style={{ scrollbarWidth: 'none' }}>
+          {activeCat === 'all' ? (
+            /* All view: category sections with grid */
+            <div className="flex flex-col gap-10">
+              {cats.map(cat => {
+                const catTpls = VISUAL_TEMPLATES.filter(t => t.category === cat.id);
+                const accentColor = CAT_STYLE[cat.id]?.accent ?? '#aaa';
+                return (
+                  <div key={cat.id}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span style={{ fontSize: 18 }}>{cat.emoji}</span>
+                      <h3 className="font-bold text-white text-base tracking-tight">{cat.label}</h3>
+                      <div className="h-px flex-1 ml-2" style={{ background: `linear-gradient(to right, ${accentColor}30, transparent)` }} />
+                      <span className="text-[11px] font-medium" style={{ color: `${accentColor}80` }}>{catTpls.length} templates</span>
+                    </div>
+                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
+                      {catTpls.map(t => (
+                        <GalleryCard key={t.id} t={t} isActive={activeId === t.id} onClick={() => onSelect(t)} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Single category grid */
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+              {filtered.map(t => (
+                <GalleryCard key={t.id} t={t} isActive={activeId === t.id} onClick={() => onSelect(t)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Gallery Card (used inside fullscreen gallery) ── */
+function GalleryCard({
+  t,
+  isActive,
+  onClick,
+}: {
+  t: typeof VISUAL_TEMPLATES[0];
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const catStyle = CAT_STYLE[t.category] ?? CAT_STYLE['nature'];
+  return (
+    <button
+      onClick={onClick}
+      className="group relative w-full overflow-hidden text-left"
+      style={{
+        aspectRatio: '9 / 12',
+        borderRadius: 14,
+        border: isActive ? '2px solid #f3b94b' : '1.5px solid rgba(255,255,255,0.08)',
+        boxShadow: isActive
+          ? '0 0 0 3px rgba(243,185,75,0.2), 0 8px 24px rgba(0,0,0,0.5)'
+          : '0 4px 14px rgba(0,0,0,0.35)',
+        background: catStyle.bg,
+        transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.03)';
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.55)';
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.transform = '';
+        (e.currentTarget as HTMLElement).style.boxShadow = isActive
+          ? '0 0 0 3px rgba(243,185,75,0.2), 0 8px 24px rgba(0,0,0,0.5)'
+          : '0 4px 14px rgba(0,0,0,0.35)';
+      }}
+    >
+      {t.thumb && (
+        <img
+          src={t.thumb}
+          alt={t.name}
+          onLoad={() => setImgLoaded(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+          loading="lazy"
+        />
+      )}
+      {/* gradient overlay */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.06) 50%, transparent 100%)' }} />
+      {/* hover CTA */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}>
+        <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white"
+          style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)' }}>
+          ✦ Use this style
+        </div>
+      </div>
+      {/* name at bottom */}
+      <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 group-hover:opacity-0 transition-opacity duration-200">
+        <span className="block text-[10px] font-semibold leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
+      </div>
+      {/* active check */}
+      {isActive && (
+        <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white shadow">✓</span>
+      )}
+    </button>
+  );
+}
+
 /* ── Template Card — real thumbnail image background ── */
 function TemplateCard({
   t,
@@ -442,7 +627,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [isGenerating, setIsGenerating]       = useState(false);
   const [activeTemplate, setActiveTemplate]   = useState<typeof TEMPLATES[0] | null>(null);
   const [activeVisualId, setActiveVisualId]   = useState<string | undefined>(undefined);
-  const [activeCatFilter, setActiveCatFilter] = useState('all');
+  const [activeCatFilter, setActiveCatFilter] = useState('spaces');
   const [imageCount, setImageCount]           = useState(1);
   const shuffledAnime = useMemo(() => shuffleArray(ANIME_BOY_IMAGES), []);
   const [editTarget, setEditTarget]           = useState<GenImage | null>(null);
@@ -452,6 +637,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
   const [editHistory, setEditHistory]         = useState<string[]>([]);
   const [isEditGenerating, setIsEditGenerating] = useState(false);
   const [lightboxImg, setLightboxImg]         = useState<GenImage | null>(null);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
 
   const textareaRef     = useRef<HTMLTextAreaElement>(null);
   const uploadRef       = useRef<HTMLInputElement>(null);
@@ -530,6 +716,11 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
 
     await Promise.allSettled(promises);
     setIsGenerating(false);
+  }
+
+  function handleTemplateSelectFromGallery(t: typeof VISUAL_TEMPLATES[0]) {
+    setShowTemplateGallery(false);
+    handleTemplateSelect(t);
   }
 
   function handleTemplateSelect(t: typeof VISUAL_TEMPLATES[0]) {
@@ -760,6 +951,15 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
         }
       `}</style>
 
+      {/* ── Fullscreen Template Gallery ── */}
+      {showTemplateGallery && (
+        <TemplateGalleryOverlay
+          onClose={() => setShowTemplateGallery(false)}
+          onSelect={handleTemplateSelectFromGallery}
+          activeId={activeVisualId}
+        />
+      )}
+
       <div className="fixed inset-0 z-50 flex flex-col"
         style={{ background: '#fff', color: '#171717', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
 
@@ -810,7 +1010,17 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
 
               {/* Category filter pills */}
               <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {TEMPLATE_CATEGORIES.map(cat => (
+                {/* Browse All button */}
+                <button
+                  onClick={() => setShowTemplateGallery(true)}
+                  className="shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200"
+                  style={{ background: 'linear-gradient(135deg,#18181b,#3f3f46)', color: '#ffffff', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }}
+                >
+                  <LayoutGrid size={11} />
+                  <span>All</span>
+                </button>
+                {/* Individual category tabs (skip 'all') */}
+                {TEMPLATE_CATEGORIES.filter(c => c.id !== 'all').map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCatFilter(cat.id)}
@@ -826,47 +1036,22 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 ))}
               </div>
 
-              {/* Templates display */}
-              {activeCatFilter === 'all' ? (
-                /* ALL: one labeled marquee row per category so all 80 are browsable */
-                <div className="flex flex-col gap-5">
-                  {TEMPLATE_CATEGORIES.filter(c => c.id !== 'all').map((cat, i) => {
-                    const catTemplates = VISUAL_TEMPLATES.filter(t => t.category === cat.id);
-                    return (
-                      <div key={cat.id}>
-                        <div className="flex items-center gap-1.5 mb-2 px-0.5">
-                          <span className="text-sm leading-none">{cat.emoji}</span>
-                          <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">{cat.label}</span>
-                          <button
-                            onClick={() => setActiveCatFilter(cat.id)}
-                            className="ml-auto text-[10px] font-medium text-neutral-400 hover:text-neutral-700 transition-colors"
-                          >
-                            See all →
-                          </button>
-                        </div>
-                        <MarqueeRow
-                          templates={catTemplates}
-                          direction={i % 2 === 0 ? 'left' : 'right'}
-                          activeId={activeVisualId}
-                          onSelect={handleTemplateSelect}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* SPECIFIC CATEGORY: 2 marquee rows */
-                (() => {
-                  const filtered = VISUAL_TEMPLATES.filter(t => t.category === activeCatFilter);
-                  const mid = Math.ceil(filtered.length / 2);
-                  return (
-                    <div className="flex flex-col gap-2.5">
-                      <MarqueeRow templates={filtered.slice(0, mid)} direction="left"  activeId={activeVisualId} onSelect={handleTemplateSelect} />
-                      <MarqueeRow templates={filtered.slice(mid)}    direction="right" activeId={activeVisualId} onSelect={handleTemplateSelect} />
-                    </div>
-                  );
-                })()
-              )}
+              {/* Templates display — marquee for selected category */}
+              {(() => {
+                const cat = activeCatFilter === 'all'
+                  ? TEMPLATE_CATEGORIES.find(c => c.id === 'spaces')! // default to spaces if somehow 'all' is active
+                  : TEMPLATE_CATEGORIES.find(c => c.id === activeCatFilter);
+                const filtered = activeCatFilter === 'all'
+                  ? VISUAL_TEMPLATES.filter(t => t.category === 'spaces')
+                  : VISUAL_TEMPLATES.filter(t => t.category === activeCatFilter);
+                const mid = Math.ceil(filtered.length / 2);
+                return (
+                  <div className="flex flex-col gap-2.5">
+                    <MarqueeRow templates={filtered.slice(0, mid)} direction="left"  activeId={activeVisualId} onSelect={handleTemplateSelect} />
+                    <MarqueeRow templates={filtered.slice(mid)}    direction="right" activeId={activeVisualId} onSelect={handleTemplateSelect} />
+                  </div>
+                );
+              })()}
             </section>
 
             {/* ── Gallery: only real persisted images ── */}
