@@ -898,43 +898,97 @@ const IMAGINE_EDIT_TEMPLATES = [
 
 /* ── 34 visual style templates for 3D marquee rows (Unsplash) ── */
 const STUDIO_VISUAL_TEMPLATES = [
-  { id: 'monsoon',       name: 'Monsoon Mood',        thumb: US('1534438327276-14e5300c3a48'), prompt: 'cozy rainy day scene, steaming hot coffee cup on wooden windowsill, rain drops on glass window, warm candlelight glow, moody cinematic photography' },
-  { id: 'portrait',     name: 'Realistic Portrait',   thumb: US('1531746020798-e6953c6e8e04'), prompt: 'ultra-realistic portrait photography, professional studio lighting, 8K resolution, sharp focus, photorealistic skin texture' },
-  { id: 'pro-headshot', name: 'Pro Headshot',          thumb: US('1560250097-0b93528c311a'), prompt: 'professional business headshot, neutral background, confident expression, sharp focus, high quality corporate portrait photography' },
-  { id: 'anime',        name: 'Anime Style',           thumb: US('1607604276583-eef5d076aa5f'), prompt: 'anime art style, cel animation, Studio Ghibli inspired, vibrant colors, detailed background art' },
-  { id: 'ghibli',       name: 'Ghibli Style',          thumb: US('1518020382113-a7e8fc38eac9'), prompt: 'Studio Ghibli art style, soft warm colors, magical atmosphere, detailed painterly backgrounds, Miyazaki aesthetic' },
-  { id: 'cinematic',    name: 'Cinematic',             thumb: US('1478720568477-152d9b164e26'), prompt: 'cinematic wide shot, anamorphic lens flare, dramatic film lighting, Hollywood movie quality, color graded' },
-  { id: '3d',           name: '3D Render',             thumb: US('1633356122544-f134324a6cee'), prompt: '3D CGI rendered artwork, photorealistic 3D model, Blender Cycles render, ray tracing global illumination, studio HDRI lighting' },
-  { id: 'cyberpunk',    name: 'Cyberpunk',             thumb: US('1515630278258-407f994537ee'), prompt: 'cyberpunk aesthetic, neon lights reflecting on rain-slicked streets, futuristic mega-city, electric blues and magentas' },
-  { id: 'fantasy',      name: 'Fantasy Art',           thumb: US('1518709268805-4e9042af9f05'), prompt: 'epic fantasy illustration, dramatic magical lighting, detailed intricate elements, painterly digital art masterpiece' },
-  { id: 'dark-fantasy', name: 'Dark Fantasy',          thumb: US('1519074069444-1ba4fff66d16'), prompt: 'dark fantasy art, dramatic magical atmosphere, intricate mystical details, epic dramatic lighting, dragons, castles' },
-  { id: 'nature',       name: 'Nature Photo',          thumb: US('1506905925346-21bda4d32df4'), prompt: 'nature photography, golden hour lighting, ultra-sharp details, National Geographic quality, breathtaking landscape' },
-  { id: 'travel',       name: 'Travel',                thumb: US('1476514525535-07fb3b4ae5f1'), prompt: 'travel photography, iconic landmark, deep blue sky, vibrant saturated colors, editorial quality, wanderlust' },
-  { id: 'fashion',      name: 'Fashion Editorial',     thumb: US('1515886657613-9f3515b0c78f'), prompt: 'high fashion editorial photography, Vogue quality, dramatic studio lighting, haute couture aesthetic, runway style' },
-  { id: 'wedding',      name: 'Wedding',               thumb: US('1519741497674-611481863552'), prompt: 'romantic wedding photography, golden hour backlight, soft bokeh, emotional intimate moments, elegant timeless composition' },
-  { id: 'interior',     name: 'Interior Design',       thumb: US('1586023492125-27b2c045efd7'), prompt: 'interior design visualization, cozy atmosphere, natural lighting, modern aesthetic, Architectural Digest quality' },
-  { id: 'architecture', name: 'Architecture',          thumb: US('1487958449943-2429e8be8625'), prompt: 'architectural visualization, modern contemporary design, photorealistic render, natural lighting, detailed structural materials' },
-  { id: 'food',         name: 'Food Photo',            thumb: US('1476224203421-9ac39bcb3327'), prompt: 'professional food photography, appetizing golden lighting, macro lens bokeh, restaurant quality plating, culinary art' },
-  { id: 'product',      name: 'Product Photo',         thumb: US('1523275335684-37898b6baf30'), prompt: 'professional product photography, clean studio background, dramatic lighting, commercial quality, sharp macro details' },
-  { id: 'street',       name: 'Street Photo',          thumb: US('1477959858617-67f85cf4f1df'), prompt: 'urban street photography, documentary candid style, natural available light, city life, photojournalistic quality' },
-  { id: 'oil',          name: 'Oil Painting',          thumb: US('1578321272176-b7bbc0679853'), prompt: 'classical oil painting, impressionist brushwork, rich warm colors, textured canvas, old master technique, museum quality' },
-  { id: 'watercolor',   name: 'Watercolor',            thumb: US('1579783902614-a3fb3927b6a5'), prompt: 'delicate watercolor painting, soft transparent washes, wet-on-wet technique, artistic brushstrokes, gentle color gradients' },
-  { id: 'impressionist',name: 'Impressionist',         thumb: US('1592621385612-4d7129426394'), prompt: 'impressionist painting style, loose expressive brushstrokes, dappled light, Monet technique, water lilies' },
-  { id: 'sketch',       name: 'Pencil Sketch',         thumb: US('1541961017774-22349e4a1262'), prompt: 'detailed pencil sketch, fine crosshatching, artistic line drawing, graphite shading, hand-drawn quality, sketchbook style' },
-  { id: 'pixel',        name: 'Pixel Art',             thumb: US('1550745165-9bc0b252726f'), prompt: 'pixel art style, 8-bit retro game art, pixelated aesthetic, vibrant flat colors, NES SNES era video game art style' },
-  { id: 'vintage',      name: 'Vintage Film',          thumb: US('1516466723902-9b53e71d8f3e'), prompt: 'vintage film photography, grain texture, warm sepia and amber tones, analog camera look, nostalgic retro mood' },
-  { id: 'neon',         name: 'Neon Art',              thumb: US('1563089145-4e46e3f6f0e2'), prompt: 'neon art aesthetic, glowing electric neon signs, dark dramatic background, vivid electric colors, futuristic luminous glow' },
-  { id: 'abstract',     name: 'Abstract',              thumb: US('1541701494-b6c18b2b97c1'), prompt: 'abstract digital art, vibrant flowing colors, geometric organic patterns, creative composition, modern contemporary art' },
-  { id: 'surreal',      name: 'Surrealist',            thumb: US('1518020382113-a7e8fc38eac9'), prompt: 'surrealist art style, dreamlike impossible scenario, Salvador Dali inspired, otherworldly, melting clocks' },
-  { id: 'steampunk',    name: 'Steampunk',             thumb: US('1535083534998-4d2e7f4fd0fe'), prompt: 'steampunk Victorian aesthetic, brass gears, leather, goggles, copper tones, mechanical devices, clockwork city' },
-  { id: 'vaporwave',    name: 'Vaporwave',             thumb: US('1519389950473-47ba0277781c'), prompt: 'vaporwave aesthetic, pastel pinks and purples, retro 80s computer graphics, nostalgic synthwave, palm trees' },
-  { id: 'claymation',   name: 'Claymation',            thumb: US('1558618666-fcd25c85cd64'), prompt: 'claymation stop motion style, tactile clay texture, Aardman animation quality, playful 3D colorful characters' },
-  { id: 'comic',        name: 'Comic Book',            thumb: US('1612036782180-6b785e6c7a12'), prompt: 'comic book art style, bold ink outlines, halftone dots, dynamic action lines, Marvel style superhero' },
-  { id: 'popart',       name: 'Pop Art',               thumb: US('1561070791-2526bdc3d2f5'), prompt: 'Andy Warhol pop art style, bold flat colors, halftone pattern, high contrast graphic design' },
-  { id: 'poster',       name: 'Poster Art',            thumb: US('1547891654-e66ed7ebb968'), prompt: 'graphic design poster art, bold striking composition, artistic illustration, high impact visual design' },
+  /* ── ORGANIC LIVING (10) ── */
+  { id: 'pottery-studio',     category: 'Organic Living',  name: 'Pottery Studio',           thumb: '/templates/thumb-0.jpg',  prompt: 'close-up of hands crafting pottery on a wheel, warm sunlight streaming through a window, ceramic pieces on wooden shelves in background, artisan workshop, craftsman vibe, natural earthy tones, cinematic photography' },
+  { id: 'japandi-bath',       category: 'Organic Living',  name: 'Japandi Sanctuary',        thumb: '/templates/thumb-1.jpg',  prompt: 'minimalist Japandi bathroom, freestanding stone bathtub, bamboo flooring, living green wall with plants, soft diffused natural light, luxury spa vibe, peaceful minimalism, architectural photography' },
+  { id: 'foraged-kitchen',    category: 'Organic Living',  name: 'Foraged Kitchen',          thumb: '/templates/thumb-2.jpg',  prompt: 'rustic wooden kitchen shelves with hanging dried herbs and lavender bundles, hand-carved wooden utensils, ambient green backlighting, warm earthy tones, farm-to-table aesthetic, editorial food photography' },
+  { id: 'terracotta-oasis',   category: 'Organic Living',  name: 'Terracotta Oasis',         thumb: '/templates/thumb-3.jpg',  prompt: 'cozy urban corner filled with terracotta pots of varying sizes, exotic large-leaf tropical indoor plants, warm afternoon light, boho urban jungle vibe, interior lifestyle photography' },
+  { id: 'textile-loom',       category: 'Organic Living',  name: 'Textile Loom',             thumb: '/templates/thumb-4.jpg',  prompt: 'handmade woolen rug on a traditional wooden loom, raw cotton bundles and hand-dyed colorful yarns scattered nearby, earthy fiber textures, artisan textile craft, warm natural light, editorial lifestyle photography' },
+  { id: 'desert-bloom',       category: 'Organic Living',  name: 'Desert Bloom',             thumb: '/templates/thumb-5.jpg',  prompt: 'resilient succulent and cactus plants growing from arid desert earth, mud-brick dwelling in the background, golden hour desert light, minimalist desert aesthetic, National Geographic quality photography' },
+  { id: 'basket-market',      category: 'Organic Living',  name: 'Basketry Market',          thumb: '/templates/thumb-6.jpg',  prompt: 'artistic boho display of natural fiber baskets, rattan mats, jute and bamboo woven wares, earthy neutral tones, warm market light, bohemian lifestyle photography' },
+  { id: 'root-cellar',        category: 'Organic Living',  name: 'Root Cellar Harvest',      thumb: '/templates/thumb-7.jpg',  prompt: 'fresh root vegetables, carrots, potatoes and farm produce resting in an old stone cellar, rustic earthy tones, ambient damp cellar light, farm-to-table editorial photography' },
+  { id: 'geode-collection',   category: 'Organic Living',  name: 'Geode Collection',         thumb: '/templates/thumb-8.jpg',  prompt: 'curated collection of raw geological crystals, sparkling geodes and natural gemstones on a wooden surface, macro detail photography, earthy mineral textures, geological lifestyle photography' },
+  { id: 'monsoon-window',     category: 'Organic Living',  name: 'Monsoon Mood',             thumb: '/templates/thumb-9.jpg',  prompt: 'cozy rain-streaked window pane looking out at lush green forest, steaming mug of coffee on wooden windowsill, warm glowing candle, soft knit blanket, moody monsoon atmospheric lighting, cinematic photography' },
+  /* ── PORTRAITS (10) ── */
+  { id: 'artisan-portrait',   category: 'Portraits',       name: 'The Artisan',              thumb: '/templates/thumb-10.jpg', prompt: 'candid warm portrait of a leatherworker in a cluttered artisan workshop, focused on stitching, rich leather textures and tools visible, natural workshop lighting, authentic documentary portrait photography' },
+  { id: 'ballet-portrait',    category: 'Portraits',       name: 'Ballet Dancer',            thumb: '/templates/thumb-11.jpg', prompt: 'dramatic low-key portrait of a ballerina in a dance studio looking into a mirror, tension and grace before performance, chiaroscuro theatrical lighting, emotional dance portrait photography' },
+  { id: 'aviator-portrait',   category: 'Portraits',       name: 'Vintage Aviator',          thumb: '/templates/thumb-12.jpg', prompt: 'sepia-toned portrait of a 1930s pilot in a worn leather jacket and goggles, vintage biplane background, warm amber tones, historical evocative portrait, analog film grain texture' },
+  { id: 'cyberpunk-portrait', category: 'Portraits',       name: 'Cyberpunk Hacker',         thumb: '/templates/thumb-13.jpg', prompt: 'neon-lit portrait of a young person with reflective cyberpunk glasses and subtle tech implants, rainy futuristic urban alley background, electric blues and magentas, sci-fi moody atmosphere' },
+  { id: 'elder-portrait',     category: 'Portraits',       name: 'Tribal Elder',             thumb: '/templates/thumb-14.jpg', prompt: 'dignified portrait of a wise tribal elder with intricate traditional jewelry, weathered expressive features, deep wise gaze, natural window lighting, cultural respectful portrait photography' },
+  { id: 'editorial-portrait', category: 'Portraits',       name: 'Fashion Editorialist',     thumb: '/templates/thumb-15.jpg', prompt: 'bold high-fashion editorial portrait, avant-garde makeup and clothing, strong geometric color blocks, minimalist set design, Vogue magazine quality editorial photography' },
+  { id: 'jazz-portrait',      category: 'Portraits',       name: 'Jazz Musician',            thumb: '/templates/thumb-16.jpg', prompt: 'smoky atmospheric portrait of a saxophonist in a jazz club, bathed in warm golden spotlight, saxophone gleaming, ambient club smoke, classic moody jazz photography' },
+  { id: 'explorer-portrait',  category: 'Portraits',       name: 'Victorian Explorer',       thumb: '/templates/thumb-17.jpg', prompt: 'studio portrait of a Victorian explorer in a tweed suit and pith helmet, holding an antique compass, adventurous gaze off-camera, warm studio lighting, costumed thematic portrait photography' },
+  { id: 'polymath-portrait',  category: 'Portraits',       name: 'Modern Polymath',          thumb: '/templates/thumb-18.jpg', prompt: 'split dramatic lighting portrait of a person, one side surrounded by stacked books and spectacles, other side holding a paintbrush, conceptual dual-nature portrait, cinematic editorial photography' },
+  { id: 'runner-portrait',    category: 'Portraits',       name: 'Marathon Runner',          thumb: '/templates/thumb-19.jpg', prompt: 'sweaty post-race portrait of a marathon athlete, face showing raw exhaustion and triumph, emotion-filled authentic moment, dramatic natural light, sports portrait photography' },
+  /* ── FANTASY (10) ── */
+  { id: 'elven-spy',          category: 'Fantasy',         name: 'Elven Spymaster',          thumb: '/templates/thumb-20.jpg', prompt: 'sharp low-key fantasy portrait of a high elf in dark intricate leather armor and hooded cloak, subtle scars and one piercing golden eye, holding a coded message, stealth intellect fantasy art, digital painting' },
+  { id: 'gnome-artificer',    category: 'Fantasy',         name: 'Gnomish Artificer',        thumb: '/templates/thumb-21.jpg', prompt: 'cheerful older gnome with wild white hair and goggles pushed on forehead, grease-stained vest, tinkering with a small glowing magical automaton, steampunk cheerful fantasy portrait, digital art' },
+  { id: 'undead-lich',        category: 'Fantasy',         name: 'The Undead Lich',          thumb: '/templates/thumb-22.jpg', prompt: 'dramatic high-contrast portrait of an ancient skeletal sorcerer lich, tattered robes, empty eye sockets burning with cold blue fire, one hand raised crackling with dark necromantic magic, horror fantasy digital art' },
+  { id: 'celestial-paladin',  category: 'Fantasy',         name: 'Celestial Paladin',        thumb: '/templates/thumb-23.jpg', prompt: 'heroic fantasy portrait of a human warrior in polished gilded armor adorned with sun and celestial motifs, radiant holy glow, determined expression, leaning on a massive two-handed sword, lawful good cinematic fantasy art' },
+  { id: 'shapeshifter-druid', category: 'Fantasy',         name: 'Shapeshifter Druid',       thumb: '/templates/thumb-24.jpg', prompt: 'striking semi-feral portrait of a female druid in earthy mossy armor, glowing green eyes, one arm visibly transforming into a bear claw, nature magic wild transformation, detailed fantasy digital painting' },
+  { id: 'shadow-sorcerer',    category: 'Fantasy',         name: 'Shadow Sorcerer',          thumb: '/templates/thumb-25.jpg', prompt: 'brooding low-key portrait of a young sorcerer surrounded by swirling inky black shadows, face obscured, eyes glowing with intense purple arcane power, moody chaos magic fantasy art, dramatic lighting' },
+  { id: 'centaur-huntress',   category: 'Fantasy',         name: 'Centaur Huntress',         thumb: '/templates/thumb-26.jpg', prompt: 'powerful dynamic portrait of a centaur archer in practical travel-worn armor, intense gaze while nocking an arrow, vast windswept plains in background, action fantasy digital painting, epic scale' },
+  { id: 'vampire-lord',       category: 'Fantasy',         name: 'Vampire Lord',             thumb: '/templates/thumb-27.jpg', prompt: 'opulent classic portrait of a vampire aristocrat in rich velvet and antique lace, enigmatic pale expression, single drop of blood on lip, candlelit historical mansion interior, dark romance fantasy art' },
+  { id: 'dragonborn-barb',    category: 'Fantasy',         name: 'Dragonborn Barbarian',     thumb: '/templates/thumb-28.jpg', prompt: 'fierce detailed portrait of a red-scaled dragonborn warrior with curved horns and broken warhammer, roaring with fury, steam rising from scales, raw intense fantasy digital art, dramatic fiery background' },
+  { id: 'kitsune-illusionist',category: 'Fantasy',         name: 'Kitsune Illusionist',      thumb: '/templates/thumb-29.jpg', prompt: 'vibrant playful portrait of a kitsune fox spirit in traditional stylized Japanese robes, multiple shimmering magical tails, holding a glowing illusionary orb, anime-esque cultural fantasy art, vivid colors' },
+  /* ── FASHION (10) ── */
+  { id: 'monochrome-fashion', category: 'Fashion',         name: 'Monochrome Minimalist',    thumb: '/templates/thumb-30.jpg', prompt: 'sleek high-fashion editorial portrait of a model in head-to-toe crisp cream tailoring, stark architectural concrete wall backdrop, clean geometric lines, high-fashion minimalist photography, Vogue quality' },
+  { id: 'boho-resort',        category: 'Fashion',         name: 'Bohemian Resort',          thumb: '/templates/thumb-31.jpg', prompt: 'breezy sun-dappled fashion shot of a model in flowing linen separates and wide-brim straw hat, Mediterranean pergola with climbing vines, golden hour resort lifestyle photography, relaxed boho chic' },
+  { id: 'cyber-goth',         category: 'Fashion',         name: 'Edgy Cyber-Goth',          thumb: '/templates/thumb-32.jpg', prompt: 'moody neon-accented fashion portrait with structural black faux-leather apparel, silver hardware and chains, dramatic split neon lighting, alternative avant-garde fashion editorial photography' },
+  { id: 'retro-70s',          category: 'Fashion',         name: 'Vintage Retro 70s',        thumb: '/templates/thumb-33.jpg', prompt: 'warm nostalgic portrait of a model styled in a patterned turtleneck, corduroy blazer and amber tinted frames, vintage film grain, Kodachrome color palette, 1970s retro fashion photography' },
+  { id: 'trench-heritage',    category: 'Fashion',         name: 'Classic Trench',           thumb: '/templates/thumb-34.jpg', prompt: 'sophisticated moody street-style portrait of a model wearing a classic double-breasted beige trench coat on a misty city morning, rain-slicked cobblestones, timeless outerwear fashion editorial' },
+  { id: 'winter-layering',    category: 'Fashion',         name: 'Winter Layering',          thumb: '/templates/thumb-35.jpg', prompt: 'cozy stylish mountain-chic fashion look, chunky cable-knit sweater under a quilted puffer vest, snowy alpine backdrop with pine trees, seasonal winter fashion lifestyle photography' },
+  { id: 'velvet-renaissance', category: 'Fashion',         name: 'Velvet Renaissance',       thumb: '/templates/thumb-36.jpg', prompt: 'opulent rich-toned portrait of a model draped in a deep emerald velvet suit, antique dimly lit interior with oil paintings, candlelight glow, luxurious dramatic fashion editorial photography' },
+  { id: 'denim-studio',       category: 'Fashion',         name: 'Denim-on-Denim',           thumb: '/templates/thumb-37.jpg', prompt: 'cool modern editorial portrait featuring structured dark-wash denim jacket and jeans, minimalist grey studio backdrop, dramatic side lighting, casual edgy fashion photography' },
+  { id: 'pastel-spring',      category: 'Fashion',         name: 'Pastel Spring',            thumb: '/templates/thumb-38.jpg', prompt: 'soft glowing outdoor portrait of a model in a light lavender pastel structured suit, surrounded by blooming cherry blossoms and spring flowers, bright fresh fashion editorial photography' },
+  { id: 'techwear-future',    category: 'Fashion',         name: 'Futuristic Techwear',      thumb: '/templates/thumb-39.jpg', prompt: 'dynamic high-utility futuristic techwear fashion look, multi-pocket cargo straps and matte black technical fabrics, industrial warehouse lighting, modern functional fashion editorial photography' },
+  /* ── TRADITIONAL (10) ── */
+  { id: 'royal-sherwani',     category: 'Traditional',     name: 'Royal Sherwani',           thumb: '/templates/thumb-40.jpg', prompt: 'regal portrait of a groom in heavy embroidered velvet sherwani with traditional kalgi and ornate safa turban, antique royal palace jharokha arch background, warm golden lighting, cinematic wedding photography' },
+  { id: 'saree-elegance',     category: 'Traditional',     name: 'Ethereal Saree',           thumb: '/templates/thumb-41.jpg', prompt: 'soft golden-hour portrait of a woman in a handloom organza saree with minimal kundan jewellery, standing in a heritage sandstone courtyard, warm afternoon light, elegant traditional fashion photography' },
+  { id: 'qawwali-night',      category: 'Traditional',     name: 'Qawwali Night',            thumb: '/templates/thumb-42.jpg', prompt: 'moody warm-lit portrait of a qawwali musician in traditional kurta-pajama with a fine shawl, sitting with harmonium or tabla, amber candlelight and diyas, atmospheric Sufi music photography' },
+  { id: 'shalwar-classic',    category: 'Traditional',     name: 'Shalwar Kameez',           thumb: '/templates/thumb-43.jpg', prompt: 'rugged sophisticated portrait of a man in crisp white shalwar kameez with a fine leather waistcoat, textured brick wall background, dramatic natural light, South Asian traditional fashion editorial' },
+  { id: 'bandhgala-festive',  category: 'Traditional',     name: 'Festive Bandhgala',        thumb: '/templates/thumb-44.jpg', prompt: 'sharp modern-traditional portrait of a model in a dark jewel-toned bandhgala suit, surrounded by Diwali or Eid festive string lights and bokeh, warm celebratory editorial photography' },
+  { id: 'bridal-zardosi',     category: 'Traditional',     name: 'Bridal Zardosi',           thumb: '/templates/thumb-45.jpg', prompt: 'cinematic close-up portrait of a South Asian bride in heavy zardosi embroidered lehenga with traditional matha patti headpiece, shy downward gaze, warm golden backlight, luxury bridal photography' },
+  { id: 'sufi-whirling',      category: 'Traditional',     name: 'Sufi Whirling',            thumb: '/templates/thumb-46.jpg', prompt: 'dynamic atmospheric shot of a Sufi whirling dervish dancer in flowing white traditional attire, motion blur capturing the spin, deep blue and indigo atmospheric lighting, spiritual dance photography' },
+  { id: 'phulkari-punjabi',   category: 'Traditional',     name: 'Phulkari & Kurta',         thumb: '/templates/thumb-47.jpg', prompt: 'vibrant outdoor rural-chic portrait featuring bright Phulkari embroidery dupatta and traditional Punjabi kurta, golden field backdrop, rich cultural embroidery textures, joyful lifestyle photography' },
+  { id: 'mughal-miniature',   category: 'Traditional',     name: 'Mughal Miniature',         thumb: '/templates/thumb-48.jpg', prompt: 'art-inspired portrait with lighting and composition inspired by Mughal miniature paintings, ornate royal staging, fine jewellery and brocade fabrics, rich jewel-toned palette, heritage art photography' },
+  { id: 'indo-western',       category: 'Traditional',     name: 'Indo-Western Fusion',      thumb: '/templates/thumb-49.jpg', prompt: 'contemporary ethnic fashion look with an asymmetrical kurta combined with a structured blazer jacket, modern studio lighting, clean editorial background, fusion fashion shoot, South Asian contemporary style' },
+  /* ── TRAVEL (10) ── */
+  { id: 'dubai-luxury',       category: 'Travel',          name: 'Dubai Skyline',            thumb: '/templates/thumb-50.jpg', prompt: 'sleek travel portrait of a person on a luxury glass balcony or rooftop, Burj Khalifa towering in background, golden hour sunset glow over Dubai skyline, aspirational luxury travel photography' },
+  { id: 'paris-elegance',     category: 'Travel',          name: 'Parisian Elegance',        thumb: '/templates/thumb-51.jpg', prompt: 'cinematic travel shot with classic Haussmann buildings and a misty morning view of the Eiffel Tower, model wearing a chic beige trench coat, cobblestone street, romantic Paris editorial travel photography' },
+  { id: 'hill-station-mist',  category: 'Travel',          name: 'Misty Hill Station',       thumb: '/templates/thumb-52.jpg', prompt: 'atmospheric travel portrait of a person in a woollen scarf and coat standing in a misty green hill station, rolling fog over lush mountains, cozy monsoon mountain travel photography' },
+  { id: 'santorini-dream',    category: 'Travel',          name: 'Santorini Dream',          thumb: '/templates/thumb-53.jpg', prompt: 'sunny Santorini travel shot with iconic whitewashed architecture and blue-domed churches, sparkling Aegean Sea background, vibrant Mediterranean light, editorial travel photography' },
+  { id: 'kyoto-bamboo',       category: 'Travel',          name: 'Kyoto Bamboo',             thumb: '/templates/thumb-54.jpg', prompt: 'peaceful travel portrait in Arashiyama bamboo grove Kyoto, tall green bamboo stalks filtering soft dappled light, traditional stone pathway, serene Japanese travel photography' },
+  { id: 'swiss-alps',         category: 'Travel',          name: 'Swiss Alps Peak',          thumb: '/templates/thumb-55.jpg', prompt: 'winter adventure travel aesthetic, snow-capped Swiss Alps mountain peaks, pine trees blanketed in fresh snow, person in cozy winter gear, crisp clean alpine photography' },
+  { id: 'amalfi-terrace',     category: 'Travel',          name: 'Amalfi Terrace',           thumb: '/templates/thumb-56.jpg', prompt: 'Mediterranean travel vibe with colorful cliffside Amalfi Coast houses, deep azure sea, lemon grove terrace, golden afternoon light, dreamy Italian coastal travel photography' },
+  { id: 'venice-canal',       category: 'Travel',          name: 'Venice Canal',             thumb: '/templates/thumb-57.jpg', prompt: 'atmospheric evening travel shot in Venice, gondola gliding past a historic arched bridge, warm glowing lanterns reflecting on water, moody romantic travel photography' },
+  { id: 'kyoto-autumn',       category: 'Travel',          name: 'Kyoto Autumn',             thumb: '/templates/thumb-58.jpg', prompt: 'vibrant Japanese Koyo autumn travel shot, brilliant red and orange maple leaves surrounding a traditional wooden temple, warm autumn light, cultural travel photography' },
+  { id: 'iceland-black-sand', category: 'Travel',          name: 'Iceland Black Sand',       thumb: '/templates/thumb-59.jpg', prompt: 'dramatic moody Iceland landscape, black volcanic sand beach with massive basalt rock columns, dark brooding ocean waves, cinematic wide travel photography, powerful natural drama' },
+  /* ── PRODUCTS (10) ── */
+  { id: 'skincare-flatlay',   category: 'Products',        name: 'Botanical Skincare',       thumb: '/templates/thumb-60.jpg', prompt: 'clean minimalist skincare product flatlay on white marble surface, organic glass bottles with botanical labels, fresh green eucalyptus leaves, jade facial roller, soft natural morning light, professional product photography' },
+  { id: 'diya-mithai',        category: 'Products',        name: 'Festive Mithai & Diya',    thumb: '/templates/thumb-61.jpg', prompt: 'luxury Indian festival product shot, ornate sweet mithai box on rich velvet fabric with marigold flowers, glowing clay diyas arranged around, warm golden festive glow, editorial product photography' },
+  { id: 'iced-coffee-splash', category: 'Products',        name: 'Iced Coffee Splash',       thumb: '/templates/thumb-62.jpg', prompt: 'dynamic beverage product shot of a tall iced latte in a glass with swirling milk and coffee, dramatic milk splash droplets frozen in motion, dark background, high-speed commercial beverage photography' },
+  { id: 'dark-perfume',       category: 'Products',        name: 'Dark Luxury Perfume',      thumb: '/templates/thumb-63.jpg', prompt: 'sleek moody luxury perfume bottle on dark textured volcanic stones, subtle golden rim light from behind creating dramatic halo, deep shadow, high-end commercial fragrance product photography' },
+  { id: 'coffee-beans',       category: 'Products',        name: 'Artisan Coffee Beans',     thumb: '/templates/thumb-64.jpg', prompt: 'dark rustic wooden table with freshly roasted coffee beans artfully spilled, antique brass coffee grinder, steaming espresso cup, rich earthy brown tones, moody artisan coffee product photography' },
+  { id: 'luxury-watch',       category: 'Products',        name: 'Luxury Watch',             thumb: '/templates/thumb-65.jpg', prompt: 'matte black surface product shot of a sleek executive luxury watch, folded premium leather wallet, and fountain pen, sharp geometric shadows, professional minimalist corporate product photography' },
+  { id: 'honey-jar',          category: 'Products',        name: 'Organic Honey',            thumb: '/templates/thumb-66.jpg', prompt: 'golden-hued honey product shot of a glass honey jar with honey dripping from a wooden honeycomb dipper, fresh wildflowers arranged nearby, warm glowing sunlight, natural organic lifestyle product photography' },
+  { id: 'clay-mask',          category: 'Products',        name: 'Clay Mask Spa',            thumb: '/templates/thumb-67.jpg', prompt: 'spa aesthetic product shot of earthy green clay mask in a ceramic bowl, wooden application brush, fresh eucalyptus branch, white marble surface, clean natural beauty product photography' },
+  { id: 'tech-gadget',        category: 'Products',        name: 'Tech Gadget',              thumb: '/templates/thumb-68.jpg', prompt: 'pastel matte studio backdrop product shot of sleek wireless headphones, clean geometric cast shadows, minimal composition, modern tech lifestyle product photography, soft studio lighting' },
+  { id: 'citrus-splash',      category: 'Products',        name: 'Citrus Refreshment',       thumb: '/templates/thumb-69.jpg', prompt: 'bright vibrant summer beverage product shot with citrus juice glass surrounded by sliced fresh oranges and lemons, dramatic water splash droplets in motion, high-speed commercial photography, vivid colors' },
+  /* ── NATURE (10) ── */
+  { id: 'golden-mountain',    category: 'Nature',          name: 'Golden Hour Peak',         thumb: '/templates/thumb-70.jpg', prompt: 'breathtaking golden hour mountain peak landscape, warm amber and orange light painting the snow-capped summits, dramatic cloud formations, National Geographic quality nature photography' },
+  { id: 'misty-waterfall',    category: 'Nature',          name: 'Misty Waterfall',          thumb: '/templates/thumb-71.jpg', prompt: 'magical misty waterfall cascading through a lush tropical forest, soft diffused green light filtering through dense canopy, moss-covered rocks, serene nature photography' },
+  { id: 'desert-dunes',       category: 'Nature',          name: 'Desert Dunes Sunrise',     thumb: '/templates/thumb-72.jpg', prompt: 'sweeping golden sand dunes at sunrise, long shadows creating dramatic wave-like patterns, vast silence and minimalism, Sahara or Arabian desert, cinematic nature landscape photography' },
+  { id: 'tropical-ocean',     category: 'Nature',          name: 'Tropical Ocean Wave',      thumb: '/templates/thumb-73.jpg', prompt: 'stunning turquoise tropical ocean wave crashing, crystal clear water revealing sandy seafloor, vibrant blue and teal tones, paradise beach, National Geographic ocean photography' },
+  { id: 'cherry-blossom',     category: 'Nature',          name: 'Cherry Blossom Path',      thumb: '/templates/thumb-74.jpg', prompt: 'dreamy sakura cherry blossom tunnel path in Japan, pink petals falling gently, soft pastel pink light, romantic spring atmosphere, Japanese nature travel photography' },
+  { id: 'aurora-borealis',    category: 'Nature',          name: 'Aurora Borealis',          thumb: '/templates/thumb-75.jpg', prompt: 'spectacular northern lights aurora borealis dancing across a dark Arctic sky, vivid green and purple ribbons of light, starry sky reflection on a still lake, Iceland night nature photography' },
+  { id: 'autumn-forest',      category: 'Nature',          name: 'Autumn Forest Carpet',     thumb: '/templates/thumb-76.jpg', prompt: 'golden autumn forest with a thick carpet of fallen red and orange maple leaves, tall trees creating a canopy of fire colors, misty morning light, peaceful fall nature photography' },
+  { id: 'monsoon-jungle',     category: 'Nature',          name: 'Monsoon Jungle Rain',      thumb: '/templates/thumb-77.jpg', prompt: 'lush monsoon tropical jungle during heavy rain, vibrant emerald green vegetation glistening with raindrops, dramatic rain curtain, moody atmospheric tropical nature photography' },
+  { id: 'snow-pine-forest',   category: 'Nature',          name: 'Snow Pine Forest',         thumb: '/templates/thumb-78.jpg', prompt: 'magical snow-covered pine forest in winter, heavy white snow bending the branches, silent peaceful atmosphere, soft blue-white winter light, fairy tale winter nature photography' },
+  { id: 'underwater-coral',   category: 'Nature',          name: 'Underwater Coral Reef',    thumb: '/templates/thumb-0.jpg',  prompt: 'stunning underwater coral reef ecosystem, vibrant tropical fish swimming through colorful coral formations, crystal clear blue water, sunlight rays piercing from above, marine nature photography' },
 ];
-const STUDIO_ROW1 = STUDIO_VISUAL_TEMPLATES.slice(0, 17);
-const STUDIO_ROW2 = STUDIO_VISUAL_TEMPLATES.slice(17);
+const STUDIO_ROW1 = STUDIO_VISUAL_TEMPLATES.slice(0, 40);
+const STUDIO_ROW2 = STUDIO_VISUAL_TEMPLATES.slice(40);
 
 const STUDIO_COLS = [
   { id: 'fius-imagine-super', name: 'Fius Imagine Super', sub: 'Ultra quality',  logo: '/fius-logo.png',       gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
@@ -5621,7 +5675,7 @@ Let's start the self-listen session!`;
                           `}</style>
                           <div className="mb-3 flex items-center justify-between px-1">
                             <h3 className="text-sm font-bold text-neutral-800">Templates <span className="ml-1 text-[11px] font-normal text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span></h3>
-                            <button onClick={() => { loadImagineMyPhotos(); setImagineGalleryOpen(true); }} className="text-[11px] text-neutral-500 transition hover:text-neutral-900">Browse all →</button>
+                            <button onClick={() => setShowAllTemplates(true)} className="text-[11px] text-neutral-500 transition hover:text-neutral-900">Browse all →</button>
                           </div>
                           <div className="flex flex-col gap-2.5">
                             {/* Row 1 — scrolls left */}
@@ -7266,6 +7320,71 @@ Let's start the self-listen session!`;
         />
 
 
+        {/* ── Browse All Templates Modal ──────────────────────────────────── */}
+        {showAllTemplates && (
+          <div
+            className="fixed inset-0 z-[999] flex items-end justify-center sm:items-center p-0 sm:p-4"
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowAllTemplates(false); }}
+          >
+            <div className="relative w-full max-w-5xl bg-zinc-950 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col" style={{ maxHeight: '90vh' }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-white/10 flex-shrink-0">
+                <div>
+                  <h3 className="text-lg font-bold text-white">All Templates</h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">{STUDIO_VISUAL_TEMPLATES.length} styles — click any to generate</p>
+                </div>
+                <button onClick={() => setShowAllTemplates(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Category filter pills */}
+              <div className="flex gap-2 overflow-x-auto px-6 py-3 flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
+                {['All', ...Array.from(new Set(STUDIO_VISUAL_TEMPLATES.map(t => t.category)))].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setImagineTemplateCategory(cat)}
+                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all"
+                    style={imagineTemplateCategory === cat
+                      ? { background: '#7c3aed', color: 'white' }
+                      : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.1)' }
+                    }
+                  >{cat}</button>
+                ))}
+              </div>
+              {/* Grid */}
+              <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarWidth: 'thin' }}>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {STUDIO_VISUAL_TEMPLATES
+                    .filter(t => imagineTemplateCategory === 'All' || t.category === imagineTemplateCategory)
+                    .map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setShowAllTemplates(false);
+                          setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt });
+                          setTemplateUploadPhoto(null);
+                        }}
+                        className="group relative overflow-hidden rounded-2xl text-left"
+                        style={{ aspectRatio: '3/4', border: '1.5px solid rgba(255,255,255,0.08)', background: '#1c1c1e' }}
+                      >
+                        <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 55%)' }} />
+                        <div className="absolute inset-x-0 bottom-0 p-2">
+                          <span className="block text-[10px] font-semibold text-white leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
+                          <span className="block text-[9px] text-white/50 mt-0.5">{t.category}</span>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200" style={{ background: 'rgba(124,58,237,0.25)' }}>
+                          <span className="text-[11px] font-bold text-white bg-violet-600 px-2.5 py-1 rounded-full">✦ Use</span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Imagine Gallery Modal ───────────────────────────────────────── */}
         {imagineGalleryOpen && (
           <div
@@ -7421,27 +7540,38 @@ Let's start the self-listen session!`;
                 )}
 
                 {/* Action buttons */}
-                <div className="flex gap-2.5 mt-4">
+                <div className="flex flex-col gap-2 mt-4">
                   <button
-                    onClick={() => { setImagineTemplateModal(null); setTemplateUploadPhoto(null); }}
-                    className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-zinc-400 hover:text-white transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.07)' }}
-                  >Cancel</button>
-                  <button
-                    disabled={!templateUploadPhoto}
                     onClick={() => {
-                      if (!templateUploadPhoto || !imagineTemplateModal) return;
+                      if (!imagineTemplateModal) return;
                       const t = imagineTemplateModal;
-                      const p = templateUploadPhoto;
                       setImagineTemplateModal(null);
                       setTemplateUploadPhoto(null);
-                      triggerImagineTemplate(t.prompt, p);
+                      triggerImagineTemplate(t.prompt, null);
                     }}
-                    className="flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ background: 'linear-gradient(135deg, #000000 0%, #ffffff 100%)', color: templateUploadPhoto ? '#000' : '#888' }}
-                  >
-                    Continue
-                  </button>
+                    className="w-full py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)' }}
+                  >✦ Generate directly</button>
+                  <div className="flex gap-2.5">
+                    <button
+                      onClick={() => { setImagineTemplateModal(null); setTemplateUploadPhoto(null); }}
+                      className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-zinc-400 hover:text-white transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.07)' }}
+                    >Cancel</button>
+                    <button
+                      disabled={!templateUploadPhoto}
+                      onClick={() => {
+                        if (!templateUploadPhoto || !imagineTemplateModal) return;
+                        const t = imagineTemplateModal;
+                        const p = templateUploadPhoto;
+                        setImagineTemplateModal(null);
+                        setTemplateUploadPhoto(null);
+                        triggerImagineTemplate(t.prompt, p);
+                      }}
+                      className="flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: 'rgba(255,255,255,0.12)', color: templateUploadPhoto ? 'white' : '#666' }}
+                    >Apply to Photo</button>
+                  </div>
                 </div>
               </div>
             </div>
