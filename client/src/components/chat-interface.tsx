@@ -5451,11 +5451,11 @@ Let's start the self-listen session!`;
 
                       <div className="relative mx-auto w-full max-w-[1180px] pt-6">
                         <div className="mx-auto mt-[260px] flex max-w-[480px] flex-col items-center text-center">
-                          <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1 }}>
-                            <span className="font-extrabold">Fius Labs</span>{' '}
-                            <span className="font-extrabold">Imagine Studio</span>
+                          <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, fontWeight: 900 }}>
+                            <span className="font-black">Fius Labs</span>{' '}
+                            <span className="font-black">Imagine Studio</span>
                           </h2>
-                          <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow ✦</p>
+                          <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow</p>
                         </div>
 
                         {/* ── Inline message bar — full width outside narrow heading container ── */}
@@ -5724,7 +5724,7 @@ Let's start the self-listen session!`;
                               <h3 className="text-sm font-bold text-neutral-900">Templates</h3>
                               <span className="text-[11px] text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span>
                             </div>
-                            <button onClick={() => setShowAllTemplates(true)} className="flex items-center gap-1 text-[11px] font-semibold text-violet-500 transition hover:text-violet-700">Browse all <ChevronRight className="h-3 w-3" /></button>
+                            <button onClick={() => setShowAllTemplates(true)} className="flex items-center text-[11px] font-semibold text-neutral-900 transition hover:text-neutral-500">Browse all</button>
                           </div>
                           <div className="flex flex-col gap-3">
                             {/* Row 1 — scrolls left */}
@@ -5740,9 +5740,9 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r1-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 165, height: 225, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
                                     <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
@@ -5768,9 +5768,9 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r2-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 165, height: 225, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(6deg) rotateX(-3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
                                     <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
