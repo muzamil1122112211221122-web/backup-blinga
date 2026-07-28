@@ -423,7 +423,7 @@ export function CustomizeModal({
     showUserMsgActions: true,
     glossyOutline: true,
     topbarTabIcons: true,
-    tabsInSidebar: true,
+    tabsInSidebar: false,
   });
 
   const settingsContentRef = useRef<HTMLDivElement | null>(null);

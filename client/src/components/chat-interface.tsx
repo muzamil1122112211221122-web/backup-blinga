@@ -1564,7 +1564,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     showUserMsgActions: true,
     glossyOutline: true,
     topbarTabIcons: true,
-    tabsInSidebar: true,
+    tabsInSidebar: false,
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -4040,7 +4040,10 @@ Let's start the self-listen session!`;
          onImagineClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab('imagine'); }}
          onTabChange={(tab) => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab(tab as any); }}
          activeTab={activeTab}
-         tabsInSidebar={settingsToggles.tabsInSidebar ?? true}
+         tabsInSidebar={settingsToggles.tabsInSidebar ?? false}
+         ownMode={ownMode}
+         onToggleOwnMode={() => { if (ownMode) { setOwnMode(false); if (projects.length > 0) handleProjectSelect(projects[0].id); } else { setOwnMode(true); } }}
+         resolvedTheme={resolvedTheme}
         user={user || undefined}
         onUserRename={(newName) => setUser(prev => prev ? { ...prev, username: newName, displayName: newName } : prev)}
         profilePicture={profilePicture || undefined}
@@ -4102,7 +4105,7 @@ Let's start the self-listen session!`;
               }} />
             </div>
           )}
-          {!(settingsToggles.tabsInSidebar ?? true) && (<>
+          {!(settingsToggles.tabsInSidebar ?? false) && (<>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -4110,11 +4113,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('ask')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'ask' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'ask' ? 'font-semibold' : ''}`}
                 style={activeTab === 'ask' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-ask"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-ask-dark.png' : '/tab-ask-light.png'} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-ask-dark.png' : '/tab-ask-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
                 Ask
               </Button>
             </TooltipTrigger>
@@ -4127,7 +4130,7 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('nomad')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'nomad' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'nomad' ? 'font-semibold' : ''}`}
                 style={activeTab === 'nomad' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-nomad"
               >
@@ -4144,11 +4147,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('imagine')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'imagine' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'imagine' ? 'font-semibold' : ''}`}
                 style={activeTab === 'imagine' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-imagine"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-imagine-dark.png' : '/tab-imagine-light.png'} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-imagine-dark.png' : '/tab-imagine-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
                 Imagine Studio
               </Button>
             </TooltipTrigger>
@@ -4161,11 +4164,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('philosopher')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'philosopher' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'philosopher' ? 'font-semibold' : ''}`}
                 style={activeTab === 'philosopher' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-philosopher"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-minds-dark.png' : '/tab-minds-light.png'} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-minds-dark.png' : '/tab-minds-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
                 <span className="hidden sm:inline">Fius Minds</span>
                 <span className="sm:hidden">Minds</span>
               </Button>
@@ -4179,11 +4182,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-games')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'fius-games' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'fius-games' ? 'font-semibold' : ''}`}
                 style={activeTab === 'fius-games' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-fius-games"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-games-dark.png' : '/tab-games-light.png'} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-games-dark.png' : '/tab-games-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
                 <span className="hidden sm:inline">Fius Games</span>
                 <span className="sm:hidden">Games</span>
               </Button>
@@ -4197,11 +4200,11 @@ Let's start the self-listen session!`;
                 variant="ghost"
                 size="sm"
                 onClick={() => changeTab('fius-labs')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === 'fius-labs' ? 'font-semibold' : ''}`}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'fius-labs' ? 'font-semibold' : ''}`}
                 style={activeTab === 'fius-labs' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-fius-labs"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-labs-dark.png' : '/tab-labs-light.png'} alt="" className="w-4 h-4 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-labs-dark.png' : '/tab-labs-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
                 <span className="hidden sm:inline">Fius Labs</span>
                 <span className="sm:hidden">Labs</span>
               </Button>
@@ -4209,6 +4212,7 @@ Let's start the self-listen session!`;
             <TooltipContent>Multi-chat AI lab with personalized AI</TooltipContent>
           </Tooltip>
           </>)}
+          {!(settingsToggles.tabsInSidebar ?? false) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -4230,6 +4234,7 @@ Let's start the self-listen session!`;
             </TooltipTrigger>
             <TooltipContent>{ownMode ? 'Exit Owl Mode' : 'Owl Mode — chat without saving'}</TooltipContent>
           </Tooltip>
+          )}
 
           <Tooltip>
             <TooltipTrigger asChild className="ml-auto">

@@ -2608,7 +2608,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
     return () => window.removeEventListener("storage", h);
   }, []);
   const showTabIcons = pcToggles.topbarTabIcons ?? true;
-  const tabsHidden = pcToggles.tabsInSidebar ?? true;
+  const tabsHidden = pcToggles.tabsInSidebar ?? false;
   const glossy = pcToggles.glossyOutline ?? true;
 
   // Only track pill when tabs are visible
@@ -2641,7 +2641,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
             const iconSet = TAB_ICONS[id];
             return (
               <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-                className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === id ? "font-semibold" : ""}`}>
+                className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === id ? "font-semibold" : ""}`}>
                 {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />}
                 {label}
               </button>
@@ -4105,7 +4105,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             onImagineClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("imagine"); }}
             onTabChange={(t) => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab(t as MobileTab); }}
             activeTab={tab}
-            tabsInSidebar={mobileSettingToggles.tabsInSidebar ?? true}
+            tabsInSidebar={mobileSettingToggles.tabsInSidebar ?? false}
             user={user ? { email: user.email, username: user.username } : undefined}
             onUserRename={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
             profilePicture={profilePicture}
