@@ -1269,13 +1269,6 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [catPillStyle, setCatPillStyle] = useState({ left: 0, width: 0, ready: false });
   const catPillAnimateRef = useRef(false);
 
-  // Template filter pill (Browse All Templates modal)
-  const tplNavRef = useRef<HTMLDivElement>(null);
-  const tplBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [tplPillStyle, setTplPillStyle] = useState({ left: 0, width: 0, ready: false });
-  const tplPillAnimateRef = useRef(false);
-  const TPL_FILTER_CATS = ['All', 'Spaces', 'Nature', 'Portraits', 'Fantasy', 'Fashion', 'Traditional', 'Travel', 'Products'];
-
   const measureCatPill = useCallback(() => {
     const idx = PERSONALITY_CATEGORIES.indexOf(personalityCategory);
     const btn = catBtnRefs.current[idx];
@@ -1287,39 +1280,12 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     if (btn.offsetWidth > 0) setCatPillStyle({ left, width: btn.offsetWidth, ready: true });
   }, [personalityCategory]);
 
-  const measureTplPill = useCallback(() => {
-    const idx = TPL_FILTER_CATS.indexOf(imagineTemplateCategory);
-    const btn = tplBtnRefs.current[idx];
-    const container = tplNavRef.current;
-    if (!btn || !container) return;
-    const btnRect = btn.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    const left = btnRect.left - containerRect.left;
-    if (btn.offsetWidth > 0) setTplPillStyle({ left, width: btn.offsetWidth, ready: true });
-  }, [imagineTemplateCategory]);
-
   useEffect(() => {
     measureCatPill();
     const id1 = requestAnimationFrame(measureCatPill);
     const id2 = window.setTimeout(measureCatPill, 150);
     return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
   }, [personalityCategory, measureCatPill]);
-
-  useEffect(() => {
-    measureTplPill();
-    const id1 = requestAnimationFrame(measureTplPill);
-    const id2 = window.setTimeout(measureTplPill, 150);
-    return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
-  }, [imagineTemplateCategory, measureTplPill]);
-
-  useEffect(() => {
-    if (showAllTemplates) {
-      tplPillAnimateRef.current = false;
-      const id1 = requestAnimationFrame(measureTplPill);
-      const id2 = window.setTimeout(measureTplPill, 100);
-      return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
-    }
-  }, [showAllTemplates, measureTplPill]);
 
   // Re-measure when philosopher tab is first opened (DOM wasn't mounted before)
   useEffect(() => {
@@ -1534,6 +1500,41 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const toggleImagineModel = (id: string) =>
     setImagineSelectedModels(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+
+  // Template filter pill (Browse All Templates modal) — must be after imagineTemplateCategory + showAllTemplates
+  const tplNavRef = useRef<HTMLDivElement>(null);
+  const tplBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [tplPillStyle, setTplPillStyle] = useState({ left: 0, width: 0, ready: false });
+  const tplPillAnimateRef = useRef(false);
+  const TPL_FILTER_CATS = ['All', 'Spaces', 'Nature', 'Portraits', 'Fantasy', 'Fashion', 'Traditional', 'Travel', 'Products'];
+
+  const measureTplPill = useCallback(() => {
+    const idx = TPL_FILTER_CATS.indexOf(imagineTemplateCategory);
+    const btn = tplBtnRefs.current[idx];
+    const container = tplNavRef.current;
+    if (!btn || !container) return;
+    const btnRect = btn.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    if (btn.offsetWidth > 0) setTplPillStyle({ left, width: btn.offsetWidth, ready: true });
+  }, [imagineTemplateCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    measureTplPill();
+    const id1 = requestAnimationFrame(measureTplPill);
+    const id2 = window.setTimeout(measureTplPill, 150);
+    return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
+  }, [imagineTemplateCategory, measureTplPill]);
+
+  useEffect(() => {
+    if (showAllTemplates) {
+      tplPillAnimateRef.current = false;
+      const id1 = requestAnimationFrame(measureTplPill);
+      const id2 = window.setTimeout(measureTplPill, 100);
+      return () => { cancelAnimationFrame(id1); clearTimeout(id2); };
+    }
+  }, [showAllTemplates, measureTplPill]);
+
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [webSearchEnabled] = useState(true);
   const [thinkingType, setThinkingType] = useState<'thinking' | 'analyzing' | 'generating'>('thinking');
