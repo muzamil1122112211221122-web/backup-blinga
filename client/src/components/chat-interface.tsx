@@ -5740,15 +5740,13 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r1-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 195, height: 265, borderRadius: 20, background: 'var(--background)', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#ffffff', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transformOrigin: 'center center', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
-                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
-                                      <div className="px-2.5 pb-3">
-                                        <div className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>✦ Try this look</div>
-                                      </div>
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}>
+                                      <div className="rounded-full px-4 py-2 text-[11px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>Try this look</div>
                                     </div>
                                     <span className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-[10px] font-bold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}>{t.name}</span>
                                   </button>
@@ -5768,15 +5766,13 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r2-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 195, height: 265, borderRadius: 20, background: 'var(--background)', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#ffffff', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transformOrigin: 'center center', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
-                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
-                                      <div className="px-2.5 pb-3">
-                                        <div className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>✦ Try this look</div>
-                                      </div>
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}>
+                                      <div className="rounded-full px-4 py-2 text-[11px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(10px)' }}>Try this look</div>
                                     </div>
                                     <span className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-[10px] font-bold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}>{t.name}</span>
                                   </button>
