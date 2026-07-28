@@ -4186,7 +4186,7 @@ Let's start the self-listen session!`;
                 style={activeTab === 'fius-games' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-fius-games"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-games-dark.png' : '/tab-games-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-games-dark.png' : '/tab-games-light.png'} alt="" className="w-6 h-6 object-contain flex-shrink-0" />}
                 <span className="hidden sm:inline">Fius Games</span>
                 <span className="sm:hidden">Games</span>
               </Button>
@@ -4204,7 +4204,7 @@ Let's start the self-listen session!`;
                 style={activeTab === 'fius-labs' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-fius-labs"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-labs-dark.png' : '/tab-labs-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-labs-dark.png' : '/tab-labs-light.png'} alt="" className="w-6 h-6 object-contain flex-shrink-0" />}
                 <span className="hidden sm:inline">Fius Labs</span>
                 <span className="sm:hidden">Labs</span>
               </Button>

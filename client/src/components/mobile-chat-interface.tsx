@@ -2586,13 +2586,13 @@ const OWL_BG_DATA_M = [
 ];
 
 // ─── Tab icon map for PCHeader ────────────────────────────────────────────────
-const TAB_ICONS: Record<string, { dark: string; light: string }> = {
+const TAB_ICONS: Record<string, { dark: string; light: string; size?: string }> = {
   ask:        { dark: '/tab-ask-dark.png',    light: '/tab-ask-light.png'    },
   nomad:      { dark: '/tab-nomad-dark.png',  light: '/tab-nomad-light.png'  },
   imagine:    { dark: '/tab-imagine-dark.png', light: '/tab-imagine-light.png' },
   philosopher:{ dark: '/tab-minds-dark.png',  light: '/tab-minds-light.png'  },
-  games:      { dark: '/tab-games-dark.png',  light: '/tab-games-light.png'  },
-  'fius-labs':{ dark: '/tab-labs-dark.png',   light: '/tab-labs-light.png'   },
+  games:      { dark: '/tab-games-dark.png',  light: '/tab-games-light.png',  size: 'w-5 h-5' },
+  'fius-labs':{ dark: '/tab-labs-dark.png',   light: '/tab-labs-light.png',   size: 'w-5 h-5' },
 };
 
 // ─── PC-style Header ──────────────────────────────────────────────────────────
@@ -2642,7 +2642,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
             return (
               <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
                 className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === id ? "font-semibold" : ""}`}>
-                {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />}
+                {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className={`${iconSet.size ?? 'w-3.5 h-3.5'} object-contain flex-shrink-0`} />}
                 {label}
               </button>
             );
