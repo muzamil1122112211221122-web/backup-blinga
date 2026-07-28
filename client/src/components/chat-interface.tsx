@@ -1321,6 +1321,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<string>>(new Set());
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
   const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackMsgId, setFeedbackMsgId] = useState('');
@@ -4051,6 +4053,16 @@ Let's start the self-listen session!`;
         onProfilePictureChange={(dataUrl) => { setProfilePicture(dataUrl); localStorage.setItem('profilePicture', dataUrl); }}
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
+      {/* Floating expand button when tabsInSidebar enabled and sidebar closed */}
+      {(settingsToggles.tabsInSidebar ?? false) && !isSidebarOpen && (
+        <button
+          style={{ position: 'fixed', top: 12, left: 12, zIndex: 50 }}
+          onClick={() => { setSidebarOpenMode('full'); setIsSidebarOpen(true); }}
+          className="bg-card border border-border rounded-xl p-2 text-muted-foreground hover:text-foreground shadow-sm transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
       {/* Header */}
       <header className={`bg-card backdrop-blur-lg px-4 sm:px-6 py-3 flex items-center gap-4 sm:gap-5 mx-auto relative z-[46] rounded-full max-w-4xl w-fit mt-2 mb-1 ${(settingsToggles.glossyOutline ?? true) ? 'border border-border glossy-outline' : ''} ${(settingsToggles.tabsInSidebar ?? false) ? 'hidden' : ''}`}>
         <div className="flex items-center gap-1">
@@ -4397,6 +4409,33 @@ Let's start the self-listen session!`;
               >
                 {message.role === 'user' ? (
                   <div className="group max-w-xs lg:max-w-md flex flex-col items-end">
+                    {editingMessageId === message.id ? (
+                      <div className="w-full min-w-[220px]">
+                        <textarea
+                          value={editingContent}
+                          onChange={e => setEditingContent(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Escape') setEditingMessageId(null);
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              setMessages((prev: any[]) => prev.map((m: any) => m.id === editingMessageId ? { ...m, content: editingContent } : m));
+                              setEditingMessageId(null);
+                            }
+                          }}
+                          autoFocus
+                          rows={3}
+                          className="w-full bg-zinc-200 dark:bg-zinc-700 text-foreground text-sm rounded-3xl rounded-br-none px-4 py-3 resize-none outline-none ring-2 ring-blue-400 dark:ring-blue-500 [overflow-wrap:anywhere]"
+                        />
+                        <div className="flex justify-end gap-1.5 mt-1">
+                          <button onClick={() => setEditingMessageId(null)} className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Cancel</button>
+                          <button onClick={() => {
+                            setMessages((prev: any[]) => prev.map((m: any) => m.id === editingMessageId ? { ...m, content: editingContent } : m));
+                            setEditingMessageId(null);
+                          }} className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:opacity-80 transition-opacity">Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                    <>
                     <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 w-fit chat-bubble shadow-sm [overflow-wrap:anywhere]">
                       {/* Display uploaded image if present */}
                       {message.imageUrl && (
@@ -4473,7 +4512,7 @@ Let's start the self-listen session!`;
                               onClick={() => handleCopyMessage(message.content, message.id)}
                               data-testid={`button-copy-user-${message.id}`}
                             >
-                              <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
+                              <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
@@ -4484,24 +4523,17 @@ Let's start the self-listen session!`;
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150"
-                              onClick={() => {
-                                setInputValue(message.content);
-                                setTimeout(() => {
-                                  const inputElement = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement;
-                                  if (inputElement) {
-                                    inputElement.focus();
-                                    inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
-                                  }
-                                }, 100);
-                              }}
+                              onClick={() => { setEditingMessageId(message.id); setEditingContent(message.content); }}
                               data-testid={`button-redo-user-${message.id}`}
                             >
-                              <RefreshCw className="h-4 w-4" />
+                              <img src="/icon-edit-prompt-gray.png" className="h-4 w-4 object-contain brightness-0 dark:brightness-100 dark:opacity-75" alt="edit" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent><p>Edit message</p></TooltipContent>
+                          <TooltipContent><p>Edit prompt</p></TooltipContent>
                         </Tooltip>
                       </div>
+                    )}
+                    </>
                     )}
                   </div>
                 ) : (() => {
@@ -4609,10 +4641,10 @@ Let's start the self-listen session!`;
                           <div className="flex items-center gap-0.5 mt-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`}
+                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`}
                                   onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
-                                  <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" />
-                                  <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
+                                  <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { filter: 'brightness(0)' }} alt="like" />
+                                  <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { opacity: 0.75 }} alt="like" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent><p>Like</p></TooltipContent>
@@ -4621,7 +4653,7 @@ Let's start the self-listen session!`;
                               <TooltipTrigger asChild>
                                 <button className={`${ab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`}
                                   onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
-                                  <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" />
+                                  <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { filter: 'brightness(0)' }} alt="dislike" />
                                   <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
                                 </button>
                               </TooltipTrigger>
@@ -4631,7 +4663,7 @@ Let's start the self-listen session!`;
                               <TooltipTrigger asChild>
                                 <button className={`${ab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`}
                                   onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
-                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
@@ -4639,7 +4671,7 @@ Let's start the self-listen session!`;
                             {/* … more menu */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
+                                <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                 <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)}
@@ -4649,7 +4681,7 @@ Let's start the self-listen session!`;
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleRetryMessage(message.id)} disabled={retryingMessageId === message.id}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
-                                  {retryingMessageId === message.id ? <RefreshCw className="w-3.5 h-3.5 text-green-500 animate-spin" /> : <><img src="/icon-redo-black.png" className="w-3.5 h-3.5 object-contain block dark:hidden opacity-70" alt="redo" /><img src="/icon-redo-gray.png" className="w-3.5 h-3.5 object-contain hidden dark:block opacity-75" alt="redo" /></>} Regenerate
+                                  {retryingMessageId === message.id ? <RefreshCw className="w-3.5 h-3.5 text-green-500 animate-spin" /> : <><img src="/icon-redo-black.png" className="w-3.5 h-3.5 object-contain block dark:hidden brightness-0" alt="redo" /><img src="/icon-redo-gray.png" className="w-3.5 h-3.5 object-contain hidden dark:block opacity-75" alt="redo" /></>} Regenerate
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -4953,11 +4985,11 @@ Let's start the self-listen session!`;
                               <div className="flex space-x-2">
                                 <Tooltip><TooltipTrigger asChild>
                                   <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
-                                    <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
+                                    <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                 <Tooltip><TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(msg.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setEditingMessageId(msg.id); setEditingContent(msg.content); }}>
                                     <RefreshCw className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
@@ -4981,23 +5013,23 @@ Let's start the self-listen session!`;
                                 </div>
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${nab} ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
-                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
+                                    <button className={`${nab} ${likedMessages.has(msg.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { filter: 'brightness(0)' }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { opacity: 0.75 }} alt="like" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${nab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
-                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
+                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { filter: 'brightness(0)' }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${nab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
-                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={nab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
+                                      <button className={nab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                       <DropdownMenuItem onClick={() => handleSpeakMessage(msg.content, msg.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5227,11 +5259,11 @@ Let's start the self-listen session!`;
                                       <div className="flex space-x-1">
                                         <Tooltip><TooltipTrigger asChild>
                                           <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
-                                            <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
+                                            <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                           </Button>
                                         </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                         <Tooltip><TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(message.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setEditingMessageId(message.id); setEditingContent(message.content); }}>
                                             <RefreshCw className="h-4 w-4" />
                                           </Button>
                                         </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
@@ -5251,23 +5283,23 @@ Let's start the self-listen session!`;
                                     </div>
                                     <div className="flex items-center gap-0.5 mt-1">
                                       <Tooltip><TooltipTrigger asChild>
-                                        <button className={`${mcab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
-                                          <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
+                                        <button className={`${mcab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                          <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { filter: 'brightness(0)' }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { opacity: 0.75 }} alt="like" />
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                       <Tooltip><TooltipTrigger asChild>
                                         <button className={`${mcab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
-                                          <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
+                                          <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { filter: 'brightness(0)' }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                       <Tooltip><TooltipTrigger asChild>
                                         <button className={`${mcab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
-                                          {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                          {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                       <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                          <button className={mcab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
+                                          <button className={mcab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                           <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5343,11 +5375,11 @@ Let's start the self-listen session!`;
                                 <div className="flex space-x-2">
                                   <Tooltip><TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
-                                      <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
+                                      <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                     </Button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(message.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setEditingMessageId(message.id); setEditingContent(message.content); }}>
                                       <RefreshCw className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
@@ -5365,23 +5397,23 @@ Let's start the self-listen session!`;
                                 </div>
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${sab} ${likedMessages.has(message.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
-                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
+                                    <button className={`${sab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { filter: 'brightness(0)' }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { opacity: 0.75 }} alt="like" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${sab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
-                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
+                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { filter: 'brightness(0)' }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(message.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${sab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
-                                      {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                      {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={sab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
+                                      <button className={sab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                       <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -6165,11 +6197,11 @@ Let's start the self-listen session!`;
                               <div className="flex items-center justify-end mt-2 gap-1">
                                 <Tooltip><TooltipTrigger asChild>
                                   <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
-                                    <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
+                                    <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                 <Tooltip><TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setInputValue(msg.content); setTimeout(() => { const el = document.querySelector('textarea[data-testid="chat-input"]') as HTMLTextAreaElement; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 100); }}>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-xl text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent transition-all duration-150" onClick={() => { setEditingMessageId(msg.id); setEditingContent(msg.content); }}>
                                     <RefreshCw className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>Edit message</p></TooltipContent></Tooltip>
@@ -6183,23 +6215,23 @@ Let's start the self-listen session!`;
                               {isDone && (
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${ab} ${likedMessages.has(msg.id) ? 'text-green-500 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
-                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
+                                    <button className={`${ab} ${likedMessages.has(msg.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                      <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { filter: 'brightness(0)' }} alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={likedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(25%) sepia(90%) saturate(700%) hue-rotate(115deg) brightness(0.85)' } : { opacity: 0.75 }} alt="like" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${ab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
-                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
+                                      <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { filter: 'brightness(0)' }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block" style={dislikedMessages.has(msg.id) ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
                                     <button className={`${ab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
-                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                      {copiedMessageId === msg.id ? <Check className="h-3.5 w-3.5 text-blue-500" /> : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
+                                      <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
                                       <DropdownMenuItem onClick={() => handlePhilosopherRetry()} disabled={philosopherIsTyping}

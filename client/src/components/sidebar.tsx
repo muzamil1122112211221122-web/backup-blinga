@@ -26,7 +26,7 @@ function UsageBar({ pct, color }: { pct: number; color: string }) {
   );
 }
 
-function SidebarUsage() {
+function SidebarUsage({ compact = false }: { compact?: boolean }) {
   const { usage, isLoading } = useUsage();
   if (isLoading || !usage) return null;
 
@@ -61,7 +61,7 @@ function SidebarUsage() {
     : `${n}`;
 
   return (
-    <div className="mx-3 mb-2 px-3 py-2.5 space-y-3">
+    <div className={`${compact ? 'px-3 py-2.5' : 'mx-3 mb-2 px-3 py-2.5'} space-y-3`}>
       {/* ── Tokens / Messages ── */}
       <div>
         <div className="flex items-center justify-between mb-1">
@@ -971,156 +971,132 @@ export function Sidebar({
           </div>
         </div>}
 
-        {/* ── Usage stats ── */}
-        {!isMini && <SidebarUsage />}
+        {/* ── Bottom joined card (usage + user account) ── */}
+        <div className={`mt-auto ${isMini ? 'p-2' : 'px-3 pb-3'}`}>
+          {isMini ? (
+            /* Mini mode: just avatar button */
+            user && (
+              <button
+                type="button"
+                aria-label={`Open profile for ${user.username || user.email}`}
+                onClick={() => setIsMini(false)}
+                className="mx-auto flex items-center justify-center rounded-full hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-all"
+              >
+                {profilePicture ? (
+                  <img src={profilePicture} alt="Profile" className="h-10 w-10 rounded-full object-cover shadow-lg" />
+                ) : (
+                  <div
+                    className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
+                    style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
+                  >
+                    {(user.username || user.email).charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </button>
+            )
+          ) : (
+            /* Full mode: joined card */
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden" ref={profileMenuRef}>
+              {/* Usage stats inside card */}
+              <SidebarUsage compact />
 
-        <div className={`p-4 mt-auto border-t border-zinc-100 dark:border-zinc-800/30 ${isMini ? 'px-2' : ''}`}>
-          {user && (
-            <div className="relative" ref={profileMenuRef}>
-              {/* Profile menu popup */}
-              {profileMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-10" style={{ animation: 'popup-slide-up 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-                  {isCustomizing ? (
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
-                        <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-                          <X className="h-4 w-4" />
+              {/* Divider */}
+              <div className="border-t border-zinc-200 dark:border-zinc-800" />
+
+              {/* Inline expanded menu (customize profile) */}
+              {profileMenuOpen && isCustomizing && (
+                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
+                    <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center mb-4">
+                    <button onClick={() => picInputRef.current?.click()} className="relative group">
+                      {profilePicture ? (
+                        <img src={profilePicture} alt="Profile" className="h-16 w-16 rounded-full object-cover shadow-lg" />
+                      ) : (
+                        <div className="h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg"
+                          style={{ background: `linear-gradient(45deg, ${getVibrantColor(user?.username || user?.email || '')}, ${getVibrantColor(user?.username || user?.email || '', true)})` }}>
+                          {(user?.username || user?.email || '').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <UserPen className="h-5 w-5 text-white" />
+                      </div>
+                    </button>
+                    <p className="text-[11px] text-zinc-400 mt-1.5">Click to upload photo</p>
+                    <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
+                  </div>
+                  <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Display name</p>
+                  <div className="flex items-center gap-2">
+                    <Input value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsCustomizing(false); }}
+                      placeholder={user?.username || user?.email} autoFocus className="h-8 text-sm" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button onClick={handleRenameSubmit} className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0">
+                          <Check className="h-4 w-4" />
                         </button>
-                      </div>
-
-                      {/* Avatar picker */}
-                      <div className="flex flex-col items-center mb-4">
-                        <button
-                          onClick={() => picInputRef.current?.click()}
-                          className="relative group"
-                        >
-                          {profilePicture ? (
-                            <img src={profilePicture} alt="Profile" className="h-16 w-16 rounded-full object-cover shadow-lg" />
-                          ) : (
-                            <div
-                              className="h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg"
-                              style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
-                            >
-                              {(user.username || user.email).charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <UserPen className="h-5 w-5 text-white" />
-                          </div>
-                        </button>
-                        <p className="text-[11px] text-zinc-400 mt-1.5">Click to upload photo</p>
-                        <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
-                      </div>
-
-                      {/* Name field */}
-                      <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Display name</p>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={renameValue}
-                          onChange={e => setRenameValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsCustomizing(false); }}
-                          placeholder={user.username || user.email}
-                          autoFocus
-                          className="h-8 text-sm"
-                        />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={handleRenameSubmit}
-                              className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>Save name</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        <Settings className="h-4 w-4 text-slate-500" />
-                        Settings
-                      </button>
-                      <button
-                        onClick={() => { setRenameValue(user.username || user.email); setIsCustomizing(true); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        <UserPen className="h-4 w-4 text-indigo-500" />
-                        Customize profile
-                      </button>
-                      <button
-                        onClick={() => { setProfileMenuOpen(false); onLogout(); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                      >
-                        <LogOut className="h-4 w-4 text-red-500" />
-                        Log out
-                      </button>
-                    </>
-                  )}
+                      </TooltipTrigger>
+                      <TooltipContent>Save name</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               )}
 
-              {/* Profile row (clickable) */}
-              {isMini ? (
-                <button
-                  type="button"
-                  aria-label={`Open profile for ${user.username || user.email}`}
-                  onClick={() => setIsMini(false)}
-                  className="mx-auto flex items-center justify-center rounded-full hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-700 transition-all"
-                >
+              {/* Inline expanded menu (settings/profile/logout) */}
+              {profileMenuOpen && !isCustomizing && (
+                <div className="border-b border-zinc-200 dark:border-zinc-800">
+                  <button onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                    <Settings className="h-4 w-4 text-slate-500" />Settings
+                  </button>
+                  <button onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                    <UserPen className="h-4 w-4 text-indigo-500" />Customize profile
+                  </button>
+                  <button onClick={() => { setProfileMenuOpen(false); onLogout(); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                    <LogOut className="h-4 w-4 text-red-500" />Log out
+                  </button>
+                </div>
+              )}
+
+              {/* User row */}
+              {user && (
+                <div className="flex items-center gap-2.5 px-3 py-2.5">
                   {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="h-10 w-10 rounded-full object-cover shadow-lg" />
+                    <img src={profilePicture} alt="Profile" className="h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
                   ) : (
-                    <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
-                      style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
-                    >
+                    <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px] shadow"
+                      style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}>
                       {(user.username || user.email).charAt(0).toUpperCase()}
                     </div>
                   )}
-                </button>
-              ) : (
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => setProfileMenuOpen(v => !v)}
-                  className="flex items-center space-x-3 flex-1 min-w-0 rounded-xl p-1.5 -ml-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
-                >
-                  {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="h-9 w-9 rounded-full flex-shrink-0 object-cover shadow-lg" />
-                  ) : (
-                    <div
-                      className="h-9 w-9 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[15px] shadow-lg"
-                      style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}
-                    >
-                      {(user.username || user.email).charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                      {user.username || user.email}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{user.username || user.email}</p>
+                    <p className="text-[10px] text-zinc-400 leading-tight">Free</p>
                   </div>
-                  <ChevronUp className={`h-4 w-4 text-zinc-400 transition-transform flex-shrink-0 ${profileMenuOpen ? '' : 'rotate-180'}`} />
-                </button>
-                {closeButtonPosition === 'bottom' && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={closeSidebarStage}
-                        className="ml-2 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                      >
-                        <img src={sidebarAsset("close")} alt="" className="h-5 w-5 object-contain" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Close sidebar</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
+                  {closeButtonPosition === 'bottom' && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button onClick={closeSidebarStage} className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0">
+                          <img src={sidebarAsset("close")} alt="" className="h-4 w-4 object-contain" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Close sidebar</TooltipContent>
+                    </Tooltip>
+                  )}
+                  <button
+                    onClick={() => setProfileMenuOpen(v => !v)}
+                    className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-[14px] font-bold transition-colors ${profileMenuOpen ? 'bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600'}`}
+                    aria-label="Expand account menu"
+                  >
+                    {profileMenuOpen ? '×' : '+'}
+                  </button>
+                </div>
               )}
             </div>
           )}
