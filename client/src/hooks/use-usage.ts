@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 export interface UsageSummary {
   plan: "free" | "ultimate";
   priceUsd: number;
+  planActivatedAt?: string;
   freeNomadModels: string[];
   freeNomadModelLabels: Record<string, string>;
   messagesRemaining?: number | null;

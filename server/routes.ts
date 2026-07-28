@@ -2108,6 +2108,7 @@ Make statements educational, interesting, and covering science, history, geograp
       const usage = await getUsage(userId);
       res.json({
         ...getUsageSummary(usage),
+        planActivatedAt: usage.planActivatedAt,
         priceUsd: ULTIMATE_PRICE_USD,
         freeNomadModels: FREE_NOMAD_MODELS,
         freeNomadModelLabels: FREE_NOMAD_MODEL_LABELS,

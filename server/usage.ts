@@ -51,6 +51,12 @@ export async function getUsage(userId: string): Promise<UsageState> {
   const usage = (settings as any).usage as Partial<UsageState> | undefined;
   const state: UsageState = { ...DEFAULT_USAGE, ...(usage || {}) };
 
+  // Seed planActivatedAt for users who don't have it yet (free plan, first load)
+  if (!state.planActivatedAt) {
+    state.planActivatedAt = new Date().toISOString();
+    await saveUsage(userId, state);
+  }
+
   // 30-day rolling reset: if 30 days have elapsed since planActivatedAt, reset counters
   if (state.planActivatedAt) {
     const activatedAt = new Date(state.planActivatedAt);

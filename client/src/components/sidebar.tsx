@@ -15,26 +15,29 @@ import { useTheme } from "./theme-provider";
 import { SIDEBAR_ASSETS } from "@/lib/sidebar-assets";
 
 // ── Sidebar usage strip ────────────────────────────────────────────────────
-function UsageBar({ pct, color }: { pct: number; color: string }) {
+function UsageBar({ pct }: { pct: number }) {
   return (
     <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
       <div
         className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: color }}
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: '#15803d' }}
       />
     </div>
   );
 }
 
-function SidebarUsage({ compact = false }: { compact?: boolean }) {
+function SidebarUsage({ compact = false, onOpenSettings }: { compact?: boolean; onOpenSettings?: () => void }) {
   const { usage, isLoading } = useUsage();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   if (isLoading || !usage) return null;
 
   const isUltimate = usage.plan === "ultimate";
 
-  // 30-day rolling reset from plan activation date
+  // 30-day rolling reset from planActivatedAt (seeded for all users server-side)
   const now = new Date();
-  const activatedAt = (usage as any).planActivatedAt ? new Date((usage as any).planActivatedAt) : null;
+  const activatedAt = usage.planActivatedAt ? new Date(usage.planActivatedAt) : null;
   const resetDate = activatedAt
     ? new Date(activatedAt.getTime() + 30 * 24 * 60 * 60 * 1000)
     : new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -57,36 +60,49 @@ function SidebarUsage({ compact = false }: { compact?: boolean }) {
 
   const fmtNum = (n: number) =>
     n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
-    : n >= 1000    ? `${(n / 1000).toFixed(0)}k`
+    : n >= 1000    ? `${(n / 1000).toFixed(0)}K`
     : `${n}`;
 
+  // Theme-aware plan icons
+  const planIcon = isUltimate
+    ? (isDark ? '/plan-icon-ultimate-dark.png' : '/plan-icon-ultimate-light.png')
+    : (isDark ? '/plan-icon-free-dark.png'     : '/plan-icon-free-light.png');
+
   return (
-    <div className={`${compact ? 'px-3 py-2.5' : 'mx-3 mb-2 px-3 py-2.5'} space-y-3`}>
-      {/* ── Tokens / Messages ── */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">{tokensLabel}</span>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{fmtNum(tokensRemaining)} left</span>
-        </div>
-        <UsageBar pct={tokensPct} color="#f59e0b" />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">{fmtNum(tokensUsed)} of {fmtNum(tokensLimit)}</p>
+    <div className={`${compact ? 'px-3 pt-3 pb-2' : 'mx-3 mb-2 px-3 pt-3 pb-2'} flex flex-col items-center gap-2.5`}>
+      {/* ── Plan icon + name ── */}
+      <div className="flex items-center gap-1.5">
+        <img src={planIcon} alt={isUltimate ? 'Ultimate' : 'Free'} className="h-5 w-5 object-contain" />
+        <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-300">
+          {isUltimate ? 'Ultimate' : 'Free'}
+        </span>
       </div>
 
-      {/* ── Images ── */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Images</span>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{imagesRemaining} left</span>
-        </div>
-        <UsageBar pct={imagesPct} color="#ec4899" />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">{imagesUsed} of {imagesLimit}</p>
+      {/* ── Tokens / Messages ── */}
+      <div className="w-full space-y-1">
+        <p className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 text-center">
+          {fmtNum(tokensRemaining)} {tokensLabel} left
+        </p>
+        <UsageBar pct={tokensPct} />
+        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
+          {fmtNum(tokensUsed)} of {fmtNum(tokensLimit)}
+        </p>
       </div>
 
       {/* ── Reset countdown ── */}
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">Resets in</span>
-        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{daysLeft}d {hoursLeft}h</span>
-      </div>
+      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
+        Resets in {daysLeft}d {hoursLeft}h
+      </p>
+
+      {/* ── Upgrade button (free plan only) ── */}
+      {!isUltimate && (
+        <button
+          onClick={onOpenSettings}
+          className="w-full mt-0.5 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] font-semibold hover:opacity-80 transition-opacity"
+        >
+          Upgrade to Ultimate
+        </button>
+      )}
     </div>
   );
 }
@@ -998,7 +1014,7 @@ export function Sidebar({
             /* Full mode: joined card */
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden" ref={profileMenuRef}>
               {/* Usage stats inside card */}
-              <SidebarUsage compact />
+              <SidebarUsage compact onOpenSettings={onOpenSettings} />
 
               {/* Inline expanded menu (customize profile) */}
               {profileMenuOpen && isCustomizing && (
