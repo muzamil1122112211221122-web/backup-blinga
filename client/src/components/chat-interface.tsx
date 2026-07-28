@@ -5451,9 +5451,9 @@ Let's start the self-listen session!`;
 
                       <div className="relative mx-auto w-full max-w-[1180px] pt-6">
                         <div className="mx-auto mt-[260px] flex max-w-[480px] flex-col items-center text-center">
-                          <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, fontWeight: 900 }}>
-                            <span style={{ fontWeight: 900 }}>Fius Labs</span>{' '}
-                            <span style={{ fontWeight: 900 }}>Imagine Studio</span>
+                          <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, fontWeight: 1000, WebkitTextStroke: '0.6px currentColor' }}>
+                            <span style={{ fontWeight: 1000 }}>Fius Labs</span>{' '}
+                            <span style={{ fontWeight: 1000 }}>Imagine Studio</span>
                           </h2>
                           <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow</p>
                         </div>

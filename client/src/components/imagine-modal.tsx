@@ -988,9 +988,9 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
 
             {/* ── Hero heading ── */}
             <div className="mx-auto flex w-full max-w-[640px] flex-col items-center pt-[clamp(112px,18vw,190px)] sm:pt-[clamp(126px,17vw,182px)]">
-              <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1, fontWeight: 900 }}>
-                <span className="font-black">Fius Labs</span>{' '}
-                <span className="font-black">Imagine Studio</span>
+              <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1, fontWeight: 1000, WebkitTextStroke: '0.6px currentColor' }}>
+                <span style={{ fontWeight: 1000 }}>Fius Labs</span>{' '}
+                <span style={{ fontWeight: 1000 }}>Imagine Studio</span>
               </h2>
               <p className="mt-2 text-center font-medium text-neutral-500" style={{ fontSize: 'clamp(15px,1.8vw,18px)' }}>
                 The Canvas of Tomorrow
