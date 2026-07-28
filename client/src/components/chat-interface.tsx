@@ -5721,9 +5721,6 @@ Let's start the self-listen session!`;
                           `}</style>
                           <div className="mb-4 flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
-                              <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-                                <Sparkles className="h-3.5 w-3.5 text-white" />
-                              </div>
                               <h3 className="text-sm font-bold text-neutral-900">Templates</h3>
                               <span className="text-[11px] text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span>
                             </div>
@@ -5743,7 +5740,7 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r1-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 138, height: 188, borderRadius: 18, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    style={{ width: 165, height: 225, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
@@ -5771,7 +5768,7 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r2-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 138, height: 188, borderRadius: 18, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    style={{ width: 165, height: 225, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(6deg) rotateX(-3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
@@ -7378,30 +7375,40 @@ Let's start the self-listen session!`;
           const filteredTpls = activeCat === 'All' ? STUDIO_VISUAL_TEMPLATES : STUDIO_VISUAL_TEMPLATES.filter(t => t.category === activeCat);
 
           return (
-            <div className="fixed inset-0 z-[999] flex flex-col" style={{ background: '#09090f', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
+            <div className="fixed inset-0 z-[999] flex flex-col" style={{ background: resolvedTheme === 'dark' ? '#09090f' : '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
 
               {/* Top bar: back + close only, no title/icon */}
               <div className="flex-shrink-0 flex items-center justify-between px-5 pt-4 pb-0">
-                <button onClick={() => setShowAllTemplates(false)} className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors" style={{ color: 'rgba(255,255,255,0.4)' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'}
+                <button
+                  onClick={() => setShowAllTemplates(false)}
+                  className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
+                  style={{ color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = resolvedTheme === 'dark' ? '#fff' : '#000'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = resolvedTheme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
                 >
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button onClick={() => setShowAllTemplates(false)} className="flex h-8 w-8 items-center justify-center rounded-full transition" style={{ color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.06)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; }}
+                <button
+                  onClick={() => setShowAllTemplates(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition"
+                  style={{ color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', background: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = resolvedTheme === 'dark' ? '#fff' : '#000'; (e.currentTarget as HTMLElement).style.background = resolvedTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = resolvedTheme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'; (e.currentTarget as HTMLElement).style.background = resolvedTheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'; }}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Filter pill bar — exact Minds style, dark-adapted */}
+              {/* Filter pill bar — exact Minds style */}
               <div className="flex-shrink-0 flex justify-center py-3 px-5">
                 <div
                   ref={tplNavRef}
                   className="relative flex items-center gap-1 px-2 py-2"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 999 }}
+                  style={{
+                    background: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    border: resolvedTheme === 'dark' ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 999,
+                  }}
                 >
                   {/* sliding pill */}
                   {tplPillStyle.ready && (
@@ -7416,9 +7423,9 @@ Let's start the self-listen session!`;
                     }}>
                       <div style={{
                         position: 'absolute', inset: 0,
-                        background: 'rgba(255,255,255,0.92)',
+                        background: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
                         borderRadius: 999,
-                        boxShadow: '0 1px 10px rgba(255,255,255,0.15)',
+                        boxShadow: resolvedTheme === 'dark' ? '0 1px 10px rgba(255,255,255,0.15)' : '0 1px 4px rgba(0,0,0,0.08)',
                         animation: tplPillAnimateRef.current ? 'pill-squish 0.48s cubic-bezier(0.34,1.56,0.64,1) both' : 'none',
                       }} />
                     </div>
@@ -7430,8 +7437,8 @@ Let's start the self-listen session!`;
                       onClick={() => { tplPillAnimateRef.current = true; setImagineTemplateCategory(cat); }}
                       className="relative z-10 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-none"
                       style={activeCat === cat && tplPillStyle.ready
-                        ? { color: 'rgba(0,0,0,0.85)', fontWeight: 600 }
-                        : { color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}
+                        ? { color: resolvedTheme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.85)', fontWeight: 600 }
+                        : { color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', fontWeight: 500 }}
                     >
                       {cat}
                     </button>
@@ -7448,19 +7455,19 @@ Let's start the self-listen session!`;
                       if (!catTpls.length) return null;
                       return (
                         <div key={catName}>
-                          <p className="text-[12px] font-semibold mb-3" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{catName}</p>
-                          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))' }}>
+                          <p className="text-[12px] font-semibold mb-3" style={{ color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{catName}</p>
+                          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))' }}>
                             {catTpls.map(t => (
                               <button
                                 key={t.id}
                                 onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                 className="group relative overflow-hidden text-left"
-                                style={{ aspectRatio: '9/13', borderRadius: 18, background: '#0e0e16', boxShadow: '0 8px 28px rgba(0,0,0,0.5)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 56px rgba(0,0,0,0.65)'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.5)'; }}
+                                style={{ aspectRatio: '9/13', borderRadius: 20, background: resolvedTheme === 'dark' ? '#0e0e16' : '#f0f0f0', boxShadow: resolvedTheme === 'dark' ? '0 8px 28px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.1)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = resolvedTheme === 'dark' ? '0 24px 56px rgba(0,0,0,0.65)' : '0 16px 40px rgba(0,0,0,0.2)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = resolvedTheme === 'dark' ? '0 8px 28px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.1)'; }}
                               >
                                 <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.02) 50%,transparent 100%)' }} />
+                                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.02) 50%,transparent 100%)' }} />
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)' }}>
                                   <span className="px-4 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)' }}>✦ Use this style</span>
                                 </div>
@@ -7475,18 +7482,18 @@ Let's start the self-listen session!`;
                     })}
                   </div>
                 ) : (
-                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))' }}>
+                  <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))' }}>
                     {filteredTpls.map(t => (
                       <button
                         key={t.id}
                         onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                         className="group relative overflow-hidden text-left"
-                        style={{ aspectRatio: '9/13', borderRadius: 18, background: '#0e0e16', boxShadow: '0 8px 28px rgba(0,0,0,0.5)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 56px rgba(0,0,0,0.65)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 28px rgba(0,0,0,0.5)'; }}
+                        style={{ aspectRatio: '9/13', borderRadius: 20, background: resolvedTheme === 'dark' ? '#0e0e16' : '#f0f0f0', boxShadow: resolvedTheme === 'dark' ? '0 8px 28px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.1)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = resolvedTheme === 'dark' ? '0 24px 56px rgba(0,0,0,0.65)' : '0 16px 40px rgba(0,0,0,0.2)'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = resolvedTheme === 'dark' ? '0 8px 28px rgba(0,0,0,0.5)' : '0 4px 16px rgba(0,0,0,0.1)'; }}
                       >
                         <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.02) 50%,transparent 100%)' }} />
+                        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.02) 50%,transparent 100%)' }} />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)' }}>
                           <span className="px-4 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)' }}>✦ Use this style</span>
                         </div>
