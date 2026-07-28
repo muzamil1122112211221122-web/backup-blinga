@@ -2585,42 +2585,68 @@ const OWL_BG_DATA_M = [
   {l:'90%',t:'35%',d:'1.4s',dur:'3.3s',dd:'0.8s',ddur:'8s',sz:'15px'},
 ];
 
+// ─── Tab icon map for PCHeader ────────────────────────────────────────────────
+const TAB_ICONS: Record<string, { dark: string; light: string }> = {
+  ask:        { dark: '/tab-ask-dark.png',    light: '/tab-ask-light.png'    },
+  nomad:      { dark: '/tab-nomad-dark.png',  light: '/tab-nomad-light.png'  },
+  imagine:    { dark: '/tab-imagine-dark.png', light: '/tab-imagine-light.png' },
+  philosopher:{ dark: '/tab-minds-dark.png',  light: '/tab-minds-light.png'  },
+  games:      { dark: '/tab-games-dark.png',  light: '/tab-games-light.png'  },
+  'fius-labs':{ dark: '/tab-labs-dark.png',   light: '/tab-labs-light.png'   },
+};
+
 // ─── PC-style Header ──────────────────────────────────────────────────────────
 function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMode }: { activeTab: MobileTab; onTabChange: (t: MobileTab) => void; onMenuClick: () => void; ownMode?: boolean; onToggleOwnMode?: () => void; }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const navRef = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
+  const [pcToggles, setPcToggles] = useState(() => { try { const s = localStorage.getItem("settingsToggles"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
+  useEffect(() => {
+    const h = () => { try { const s = localStorage.getItem("settingsToggles"); setPcToggles(s ? JSON.parse(s) : {}); } catch {} };
+    window.addEventListener("storage", h);
+    return () => window.removeEventListener("storage", h);
+  }, []);
+  const showTabIcons = pcToggles.topbarTabIcons ?? true;
+  const tabsHidden = pcToggles.tabsInSidebar ?? true;
+  const glossy = pcToggles.glossyOutline ?? true;
+
+  // Only track pill when tabs are visible
+  const visibleTabs = tabsHidden ? [] : TABS;
 
   useEffect(() => {
-    const idx = TABS.findIndex(t => t.id === activeTab);
+    const idx = visibleTabs.findIndex(t => t.id === activeTab);
     const btn = tabRefs.current[idx]; const nav = navRef.current;
     if (!btn || !nav) return;
     const nr = nav.getBoundingClientRect(); const br = btn.getBoundingClientRect();
     setPill({ left: br.left - nr.left, width: br.width, ready: true });
-  }, [activeTab]);
+  }, [activeTab, tabsHidden]);
 
   const cycleTheme = () => { if (theme === "light") setTheme("dark"); else if (theme === "dark") setTheme("system"); else setTheme("light"); };
 
   const navR = 14;
   return (
-    <header className={`relative flex-shrink-0 bg-card px-2 py-1.5 flex items-center gap-1 z-[46] rounded-full mx-3 mt-2 mb-1 ${glossyOutlineEnabled ? 'border border-border glossy-outline' : ''}`}>
+    <header className={`relative flex-shrink-0 bg-card px-2 py-1.5 flex items-center gap-1 z-[46] rounded-full mx-3 mt-2 mb-1 ${glossy ? 'border border-border glossy-outline' : ''}`}>
       <button onClick={onMenuClick} className="relative z-[46] w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         <Menu className="w-4 h-4" />
       </button>
       <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
         <div ref={navRef} className="relative flex items-center min-w-max">
-          {pill.ready && (
+          {!tabsHidden && pill.ready && (
             <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, transition: "left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.35s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none", zIndex: 0 }}>
               <div key={pill.left} style={{ position: "absolute", inset: 0, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.09)", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 4px rgba(0,0,0,0.08)", animation: "pill-squish 0.44s cubic-bezier(0.22,1,0.36,1) 0.32s both" }} />
             </div>
           )}
-          {TABS.map(({ id, label }, i) => (
-            <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-              className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white ${activeTab === id ? "font-semibold" : ""}`}>
-              {label}
-            </button>
-          ))}
+          {!tabsHidden && TABS.map(({ id, label }, i) => {
+            const iconSet = TAB_ICONS[id];
+            return (
+              <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
+                className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-col items-center gap-0.5 ${activeTab === id ? "font-semibold" : ""}`}>
+                {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />}
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
       <button
@@ -4077,6 +4103,9 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             onOpenSettings={() => setSettingsOpen(true)}
             onVoiceClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
             onImagineClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("imagine"); }}
+            onTabChange={(t) => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab(t as MobileTab); }}
+            activeTab={tab}
+            tabsInSidebar={mobileSettingToggles.tabsInSidebar ?? true}
             user={user ? { email: user.email, username: user.username } : undefined}
             onUserRename={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
             profilePicture={profilePicture}

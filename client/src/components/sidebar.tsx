@@ -308,6 +308,9 @@ interface SidebarProps {
   onOpenSettings?: () => void;
   onVoiceClick?: () => void;
   onImagineClick?: () => void;
+  onTabChange?: (tab: string) => void;
+  activeTab?: string;
+  tabsInSidebar?: boolean;
   user?: {
     email: string;
     username: string;
@@ -337,6 +340,9 @@ export function Sidebar({
   onOpenSettings,
   onVoiceClick,
   onImagineClick,
+  onTabChange,
+  activeTab,
+  tabsInSidebar = false,
   user,
   onUserRename,
   profilePicture,
@@ -688,6 +694,13 @@ export function Sidebar({
             <MiniNavButton asset="chat" label="New Chat" onClick={() => onNewProject?.(false)} />
             <MiniNavButton asset="voice" label="Voice" onClick={() => onVoiceClick?.()} />
             <MiniNavButton asset="imagine" label="Imagine Studio" onClick={() => onImagineClick?.()} />
+            {tabsInSidebar && (<>
+              <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} />
+              <MiniNavButton asset="nomad" label="Nomad" onClick={() => onTabChange?.('nomad')} />
+              <MiniNavButton asset="minds" label="Fius Minds" onClick={() => onTabChange?.('philosopher')} />
+              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} />
+              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} />
+            </>)}
             <MiniNavButton asset="history" label="Chats" onClick={() => setIsMini(false)} />
           </div>
         ) : (
@@ -723,12 +736,56 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => onImagineClick?.()}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
               >
                 <img src={sidebarAsset("imagine")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
                 <span className="text-[15px] font-medium">Imagine Studio</span>
                 <span className="ml-auto h-1.5 w-1.5 rounded-full bg-pink-500/80" />
               </button>
+
+              {/* Extra tab items when tabsInSidebar is enabled */}
+              {tabsInSidebar && (<>
+                <button
+                  type="button"
+                  onClick={() => { onTabChange?.('ask'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  <img src={sidebarAsset("ask")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                  <span className="text-[15px] font-medium">Ask</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onTabChange?.('nomad'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  <img src={sidebarAsset("nomad")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                  <span className="text-[15px] font-medium">Nomad</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onTabChange?.('philosopher'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  <img src={sidebarAsset("minds")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                  <span className="text-[15px] font-medium">Fius Minds</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onTabChange?.('fius-games'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  <img src={sidebarAsset("games")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                  <span className="text-[15px] font-medium">Fius Games</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onTabChange?.('fius-labs'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                >
+                  <img src={sidebarAsset("labs")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
+                  <span className="text-[15px] font-medium">Fius Labs</span>
+                </button>
+              </>)}
             </div>
 
             <div className="flex items-center gap-3 px-6 mb-1 mt-4 text-zinc-900 dark:text-zinc-100 font-semibold flex-shrink-0">

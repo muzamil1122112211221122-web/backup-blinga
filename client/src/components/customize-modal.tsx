@@ -422,6 +422,8 @@ export function CustomizeModal({
     hideFlyWithUs: false,
     showUserMsgActions: true,
     glossyOutline: true,
+    topbarTabIcons: true,
+    tabsInSidebar: true,
   });
 
   const settingsContentRef = useRef<HTMLDivElement | null>(null);
@@ -962,6 +964,22 @@ export function CustomizeModal({
                     <p className="text-xs text-zinc-500 mt-0.5">Shiny border effect on the message bar, function bar &amp; top bar</p>
                   </div>
                   <Switch checked={localToggles.glossyOutline ?? true} onCheckedChange={() => handleToggle('glossyOutline')} />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Top Bar Tab Icons</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Show icons alongside tab names in the top navigation bar</p>
+                  </div>
+                  <Switch checked={localToggles.topbarTabIcons ?? true} onCheckedChange={() => handleToggle('topbarTabIcons')} />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Tabs in Sidebar</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Move Ask, Nomad, Imagine Studio, Fius Minds, Fius Games &amp; Labs to the sidebar; hides them from the top bar</p>
+                  </div>
+                  <Switch checked={localToggles.tabsInSidebar ?? true} onCheckedChange={() => handleToggle('tabsInSidebar')} />
                 </div>
 
                 <div className="flex items-center justify-between">
