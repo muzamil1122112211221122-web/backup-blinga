@@ -4635,7 +4635,7 @@ Let's start the self-listen session!`;
                           <div className="flex items-center gap-0.5 mt-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`}
+                                <button className={`${ab} ${likedMessages.has(message.id) ? '' : ''}`}
                                   onClick={() => handleLikeMessage(message.id)} data-testid={`button-like-${message.id}`}>
                                   {likedMessages.has(message.id) ? <img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" />}
                                   {likedMessages.has(message.id) ? <img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" />}
@@ -4645,7 +4645,7 @@ Let's start the self-listen session!`;
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`}
+                                <button className={`${ab} ${dislikedMessages.has(message.id) ? '' : ''}`}
                                   onClick={() => handleDislikeMessage(message.id)} data-testid={`button-dislike-${message.id}`}>
                                   {dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" />}
                                   {dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
@@ -4655,7 +4655,7 @@ Let's start the self-listen session!`;
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button className={`${ab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`}
+                                <button className={`${ab} ${copiedMessageId === message.id ? '' : ''}`}
                                   onClick={() => handleCopyMessage(message.content, message.id)} data-testid={`button-copy-${message.id}`}>
                                   {copiedMessageId === message.id ? <img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copiedMessageId === message.id ? <img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />}
                                 </button>
@@ -4978,7 +4978,7 @@ Let's start the self-listen session!`;
                             <div className="flex items-center justify-end mt-2">
                               <div className="flex space-x-2">
                                 <Tooltip><TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? '' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
                                     <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -5007,17 +5007,17 @@ Let's start the self-listen session!`;
                                 </div>
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${nab} ${likedMessages.has(msg.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                    <button className={`${nab} ${likedMessages.has(msg.id) ? '' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
                                       {likedMessages.has(msg.id) ? <img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" />}{likedMessages.has(msg.id) ? <img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${nab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
+                                    <button className={`${nab} ${dislikedMessages.has(msg.id) ? '' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
                                       {dislikedMessages.has(msg.id) ? <img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" />}{dislikedMessages.has(msg.id) ? <img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${nab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                    <button className={`${nab} ${copiedMessageId === msg.id ? '' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
                                       {copiedMessageId === msg.id ? <img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copiedMessageId === msg.id ? <img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -5252,7 +5252,7 @@ Let's start the self-listen session!`;
                                     <div className="flex items-center justify-end mt-2">
                                       <div className="flex space-x-1">
                                         <Tooltip><TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                          <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? '' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
                                             <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                           </Button>
                                         </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -5277,17 +5277,17 @@ Let's start the self-listen session!`;
                                     </div>
                                     <div className="flex items-center gap-0.5 mt-1">
                                       <Tooltip><TooltipTrigger asChild>
-                                        <button className={`${mcab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                        <button className={`${mcab} ${likedMessages.has(message.id) ? '' : ''}`} onClick={() => handleLikeMessage(message.id)}>
                                           {likedMessages.has(message.id) ? <img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" />}{likedMessages.has(message.id) ? <img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" />}
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                       <Tooltip><TooltipTrigger asChild>
-                                        <button className={`${mcab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
+                                        <button className={`${mcab} ${dislikedMessages.has(message.id) ? '' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
                                           {dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" />}{dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                       <Tooltip><TooltipTrigger asChild>
-                                        <button className={`${mcab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                        <button className={`${mcab} ${copiedMessageId === message.id ? '' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
                                           {copiedMessageId === message.id ? <img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copiedMessageId === message.id ? <img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />}
                                         </button>
                                       </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -5368,7 +5368,7 @@ Let's start the self-listen session!`;
                               <div className="flex items-center justify-end mt-2">
                                 <div className="flex space-x-2">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                    <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === message.id ? '' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(message.content, message.id)}>
                                       <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                     </Button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -5391,17 +5391,17 @@ Let's start the self-listen session!`;
                                 </div>
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${sab} ${likedMessages.has(message.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(message.id)}>
+                                    <button className={`${sab} ${likedMessages.has(message.id) ? '' : ''}`} onClick={() => handleLikeMessage(message.id)}>
                                       {likedMessages.has(message.id) ? <img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" />}{likedMessages.has(message.id) ? <img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${sab} ${dislikedMessages.has(message.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
+                                    <button className={`${sab} ${dislikedMessages.has(message.id) ? '' : ''}`} onClick={() => handleDislikeMessage(message.id)}>
                                       {dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" />}{dislikedMessages.has(message.id) ? <img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${sab} ${copiedMessageId === message.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
+                                    <button className={`${sab} ${copiedMessageId === message.id ? '' : ''}`} onClick={() => handleCopyMessage(message.content, message.id)}>
                                       {copiedMessageId === message.id ? <img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copiedMessageId === message.id ? <img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -6190,7 +6190,7 @@ Let's start the self-listen session!`;
                               </div>
                               <div className="flex items-center justify-end mt-2 gap-1">
                                 <Tooltip><TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                  <Button variant="ghost" size="icon" className={`h-6 w-6 rounded-xl transition-all duration-300 ${copiedMessageId === msg.id ? '' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
                                     <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />
                                   </Button>
                                 </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
@@ -6209,17 +6209,17 @@ Let's start the self-listen session!`;
                               {isDone && (
                                 <div className="flex items-center gap-0.5 mt-1">
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${ab} ${likedMessages.has(msg.id) ? 'text-green-700 bg-green-100 dark:bg-green-950' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
+                                    <button className={`${ab} ${likedMessages.has(msg.id) ? '' : ''}`} onClick={() => handleLikeMessage(msg.id)}>
                                       {likedMessages.has(msg.id) ? <img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" />}{likedMessages.has(msg.id) ? <img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Like</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${ab} ${dislikedMessages.has(msg.id) ? 'text-red-500 bg-red-50 dark:bg-red-950' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
+                                    <button className={`${ab} ${dislikedMessages.has(msg.id) ? '' : ''}`} onClick={() => handleDislikeMessage(msg.id)}>
                                       {dislikedMessages.has(msg.id) ? <img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" />}{dislikedMessages.has(msg.id) ? <img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Dislike</p></TooltipContent></Tooltip>
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button className={`${ab} ${copiedMessageId === msg.id ? 'text-blue-500 bg-blue-100 dark:bg-blue-950' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
+                                    <button className={`${ab} ${copiedMessageId === msg.id ? '' : ''}`} onClick={() => handleCopyMessage(msg.content, msg.id)}>
                                       {copiedMessageId === msg.id ? <img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copiedMessageId === msg.id ? <img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" />}
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>

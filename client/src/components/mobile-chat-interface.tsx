@@ -969,13 +969,13 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
           )}
           {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
-              <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
+              <button onClick={handleLike} className={`${ab} ${liked === "up" ? "" : ""}`}>
                 {liked === "up" ? <img src="/icon-like-clicked-light.png" className="w-4 h-4 object-contain block dark:hidden" alt="like" /> : <img src="/icon-like-black.png" className="w-4 h-4 object-contain block dark:hidden brightness-0" alt="like" />}{liked === "up" ? <img src="/icon-like-clicked-dark.png" className="w-4 h-4 object-contain hidden dark:block" alt="like" /> : <img src="/icon-like-gray2.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="like" />}
               </button>
-              <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
+              <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "" : ""}`}>
                 {liked === "down" ? <img src="/icon-dislike-clicked-light.png" className="w-4 h-4 object-contain block dark:hidden" alt="dislike" /> : <img src="/icon-dislike-black.png" className="w-4 h-4 object-contain block dark:hidden brightness-0" alt="dislike" />}{liked === "down" ? <img src="/icon-dislike-clicked-dark.png" className="w-4 h-4 object-contain hidden dark:block" alt="dislike" /> : <img src="/icon-dislike-gray2.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="dislike" />}
               </button>
-              <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
+              <button onClick={handleCopy} className={`${ab} ${copied ? "" : ""}`}>
                 {copied ? <img src="/icon-copy-clicked-light.png" className="w-4 h-4 object-contain block dark:hidden" alt="copy" /> : <img src="/icon-copy-black.png" className="w-4 h-4 object-contain block dark:hidden brightness-0" alt="copy" />}{copied ? <img src="/icon-copy-clicked-dark.png" className="w-4 h-4 object-contain hidden dark:block" alt="copy" /> : <img src="/icon-copy-gray2.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="copy" />}
               </button>
               <DropdownMenu>
