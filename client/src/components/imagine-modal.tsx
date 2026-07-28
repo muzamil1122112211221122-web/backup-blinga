@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
-import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic, Plus, Image as ImageIcon, SlidersHorizontal, ZoomIn, LayoutGrid } from "lucide-react";
+import { X, Sparkles, ArrowUp, Download, ChevronLeft, ChevronRight, Wand2, Upload, Loader2, Mic, Plus, Image as ImageIcon, SlidersHorizontal, ZoomIn } from "lucide-react";
 import animeBoy1 from "@assets/Cute-Anime-Boy-Desktop-Wallpaper_1780491124348.jpg";
 import animeBoy2 from "@assets/e4acdbfb00577aa06233ae2d91e2629a_1780491124348.jpg";
 import animeBoy3 from "@assets/cool-anime-cartoon-dp_1780491124349.jpeg";
@@ -515,23 +515,22 @@ function TemplateCard({
       onClick={onClick}
       className="group relative shrink-0 overflow-hidden text-left"
       style={{
-        width: 108,
-        height: 148,
+        width: 130,
+        height: 178,
         borderRadius: 16,
         border: isActive ? '2px solid #f3b94b' : '1.5px solid rgba(255,255,255,0.12)',
         boxShadow: isActive
           ? `0 0 0 3px rgba(243,185,75,0.25), 0 8px 24px rgba(0,0,0,0.35)`
           : '0 4px 16px rgba(0,0,0,0.22)',
         background: style.bg,
-        transform: 'perspective(600px)',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)',
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-5deg) rotateX(3deg) translateY(-4px) scale(1.04)';
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 18px 44px rgba(0,0,0,0.4)';
+        (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px) scale(1.04)';
+        (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.42)';
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)';
+        (e.currentTarget as HTMLElement).style.transform = '';
         (e.currentTarget as HTMLElement).style.boxShadow = isActive
           ? `0 0 0 3px rgba(243,185,75,0.25), 0 8px 24px rgba(0,0,0,0.35)`
           : '0 4px 16px rgba(0,0,0,0.22)';
@@ -989,12 +988,12 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
 
             {/* ── Hero heading ── */}
             <div className="mx-auto flex w-full max-w-[640px] flex-col items-center pt-[clamp(112px,18vw,190px)] sm:pt-[clamp(126px,17vw,182px)]">
-              <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1 }}>
-                <span className="font-extrabold">Fius Labs</span>{' '}
-                <span className="font-extrabold">Imagine Studio</span>
+              <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1, fontWeight: 900 }}>
+                <span className="font-black">Fius Labs</span>{' '}
+                <span className="font-black">Imagine Studio</span>
               </h2>
               <p className="mt-2 text-center font-medium text-neutral-500" style={{ fontSize: 'clamp(15px,1.8vw,18px)' }}>
-                The Canvas of Tomorrow ✦
+                The Canvas of Tomorrow
               </p>
             </div>
 
@@ -1012,10 +1011,9 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 {/* Browse All button */}
                 <button
                   onClick={() => setShowTemplateGallery(true)}
-                  className="shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200"
-                  style={{ background: 'linear-gradient(135deg,#18181b,#3f3f46)', color: '#ffffff', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }}
+                  className="shrink-0 flex items-center rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all duration-200"
+                  style={{ background: 'rgba(255,255,255,0.92)', color: '#111111', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', border: '1px solid rgba(0,0,0,0.1)' }}
                 >
-                  <LayoutGrid size={11} />
                   <span>All</span>
                 </button>
                 {/* Individual category tabs (skip 'all') */}
