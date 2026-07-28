@@ -1323,6 +1323,23 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [dislikedMessages, setDislikedMessages] = useState<Set<string>>(new Set());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+
+  const handleSaveEditedMessage = (msgId: string, newContent: string) => {
+    const msgIndex = messages.findIndex(m => m.id === msgId);
+    if (msgIndex === -1) return;
+    // Keep only messages up to and including the edited one, with updated content
+    const truncated = messages.slice(0, msgIndex + 1).map(m =>
+      m.id === msgId ? { ...m, content: newContent } : m
+    );
+    setMessages(truncated);
+    setEditingMessageId(null);
+    // Re-trigger AI response for the new content
+    if (!ownMode && currentProjectId && newContent.trim()) {
+      setThinkingType('thinking');
+      setIsTyping(true);
+      handleDirectApiCall(newContent.trim(), currentProjectId);
+    }
+  };
   const [stoppedMessageIds, setStoppedMessageIds] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackMsgId, setFeedbackMsgId] = useState('');
@@ -3630,39 +3647,20 @@ Rules:
     setIsCustomizeModalOpen(false);
   };
 
-  const handleNewProject = async () => {
-    // Always clear Nomad + Imagine state for a fully fresh start
+  const handleNewProject = () => {
+    // Clear Nomad + Imagine state for a fully fresh start
     setNomadMessages({});
     setNomadAutoMessages([]);
     setNomadSoloModel(null);
     setImagineMessages([]);
-
-    try {
-      const response = await authFetch('/api/conversations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: 'New Chat',
-          isProject: false,
-          preset: currentPreset,
-          model: selectedModel,
-        }),
-      });
-
-      if (response.ok) {
-        const newProject = await response.json();
-        setCurrentProjectId(newProject.id);
-        localStorage.setItem('currentProjectId', newProject.id);
-        isHistoryLoad.current = true;
-        setMessages([]);
-        setProjects(prev => [newProject, ...prev]);
-        setActiveTab('ask');
-      }
-    } catch (error) {
-      console.error('Failed to create project:', error);
-    }
+    // Reset local state only — do NOT create a conversation on the server yet.
+    // The conversation is created lazily on the first message send so that
+    // empty chats never appear in the history list.
+    setCurrentProjectId(null);
+    localStorage.removeItem('currentProjectId');
+    isHistoryLoad.current = true;
+    setMessages([]);
+    setActiveTab('ask');
   };
 
   const handleProjectSelect_original = async (id: string) => {
@@ -4418,8 +4416,7 @@ Let's start the self-listen session!`;
                             if (e.key === 'Escape') setEditingMessageId(null);
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
-                              setMessages((prev: any[]) => prev.map((m: any) => m.id === editingMessageId ? { ...m, content: editingContent } : m));
-                              setEditingMessageId(null);
+                              handleSaveEditedMessage(message.id, editingContent);
                             }
                           }}
                           autoFocus
@@ -4428,10 +4425,7 @@ Let's start the self-listen session!`;
                         />
                         <div className="flex justify-end gap-1.5 mt-1">
                           <button onClick={() => setEditingMessageId(null)} className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">Cancel</button>
-                          <button onClick={() => {
-                            setMessages((prev: any[]) => prev.map((m: any) => m.id === editingMessageId ? { ...m, content: editingContent } : m));
-                            setEditingMessageId(null);
-                          }} className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:opacity-80 transition-opacity">Save</button>
+                          <button onClick={() => handleSaveEditedMessage(message.id, editingContent)} className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:opacity-80 transition-opacity">Save</button>
                         </div>
                       </div>
                     ) : (
