@@ -5682,27 +5682,29 @@ Let's start the self-listen session!`;
                           {/* Editor + Templates cards */}
                           <div className="mt-5 grid w-full grid-cols-2 gap-3">
                             <button onClick={() => imageInputRef.current?.click()}
-                              className="group relative overflow-hidden flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1"
-                              style={{ borderRadius: 20, background: 'linear-gradient(135deg,#0f1729 0%,#162040 60%,#1e3060 100%)', boxShadow: '0 2px 20px rgba(56,189,248,0.12)' }}>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg,#0f2040 0%,#1a3060 60%,#2246a0 100%)' }} />
-                              <div className="relative shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)' }}>
-                                <Wand2 className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" style={{ color: '#38bdf8' }} />
-                              </div>
+                              className="group relative flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                              style={{ borderRadius: 20, background: resolvedTheme === 'dark' ? '#1a1a1a' : '#ffffff', boxShadow: resolvedTheme === 'dark' ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.08)', border: resolvedTheme === 'dark' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.07)' }}>
+                              <img
+                                src={resolvedTheme === 'dark' ? '/icon-editor-dark.png' : '/icon-editor-light.png'}
+                                alt="Editor"
+                                className="relative shrink-0 w-10 h-10 object-contain transition-transform duration-300 group-hover:scale-110"
+                              />
                               <span className="relative">
-                                <span className="block text-sm font-bold text-white">Editor</span>
-                                <span className="mt-0.5 block text-[11px]" style={{ color: 'rgba(148,194,255,0.6)' }}>Transform a photo</span>
+                                <span className="block text-sm font-bold" style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111111' }}>Editor</span>
+                                <span className="mt-0.5 block text-[11px]" style={{ color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>Transform a photo</span>
                               </span>
                             </button>
                             <button onClick={() => document.getElementById('pc-studio-templates')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                              className="group relative overflow-hidden flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1"
-                              style={{ borderRadius: 20, background: 'linear-gradient(135deg,#140a28 0%,#1e1040 60%,#2c1860 100%)', boxShadow: '0 2px 20px rgba(167,139,250,0.12)' }}>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg,#1a0e38 0%,#261650 60%,#3c2280 100%)' }} />
-                              <div className="relative shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.25)' }}>
-                                <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" style={{ color: '#a78bfa' }} />
-                              </div>
+                              className="group relative flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                              style={{ borderRadius: 20, background: resolvedTheme === 'dark' ? '#1a1a1a' : '#ffffff', boxShadow: resolvedTheme === 'dark' ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.08)', border: resolvedTheme === 'dark' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.07)' }}>
+                              <img
+                                src={resolvedTheme === 'dark' ? '/icon-templates-dark.png' : '/icon-templates-light.png'}
+                                alt="Templates"
+                                className="relative shrink-0 w-10 h-10 object-contain transition-transform duration-300 group-hover:scale-110"
+                              />
                               <span className="relative">
-                                <span className="block text-sm font-bold text-white">Templates</span>
-                                <span className="mt-0.5 block text-[11px]" style={{ color: 'rgba(200,180,255,0.55)' }}>Styles for every occasion</span>
+                                <span className="block text-sm font-bold" style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111111' }}>Templates</span>
+                                <span className="mt-0.5 block text-[11px]" style={{ color: resolvedTheme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>Styles for every occasion</span>
                               </span>
                             </button>
                           </div>
@@ -5731,7 +5733,7 @@ Let's start the self-listen session!`;
                             <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 14, marginBottom: -14 }}>
                               <div
                                 className="flex gap-3 w-max"
-                                style={{ animation: 'studio-marquee-left 65s linear infinite' }}
+                                style={{ animation: 'studio-marquee-left 175s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
                               >
@@ -5757,7 +5759,7 @@ Let's start the self-listen session!`;
                             <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 14, marginBottom: -14 }}>
                               <div
                                 className="flex gap-3 w-max"
-                                style={{ animation: 'studio-marquee-right 65s linear infinite' }}
+                                style={{ animation: 'studio-marquee-right 175s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
                               >
