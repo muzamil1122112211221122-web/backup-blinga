@@ -1000,9 +1000,6 @@ export function Sidebar({
               {/* Usage stats inside card */}
               <SidebarUsage compact />
 
-              {/* Divider */}
-              <div className="border-t border-zinc-200 dark:border-zinc-800" />
-
               {/* Inline expanded menu (customize profile) */}
               {profileMenuOpen && isCustomizing && (
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -1066,7 +1063,12 @@ export function Sidebar({
 
               {/* User row */}
               {user && (
-                <div className="flex items-center gap-2.5 px-3 py-2.5">
+                <button
+                  type="button"
+                  onClick={() => setProfileMenuOpen(v => !v)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors text-left"
+                  aria-label="Expand account menu"
+                >
                   {profilePicture ? (
                     <img src={profilePicture} alt="Profile" className="h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
                   ) : (
@@ -1082,21 +1084,18 @@ export function Sidebar({
                   {closeButtonPosition === 'bottom' && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button onClick={closeSidebarStage} className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0">
+                        <span
+                          role="button"
+                          onClick={e => { e.stopPropagation(); closeSidebarStage(); }}
+                          className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0"
+                        >
                           <img src={sidebarAsset("close")} alt="" className="h-4 w-4 object-contain" />
-                        </button>
+                        </span>
                       </TooltipTrigger>
                       <TooltipContent>Close sidebar</TooltipContent>
                     </Tooltip>
                   )}
-                  <button
-                    onClick={() => setProfileMenuOpen(v => !v)}
-                    className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-[14px] font-bold transition-colors ${profileMenuOpen ? 'bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600'}`}
-                    aria-label="Expand account menu"
-                  >
-                    {profileMenuOpen ? '×' : '+'}
-                  </button>
-                </div>
+                </button>
               )}
             </div>
           )}
