@@ -4038,9 +4038,10 @@ Let's start the self-listen session!`;
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
          onVoiceClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
          onImagineClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab('imagine'); }}
-         onTabChange={(tab) => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab(tab as any); }}
+         onTabChange={(tab) => { if (!(settingsToggles.tabsInSidebar ?? false)) { setIsSidebarOpen(false); setSidebarOpenMode('mini'); } changeTab(tab as any); }}
          activeTab={activeTab}
          tabsInSidebar={settingsToggles.tabsInSidebar ?? false}
+         askHasMessages={messages.length > 0}
          ownMode={ownMode}
          onToggleOwnMode={() => { if (ownMode) { setOwnMode(false); if (projects.length > 0) handleProjectSelect(projects[0].id); } else { setOwnMode(true); } }}
          resolvedTheme={resolvedTheme}

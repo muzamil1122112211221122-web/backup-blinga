@@ -311,6 +311,7 @@ interface SidebarProps {
   onTabChange?: (tab: string) => void;
   activeTab?: string;
   tabsInSidebar?: boolean;
+  askHasMessages?: boolean;
   ownMode?: boolean;
   onToggleOwnMode?: () => void;
   resolvedTheme?: string;
@@ -346,6 +347,7 @@ export function Sidebar({
   onTabChange,
   activeTab,
   tabsInSidebar = false,
+  askHasMessages = false,
   ownMode,
   onToggleOwnMode,
   resolvedTheme,
@@ -696,13 +698,13 @@ export function Sidebar({
 
         {isMini ? (
           <div
-            className="flex-1 flex flex-col items-center gap-1.5 pt-1 cursor-pointer"
+            className="flex-1 flex flex-col items-center gap-0.5 pt-1 cursor-pointer"
             onClick={() => setIsMini(false)}
             aria-label="Expand sidebar"
           >
             <MiniNavButton asset="search" label="Search Chats" onClick={openSpotlight} />
-            <MiniNavButton asset="chat" label="New Chat" onClick={() => onNewProject?.(false)} />
-            <MiniNavButton asset="imagine" label="Imagine Studio" onClick={() => onImagineClick?.()} />
+            <MiniNavButton asset="chat" label="New Chat" onClick={() => onNewProject?.(false)} active={tabsInSidebar && activeTab === 'ask' && !askHasMessages} />
+            <MiniNavButton asset="imagine" label="Imagine Studio" onClick={() => onImagineClick?.()} active={tabsInSidebar && activeTab === 'imagine'} />
             {tabsInSidebar && (<>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -710,18 +712,18 @@ export function Sidebar({
                     type="button"
                     aria-label="Owl Mode"
                     onClick={(e) => { e.stopPropagation(); onToggleOwnMode?.(); }}
-                    className={`h-10 w-10 mx-auto flex items-center justify-center rounded-xl transition-colors ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                    className={`h-10 w-10 mx-auto flex items-center justify-center rounded-full transition-all duration-150 hover:scale-110 active:scale-95 ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                   >
                     <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">{ownMode ? 'Exit Owl Mode' : 'Owl Mode'}</TooltipContent>
               </Tooltip>
-              <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} active={activeTab === 'ask'} iconSize="23px" />
+              <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} active={activeTab === 'ask' && askHasMessages} iconSize="25px" />
               <MiniNavButton asset="nomad" label="Nomad" onClick={() => onTabChange?.('nomad')} active={activeTab === 'nomad'} />
               <MiniNavButton asset="minds" label="Fius Minds" onClick={() => onTabChange?.('philosopher')} active={activeTab === 'philosopher'} iconSize="23px" />
-              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} active={activeTab === 'fius-games'} iconSize="23px" />
-              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} active={activeTab === 'fius-labs'} iconSize="23px" />
+              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} active={activeTab === 'fius-games'} iconSize="26px" />
+              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} active={activeTab === 'fius-labs'} iconSize="26px" />
             </>)}
             <MiniNavButton asset="history" label="Chats" onClick={() => setIsMini(false)} />
           </div>
@@ -731,7 +733,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={openSpotlight}
-                className="w-full flex items-center gap-3 px-3 py-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left"
+                className="w-full flex items-center gap-3 px-3 py-1 rounded-full text-zinc-700 dark:text-zinc-300 transition-colors duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left"
               >
                 <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("search")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
                 <span className="text-[14px] font-medium">Search Chats</span>
@@ -740,7 +742,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => onNewProject?.(false)}
-                className="w-full flex items-center gap-3 px-3 py-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left"
+                className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${tabsInSidebar && activeTab === 'ask' && !askHasMessages ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
               >
                 <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("chat")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
                 <span className="text-[14px] font-medium">New Chat</span>
@@ -749,7 +751,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => onImagineClick?.()}
-                className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
               >
                 <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("imagine")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
                 <span className="text-[14px] font-medium">Imagine Studio</span>
@@ -762,7 +764,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => onToggleOwnMode?.()}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} /></span>
                   <span className="text-[14px] font-medium">Owl Mode</span>
@@ -772,15 +774,15 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('ask'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'ask' && askHasMessages ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("ask")} alt="" className="object-contain" style={{width:'23px',height:'23px'}} /></span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("ask")} alt="" className="object-contain" style={{width:'25px',height:'25px'}} /></span>
                   <span className="text-[14px] font-medium">Ask</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('nomad'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("nomad")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
                   <span className="text-[14px] font-medium">Nomad</span>
@@ -788,7 +790,7 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('philosopher'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("minds")} alt="" className="object-contain" style={{width:'23px',height:'23px'}} /></span>
                   <span className="text-[14px] font-medium">Fius Minds</span>
@@ -796,17 +798,17 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-games'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("games")} alt="" className="object-contain" style={{width:'26px',height:'26px'}} /></span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("games")} alt="" className="object-contain" style={{width:'28px',height:'28px'}} /></span>
                   <span className="text-[14px] font-medium">Fius Games</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-labs'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-colors duration-150 text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("labs")} alt="" className="object-contain" style={{width:'26px',height:'26px'}} /></span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("labs")} alt="" className="object-contain" style={{width:'28px',height:'28px'}} /></span>
                   <span className="text-[14px] font-medium">Fius Labs</span>
                 </button>
               </>)}
