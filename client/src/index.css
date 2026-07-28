@@ -1442,6 +1442,48 @@ html:not(.preload) img {
 }
 
 
+/* ─── Global drag prevention ────────────────────────────────────────────────── */
+/* Prevent native browser drag-ghost on images and interactive elements app-wide.
+   File-upload drop zones override this explicitly with their own drag handlers.  */
+img, a, button, [role="button"] {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* ─── Text selection / highlight colour ─────────────────────────────────────── */
+/* Default (accent off or multicolor): soft light-blue                            */
+::selection {
+  background-color: #93c5fd;
+  color: inherit;
+}
+/* When a solid accent is active: tint the selection with the accent colour       */
+.fius-accent-on ::selection {
+  background-color: color-mix(in srgb, var(--fius-ui-accent) 38%, transparent);
+  color: inherit;
+}
+
+/* ─── Caret / text-insertion indicator ──────────────────────────────────────── */
+/* Light theme default: black caret                                               */
+textarea, input[type="text"], input[type="search"], input[type="email"], input[type="password"] {
+  caret-color: #000;
+}
+/* Dark theme default: white caret                                                */
+.dark textarea,
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="email"],
+.dark input[type="password"] {
+  caret-color: #fff;
+}
+/* Accent overrides both when a solid accent is active                            */
+.fius-accent-on textarea,
+.fius-accent-on input[type="text"],
+.fius-accent-on input[type="search"],
+.fius-accent-on input[type="email"],
+.fius-accent-on input[type="password"] {
+  caret-color: var(--fius-ui-accent) !important;
+}
+
 /* ─── Accent Color ───────────────────────────────────────────────────────────── */
 /* When uiAccentEnabled=true & a specific color is chosen, body gets .fius-accent-on */
 
@@ -1464,4 +1506,11 @@ html:not(.preload) img {
 }
 .fius-accent-on .user-msg-bubble * {
   color: #fff !important;
+}
+
+/* ─── Logo variant 2 (rings) accent colour ───────────────────────────────────── */
+/* The ƒ letter inside the spinning rings uses currentColor by default.
+   When a solid accent is active, tint it with the accent colour.                */
+.fius-accent-on [data-testid="logo-fius-rings"] span {
+  color: var(--fius-ui-accent) !important;
 }
