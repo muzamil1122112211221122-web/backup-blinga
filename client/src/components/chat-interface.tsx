@@ -5728,10 +5728,10 @@ Let's start the self-listen session!`;
                           </div>
                           <div className="flex flex-col gap-3">
                             {/* Row 1 — scrolls left */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 4 }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 14, marginBottom: -14 }}>
                               <div
                                 className="flex gap-3 w-max"
-                                style={{ animation: 'studio-marquee-left 80s linear infinite' }}
+                                style={{ animation: 'studio-marquee-left 120s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
                               >
@@ -5754,10 +5754,10 @@ Let's start the self-listen session!`;
                               </div>
                             </div>
                             {/* Row 2 — scrolls right */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 4 }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 14, marginBottom: -14 }}>
                               <div
                                 className="flex gap-3 w-max"
-                                style={{ animation: 'studio-marquee-right 95s linear infinite' }}
+                                style={{ animation: 'studio-marquee-right 120s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
                               >
