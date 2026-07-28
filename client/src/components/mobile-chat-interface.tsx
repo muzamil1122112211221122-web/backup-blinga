@@ -980,7 +980,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className={ab}><MoreHorizontal className="w-4 h-4" /></button>
+                  <button className={ab}><img src="/icon-more-black.png" className="w-4 h-4 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="more" /></button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
                   <DropdownMenuItem onClick={handleSpeak}

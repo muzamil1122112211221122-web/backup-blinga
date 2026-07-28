@@ -4639,7 +4639,7 @@ Let's start the self-listen session!`;
                             {/* … more menu */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                 <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)}
@@ -4997,7 +4997,7 @@ Let's start the self-listen session!`;
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={nab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                      <button className={nab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                       <DropdownMenuItem onClick={() => handleSpeakMessage(msg.content, msg.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5267,7 +5267,7 @@ Let's start the self-listen session!`;
                                       </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                       <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                          <button className={mcab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                          <button className={mcab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                           <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5381,7 +5381,7 @@ Let's start the self-listen session!`;
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === message.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={sab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                      <button className={sab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[200px] z-[200]">
                                       <DropdownMenuItem onClick={() => handleSpeakMessage(message.content, message.id)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -6199,7 +6199,7 @@ Let's start the self-listen session!`;
                                   </TooltipTrigger><TooltipContent><p>{copiedMessageId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent></Tooltip>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button className={ab}><MoreHorizontal className="h-3.5 w-3.5" /></button>
+                                      <button className={ab}><img src="/icon-more-black.png" className="h-3.5 w-3.5 object-contain block dark:hidden opacity-70" alt="more" /><img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" /></button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
                                       <DropdownMenuItem onClick={() => handlePhilosopherRetry()} disabled={philosopherIsTyping}
