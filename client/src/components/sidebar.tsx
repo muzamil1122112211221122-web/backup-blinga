@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, Settings, UserPen, LogOut, ChevronUp, ChevronLeft, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Search, MessageSquare, Clock } from "lucide-react";
+import { Plus, X, Check, Settings, UserPen, LogOut, ChevronUp, ChevronDown, ChevronLeft, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Search, MessageSquare, Clock } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useUsage } from "@/hooks/use-usage";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -401,6 +402,8 @@ export function Sidebar({
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const picInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { usage: sidebarUsageData } = useUsage();
+  const isUltimatePlan = sidebarUsageData?.plan === "ultimate";
 
   const isDarkTheme = theme === "dark" || (
     theme === "system" &&
@@ -1016,66 +1019,76 @@ export function Sidebar({
               {/* Usage stats inside card */}
               <SidebarUsage compact onOpenSettings={onOpenSettings} />
 
-              {/* Inline expanded menu (customize profile) */}
-              {profileMenuOpen && isCustomizing && (
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
-                    <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="flex flex-col items-center mb-4">
-                    <button onClick={() => picInputRef.current?.click()} className="relative group">
-                      {profilePicture ? (
-                        <img src={profilePicture} alt="Profile" className="h-16 w-16 rounded-full object-cover shadow-lg" />
-                      ) : (
-                        <div className="h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg"
-                          style={{ background: `linear-gradient(45deg, ${getVibrantColor(user?.username || user?.email || '')}, ${getVibrantColor(user?.username || user?.email || '', true)})` }}>
-                          {(user?.username || user?.email || '').charAt(0).toUpperCase()}
+              {/* Inline expanded menu (customize profile or settings) — animated */}
+              <AnimatePresence initial={false}>
+                {profileMenuOpen && (
+                  <motion.div
+                    key="profile-menu"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    {isCustomizing ? (
+                      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                        <div className="flex items-center justify-between mb-4">
+                          <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
+                          <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                            <X className="h-4 w-4" />
+                          </button>
                         </div>
-                      )}
-                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <UserPen className="h-5 w-5 text-white" />
+                        <div className="flex flex-col items-center mb-4">
+                          <button onClick={() => picInputRef.current?.click()} className="relative group">
+                            {profilePicture ? (
+                              <img src={profilePicture} alt="Profile" className="h-16 w-16 rounded-full object-cover shadow-lg" />
+                            ) : (
+                              <div className="h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg"
+                                style={{ background: `linear-gradient(45deg, ${getVibrantColor(user?.username || user?.email || '')}, ${getVibrantColor(user?.username || user?.email || '', true)})` }}>
+                                {(user?.username || user?.email || '').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <UserPen className="h-5 w-5 text-white" />
+                            </div>
+                          </button>
+                          <p className="text-[11px] text-zinc-400 mt-1.5">Click to upload photo</p>
+                          <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
+                        </div>
+                        <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Display name</p>
+                        <div className="flex items-center gap-2">
+                          <Input value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsCustomizing(false); }}
+                            placeholder={user?.username || user?.email} autoFocus className="h-8 text-sm" />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button onClick={handleRenameSubmit} className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0">
+                                <Check className="h-4 w-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Save name</TooltipContent>
+                          </Tooltip>
+                        </div>
                       </div>
-                    </button>
-                    <p className="text-[11px] text-zinc-400 mt-1.5">Click to upload photo</p>
-                    <input ref={picInputRef} type="file" accept="image/*" className="hidden" onChange={handlePictureUpload} />
-                  </div>
-                  <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Display name</p>
-                  <div className="flex items-center gap-2">
-                    <Input value={renameValue} onChange={e => setRenameValue(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleRenameSubmit(); if (e.key === 'Escape') setIsCustomizing(false); }}
-                      placeholder={user?.username || user?.email} autoFocus className="h-8 text-sm" />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button onClick={handleRenameSubmit} className="p-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-80 transition-opacity flex-shrink-0">
-                          <Check className="h-4 w-4" />
+                    ) : (
+                      <div className="border-b border-zinc-200 dark:border-zinc-800">
+                        <button onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                          <Settings className="h-4 w-4 text-slate-500" />Settings
                         </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Save name</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              )}
-
-              {/* Inline expanded menu (settings/profile/logout) */}
-              {profileMenuOpen && !isCustomizing && (
-                <div className="border-b border-zinc-200 dark:border-zinc-800">
-                  <button onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                    <Settings className="h-4 w-4 text-slate-500" />Settings
-                  </button>
-                  <button onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                    <UserPen className="h-4 w-4 text-indigo-500" />Customize profile
-                  </button>
-                  <button onClick={() => { setProfileMenuOpen(false); onLogout(); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                    <LogOut className="h-4 w-4 text-red-500" />Log out
-                  </button>
-                </div>
-              )}
+                        <button onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                          <UserPen className="h-4 w-4 text-indigo-500" />Customize profile
+                        </button>
+                        <button onClick={() => { setProfileMenuOpen(false); onLogout(); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                          <LogOut className="h-4 w-4 text-red-500" />Log out
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* User row */}
               {user && (
@@ -1095,8 +1108,15 @@ export function Sidebar({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{user.username || user.email}</p>
-                    <p className="text-[10px] text-zinc-400 leading-tight">Free</p>
+                    <p className="text-[10px] text-zinc-400 leading-tight">{isUltimatePlan ? 'Ultimate' : 'Free'}</p>
                   </div>
+                  <motion.div
+                    animate={{ rotate: profileMenuOpen ? 0 : 180 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    className="flex-shrink-0 text-zinc-400"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </motion.div>
                   {closeButtonPosition === 'bottom' && (
                     <Tooltip>
                       <TooltipTrigger asChild>
