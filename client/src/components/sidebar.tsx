@@ -1075,89 +1075,53 @@ export function Sidebar({
                         </div>
                       </div>
                     ) : (
-                      <div className="px-2 py-2 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-0.5">
+                      <div className="px-2 py-2 flex flex-col gap-0.5">
                         {/* Settings */}
                         <motion.button
                           onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
-                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-zinc-600 dark:text-zinc-300 overflow-hidden"
-                          whileHover="hovered"
-                          initial="rest"
+                          className="group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] overflow-hidden"
+                          whileHover="hov"
+                          initial="idle"
                         >
                           <motion.span
-                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-zinc-800/70"
-                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
+                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-white/[0.07]"
+                            variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
+                            transition={{ duration: 0.16, ease: "easeOut" }}
                           />
-                          <motion.span
-                            variants={{ rest: { color: "#94a3b8" }, hovered: { color: "#6366f1" } }}
-                            transition={{ duration: 0.15 }}
-                            className="relative z-10 flex-shrink-0"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </motion.span>
-                          <motion.span
-                            className="relative z-10 font-medium"
-                            variants={{ rest: {}, hovered: { x: 1 } }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            Settings
-                          </motion.span>
+                          <Settings className="relative z-10 h-4 w-4 flex-shrink-0 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors duration-150" />
+                          <span className="relative z-10 font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors duration-150">Settings</span>
                         </motion.button>
 
                         {/* Customize profile */}
                         <motion.button
                           onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
-                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-zinc-600 dark:text-zinc-300 overflow-hidden"
-                          whileHover="hovered"
-                          initial="rest"
+                          className="group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] overflow-hidden"
+                          whileHover="hov"
+                          initial="idle"
                         >
                           <motion.span
-                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-zinc-800/70"
-                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
+                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-white/[0.07]"
+                            variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
+                            transition={{ duration: 0.16, ease: "easeOut" }}
                           />
-                          <motion.span
-                            variants={{ rest: { color: "#818cf8" }, hovered: { color: "#6366f1" } }}
-                            transition={{ duration: 0.15 }}
-                            className="relative z-10 flex-shrink-0"
-                          >
-                            <UserPen className="h-4 w-4" />
-                          </motion.span>
-                          <motion.span
-                            className="relative z-10 font-medium"
-                            variants={{ rest: {}, hovered: { x: 1 } }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            Customize profile
-                          </motion.span>
+                          <UserPen className="relative z-10 h-4 w-4 flex-shrink-0 text-indigo-400 group-hover:text-indigo-500 transition-colors duration-150" />
+                          <span className="relative z-10 font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors duration-150">Customize profile</span>
                         </motion.button>
 
                         {/* Log out */}
                         <motion.button
                           onClick={() => { setProfileMenuOpen(false); onLogout(); }}
-                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-red-500 overflow-hidden"
-                          whileHover="hovered"
-                          initial="rest"
+                          className="group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] overflow-hidden"
+                          whileHover="hov"
+                          initial="idle"
                         >
                           <motion.span
-                            className="absolute inset-0 rounded-xl bg-red-50 dark:bg-red-950/30"
-                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
+                            className="absolute inset-0 rounded-xl bg-red-50 dark:bg-red-950/25"
+                            variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
+                            transition={{ duration: 0.16, ease: "easeOut" }}
                           />
-                          <motion.span
-                            variants={{ rest: { scale: 1 }, hovered: { scale: 1.1 } }}
-                            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                            className="relative z-10 flex-shrink-0"
-                          >
-                            <LogOut className="h-4 w-4" />
-                          </motion.span>
-                          <motion.span
-                            className="relative z-10 font-medium"
-                            variants={{ rest: {}, hovered: { x: 1 } }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            Log out
-                          </motion.span>
+                          <LogOut className="relative z-10 h-4 w-4 flex-shrink-0 text-red-400 group-hover:text-red-500 transition-colors duration-150" />
+                          <span className="relative z-10 font-medium text-red-500 group-hover:text-red-600 transition-colors duration-150">Log out</span>
                         </motion.button>
                       </div>
                     )}
@@ -1167,28 +1131,35 @@ export function Sidebar({
 
               {/* User row */}
               {user && (
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setProfileMenuOpen(v => !v)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors text-left"
+                  className="group relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-b-2xl overflow-hidden text-left"
                   aria-label="Expand account menu"
+                  whileHover="hov"
+                  initial="idle"
                 >
+                  <motion.span
+                    className="absolute inset-0 bg-zinc-100 dark:bg-white/[0.06]"
+                    variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                  />
                   {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
+                    <img src={profilePicture} alt="Profile" className="relative z-10 h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
                   ) : (
-                    <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px] shadow"
+                    <div className="relative z-10 h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px] shadow"
                       style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}>
                       {(user.username || user.email).charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
+                  <div className="relative z-10 flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{user.username || user.email}</p>
                     <p className="text-[10px] text-zinc-400 leading-tight">{isUltimatePlan ? 'Ultimate' : 'Free'}</p>
                   </div>
                   <motion.div
                     animate={{ rotate: profileMenuOpen ? 0 : 180 }}
-                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex-shrink-0 text-zinc-400"
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    className="relative z-10 flex-shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors duration-150"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </motion.div>
@@ -1198,7 +1169,7 @@ export function Sidebar({
                         <span
                           role="button"
                           onClick={e => { e.stopPropagation(); closeSidebarStage(); }}
-                          className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0"
+                          className="relative z-10 p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors flex-shrink-0"
                         >
                           <img src={sidebarAsset("close")} alt="" className="h-4 w-4 object-contain" />
                         </span>
@@ -1206,7 +1177,7 @@ export function Sidebar({
                       <TooltipContent>Close sidebar</TooltipContent>
                     </Tooltip>
                   )}
-                </button>
+                </motion.button>
               )}
             </div>
           )}
