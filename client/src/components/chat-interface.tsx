@@ -4037,7 +4037,7 @@ Let's start the self-listen session!`;
         onSearchOpen={() => setIsSearchOpen(true)}
         onOpenSettings={() => setIsCustomizeModalOpen(true)}
          onVoiceClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
-         onImagineClick={() => { setIsSidebarOpen(false); setSidebarOpenMode('mini'); changeTab('imagine'); }}
+         onImagineClick={() => { if (!(settingsToggles.tabsInSidebar ?? false)) { setIsSidebarOpen(false); setSidebarOpenMode('mini'); } changeTab('imagine'); }}
          onTabChange={(tab) => { if (!(settingsToggles.tabsInSidebar ?? false)) { setIsSidebarOpen(false); setSidebarOpenMode('mini'); } changeTab(tab as any); }}
          activeTab={activeTab}
          tabsInSidebar={settingsToggles.tabsInSidebar ?? false}
