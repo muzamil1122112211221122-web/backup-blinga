@@ -612,7 +612,7 @@ export function Sidebar({
             event.stopPropagation();
             onClick();
           }}
-          className={`h-10 w-10 mx-auto flex items-center justify-center rounded-xl transition-colors ${active ? 'bg-zinc-200 dark:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+          className={`h-10 w-10 mx-auto flex items-center justify-center rounded-full transition-all duration-150 hover:scale-110 active:scale-95 ${active ? 'bg-zinc-200 dark:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
         >
           <img src={sidebarAsset(asset)} alt="" className="object-contain" style={{width: iconSize ?? '19px', height: iconSize ?? '19px'}} />
         </button>
@@ -727,32 +727,32 @@ export function Sidebar({
           </div>
         ) : (
           <>
-            <div className="px-3 space-y-1 mt-1">
+            <div className="px-3 space-y-0.5 mt-1">
               <button
                 type="button"
                 onClick={openSpotlight}
-                className="w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left"
               >
-                <img src={sidebarAsset("search")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
-                <span className="text-[15px] font-medium">Search Chats</span>
+                <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("search")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
+                <span className="text-[14px] font-medium">Search Chats</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onNewProject?.(false)}
-                className="w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left"
               >
-                <img src={sidebarAsset("chat")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
-                <span className="text-[15px] font-medium">New Chat</span>
+                <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("chat")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
+                <span className="text-[14px] font-medium">New Chat</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onImagineClick?.()}
-                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
               >
-                <img src={sidebarAsset("imagine")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
-                <span className="text-[15px] font-medium">Imagine Studio</span>
+                <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("imagine")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
+                <span className="text-[14px] font-medium">Imagine Studio</span>
                 <span className="ml-auto h-1.5 w-1.5 rounded-full bg-pink-500/80" />
               </button>
 
@@ -762,52 +762,52 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => onToggleOwnMode?.()}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain flex-shrink-0 ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} />
-                  <span className="text-[15px] font-medium">Owl Mode</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} /></span>
+                  <span className="text-[14px] font-medium">Owl Mode</span>
                   {ownMode && <span className="ml-auto text-[11px] font-medium opacity-70">ON</span>}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('ask'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={sidebarAsset("ask")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
-                  <span className="text-[15px] font-medium">Ask</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("ask")} alt="" className="object-contain" style={{width:'23px',height:'23px'}} /></span>
+                  <span className="text-[14px] font-medium">Ask</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('nomad'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={sidebarAsset("nomad")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
-                  <span className="text-[15px] font-medium">Nomad</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("nomad")} alt="" className="object-contain" style={{width:'19px',height:'19px'}} /></span>
+                  <span className="text-[14px] font-medium">Nomad</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('philosopher'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={sidebarAsset("minds")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
-                  <span className="text-[15px] font-medium">Fius Minds</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("minds")} alt="" className="object-contain" style={{width:'23px',height:'23px'}} /></span>
+                  <span className="text-[14px] font-medium">Fius Minds</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-games'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={sidebarAsset("games")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
-                  <span className="text-[15px] font-medium">Fius Games</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("games")} alt="" className="object-contain" style={{width:'26px',height:'26px'}} /></span>
+                  <span className="text-[14px] font-medium">Fius Games</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-labs'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
-                  <img src={sidebarAsset("labs")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
-                  <span className="text-[15px] font-medium">Fius Labs</span>
+                  <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("labs")} alt="" className="object-contain" style={{width:'26px',height:'26px'}} /></span>
+                  <span className="text-[14px] font-medium">Fius Labs</span>
                 </button>
               </>)}
             </div>
