@@ -594,10 +594,14 @@ export function Sidebar({
     asset,
     label,
     onClick,
+    active,
+    iconSize,
   }: {
     asset: keyof typeof SIDEBAR_ASSETS;
     label: string;
     onClick: () => void;
+    active?: boolean;
+    iconSize?: string;
   }) => (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -608,9 +612,9 @@ export function Sidebar({
             event.stopPropagation();
             onClick();
           }}
-          className="h-10 w-10 mx-auto flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors"
+          className={`h-10 w-10 mx-auto flex items-center justify-center rounded-xl transition-colors ${active ? 'bg-zinc-200 dark:bg-zinc-700' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
         >
-          <img src={sidebarAsset(asset)} alt="" className="object-contain" style={{width:'19px',height:'19px'}} />
+          <img src={sidebarAsset(asset)} alt="" className="object-contain" style={{width: iconSize ?? '19px', height: iconSize ?? '19px'}} />
         </button>
       </TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
@@ -698,7 +702,6 @@ export function Sidebar({
           >
             <MiniNavButton asset="search" label="Search Chats" onClick={openSpotlight} />
             <MiniNavButton asset="chat" label="New Chat" onClick={() => onNewProject?.(false)} />
-            <MiniNavButton asset="voice" label="Voice" onClick={() => onVoiceClick?.()} />
             <MiniNavButton asset="imagine" label="Imagine Studio" onClick={() => onImagineClick?.()} />
             {tabsInSidebar && (<>
               <Tooltip>
@@ -709,16 +712,16 @@ export function Sidebar({
                     onClick={(e) => { e.stopPropagation(); onToggleOwnMode?.(); }}
                     className={`h-10 w-10 mx-auto flex items-center justify-center rounded-xl transition-colors ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                   >
-                    <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'19px',height:'19px'}} />
+                    <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">{ownMode ? 'Exit Owl Mode' : 'Owl Mode'}</TooltipContent>
               </Tooltip>
-              <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} />
-              <MiniNavButton asset="nomad" label="Nomad" onClick={() => onTabChange?.('nomad')} />
-              <MiniNavButton asset="minds" label="Fius Minds" onClick={() => onTabChange?.('philosopher')} />
-              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} />
-              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} />
+              <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} active={activeTab === 'ask'} iconSize="23px" />
+              <MiniNavButton asset="nomad" label="Nomad" onClick={() => onTabChange?.('nomad')} active={activeTab === 'nomad'} />
+              <MiniNavButton asset="minds" label="Fius Minds" onClick={() => onTabChange?.('philosopher')} active={activeTab === 'philosopher'} iconSize="23px" />
+              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} active={activeTab === 'fius-games'} iconSize="23px" />
+              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} active={activeTab === 'fius-labs'} iconSize="23px" />
             </>)}
             <MiniNavButton asset="history" label="Chats" onClick={() => setIsMini(false)} />
           </div>
@@ -728,7 +731,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={openSpotlight}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
               >
                 <img src={sidebarAsset("search")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
                 <span className="text-[15px] font-medium">Search Chats</span>
@@ -737,7 +740,7 @@ export function Sidebar({
               <button
                 type="button"
                 onClick={() => onNewProject?.(false)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
               >
                 <img src={sidebarAsset("chat")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
                 <span className="text-[15px] font-medium">New Chat</span>
@@ -745,17 +748,8 @@ export function Sidebar({
 
               <button
                 type="button"
-                onClick={() => onVoiceClick?.()}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-zinc-700 dark:text-zinc-300 transition-colors text-left"
-              >
-                <img src={sidebarAsset("voice")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
-                <span className="text-[15px] font-medium">Voice</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => onImagineClick?.()}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'imagine' && tabsInSidebar ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
               >
                 <img src={sidebarAsset("imagine")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
                 <span className="text-[15px] font-medium">Imagine Studio</span>
@@ -768,9 +762,9 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => onToggleOwnMode?.()}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 text-white' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain flex-shrink-0 ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'19px',height:'19px'}} />
+                  <img src={(resolvedTheme ?? (isDarkTheme ? 'dark' : 'light')) === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="" className={`object-contain flex-shrink-0 ${ownMode ? 'brightness-0 invert' : ''}`} style={{width:'23px',height:'23px'}} />
                   <span className="text-[15px] font-medium">Owl Mode</span>
                   {ownMode && <span className="ml-auto text-[11px] font-medium opacity-70">ON</span>}
                 </button>
@@ -778,15 +772,15 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('ask'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'ask' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  <img src={sidebarAsset("ask")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
+                  <img src={sidebarAsset("ask")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
                   <span className="text-[15px] font-medium">Ask</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('nomad'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'nomad' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
                   <img src={sidebarAsset("nomad")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
                   <span className="text-[15px] font-medium">Nomad</span>
@@ -794,25 +788,25 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('philosopher'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  <img src={sidebarAsset("minds")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
+                  <img src={sidebarAsset("minds")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
                   <span className="text-[15px] font-medium">Fius Minds</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-games'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  <img src={sidebarAsset("games")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
+                  <img src={sidebarAsset("games")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
                   <span className="text-[15px] font-medium">Fius Games</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { onTabChange?.('fius-labs'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`w-full flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
-                  <img src={sidebarAsset("labs")} alt="" className="object-contain flex-shrink-0" style={{width:'19px',height:'19px'}} />
+                  <img src={sidebarAsset("labs")} alt="" className="object-contain flex-shrink-0" style={{width:'23px',height:'23px'}} />
                   <span className="text-[15px] font-medium">Fius Labs</span>
                 </button>
               </>)}

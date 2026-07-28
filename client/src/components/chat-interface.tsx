@@ -4051,7 +4051,7 @@ Let's start the self-listen session!`;
         closeButtonPosition={settingsToggles.sidebarCloseTop ? 'top' : 'bottom'}
       />
       {/* Header */}
-      <header className={`bg-card backdrop-blur-lg px-4 sm:px-6 py-3 flex items-center gap-4 sm:gap-5 mx-auto relative z-[46] rounded-full max-w-4xl w-fit mt-2 mb-1 ${(settingsToggles.glossyOutline ?? true) ? 'border border-border glossy-outline' : ''}`}>
+      <header className={`bg-card backdrop-blur-lg px-4 sm:px-6 py-3 flex items-center gap-4 sm:gap-5 mx-auto relative z-[46] rounded-full max-w-4xl w-fit mt-2 mb-1 ${(settingsToggles.glossyOutline ?? true) ? 'border border-border glossy-outline' : ''} ${(settingsToggles.tabsInSidebar ?? false) ? 'hidden' : ''}`}>
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -4117,7 +4117,7 @@ Let's start the self-listen session!`;
                 style={activeTab === 'ask' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
                 data-testid="tab-ask"
               >
-                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-ask-dark.png' : '/tab-ask-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
+                {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-ask-dark.png' : '/tab-ask-light.png'} alt="" className="w-6 h-6 object-contain flex-shrink-0" />}
                 Ask
               </Button>
             </TooltipTrigger>
