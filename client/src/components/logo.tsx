@@ -229,11 +229,17 @@ export function FiusLogo({
           className="absolute inset-0 object-contain fius-uploaded-rings-spin"
           style={{ width: px, height: px }}
         />
-        {/* F letter — stays static, slightly smaller and nudged up */}
+        {/* Accent colour overlay — tints the rings via mix-blend-mode:color */}
+        <div
+          className="fius-rings-accent-tint absolute inset-0 pointer-events-none"
+          style={{ zIndex: 1, borderRadius: '50%' }}
+        />
+        {/* F letter — stays static, above the tint overlay */}
         <span
           aria-label="Fius"
           style={{
             position: "relative",
+            zIndex: 2,
             fontSize: font * 0.72,
             fontWeight: 400,
             fontFamily: "Georgia, 'Times New Roman', serif",

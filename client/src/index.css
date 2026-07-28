@@ -1453,7 +1453,7 @@ img, a, button, [role="button"] {
 /* ─── Text selection / highlight colour ─────────────────────────────────────── */
 /* Default (accent off or multicolor): soft light-blue                            */
 ::selection {
-  background-color: #93c5fd;
+  background-color: rgba(59, 130, 246, 0.52);
   color: inherit;
 }
 /* When a solid accent is active: tint the selection with the accent colour       */
@@ -1509,8 +1509,13 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
 }
 
 /* ─── Logo variant 2 (rings) accent colour ───────────────────────────────────── */
-/* The ƒ letter inside the spinning rings uses currentColor by default.
-   When a solid accent is active, tint it with the accent colour.                */
+/* Overlay div uses mix-blend-mode:color to recolour the spinning rings PNG.
+   The ƒ letter (z-index:2) sits above it and also picks up the accent.          */
+.fius-accent-on .fius-rings-accent-tint {
+  background-color: var(--fius-ui-accent);
+  mix-blend-mode: color;
+  opacity: 0.82;
+}
 .fius-accent-on [data-testid="logo-fius-rings"] span {
   color: var(--fius-ui-accent) !important;
 }
