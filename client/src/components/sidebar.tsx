@@ -1024,17 +1024,21 @@ export function Sidebar({
                 {profileMenuOpen && (
                   <motion.div
                     key="profile-menu"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                    initial={{ height: 0, opacity: 0, y: -6 }}
+                    animate={{ height: "auto", opacity: 1, y: 0 }}
+                    exit={{ height: 0, opacity: 0, y: -4 }}
+                    transition={{
+                      height: { type: "spring", stiffness: 340, damping: 34, mass: 0.8 },
+                      opacity: { duration: 0.22, ease: "easeOut" },
+                      y:       { type: "spring", stiffness: 400, damping: 38, mass: 0.6 },
+                    }}
                     style={{ overflow: "hidden" }}
                   >
                     {isCustomizing ? (
                       <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
                         <div className="flex items-center justify-between mb-4">
                           <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
-                          <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                          <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
                             <X className="h-4 w-4" />
                           </button>
                         </div>
@@ -1071,19 +1075,90 @@ export function Sidebar({
                         </div>
                       </div>
                     ) : (
-                      <div className="border-b border-zinc-200 dark:border-zinc-800">
-                        <button onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                          <Settings className="h-4 w-4 text-slate-500" />Settings
-                        </button>
-                        <button onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                          <UserPen className="h-4 w-4 text-indigo-500" />Customize profile
-                        </button>
-                        <button onClick={() => { setProfileMenuOpen(false); onLogout(); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                          <LogOut className="h-4 w-4 text-red-500" />Log out
-                        </button>
+                      <div className="px-2 py-2 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-0.5">
+                        {/* Settings */}
+                        <motion.button
+                          onClick={() => { onOpenSettings?.(); setProfileMenuOpen(false); }}
+                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-zinc-600 dark:text-zinc-300 overflow-hidden"
+                          whileHover="hovered"
+                          initial="rest"
+                        >
+                          <motion.span
+                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-zinc-800/70"
+                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
+                            transition={{ duration: 0.18, ease: "easeOut" }}
+                          />
+                          <motion.span
+                            variants={{ rest: { color: "#94a3b8" }, hovered: { color: "#6366f1" } }}
+                            transition={{ duration: 0.15 }}
+                            className="relative z-10 flex-shrink-0"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </motion.span>
+                          <motion.span
+                            className="relative z-10 font-medium"
+                            variants={{ rest: {}, hovered: { x: 1 } }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            Settings
+                          </motion.span>
+                        </motion.button>
+
+                        {/* Customize profile */}
+                        <motion.button
+                          onClick={() => { setRenameValue(user?.username || user?.email || ''); setIsCustomizing(true); }}
+                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-zinc-600 dark:text-zinc-300 overflow-hidden"
+                          whileHover="hovered"
+                          initial="rest"
+                        >
+                          <motion.span
+                            className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-zinc-800/70"
+                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
+                            transition={{ duration: 0.18, ease: "easeOut" }}
+                          />
+                          <motion.span
+                            variants={{ rest: { color: "#818cf8" }, hovered: { color: "#6366f1" } }}
+                            transition={{ duration: 0.15 }}
+                            className="relative z-10 flex-shrink-0"
+                          >
+                            <UserPen className="h-4 w-4" />
+                          </motion.span>
+                          <motion.span
+                            className="relative z-10 font-medium"
+                            variants={{ rest: {}, hovered: { x: 1 } }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            Customize profile
+                          </motion.span>
+                        </motion.button>
+
+                        {/* Log out */}
+                        <motion.button
+                          onClick={() => { setProfileMenuOpen(false); onLogout(); }}
+                          className="relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] text-red-500 overflow-hidden"
+                          whileHover="hovered"
+                          initial="rest"
+                        >
+                          <motion.span
+                            className="absolute inset-0 rounded-xl bg-red-50 dark:bg-red-950/30"
+                            variants={{ rest: { opacity: 0, scale: 0.97 }, hovered: { opacity: 1, scale: 1 } }}
+                            transition={{ duration: 0.18, ease: "easeOut" }}
+                          />
+                          <motion.span
+                            variants={{ rest: { scale: 1 }, hovered: { scale: 1.1 } }}
+                            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                            className="relative z-10 flex-shrink-0"
+                          >
+                            <LogOut className="h-4 w-4" />
+                          </motion.span>
+                          <motion.span
+                            className="relative z-10 font-medium"
+                            variants={{ rest: {}, hovered: { x: 1 } }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            Log out
+                          </motion.span>
+                        </motion.button>
                       </div>
                     )}
                   </motion.div>
