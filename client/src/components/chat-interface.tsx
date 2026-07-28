@@ -5643,25 +5643,37 @@ Let's start the self-listen session!`;
                             </div>
                           </div>
 
-                        <div className="mx-auto w-full max-w-[480px] flex flex-col items-center text-center">
+                        <div className="mx-auto w-full max-w-[500px] flex flex-col items-center text-center">
                           {/* Editor + Templates cards */}
-                          <div className="mt-5 grid w-full grid-cols-2 gap-4">
+                          <div className="mt-5 grid w-full grid-cols-2 gap-3">
                             <button onClick={() => imageInputRef.current?.click()}
-                              className="group flex min-h-[92px] items-center gap-4 border border-neutral-200 bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
-                              style={{ borderRadius: 22 }}>
-                              <Wand2 className="h-6 w-6 shrink-0 transition group-hover:scale-110" style={{ color: '#38bdf8' }} />
-                              <span><span className="block text-sm font-semibold text-neutral-800">Editor</span><span className="mt-1 block text-xs text-neutral-400">Transform a photo</span></span>
+                              className="group relative overflow-hidden flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1"
+                              style={{ borderRadius: 20, background: 'linear-gradient(135deg,#0f1729 0%,#162040 60%,#1e3060 100%)', boxShadow: '0 2px 20px rgba(56,189,248,0.12)' }}>
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg,#0f2040 0%,#1a3060 60%,#2246a0 100%)' }} />
+                              <div className="relative shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.25)' }}>
+                                <Wand2 className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" style={{ color: '#38bdf8' }} />
+                              </div>
+                              <span className="relative">
+                                <span className="block text-sm font-bold text-white">Editor</span>
+                                <span className="mt-0.5 block text-[11px]" style={{ color: 'rgba(148,194,255,0.6)' }}>Transform a photo</span>
+                              </span>
                             </button>
                             <button onClick={() => document.getElementById('pc-studio-templates')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                              className="group flex min-h-[92px] items-center gap-4 border border-neutral-200 bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
-                              style={{ borderRadius: 22 }}>
-                              <Sparkles className="h-6 w-6 shrink-0 transition group-hover:scale-110" style={{ color: '#a78bfa' }} />
-                              <span><span className="block text-sm font-semibold text-neutral-800">Templates</span><span className="mt-1 block text-xs text-neutral-400">Styles for every occasion</span></span>
+                              className="group relative overflow-hidden flex min-h-[88px] items-center gap-3.5 px-5 py-4 text-left transition-all duration-300 hover:-translate-y-1"
+                              style={{ borderRadius: 20, background: 'linear-gradient(135deg,#140a28 0%,#1e1040 60%,#2c1860 100%)', boxShadow: '0 2px 20px rgba(167,139,250,0.12)' }}>
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg,#1a0e38 0%,#261650 60%,#3c2280 100%)' }} />
+                              <div className="relative shrink-0 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.25)' }}>
+                                <Sparkles className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" style={{ color: '#a78bfa' }} />
+                              </div>
+                              <span className="relative">
+                                <span className="block text-sm font-bold text-white">Templates</span>
+                                <span className="mt-0.5 block text-[11px]" style={{ color: 'rgba(200,180,255,0.55)' }}>Styles for every occasion</span>
+                              </span>
                             </button>
                           </div>
                         </div>
 
-                        <section id="pc-studio-templates" className="mt-12">
+                        <section id="pc-studio-templates" className="mt-10">
                           <style>{`
                             @keyframes studio-marquee-left {
                               0%   { transform: translateX(0); }
@@ -5672,15 +5684,21 @@ Let's start the self-listen session!`;
                               100% { transform: translateX(0); }
                             }
                           `}</style>
-                          <div className="mb-3 flex items-center justify-between px-1">
-                            <h3 className="text-sm font-bold text-neutral-800">Templates <span className="ml-1 text-[11px] font-normal text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span></h3>
-                            <button onClick={() => setShowAllTemplates(true)} className="text-[11px] text-neutral-500 transition hover:text-neutral-900">Browse all →</button>
+                          <div className="mb-4 flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+                                <Sparkles className="h-3.5 w-3.5 text-white" />
+                              </div>
+                              <h3 className="text-sm font-bold text-neutral-900">Templates</h3>
+                              <span className="text-[11px] text-neutral-400">{STUDIO_VISUAL_TEMPLATES.length} styles</span>
+                            </div>
+                            <button onClick={() => setShowAllTemplates(true)} className="flex items-center gap-1 text-[11px] font-semibold text-violet-500 transition hover:text-violet-700">Browse all <ChevronRight className="h-3 w-3" /></button>
                           </div>
-                          <div className="flex flex-col gap-2.5">
+                          <div className="flex flex-col gap-3">
                             {/* Row 1 — scrolls left */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)' }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
                               <div
-                                className="flex gap-2.5 w-max"
+                                className="flex gap-3 w-max"
                                 style={{ animation: 'studio-marquee-left 80s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
@@ -5690,25 +5708,25 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r1-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 110, height: 150, borderRadius: 16, border: '1.5px solid rgba(0,0,0,0.09)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.18)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; }}
+                                    style={{ width: 138, height: 188, borderRadius: 18, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-6deg) rotateX(3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
-                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
-                                      <div className="px-2 pb-2.5">
-                                        <div className="flex items-center justify-center gap-1 rounded-full py-1 text-[9px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>✦ Try this look</div>
+                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
+                                      <div className="px-2.5 pb-3">
+                                        <div className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>✦ Try this look</div>
                                       </div>
                                     </div>
-                                    <span className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-8 text-[10px] font-semibold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)' }}>{t.name}</span>
+                                    <span className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-[10px] font-bold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}>{t.name}</span>
                                   </button>
                                 ))}
                               </div>
                             </div>
                             {/* Row 2 — scrolls right */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)' }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
                               <div
-                                className="flex gap-2.5 w-max"
+                                className="flex gap-3 w-max"
                                 style={{ animation: 'studio-marquee-right 95s linear infinite' }}
                                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'paused'}
                                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.animationPlayState = 'running'}
@@ -5718,17 +5736,17 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r2-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 110, height: 150, borderRadius: 16, border: '1.5px solid rgba(0,0,0,0.09)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
-                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(6deg) rotateX(-3deg) translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.18)'; }}
-                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; }}
+                                    style={{ width: 138, height: 188, borderRadius: 18, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transform: 'perspective(600px)', transition: 'transform 0.35s ease, box-shadow 0.35s ease' }}
+                                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(6deg) rotateX(-3deg) translateY(-5px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 48px rgba(0,0,0,0.2)'; }}
+                                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
                                     <img src={t.thumb} alt={t.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
-                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
-                                      <div className="px-2 pb-2.5">
-                                        <div className="flex items-center justify-center gap-1 rounded-full py-1 text-[9px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}>✦ Try this look</div>
+                                    <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)' }}>
+                                      <div className="px-2.5 pb-3">
+                                        <div className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>✦ Try this look</div>
                                       </div>
                                     </div>
-                                    <span className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-8 text-[10px] font-semibold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)' }}>{t.name}</span>
+                                    <span className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 pt-10 text-[10px] font-bold leading-tight text-white group-hover:opacity-0 transition-opacity duration-200" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)' }}>{t.name}</span>
                                   </button>
                                 ))}
                               </div>
@@ -7321,50 +7339,63 @@ Let's start the self-listen session!`;
 
         {/* ── Browse All Templates — FULLSCREEN ───────────────────────────── */}
         {showAllTemplates && (() => {
-          const GALLERY_CATS: { id: string; label: string; emoji: string; accent: string; bg: string }[] = [
-            { id: 'Spaces',      label: 'Spaces',      emoji: '🏠', accent: '#70a8e8', bg: 'linear-gradient(155deg,#0d1a2e,#1a3050,#2a5080,#3a70aa)' },
-            { id: 'Nature',      label: 'Nature',      emoji: '🌄', accent: '#58c870', bg: 'linear-gradient(155deg,#071408,#0f3016,#1a5828,#2e8840)' },
-            { id: 'Portraits',   label: 'Portraits',   emoji: '🖼️', accent: '#f0a855', bg: 'linear-gradient(155deg,#2a1506,#5c300f,#8f5220,#c47c3a)' },
-            { id: 'Fantasy',     label: 'Fantasy',     emoji: '🐉', accent: '#b06af0', bg: 'linear-gradient(155deg,#12062e,#2e1060,#5a2090,#8840c8)' },
-            { id: 'Fashion',     label: 'Fashion',     emoji: '👗', accent: '#cccccc', bg: 'linear-gradient(155deg,#080808,#1e1e1e,#3a3a3a,#666)' },
-            { id: 'Traditional', label: 'Traditional', emoji: '🕌', accent: '#f0a030', bg: 'linear-gradient(155deg,#2e0800,#6e1c00,#aa3800,#d46020)' },
-            { id: 'Travel',      label: 'Travel',      emoji: '✈️', accent: '#60a0f8', bg: 'linear-gradient(155deg,#050e2e,#0c2464,#1840a8,#3068d8)' },
-            { id: 'Products',    label: 'Products',    emoji: '📦', accent: '#8888e8', bg: 'linear-gradient(155deg,#080818,#181830,#2c2c58,#4848a0)' },
+          const GALLERY_CATS: { id: string; label: string; accent: string; icon: React.ReactNode }[] = [
+            { id: 'Spaces',      label: 'Spaces',      accent: '#70a8e8',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg> },
+            { id: 'Nature',      label: 'Nature',      accent: '#58c870',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><path d="M12 22V12"/><path d="M12 12C12 8 8 5 4 5c0 4 3 7 8 7z"/><path d="M12 12c0-4 4-7 8-7 0 4-3 7-8 7z"/></svg> },
+            { id: 'Portraits',   label: 'Portraits',   accent: '#f0a855',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> },
+            { id: 'Fantasy',     label: 'Fantasy',     accent: '#b06af0',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+            { id: 'Fashion',     label: 'Fashion',     accent: '#d4d4d4',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/></svg> },
+            { id: 'Traditional', label: 'Traditional', accent: '#f0a030',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><path d="M2 20h20M4 20V10M20 20V10M12 4L4 10h16L12 4z"/><path d="M10 20v-6h4v6"/></svg> },
+            { id: 'Travel',      label: 'Travel',      accent: '#60a0f8',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg> },
+            { id: 'Products',    label: 'Products',    accent: '#9090ee',
+              icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-[15px] h-[15px]"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg> },
           ];
           const activeCat = imagineTemplateCategory;
           const setActiveCat = setImagineTemplateCategory;
           const filteredTpls = activeCat === 'All' ? STUDIO_VISUAL_TEMPLATES : STUDIO_VISUAL_TEMPLATES.filter(t => t.category === activeCat);
 
           return (
-            <div className="fixed inset-0 z-[999] flex flex-col" style={{ background: '#07070e', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
-              {/* Header */}
-              <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                <button onClick={() => setShowAllTemplates(false)} className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-                  <ChevronLeft className="w-4 h-4" /> Back to Studio
+            <div className="fixed inset-0 z-[999] flex flex-col" style={{ background: '#08080f', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
+              {/* Header — no border line */}
+              <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4">
+                <button onClick={() => setShowAllTemplates(false)} className="flex items-center gap-1.5 text-[13px] font-semibold text-zinc-500 hover:text-white transition-colors">
+                  <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <div className="flex-1 text-center">
-                  <span className="text-white/90 font-bold text-base tracking-tight">All Templates</span>
-                  <span className="ml-2 text-zinc-500 text-sm">{filteredTpls.length} styles</span>
+                <div className="flex-1 flex items-center justify-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-white font-bold text-[15px] tracking-tight">Templates</span>
+                  <span className="text-zinc-600 text-[13px]">{filteredTpls.length}</span>
                 </div>
-                <button onClick={() => setShowAllTemplates(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition">
+                <button onClick={() => setShowAllTemplates(false)} className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 hover:text-white hover:bg-white/10 transition">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Body: sidebar + grid */}
+              {/* Body: sidebar + grid — no dividers */}
               <div className="flex flex-1 min-h-0 overflow-hidden">
-                {/* Left sidebar */}
-                <div className="flex-shrink-0 w-[190px] overflow-y-auto py-4 px-3 flex flex-col gap-1" style={{ borderRight: '1px solid rgba(255,255,255,0.06)', scrollbarWidth: 'none' }}>
+                {/* Left sidebar — no border */}
+                <div className="flex-shrink-0 w-[172px] overflow-y-auto py-2 px-2.5 flex flex-col gap-0.5" style={{ scrollbarWidth: 'none' }}>
                   <button
                     onClick={() => setActiveCat('All')}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all text-left"
                     style={activeCat === 'All'
-                      ? { background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }
-                      : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }}
+                      ? { background: 'rgba(167,139,250,0.14)', color: '#c4b5fd' }
+                      : { background: 'transparent', color: 'rgba(255,255,255,0.36)' }}
                   >
-                    <span style={{ fontSize: 16 }}>✦</span>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg flex-shrink-0" style={{ background: activeCat === 'All' ? 'rgba(167,139,250,0.22)' : 'rgba(255,255,255,0.06)', color: activeCat === 'All' ? '#c4b5fd' : 'rgba(255,255,255,0.3)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                    </div>
                     <span>All</span>
-                    <span className="ml-auto text-[10px] font-normal opacity-50">{STUDIO_VISUAL_TEMPLATES.length}</span>
+                    <span className="ml-auto text-[10px] font-normal opacity-40">{STUDIO_VISUAL_TEMPLATES.length}</span>
                   </button>
                   {GALLERY_CATS.map(cat => {
                     const count = STUDIO_VISUAL_TEMPLATES.filter(t => t.category === cat.id).length;
@@ -7373,50 +7404,53 @@ Let's start the self-listen session!`;
                       <button
                         key={cat.id}
                         onClick={() => setActiveCat(cat.id)}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all text-left"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all text-left"
                         style={isActive
-                          ? { background: `${cat.accent}18`, color: cat.accent, border: `1px solid ${cat.accent}35` }
-                          : { background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid transparent' }}
+                          ? { background: `${cat.accent}16`, color: cat.accent }
+                          : { background: 'transparent', color: 'rgba(255,255,255,0.36)' }}
                       >
-                        <span style={{ fontSize: 15 }}>{cat.emoji}</span>
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg flex-shrink-0" style={{ background: isActive ? `${cat.accent}20` : 'rgba(255,255,255,0.06)', color: isActive ? cat.accent : 'rgba(255,255,255,0.28)' }}>
+                          {cat.icon}
+                        </div>
                         <span>{cat.label}</span>
-                        <span className="ml-auto text-[10px] font-normal opacity-50">{count}</span>
+                        <span className="ml-auto text-[10px] font-normal opacity-40">{count}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Main grid */}
-                <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: 'none' }}>
+                {/* Main grid — no section dividers */}
+                <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarWidth: 'none' }}>
                   {activeCat === 'All' ? (
-                    <div className="flex flex-col gap-10">
+                    <div className="flex flex-col gap-9">
                       {GALLERY_CATS.map(cat => {
                         const catTpls = STUDIO_VISUAL_TEMPLATES.filter(t => t.category === cat.id);
                         return (
                           <div key={cat.id}>
-                            <div className="flex items-center gap-2 mb-4">
-                              <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-                              <h3 className="font-bold text-white text-base tracking-tight">{cat.label}</h3>
-                              <div className="h-px flex-1 ml-2" style={{ background: `linear-gradient(to right,${cat.accent}40,transparent)` }} />
-                              <span className="text-[11px] font-medium" style={{ color: `${cat.accent}80` }}>{catTpls.length} templates</span>
+                            <div className="flex items-center gap-2.5 mb-4">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-xl flex-shrink-0" style={{ background: `${cat.accent}16`, color: cat.accent }}>
+                                {cat.icon}
+                              </div>
+                              <h3 className="font-bold text-white text-[14px] tracking-tight">{cat.label}</h3>
+                              <span className="text-[11px] font-medium ml-0.5" style={{ color: `${cat.accent}70` }}>{catTpls.length}</span>
                             </div>
-                            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))' }}>
+                            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))' }}>
                               {catTpls.map(t => (
                                 <button
                                   key={t.id}
                                   onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                   className="group relative overflow-hidden text-left"
-                                  style={{ aspectRatio: '9/12', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.08)', background: cat.bg, boxShadow: '0 4px 14px rgba(0,0,0,0.35)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
-                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.55)'; }}
-                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(0,0,0,0.35)'; }}
+                                  style={{ aspectRatio: '9/12', borderRadius: 16, background: '#111', boxShadow: '0 6px 22px rgba(0,0,0,0.45)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 50px rgba(0,0,0,0.6)`; }}
+                                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 22px rgba(0,0,0,0.45)'; }}
                                 >
-                                  <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 1, transition: 'opacity 0.3s ease' }} loading="lazy" />
-                                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.06) 50%,transparent 100%)' }} />
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}>
-                                    <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)' }}>✦ Use this style</div>
+                                  <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.04) 52%,transparent 100%)' }} />
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(3px)' }}>
+                                    <div className="px-4 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)' }}>✦ Use this style</div>
                                   </div>
-                                  <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 group-hover:opacity-0 transition-opacity duration-200">
-                                    <span className="block text-[10px] font-semibold leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
+                                  <div className="absolute inset-x-0 bottom-0 px-3 pb-3 group-hover:opacity-0 transition-opacity duration-200">
+                                    <span className="block text-[11px] font-bold leading-tight text-white" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.95)' }}>{t.name}</span>
                                   </div>
                                 </button>
                               ))}
@@ -7426,29 +7460,26 @@ Let's start the self-listen session!`;
                       })}
                     </div>
                   ) : (
-                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))' }}>
-                      {filteredTpls.map(t => {
-                        const catMeta = GALLERY_CATS.find(c => c.id === t.category);
-                        return (
-                          <button
-                            key={t.id}
-                            onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
-                            className="group relative overflow-hidden text-left"
-                            style={{ aspectRatio: '9/12', borderRadius: 14, border: '1.5px solid rgba(255,255,255,0.08)', background: catMeta?.bg ?? '#1c1c1e', boxShadow: '0 4px 14px rgba(0,0,0,0.35)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.55)'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 14px rgba(0,0,0,0.35)'; }}
-                          >
-                            <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.06) 50%,transparent 100%)' }} />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}>
-                              <div className="px-3 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)' }}>✦ Use this style</div>
-                            </div>
-                            <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5 group-hover:opacity-0 transition-opacity duration-200">
-                              <span className="block text-[10px] font-semibold leading-tight text-white/95" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{t.name}</span>
-                            </div>
-                          </button>
-                        );
-                      })}
+                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))' }}>
+                      {filteredTpls.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setShowAllTemplates(false); setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
+                          className="group relative overflow-hidden text-left"
+                          style={{ aspectRatio: '9/12', borderRadius: 16, background: '#111', boxShadow: '0 6px 22px rgba(0,0,0,0.45)', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-5px) scale(1.03)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 22px rgba(0,0,0,0.45)'; }}
+                        >
+                          <img src={t.thumb} alt={t.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.04) 52%,transparent 100%)' }} />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(3px)' }}>
+                            <div className="px-4 py-1.5 rounded-full text-[10px] font-bold text-white" style={{ background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)' }}>✦ Use this style</div>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 px-3 pb-3 group-hover:opacity-0 transition-opacity duration-200">
+                            <span className="block text-[11px] font-bold leading-tight text-white" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.95)' }}>{t.name}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
