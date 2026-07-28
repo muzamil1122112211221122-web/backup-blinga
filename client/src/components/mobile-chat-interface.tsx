@@ -851,7 +851,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                     <div className="flex items-center gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button onClick={handleCopy}
                         className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
-                        {copied ? <Check className="w-4 h-4 text-blue-500" /> : <img src="/icon-copy-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                        {copied ? <Check className="w-4 h-4 text-blue-500" /> : <><img src="/icon-copy-black.png" className="w-4 h-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
                       </button>
                       <button onClick={() => onRetryUser?.(msg.content)}
                         className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-accent active:scale-90">
@@ -970,13 +970,13 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
           {!isUser && done && (
             <div className="flex items-center gap-0.5 mt-1">
               <button onClick={handleLike} className={`${ab} ${liked === "up" ? "text-green-500 bg-green-50 dark:bg-green-950" : ""}`}>
-                <img src="/icon-like-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={liked === "up" ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : undefined} alt="like" />
+                <img src="/icon-like-black.png" className="w-4 h-4 object-contain block dark:hidden" style={liked === "up" ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.7 }} alt="like" /><img src="/icon-like-gray2.png" className="w-4 h-4 object-contain hidden dark:block" style={liked === "up" ? { filter: 'brightness(0) saturate(100%) invert(62%) sepia(100%) hue-rotate(100deg) saturate(500%)' } : { opacity: 0.75 }} alt="like" />
               </button>
               <button onClick={handleDislike} className={`${ab} ${liked === "down" ? "text-red-500 bg-red-50 dark:bg-red-950" : ""}`}>
-                <img src="/icon-dislike-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" style={liked === "down" ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : undefined} alt="dislike" />
+                <img src="/icon-dislike-black.png" className="w-4 h-4 object-contain block dark:hidden" style={liked === "down" ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.7 }} alt="dislike" /><img src="/icon-dislike-gray2.png" className="w-4 h-4 object-contain hidden dark:block" style={liked === "down" ? { filter: 'brightness(0) saturate(100%) invert(38%) sepia(100%) saturate(600%) hue-rotate(330deg)' } : { opacity: 0.75 }} alt="dislike" />
               </button>
               <button onClick={handleCopy} className={`${ab} ${copied ? "text-blue-500 bg-blue-50 dark:bg-blue-950" : ""}`}>
-                {copied ? <Check className="w-4 h-4" /> : <img src="/icon-copy-gray.png" className="w-4 h-4 object-contain brightness-0 opacity-70 dark:invert dark:opacity-75" alt="copy" />}
+                {copied ? <Check className="w-4 h-4" /> : <><img src="/icon-copy-black.png" className="w-4 h-4 object-contain block dark:hidden opacity-70" alt="copy" /><img src="/icon-copy-gray2.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -990,7 +990,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onRetry} disabled={!onRetry}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
-                    <RefreshCw className="w-3.5 h-3.5 text-green-500" /> Regenerate
+                    <><img src="/icon-redo-black.png" className="w-3.5 h-3.5 object-contain block dark:hidden opacity-70" alt="redo" /><img src="/icon-redo-gray.png" className="w-3.5 h-3.5 object-contain hidden dark:block opacity-75" alt="redo" /></> Regenerate
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExport}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
