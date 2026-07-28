@@ -5452,8 +5452,8 @@ Let's start the self-listen session!`;
                       <div className="relative mx-auto w-full max-w-[1180px] pt-6">
                         <div className="mx-auto mt-[260px] flex max-w-[480px] flex-col items-center text-center">
                           <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, fontWeight: 900 }}>
-                            <span className="font-black">Fius Labs</span>{' '}
-                            <span className="font-black">Imagine Studio</span>
+                            <span style={{ fontWeight: 900 }}>Fius Labs</span>{' '}
+                            <span style={{ fontWeight: 900 }}>Imagine Studio</span>
                           </h2>
                           <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow</p>
                         </div>
@@ -5728,7 +5728,7 @@ Let's start the self-listen session!`;
                           </div>
                           <div className="flex flex-col gap-3">
                             {/* Row 1 — scrolls left */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 4 }}>
                               <div
                                 className="flex gap-3 w-max"
                                 style={{ animation: 'studio-marquee-left 80s linear infinite' }}
@@ -5740,7 +5740,7 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r1-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: 'var(--background)', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
@@ -5756,7 +5756,7 @@ Let's start the self-listen session!`;
                               </div>
                             </div>
                             {/* Row 2 — scrolls right */}
-                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+                            <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', paddingTop: 14, marginTop: -14, paddingBottom: 4 }}>
                               <div
                                 className="flex gap-3 w-max"
                                 style={{ animation: 'studio-marquee-right 95s linear infinite' }}
@@ -5768,7 +5768,7 @@ Let's start the self-listen session!`;
                                     key={`${t.id}-r2-${i}`}
                                     onClick={() => { setImagineTemplateModal({ label: t.name, color: '#111', img: t.thumb, prompt: t.prompt }); setTemplateUploadPhoto(null); }}
                                     className="group relative shrink-0 overflow-hidden text-left"
-                                    style={{ width: 195, height: 265, borderRadius: 20, background: '#e8e8e8', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
+                                    style={{ width: 195, height: 265, borderRadius: 20, background: 'var(--background)', boxShadow: '0 6px 24px rgba(0,0,0,0.1)', transition: 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s cubic-bezier(0.34,1.56,0.64,1)' }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-7px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 22px 50px rgba(0,0,0,0.22)'; }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.1)'; }}
                                   >
