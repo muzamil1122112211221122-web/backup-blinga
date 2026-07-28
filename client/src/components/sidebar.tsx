@@ -1104,7 +1104,7 @@ export function Sidebar({
                             variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
                             transition={{ duration: 0.16, ease: "easeOut" }}
                           />
-                          <UserPen className="relative z-10 h-4 w-4 flex-shrink-0 text-indigo-400 group-hover:text-indigo-500 transition-colors duration-150" />
+                          <UserPen className="relative z-10 h-4 w-4 flex-shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors duration-150" />
                           <span className="relative z-10 font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors duration-150">Customize profile</span>
                         </motion.button>
 
@@ -1134,32 +1134,29 @@ export function Sidebar({
                 <motion.button
                   type="button"
                   onClick={() => setProfileMenuOpen(v => !v)}
-                  className="group relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-b-2xl overflow-hidden text-left"
+                  className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-b-2xl text-left
+                    bg-transparent hover:bg-zinc-100/80 dark:hover:bg-white/[0.05]
+                    transition-colors duration-200"
                   aria-label="Expand account menu"
-                  whileHover="hov"
-                  initial="idle"
+                  whileTap={{ scale: 0.985 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 >
-                  <motion.span
-                    className="absolute inset-0 bg-zinc-100 dark:bg-white/[0.06]"
-                    variants={{ idle: { opacity: 0 }, hov: { opacity: 1 } }}
-                    transition={{ duration: 0.16, ease: "easeOut" }}
-                  />
                   {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="relative z-10 h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
+                    <img src={profilePicture} alt="Profile" className="h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />
                   ) : (
-                    <div className="relative z-10 h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px] shadow"
+                    <div className="h-8 w-8 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[13px] shadow"
                       style={{ background: `linear-gradient(45deg, ${getVibrantColor(user.username || user.email)}, ${getVibrantColor(user.username || user.email, true)})` }}>
                       {(user.username || user.email).charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="relative z-10 flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{user.username || user.email}</p>
                     <p className="text-[10px] text-zinc-400 leading-tight">{isUltimatePlan ? 'Ultimate' : 'Free'}</p>
                   </div>
                   <motion.div
                     animate={{ rotate: profileMenuOpen ? 0 : 180 }}
                     transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                    className="relative z-10 flex-shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors duration-150"
+                    className="flex-shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors duration-200"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </motion.div>
