@@ -1036,7 +1036,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       localStorage.setItem('selectedModel', 'fius-lite');
     }
   }, [planUsage?.plan]); // eslint-disable-line react-hooks/exhaustive-deps
-  const isFreePlan = !planUsage || planUsage.plan === "free";
+  // Only treat as free AFTER the usage data has actually loaded — while loading,
+  // planUsage is null/undefined and we must not lock premium users' models.
+  const isFreePlan = planUsage !== null && planUsage !== undefined && planUsage.plan === "free";
   // Free plan's 5 messages are used up — the whole app locks down except the
   // sidebar (to open Settings/upgrade) and logging out.
   const isFreePlanExhausted = isFreePlan && typeof planUsage?.messagesRemaining === 'number' && planUsage.messagesRemaining <= 0;
@@ -1651,7 +1653,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     scheduleNomadNotif();
   }, [scheduleNomadNotif]);
 
-  const [aiOrder, setAiOrder] = useState(['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot']);
+  const ALL_MODEL_IDS = ['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot'];
+  const [aiOrder, setAiOrder] = useState(ALL_MODEL_IDS);
   // Per-model selected sub-model (persisted in localStorage)
   const [nomadSelectedSubModels, setNomadSelectedSubModels] = useState<Record<string, string>>(() => {
     try { return JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}'); } catch { return {}; }
@@ -1687,7 +1690,13 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'fius-ai': { name: nomadSelectedSubModels['fius-ai'] || 'Fius Lite', provider: 'fius', id: 'fius-ai' }
     };
 
-    const newNomadModels = aiOrder
+    // Deduplicate aiOrder and ensure all known models are included
+    const seenIds = new Set<string>();
+    const deduped = aiOrder.filter(id => { if (seenIds.has(id) || !modelMap[id]) return false; seenIds.add(id); return true; });
+    // Add any missing models at the end so they always appear
+    ALL_MODEL_IDS.forEach(id => { if (!seenIds.has(id) && modelMap[id]) { deduped.push(id); seenIds.add(id); } });
+
+    const newNomadModels = deduped
       .map(id => modelMap[id])
       .filter(Boolean);
     
