@@ -1015,7 +1015,7 @@ export function Sidebar({
             )
           ) : (
             /* Full mode: joined card */
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden" ref={profileMenuRef}>
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-900 overflow-hidden" ref={profileMenuRef}>
               {/* Usage stats inside card */}
               <SidebarUsage compact onOpenSettings={onOpenSettings} />
 
