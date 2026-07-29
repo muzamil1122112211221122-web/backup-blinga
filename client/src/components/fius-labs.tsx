@@ -328,6 +328,22 @@ export function FiusLabs({ user }: FiusLabsProps) {
 
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 py-10 overflow-y-auto">
+        {/* Top branding — static, outside AnimatePresence */}
+        <div className="flex flex-col items-center mb-10">
+          <img
+            src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
+            alt="Fius Labs"
+            className="object-contain mb-3"
+            style={{ width: 72, height: 72 }}
+          />
+          <span
+            className="text-foreground tracking-tight"
+            style={{ fontSize: '2rem', fontWeight: 1000, lineHeight: 1 }}
+          >
+            Fius Labs
+          </span>
+        </div>
+
         <AnimatePresence mode="wait">
           <motion.div
             key={qIdx}
@@ -337,30 +353,22 @@ export function FiusLabs({ user }: FiusLabsProps) {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md"
           >
-            {/* Header */}
-            <div className="flex items-center gap-2.5 mb-8">
-              <img
-                src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
-                alt="Fius Labs"
-                className="w-7 h-7 object-contain"
-              />
-              <span className="font-semibold text-base text-foreground">Fius Labs</span>
-              <span className="ml-auto text-xs text-muted-foreground tabular-nums font-medium">
+            {/* Progress row: bar + counter centered together */}
+            <div className="flex items-center gap-3 mb-8">
+              <div
+                className="flex-1 h-0.5 rounded-full overflow-hidden"
+                style={{ background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}
+              >
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)' }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums font-medium shrink-0">
                 {qIdx + 1} / {ONBOARDING_QUESTIONS.length}
               </span>
-            </div>
-
-            {/* Progress bar */}
-            <div
-              className="h-0.5 rounded-full mb-8 overflow-hidden"
-              style={{ background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}
-            >
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)' }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-              />
             </div>
 
             {/* Question */}
@@ -369,7 +377,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               {qIdx === ONBOARDING_QUESTIONS.length - 1 ? 'Optional — press Enter to skip' : 'Press Enter to continue'}
             </p>
 
-            {/* Input */}
+            {/* Input — pill shaped */}
             <div className="relative">
               <input
                 ref={obRef}
@@ -377,9 +385,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 onChange={e => setObInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitOb(); } }}
                 placeholder={q.placeholder}
-                className="w-full px-4 py-3 pr-12 text-base outline-none transition-all"
+                className="w-full px-5 py-3.5 pr-14 text-base outline-none transition-all"
                 style={{
-                  borderRadius: '1rem',
+                  borderRadius: '9999px',
                   background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
                   border: dark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.12)',
                   color: 'inherit',
@@ -387,10 +395,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
               />
               <button
                 onClick={submitOb}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:opacity-80 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-75 transition-all"
                 style={{
-                  borderRadius: '0.75rem',
-                  background: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)',
+                  borderRadius: '9999px',
+                  background: dark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.1)',
                 }}
               >
                 <ChevronRight className="w-4 h-4 text-foreground" />
@@ -419,7 +427,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               <button
                 onClick={skipSurvey}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ borderRadius: '0.75rem' }}
+                style={{ borderRadius: '9999px' }}
               >
                 Skip survey
               </button>
