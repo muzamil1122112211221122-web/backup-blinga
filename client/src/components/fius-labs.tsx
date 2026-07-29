@@ -8,6 +8,7 @@ import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/add_1784996715112.png";
 import { FiusLogo } from './logo';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import normalLabWhiteIcon from '@assets/normal_lab_white_theme_1784982983175.png';
 import superLabWhiteIcon from '@assets/super_lab_white_theme_1784982983174.png';
 import normalLabDarkIcon from '@assets/normal_lab_dark_theme_1784983374592.png';
@@ -332,6 +333,15 @@ export function FiusLabs({ user }: FiusLabsProps) {
     setMessages(prev => { const n = { ...prev }; delete n[lastIdx]; return n; });
     setTyping(prev => { const n = { ...prev }; delete n[lastIdx]; return n; });
     setNumChats(n => n - 1);
+  };
+
+  const setColumnCount = (target: number) => {
+    const clamped = Math.max(1, Math.min(6, target));
+    const diff = clamped - slots.length;
+    if (diff > 0) { for (let i = 0; i < diff; i++) addColumn(); }
+    else if (diff < 0) { for (let i = 0; i < -diff; i++) removeLastColumn(); }
+    // Reset selected panel if it's now out of bounds
+    setSuperTargetPanel(prev => (prev !== null && prev >= clamped) ? null : prev);
   };
 
   const clearColumn = (idx: number) => {
@@ -849,29 +859,50 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
                     <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
                   </button>
-                  {/* Panel picker — orientation-picker style: [-] [1][2][3][4] [+] */}
-                  <div className="flex items-center flex-shrink-0 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 px-1 py-0.5 gap-0.5">
-                    <button onClick={removeLastColumn} disabled={slots.length <= 1}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
-                      <Minus className="w-2.5 h-2.5" />
-                    </button>
-                    <div className="relative flex flex-row items-center">
-                      {superTargetPanel !== null && (
-                        <div className="absolute inset-y-0 rounded-full bg-zinc-800 dark:bg-white pointer-events-none"
-                          style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                      )}
-                      {slots.map((_, idx) => (
-                        <button key={idx} onClick={() => setSuperTargetPanel(idx)}
-                          className={`relative z-10 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full transition-colors duration-200 flex-shrink-0 ${superTargetPanel === idx ? 'text-white dark:text-black' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'}`}>
-                          {idx + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={addColumn} disabled={slots.length >= 6}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
-                      <Plus className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
+                  {/* Panel picker dropdown — orientation-changer style */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border flex-shrink-0 ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}>
+                        {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
+                        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                      {/* ── Row 1: panel count ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
+                      <div className="relative flex flex-row items-center mb-3">
+                        <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        {[1, 2, 3, 4, 5, 6].map(n => {
+                          const isActive = slots.length === n;
+                          return (
+                            <button key={n} onClick={() => setColumnCount(n)}
+                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* ── Row 2: send-to panel ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
+                      <div className="relative flex flex-row items-center">
+                        {superTargetPanel !== null && superTargetPanel < slots.length && (
+                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                            style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        )}
+                        {slots.map((m, idx) => {
+                          const isActive = superTargetPanel === idx;
+                          return (
+                            <button key={idx} onClick={() => setSuperTargetPanel(idx)}
+                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {idx + 1}
+                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-40'}`}>{m.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <input ref={globalFileInputRef} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
                   <textarea
                     ref={globalInputRef}
@@ -1193,29 +1224,50 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
                     <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
                   </button>
-                  {/* Panel picker — orientation-picker style: [-] [1][2][3][4] [+] */}
-                  <div className="flex items-center flex-shrink-0 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 px-1 py-0.5 gap-0.5">
-                    <button onClick={removeLastColumn} disabled={slots.length <= 1}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
-                      <Minus className="w-2.5 h-2.5" />
-                    </button>
-                    <div className="relative flex flex-row items-center">
-                      {superTargetPanel !== null && (
-                        <div className="absolute inset-y-0 rounded-full bg-zinc-800 dark:bg-white pointer-events-none"
-                          style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                      )}
-                      {slots.map((_, idx) => (
-                        <button key={idx} onClick={() => setSuperTargetPanel(idx)}
-                          className={`relative z-10 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full transition-colors duration-200 flex-shrink-0 ${superTargetPanel === idx ? 'text-white dark:text-black' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'}`}>
-                          {idx + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={addColumn} disabled={slots.length >= 6}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
-                      <Plus className="w-2.5 h-2.5" />
-                    </button>
-                  </div>
+                  {/* Panel picker dropdown — orientation-changer style */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border flex-shrink-0 ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}>
+                        {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
+                        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                      {/* ── Row 1: panel count ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
+                      <div className="relative flex flex-row items-center mb-3">
+                        <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        {[1, 2, 3, 4, 5, 6].map(n => {
+                          const isActive = slots.length === n;
+                          return (
+                            <button key={n} onClick={() => setColumnCount(n)}
+                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* ── Row 2: send-to panel ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
+                      <div className="relative flex flex-row items-center">
+                        {superTargetPanel !== null && superTargetPanel < slots.length && (
+                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                            style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        )}
+                        {slots.map((m, idx) => {
+                          const isActive = superTargetPanel === idx;
+                          return (
+                            <button key={idx} onClick={() => setSuperTargetPanel(idx)}
+                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {idx + 1}
+                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-40'}`}>{m.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <textarea
                     value={globalInput}
                     onChange={e => setGlobalInput(e.target.value)}
