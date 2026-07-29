@@ -448,14 +448,20 @@ export function FiusLabs({ user }: FiusLabsProps) {
             : 'radial-gradient(ellipse 60% 50% at 50% 35%, rgba(0,0,0,0.045) 0%, transparent 70%)',
         }} />
 
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12 relative z-10">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <AnimatedFiusLogo dark={dark} size={44} />
-            <h1 className="text-3xl font-bold tracking-tight" style={{ color: dark ? '#f5f5f5' : '#171717' }}>
-              Fius Labs
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-sm">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12 relative z-10 flex flex-col items-center">
+          <img
+            src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
+            alt="Fius Labs"
+            className="object-contain mb-4"
+            style={{ width: 110, height: 110 }}
+          />
+          <h1
+            className="tracking-tight mb-1"
+            style={{ fontSize: '3rem', fontWeight: 1000, color: dark ? '#f5f5f5' : '#171717', lineHeight: 1 }}
+          >
+            Fius Labs
+          </h1>
+          <p className="text-muted-foreground text-sm mt-2">
             {prefs.name ? `Welcome back, ${prefs.name}!` : 'Welcome!'} Pick a lab mode.
           </p>
         </motion.div>
