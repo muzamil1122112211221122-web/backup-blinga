@@ -776,16 +776,40 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   {/* ── Messages ────────── */}
                   <div
                     ref={el => { if (el) scrollRefs.current.set(colIdx, el); }}
-                    className="mx-2 flex flex-col space-y-6 pb-4 overflow-y-auto flex-1 min-h-0"
+                    className="mx-2 flex flex-col pb-4 overflow-y-auto flex-1 min-h-0"
                     style={{ scrollbarWidth: 'thin' }}
                   >
                     {msgs.length === 0 && !isTyping && (
-                      <div className="flex flex-col items-center justify-center flex-1 min-h-[60%] gap-3 text-center py-10 select-none">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: model.color + '14' }}>
-                          <img src="/fius-logo.png" alt="" className="w-8 h-8 object-contain" />
+                      <div className="flex flex-col items-center justify-center flex-1 min-h-[60%] text-center py-10 select-none px-3">
+                        {/* Model logo — mirrors ask tab's FiusLogo */}
+                        <img
+                          src={model.logo}
+                          alt={model.name}
+                          className="object-contain mb-5"
+                          style={{ width: 72, height: 72 }}
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        {/* Model name — mirrors ask tab h2 */}
+                        <h2 className="text-2xl font-normal text-foreground mb-1">{model.name}</h2>
+                        {/* Description — mirrors "Fly With Us!" */}
+                        <p className="text-sm text-muted-foreground mb-7 leading-relaxed">{model.description}</p>
+                        {/* Quick starter chips — mirrors ask tab action chips */}
+                        <div className="flex flex-col gap-2 w-full">
+                          {['Explain something to me', 'Help me write something', 'Brainstorm ideas'].map(prompt => (
+                            <button
+                              key={prompt}
+                              onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: prompt }))}
+                              className="w-full text-left px-4 py-2.5 rounded-2xl text-xs font-medium transition-all hover:scale-[1.02] active:scale-[0.97]"
+                              style={{
+                                background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                                border: dark ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
+                                color: dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)',
+                              }}
+                            >
+                              {prompt}
+                            </button>
+                          ))}
                         </div>
-                        <p className="text-sm font-semibold text-foreground">{model.name}</p>
-                        <p className="text-xs text-muted-foreground">{model.description}</p>
                       </div>
                     )}
 
