@@ -4724,60 +4724,15 @@ Let's start the self-listen session!`;
               </div>
             ))}
             
-            {/* Thinking Indicator — logo inside expanding cloud */}
+            {/* Thinking Indicator */}
             {isTyping && (() => {
               const label = thinkingType === 'analyzing' ? 'Analyzing' : thinkingType === 'generating' ? 'Generating' : 'Thinking';
-              // Bumpy-top cloud path in a 200×66 viewBox
-              const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
-              const W = 196, H = 66;
               return (
                 <div className="flex justify-start mb-2" data-testid="typing-indicator">
-                  <div
-                    className="thinking-cloud-wrapper"
-                    style={{ position: 'relative', width: W, height: H }}
-                  >
-                    {/* Cloud SVG background */}
-                    <svg
-                      viewBox={`0 0 ${W} ${H}`}
-                      width={W} height={H}
-                      style={{ position: 'absolute', top: 0, left: 0 }}
-                    >
-                      <path
-                        d={cloudPath}
-                        fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"}
-                        stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"}
-                        strokeWidth="1.5"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-
-                    {/* Content — flex-centered over the cloud */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                        paddingLeft: 10,
-                        paddingRight: 18,
-                        zIndex: 1,
-                      }}
-                    >
-                      {(settingsToggles.showFiusLogo ?? true) && (
-                        <FiusLogo size="sm" />
-                      )}
-                      <span className="thinking-label" style={resolvedTheme !== 'dark' ? {
-                        background: 'linear-gradient(90deg, rgba(55,55,75,0.85) 0%, rgba(55,55,75,0.85) 38%, rgba(10,10,30,1) 50%, rgba(55,55,75,0.85) 62%, rgba(55,55,75,0.85) 100%)',
-                        backgroundSize: '250% auto',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        animation: 'text-shimmer 1.8s linear infinite',
-                        animationDelay: '0.7s',
-                      } : undefined}>{label}</span>
-                    </div>
+                  <div className="thinking-pill">
+                    {(settingsToggles.showFiusLogo ?? true) && <FiusLogo size="sm" />}
+                    <div className="thinking-bars"><span /><span /><span /></div>
+                    <span className="thinking-label">{label}</span>
                   </div>
                 </div>
               );
@@ -5048,20 +5003,10 @@ Let's start the self-listen session!`;
                                 <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
                               </>
                             ) : (
-                              (() => {
-                                const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
-                                const W = 196, H = 66;
-                                return (
-                                  <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: W, height: H }}>
-                                    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-                                      <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
-                                    </svg>
-                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 14, paddingRight: 18, zIndex: 1 }}>
-                                      <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
-                                    </div>
-                                  </div>
-                                );
-                              })()
+                              <div className="thinking-pill">
+                                <div className="thinking-bars"><span /><span /><span /></div>
+                                <span className="thinking-label">Thinking</span>
+                              </div>
                             )}
                           </div>
                         )}
@@ -5318,21 +5263,11 @@ Let's start the self-listen session!`;
                               ));
                             })()}
                             {nomadIsTyping[model] && (
-                              <div className="flex items-start space-x-2">
-                                {(() => {
-                                  const cloudPath = "M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z";
-                                  const W = 196, H = 66;
-                                  return (
-                                    <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: W, height: H }}>
-                                      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ position: 'absolute', top: 0, left: 0 }}>
-                                        <path d={cloudPath} fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
-                                      </svg>
-                                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 14, paddingRight: 18, zIndex: 1 }}>
-                                        <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
+                              <div className="flex items-start">
+                                <div className="thinking-pill">
+                                  <div className="thinking-bars"><span /><span /><span /></div>
+                                  <span className="thinking-label">Thinking</span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -5436,17 +5371,13 @@ Let's start the self-listen session!`;
                         </div>
                         ));
                       })()}
-                      {/* Typing indicator — cloud style matching Ask tab */}
+                      {/* Typing indicator */}
                       {nomadIsTyping[model] && (
                         <div className="flex justify-start mb-2">
-                          <div className="thinking-cloud-wrapper" style={{ position: 'relative', width: 196, height: 66 }}>
-                            <svg viewBox="0 0 196 66" width={196} height={66} style={{ position: 'absolute', top: 0, left: 0 }}>
-                              <path d="M 12 58 Q 2 58 2 48 Q 2 36 14 33 Q 10 16 28 13 Q 41 2 58 13 Q 71 2 90 13 Q 104 2 121 13 Q 136 2 151 14 Q 165 6 169 24 Q 182 24 184 41 Q 186 58 170 60 Z" fill={resolvedTheme === 'dark' ? "rgba(22,22,28,0.82)" : "rgba(255,255,255,0.98)"} stroke={resolvedTheme === 'dark' ? "rgba(255,255,255,0.12)" : "rgba(160,165,180,0.8)"} strokeWidth="1.5" strokeLinejoin="round" />
-                            </svg>
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, paddingLeft: 10, paddingRight: 18, zIndex: 1 }}>
-                              {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
-                              <span className="thinking-label" style={resolvedTheme !== 'dark' ? { background: 'linear-gradient(90deg,rgba(55,55,75,0.85) 0%,rgba(55,55,75,0.85) 38%,rgba(10,10,30,1) 50%,rgba(55,55,75,0.85) 62%,rgba(55,55,75,0.85) 100%)', backgroundSize: '250% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', animation: 'text-shimmer 1.8s linear infinite', animationDelay: '0.7s' } : undefined}>Thinking</span>
-                            </div>
+                          <div className="thinking-pill">
+                            {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
+                            <div className="thinking-bars"><span /><span /><span /></div>
+                            <span className="thinking-label">Thinking</span>
                           </div>
                         </div>
                       )}
