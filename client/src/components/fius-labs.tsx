@@ -320,49 +320,57 @@ export function FiusLabs({ user }: FiusLabsProps) {
     const q   = ONBOARDING_QUESTIONS[qIdx];
     const pct = Math.round((qIdx / ONBOARDING_QUESTIONS.length) * 100);
 
+    const skipSurvey = () => {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({}));
+      localStorage.setItem(STORAGE_KEY, 'done');
+      setPhase('mode-select');
+    };
+
     return (
-      <div
-        className="absolute inset-0 flex flex-col items-center justify-center px-6 py-10 overflow-y-auto"
-        style={{
-          background: dark
-            ? 'radial-gradient(ellipse 70% 55% at 50% 5%, rgba(124,58,237,0.14) 0%, transparent 65%)'
-            : 'radial-gradient(ellipse 70% 55% at 50% 5%, rgba(168,85,247,0.07) 0%, transparent 65%)',
-        }}
-      >
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 py-10 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={qIdx}
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -18 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, y: -14 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md"
           >
-            <div className="flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#a855f7,#7c3aed)' }}>
-                <FlaskConical className="w-4 h-4 text-white" />
+            {/* Header */}
+            <div className="flex items-center gap-2.5 mb-8">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }}
+              >
+                <FlaskConical className="w-4 h-4 text-foreground" />
               </div>
-              <span className="font-bold text-base" style={{ background: 'linear-gradient(90deg,#a855f7,#7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Fius Labs
+              <span className="font-semibold text-base text-foreground">Fius Labs</span>
+              <span className="ml-auto text-xs text-muted-foreground tabular-nums font-medium">
+                {qIdx + 1} / {ONBOARDING_QUESTIONS.length}
               </span>
-              <span className="ml-auto text-xs text-muted-foreground tabular-nums">{qIdx + 1}/{ONBOARDING_QUESTIONS.length}</span>
             </div>
 
             {/* Progress bar */}
-            <div className="h-1 rounded-full mb-8 overflow-hidden" style={{ background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }}>
+            <div
+              className="h-0.5 rounded-full mb-8 overflow-hidden"
+              style={{ background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }}
+            >
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg,#a855f7,#7c3aed)' }}
+                style={{ background: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)' }}
                 animate={{ width: `${pct}%` }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
               />
             </div>
 
-            <h2 className="text-2xl font-semibold text-foreground leading-snug mb-2">{q.text}</h2>
+            {/* Question */}
+            <h2 className="text-xl font-semibold text-foreground leading-snug mb-1.5">{q.text}</h2>
             <p className="text-sm text-muted-foreground mb-6">
               {qIdx === ONBOARDING_QUESTIONS.length - 1 ? 'Optional — press Enter to skip' : 'Press Enter to continue'}
             </p>
 
+            {/* Input */}
             <div className="relative">
               <input
                 ref={obRef}
@@ -370,30 +378,30 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 onChange={e => setObInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitOb(); } }}
                 placeholder={q.placeholder}
-                className="w-full px-4 py-3 pr-12 rounded-2xl text-base outline-none transition-all"
+                className="w-full px-4 py-3 pr-12 rounded-xl text-base outline-none transition-all"
                 style={{
-                  background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                  border: dark ? '1.5px solid rgba(168,85,247,0.28)' : '1.5px solid rgba(124,58,237,0.18)',
+                  background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                  border: dark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.12)',
                   color: 'inherit',
                 }}
               />
               <button
                 onClick={submitOb}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 transition-all"
-                style={{ background: 'linear-gradient(135deg,#a855f7,#7c3aed)' }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-80 transition-all"
+                style={{ background: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)' }}
               >
-                <ChevronRight className="w-4 h-4 text-white" />
+                <ChevronRight className="w-4 h-4 text-foreground" />
               </button>
             </div>
 
+            {/* Previous answers chips */}
             {qIdx > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-1.5">
                 {ONBOARDING_QUESTIONS.slice(0, qIdx).map(prev =>
                   answers[prev.id] ? (
-                    <span key={prev.id} className="text-xs px-2.5 py-1 rounded-full" style={{
-                      background: dark ? 'rgba(168,85,247,0.12)' : 'rgba(124,58,237,0.08)',
-                      color: dark ? '#c084fc' : '#7c3aed',
-                      border: dark ? '1px solid rgba(168,85,247,0.2)' : '1px solid rgba(124,58,237,0.14)',
+                    <span key={prev.id} className="text-xs px-2.5 py-1 rounded-full text-muted-foreground" style={{
+                      background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                      border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
                     }}>
                       {answers[prev.id].length > 24 ? answers[prev.id].slice(0, 24) + '…' : answers[prev.id]}
                     </span>
@@ -401,6 +409,16 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 )}
               </div>
             )}
+
+            {/* Skip survey */}
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={skipSurvey}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                Skip survey
+              </button>
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

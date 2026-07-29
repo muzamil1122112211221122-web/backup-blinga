@@ -1542,12 +1542,22 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Reply quote chip ── */}
       {replyQuote && (
-        <div className="flex items-center gap-2 mx-1 mb-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 text-xs text-blue-700 dark:text-blue-300 animate-in fade-in duration-150">
-          <CornerDownLeft className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
-          <span className="truncate italic opacity-80 flex-1">"{replyQuote.slice(0, 60)}{replyQuote.length > 60 ? '…' : ''}"</span>
-          <button onClick={onClearReply} className="hover:text-red-500 transition-colors flex-shrink-0">
-            <X className="w-3 h-3" />
-          </button>
+        <div className="reply-chip-in flex items-center gap-0 mx-1 mb-1.5 overflow-hidden rounded-xl w-fit max-w-[85%]
+          bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 shadow-sm">
+          {/* Left accent bar */}
+          <div className="w-[3px] self-stretch bg-zinc-400 dark:bg-zinc-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 px-2.5 py-1.5 min-w-0">
+            <CornerDownLeft className="w-3 h-3 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
+            <span className="truncate text-[11px] text-zinc-600 dark:text-zinc-300 italic leading-snug flex-1">
+              {replyQuote.slice(0, 55)}{replyQuote.length > 55 ? '…' : ''}
+            </span>
+            <button
+              onClick={onClearReply}
+              className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -4325,8 +4335,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     {askReplyBtnPos && tab === "ask" && (
       <div
         data-reply-btn="true"
-        className="fixed z-[9999] pointer-events-auto"
-        style={{ left: askReplyBtnPos.x, top: askReplyBtnPos.y, transform: 'translate(-50%, -100%)' }}
+        className="fixed z-[9999] pointer-events-auto reply-btn-pop"
+        style={{ left: askReplyBtnPos.x, top: askReplyBtnPos.y }}
       >
         <button
           onPointerDown={(e) => {
@@ -4339,9 +4349,12 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             }
             setAskReplyBtnPos(null);
           }}
-          className="flex items-center gap-1.5 px-3 py-2 bg-foreground text-background text-xs font-semibold rounded-full shadow-lg hover:opacity-90 active:scale-95 transition-all animate-in fade-in duration-150"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-full shadow-xl active:scale-95 transition-transform
+            bg-zinc-900 text-white
+            dark:bg-zinc-600/90 dark:text-white
+            backdrop-blur-sm border border-white/10"
         >
-          <CornerDownLeft className="w-3 h-3" />
+          <CornerDownLeft className="w-3.5 h-3.5 opacity-80" />
           Reply
         </button>
       </div>

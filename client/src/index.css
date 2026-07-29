@@ -1546,3 +1546,24 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
 .fius-accent-on [data-testid="logo-fius-rings"] span {
   color: var(--fius-ui-accent) !important;
 }
+
+/* Reply button pop — scales up from small with a spring overshoot */
+@keyframes reply-btn-pop {
+  0%   { transform: translate(-50%, -100%) scale(0.5); opacity: 0; }
+  55%  { transform: translate(-50%, -100%) scale(1.08); opacity: 1; }
+  75%  { transform: translate(-50%, -100%) scale(0.96); opacity: 1; }
+  88%  { transform: translate(-50%, -100%) scale(1.02); opacity: 1; }
+  100% { transform: translate(-50%, -100%) scale(1);    opacity: 1; }
+}
+.reply-btn-pop {
+  animation: reply-btn-pop 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Reply chip slide-in from below */
+@keyframes reply-chip-in {
+  0%   { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+.reply-chip-in {
+  animation: reply-chip-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
