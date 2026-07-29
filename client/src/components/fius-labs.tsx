@@ -227,9 +227,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const scrollRefs  = useRef<Map<number, HTMLDivElement>>(new Map());
   const colsRef     = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  // ── Input-mode state ─────────────────────────────────
+  const [pendingLabMode,  setPendingLabMode]  = useState<LabMode | null>(null);
+  const [inputMode,       setInputMode]       = useState<'separate' | 'super'>('separate');
+  const [superTargetPanel, setSuperTargetPanel] = useState<number | null>(null);
+  const [openPanelPicker,  setOpenPanelPicker]  = useState(false);
 
-  const enterLab = (mode: LabMode) => {
-    const pool = mode === 'normal' ? NORMAL_DEFAULT_SLOTS : SUPER_MODELS.slice(0, 4);
+  const enterLab = (mode: LabMode, imode: 'separate' | 'super' = 'separate') => {
     const count = mode === 'normal' ? 4 : numChats;
     const initSlots = mode === 'normal' ? NORMAL_DEFAULT_SLOTS : SUPER_MODELS.slice(0, count);
     setSlots(initSlots);
@@ -240,6 +244,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
     setTyping({});
     setPerInput({});
     setLabMode(mode);
+    setInputMode(imode);
+    setSuperTargetPanel(null);
+    setPendingLabMode(null);
     setPhase('lab');
   };
 
@@ -284,10 +291,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
   };
 
   // ── Send message to a single column ─────────────────
-  const sendToColumn = async (colIdx: number) => {
-    const content = (perInput[colIdx] || '').trim();
+  const sendToColumn = async (colIdx: number, contentOverride?: string) => {
+    const content = contentOverride ?? (perInput[colIdx] || '').trim();
     if (!content) return;
-    setPerInput(prev => ({ ...prev, [colIdx]: '' }));
+    if (!contentOverride) setPerInput(prev => ({ ...prev, [colIdx]: '' }));
     const userMsgId = `u-${Date.now()}-${colIdx}`;
     setMessages(prev => ({ ...prev, [colIdx]: [...(prev[colIdx] || []), { id: userMsgId, role: 'user', content }] }));
     setTyping(prev => ({ ...prev, [colIdx]: true }));
@@ -517,7 +524,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               el.classList.remove('btn-click-pop');
               void el.offsetWidth;
               el.classList.add('btn-click-pop');
-              setTimeout(() => { el.classList.remove('btn-click-pop'); enterLab('normal'); }, 480);
+              setTimeout(() => { el.classList.remove('btn-click-pop'); setPendingLabMode('normal'); }, 480);
             }}
             whileHover={{ y: -5, scale: 1.015 }}
             transition={{ type: 'spring', stiffness: 180, damping: 22, delay: 0.08 }}
@@ -565,7 +572,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               el.classList.remove('btn-click-pop');
               void el.offsetWidth;
               el.classList.add('btn-click-pop');
-              setTimeout(() => { el.classList.remove('btn-click-pop'); enterLab('super'); }, 480);
+              setTimeout(() => { el.classList.remove('btn-click-pop'); setPendingLabMode('super'); }, 480);
             }}
             whileHover={{ y: -5, scale: 1.015 }}
             transition={{ type: 'spring', stiffness: 180, damping: 22, delay: 0.13 }}
@@ -623,6 +630,55 @@ export function FiusLabs({ user }: FiusLabsProps) {
           <RotateCcw className="w-3 h-3" />
           Retake preference survey
         </motion.button>
+
+        {/* ── Input-mode picker overlay ── */}
+        {pendingLabMode !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+            onClick={() => setPendingLabMode(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
+              style={{ background: dark ? '#1a1a1a' : '#f5f5f5' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="px-8 pt-8 pb-4 text-center">
+                <h2 className="text-xl font-bold mb-1" style={{ color: dark ? '#f5f5f5' : '#171717' }}>
+                  Choose input mode
+                </h2>
+                <p className="text-xs text-muted-foreground">How do you want to send messages in {pendingLabMode === 'normal' ? 'Normal' : 'Super'} Lab?</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 px-6 pb-8">
+                {/* Option 1 — Separate Bars */}
+                <button
+                  onClick={() => enterLab(pendingLabMode, 'separate')}
+                  className="flex-1 rounded-2xl p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                  style={{ background: dark ? '#2a2a2a' : '#ffffff', border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }}>
+                    <img src={dark ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="" className="w-5 h-5 object-contain" />
+                  </div>
+                  <h3 className="font-bold text-sm mb-1" style={{ color: dark ? '#f5f5f5' : '#171717' }}>Separate Bars</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Each chat panel gets its own message bar. Send independently to any panel.</p>
+                </button>
+                {/* Option 2 — Super Mode */}
+                <button
+                  onClick={() => enterLab(pendingLabMode, 'super')}
+                  className="flex-1 rounded-2xl p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                  style={{ background: dark ? '#2a2a2a' : '#ffffff', border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(168,85,247,0.18)' }}>
+                    <Zap className="w-5 h-5" style={{ color: '#a855f7' }} />
+                  </div>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <h3 className="font-bold text-sm" style={{ color: dark ? '#f5f5f5' : '#171717' }}>Super Mode</h3>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#a855f7', color: '#fff' }}>SUPER</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">One shared message bar. Pick a target panel with the selector, then send — message goes only to that panel.</p>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     );
   }
@@ -630,7 +686,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
   // ── LAB UI (Nomad clone) ──────────────────────────────────────────────────
   return (
     <TooltipProvider>
-    <div className="absolute inset-0 flex flex-col overflow-hidden" onClick={() => openDropdown !== null && setOpenDropdown(null)}>
+    <div className="absolute inset-0 flex flex-col overflow-hidden" onClick={() => { if (openDropdown !== null) setOpenDropdown(null); if (openPanelPicker) setOpenPanelPicker(false); }}>
 
       {/* ── Top strip ───────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-1.5 flex-shrink-0" style={{
@@ -697,10 +753,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
       </div>
 
       {/* ── Columns area + floating bar ────────────────── */}
-      <div className="flex-1 relative overflow-hidden min-h-0">
+      <div className="flex-1 relative overflow-hidden min-h-0 flex flex-col">
 
-        {/* ── GLOBAL EMPTY STATE — shown when no panel has messages ── */}
-        {!hasMessages && !isTypingAny && (
+        {/* ── GLOBAL EMPTY STATE — super inputMode only, when no messages ── */}
+        {inputMode === 'super' && !hasMessages && !isTypingAny && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4">
             {/* Logo + Fly With Us */}
             <FiusLogo size="2xl" className="mb-4 text-black dark:text-foreground" />
@@ -726,28 +782,63 @@ export function FiusLabs({ user }: FiusLabsProps) {
               ))}
             </div>
 
-            {/* Message bar */}
+            {/* Message bar — Ask tab style with panel count + panel selector inside */}
             <div className="w-full max-w-[42rem] mb-4">
-              <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
-                <div className="flex items-center px-3 py-2 gap-2">
-                  <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
+              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
+                  {/* Panel count stepper */}
+                  <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 flex-shrink-0 ml-1">
+                    <button onClick={removeLastColumn} disabled={slots.length <= 1}
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      <Minus className="w-2.5 h-2.5" />
+                    </button>
+                    <span className="text-[11px] font-bold w-3 text-center tabular-nums" style={{ color: dark ? '#f5f5f5' : '#171717' }}>{slots.length}</span>
+                    <button onClick={addColumn} disabled={slots.length >= 6}
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                  {/* Panel selector */}
+                  <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setOpenPanelPicker(!openPanelPicker)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition-all border ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
+                    >
+                      {superTargetPanel !== null ? <>Panel {superTargetPanel + 1}<span className="opacity-60 ml-0.5 hidden sm:inline truncate max-w-[60px]">· {slots[superTargetPanel]?.name}</span></> : 'Select Panel'}
+                      <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                    </button>
+                    {openPanelPicker && (
+                      <div className="absolute bottom-full mb-2 left-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 180 }}>
+                        {slots.map((m, idx) => (
+                          <button key={idx} onClick={() => { setSuperTargetPanel(idx); setOpenPanelPicker(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all ${superTargetPanel === idx ? 'font-bold' : ''}`}>
+                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white" style={{ background: m.color }}>{idx + 1}</span>
+                            <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                            <span style={{ color: superTargetPanel === idx ? m.color : 'inherit' }}>{m.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <textarea
                     ref={globalInputRef}
                     value={globalInput}
                     onChange={e => setGlobalInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToAll(); } }}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
                     onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
-                    placeholder="Message all panels…"
+                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1}…` : 'Select a panel first…'}
                     rows={1}
-                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
+                    disabled={superTargetPanel === null}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                     style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                   />
-                  <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${globalInput.trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                    <button onClick={sendToAll} disabled={!globalInput.trim()}
-                      className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                    disabled={!globalInput.trim() || superTargetPanel === null}
+                    className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -770,11 +861,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
         )}
 
-        {/* Columns — only rendered when there are messages */}
+        {/* Columns — separate: always shown; super: only when has messages */}
         <div
           ref={colsRef}
-          className="nomad-hscroll flex flex-nowrap h-full overflow-x-auto"
-          style={{ alignItems: 'stretch', scrollbarWidth: 'thin', display: hasMessages || isTypingAny ? 'flex' : 'none' }}
+          className="nomad-hscroll flex flex-nowrap overflow-x-auto"
+          style={{ flex: 1, minHeight: 0, alignItems: 'stretch', scrollbarWidth: 'thin', display: inputMode === 'separate' || hasMessages || isTypingAny ? 'flex' : 'none' }}
         >
           {slots.map((model, colIdx) => {
             const isActive = !!active[colIdx];
@@ -889,32 +980,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   {/* ── Flex-1 area: empty state OR messages ── */}
                   <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
 
-                    {/* ── EMPTY STATE — ask tab layout ── */}
-                    {msgs.length === 0 && !isTyping && (
+                    {/* ── EMPTY STATE — separate mode only, simple Ask-tab-style bar ── */}
+                    {msgs.length === 0 && !isTyping && inputMode === 'separate' && (
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2, padding: '0 12px' }}>
-
-                        {/* Function bar — above message bar, exact ask tab pill style */}
-                        <div className="flex flex-wrap justify-center gap-2 mb-3">
-                          {([
-                            { icon: dark ? '/fn-voice-gray.png' : '/fn-voice-black.png', label: 'Long Answer' },
-                            { icon: dark ? '/fn-settings-gray.png' : '/fn-settings-black.png', label: 'Voice Mode' },
-                            { icon: dark ? '/fn-longans-gray.png' : '/fn-longans-black.png', label: 'Settings' },
-                          ] as const).map(({ icon, label }) => (
-                            <button key={label}
-                              className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md">
-                              <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center">
-                                <img src={icon} alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: dark ? 'screen' : 'multiply' }} />
-                              </span>
-                              <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Message bar — centered, exact same bar */}
-                        <div className="w-full mb-4">
-                          <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
-                            <div className="flex items-center px-3 py-2 gap-2">
-                              <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
+                        <div className="w-full">
+                          <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                            <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
+                              <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60 ml-1" />
                               <textarea
                                 value={perInput[colIdx] || ''}
                                 onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
@@ -926,51 +998,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
                                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                               />
-                              {labMode === 'super' && (
-                                <div className="relative flex-shrink-0">
-                                  <button
-                                    onClick={e => { e.stopPropagation(); setOpenDropdown(openDropdown === colIdx ? null : colIdx); }}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all border border-zinc-200/60 dark:border-white/10"
-                                  >
-                                    <img src={model.logo} alt="" className="w-3.5 h-3.5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                                    <span className="truncate max-w-[60px]">{model.name}</span>
-                                    <ChevronDown className={`w-2.5 h-2.5 opacity-60 transition-transform duration-200 ${openDropdown === colIdx ? 'rotate-180' : ''}`} />
-                                  </button>
-                                  {openDropdown === colIdx && (
-                                    <div className="absolute bottom-full mb-2 right-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 170, width: 'max-content' }} onClick={e => e.stopPropagation()}>
-                                      {SUPER_MODELS.map(m => (
-                                        <button key={m.id} onClick={() => { changeSlotModel(colIdx, m); setOpenDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all" style={{ color: model.id === m.id ? m.color : 'inherit', fontWeight: model.id === m.id ? 700 : 400 }}>
-                                          <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                                          {m.name}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${(perInput[colIdx] || '').trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                                <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
-                                  <ArrowUp className="w-4 h-4" />
-                                </button>
-                              </div>
+                              <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
+                                className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
+                                <ArrowUp className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                        </div>
-
-                        {/* Quick chips — exact ask tab style */}
-                        <div className="flex items-center justify-center gap-2 flex-wrap">
-                          {([
-                            { label: 'Create Visuals', light: '/quick-visuals-light.png',   dark: '/quick-visuals-dark.png',   prompt: 'Create some visuals for me' },
-                            { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', prompt: 'Search the web for: ' },
-                            { label: 'Create Files',   light: '/quick-files-light.png',     dark: '/quick-files-dark.png',     prompt: 'Help me create a file' },
-                            { label: 'Play Games',     light: '/quick-games-light.png',     dark: '/quick-games-dark.png',     prompt: "Let's play a word game" },
-                          ] as const).map(({ label, light, dark: dIcon, prompt }) => (
-                            <button key={label} onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: prompt }))}
-                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
-                              <img src={dark ? dIcon : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
-                              {label}
-                            </button>
-                          ))}
                         </div>
                       </div>
                     )}
@@ -990,7 +1023,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           ) : (
                             <div className="max-w-[90%]">
                               <div className="flex items-center gap-1.5 mb-1.5 ml-1">
-                                <img src="/fius-logo.png" alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" />
+                                <img src={model.logo} alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = '/fius-logo.png'; }} />
                                 <span className="text-[10px] font-semibold text-muted-foreground">{model.name}</span>
                               </div>
                               <div className="rounded-3xl px-4 py-3 chat-bubble">
@@ -1004,18 +1037,18 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       ))}
                       {isTyping && (
                         <div className="flex justify-start mb-2">
-                          <ThinkingCloud logo="/fius-logo.png" name={model.name} dark={dark} />
+                          <ThinkingCloud logo={model.logo} name={model.name} dark={dark} />
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* ── Bottom message bar — only when chat has messages ── */}
-                  {(msgs.length > 0 || isTyping) && (
+                  {/* ── Per-panel bottom bar — separate mode only ── */}
+                  {inputMode === 'separate' && (msgs.length > 0 || isTyping) && (
                   <div className="mx-2 mb-3 flex-shrink-0">
-                    <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
-                      <div className="flex items-center px-3 py-2 gap-2">
-                        <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
+                    <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                      <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
+                        <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60 ml-1" />
                         <textarea
                           value={perInput[colIdx] || ''}
                           onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
@@ -1027,30 +1060,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                           style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                         />
-                        {labMode === 'super' && (
-                          <div className="relative flex-shrink-0">
-                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(openDropdown === colIdx ? null : colIdx); }} className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all border border-zinc-200/60 dark:border-white/10">
-                              <img src={model.logo} alt="" className="w-3.5 h-3.5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                              <span className="truncate max-w-[60px]">{model.name}</span>
-                              <ChevronDown className={`w-2.5 h-2.5 opacity-60 transition-transform duration-200 ${openDropdown === colIdx ? 'rotate-180' : ''}`} />
-                            </button>
-                            {openDropdown === colIdx && (
-                              <div className="absolute bottom-full mb-2 right-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 170, width: 'max-content' }} onClick={e => e.stopPropagation()}>
-                                {SUPER_MODELS.map(m => (
-                                  <button key={m.id} onClick={() => { changeSlotModel(colIdx, m); setOpenDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all" style={{ color: model.id === m.id ? m.color : 'inherit', fontWeight: model.id === m.id ? 700 : 400 }}>
-                                    <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                                    {m.name}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${(perInput[colIdx] || '').trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                          <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
-                            <ArrowUp className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
+                          className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
+                          <ArrowUp className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1061,6 +1074,70 @@ export function FiusLabs({ user }: FiusLabsProps) {
             );
           })}
         </div>
+
+        {/* ── Super mode shared bottom bar — shows when has messages ── */}
+        {inputMode === 'super' && (hasMessages || isTypingAny) && (
+          <div className="px-4 pb-4 pt-2 flex-shrink-0">
+            <div className="max-w-[56rem] mx-auto">
+              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
+                  {/* Panel count stepper */}
+                  <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 flex-shrink-0 ml-1">
+                    <button onClick={removeLastColumn} disabled={slots.length <= 1}
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      <Minus className="w-2.5 h-2.5" />
+                    </button>
+                    <span className="text-[11px] font-bold w-3 text-center tabular-nums" style={{ color: dark ? '#f5f5f5' : '#171717' }}>{slots.length}</span>
+                    <button onClick={addColumn} disabled={slots.length >= 6}
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                  {/* Panel selector */}
+                  <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setOpenPanelPicker(!openPanelPicker)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition-all border ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
+                    >
+                      {superTargetPanel !== null ? <>Panel {superTargetPanel + 1}<span className="opacity-60 ml-0.5 hidden sm:inline truncate max-w-[60px]">· {slots[superTargetPanel]?.name}</span></> : 'Select Panel'}
+                      <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                    </button>
+                    {openPanelPicker && (
+                      <div className="absolute bottom-full mb-2 left-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 180 }}>
+                        {slots.map((m, idx) => (
+                          <button key={idx} onClick={() => { setSuperTargetPanel(idx); setOpenPanelPicker(false); }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all ${superTargetPanel === idx ? 'font-bold' : ''}`}>
+                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white" style={{ background: m.color }}>{idx + 1}</span>
+                            <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                            <span style={{ color: superTargetPanel === idx ? m.color : 'inherit' }}>{m.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <textarea
+                    value={globalInput}
+                    onChange={e => setGlobalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
+                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1} — ${slots[superTargetPanel]?.name}…` : 'Select a panel first…'}
+                    rows={1}
+                    disabled={superTargetPanel === null}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
+                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  />
+                  <button
+                    onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                    disabled={!globalInput.trim() || superTargetPanel === null}
+                    className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     </TooltipProvider>
