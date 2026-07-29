@@ -380,7 +380,11 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
   return (
     <div className="flex justify-start mb-2">
       <div className="thinking-pill">
-        <div className="thinking-bars"><span /><span /><span /></div>
+        <div className="thinking-logo-breathe">
+          <div className="thinking-logo-spin">
+            <FiusLogo size="sm" />
+          </div>
+        </div>
         <span className="thinking-label">{label}</span>
       </div>
     </div>

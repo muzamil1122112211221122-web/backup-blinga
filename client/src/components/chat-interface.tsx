@@ -4730,8 +4730,13 @@ Let's start the self-listen session!`;
               return (
                 <div className="flex justify-start mb-2" data-testid="typing-indicator">
                   <div className="thinking-pill">
-                    {(settingsToggles.showFiusLogo ?? true) && <FiusLogo size="sm" />}
-                    <div className="thinking-bars"><span /><span /><span /></div>
+                    {(settingsToggles.showFiusLogo ?? true) && (
+                      <div className="thinking-logo-breathe">
+                        <div className="thinking-logo-spin">
+                          <FiusLogo size="sm" />
+                        </div>
+                      </div>
+                    )}
                     <span className="thinking-label">{label}</span>
                   </div>
                 </div>
@@ -5004,7 +5009,11 @@ Let's start the self-listen session!`;
                               </>
                             ) : (
                               <div className="thinking-pill">
-                                <div className="thinking-bars"><span /><span /><span /></div>
+                                <div className="thinking-logo-breathe">
+                                  <div className="thinking-logo-spin">
+                                    <FiusLogo size="sm" />
+                                  </div>
+                                </div>
                                 <span className="thinking-label">Thinking</span>
                               </div>
                             )}
@@ -5265,7 +5274,11 @@ Let's start the self-listen session!`;
                             {nomadIsTyping[model] && (
                               <div className="flex items-start">
                                 <div className="thinking-pill">
-                                  <div className="thinking-bars"><span /><span /><span /></div>
+                                  <div className="thinking-logo-breathe">
+                                    <div className="thinking-logo-spin">
+                                      <FiusLogo size="sm" />
+                                    </div>
+                                  </div>
                                   <span className="thinking-label">Thinking</span>
                                 </div>
                               </div>
@@ -5375,8 +5388,11 @@ Let's start the self-listen session!`;
                       {nomadIsTyping[model] && (
                         <div className="flex justify-start mb-2">
                           <div className="thinking-pill">
-                            {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
-                            <div className="thinking-bars"><span /><span /><span /></div>
+                            <div className="thinking-logo-breathe">
+                              <div className="thinking-logo-spin">
+                                {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
+                              </div>
+                            </div>
                             <span className="thinking-label">Thinking</span>
                           </div>
                         </div>
