@@ -339,12 +339,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
           >
             {/* Header */}
             <div className="flex items-center gap-2.5 mb-8">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }}
-              >
-                <FlaskConical className="w-4 h-4 text-foreground" />
-              </div>
+              <img
+                src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
+                alt="Fius Labs"
+                className="w-7 h-7 object-contain"
+              />
               <span className="font-semibold text-base text-foreground">Fius Labs</span>
               <span className="ml-auto text-xs text-muted-foreground tabular-nums font-medium">
                 {qIdx + 1} / {ONBOARDING_QUESTIONS.length}
@@ -378,8 +377,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 onChange={e => setObInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitOb(); } }}
                 placeholder={q.placeholder}
-                className="w-full px-4 py-3 pr-12 rounded-xl text-base outline-none transition-all"
+                className="w-full px-4 py-3 pr-12 text-base outline-none transition-all"
                 style={{
+                  borderRadius: '1rem',
                   background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
                   border: dark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.12)',
                   color: 'inherit',
@@ -387,8 +387,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
               />
               <button
                 onClick={submitOb}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-80 transition-all"
-                style={{ background: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)' }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:opacity-80 transition-all"
+                style={{
+                  borderRadius: '0.75rem',
+                  background: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)',
+                }}
               >
                 <ChevronRight className="w-4 h-4 text-foreground" />
               </button>
@@ -399,7 +402,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {ONBOARDING_QUESTIONS.slice(0, qIdx).map(prev =>
                   answers[prev.id] ? (
-                    <span key={prev.id} className="text-xs px-2.5 py-1 rounded-full text-muted-foreground" style={{
+                    <span key={prev.id} className="text-xs px-3 py-1 text-muted-foreground" style={{
+                      borderRadius: '999px',
                       background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
                       border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
                     }}>
@@ -414,7 +418,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
             <div className="mt-8 flex justify-center">
               <button
                 onClick={skipSurvey}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ borderRadius: '0.75rem' }}
               >
                 Skip survey
               </button>
