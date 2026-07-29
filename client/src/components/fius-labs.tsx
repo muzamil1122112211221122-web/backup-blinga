@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
 import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2 } from 'lucide-react';
-import microphoneIcon from "@assets/microphone__1784996516975.png";
+import microphoneIcon from "@assets/microphone_1784996715112.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
+import plusButtonIcon from "@assets/add_1784996715112.png";
 import { FiusLogo } from './logo';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import normalLabWhiteIcon from '@assets/normal_lab_white_theme_1784982983175.png';
@@ -227,6 +228,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const [perInput,  setPerInput]  = useState<Record<number, string>>({});
   const [numChats,  setNumChats]  = useState(4);
   const scrollRefs  = useRef<Map<number, HTMLDivElement>>(new Map());
+  const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  const globalFileInputRef = useRef<HTMLInputElement>(null);
   const colsRef     = useRef<HTMLDivElement>(null);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   // ── Input-mode state ─────────────────────────────────
@@ -875,6 +878,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                     )}
                   </div>
+                  {/* Attach */}
+                  <input ref={globalFileInputRef} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
+                  <button onClick={() => globalFileInputRef.current?.click()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10">
+                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                  </button>
                   <textarea
                     ref={globalInputRef}
                     value={globalInput}
@@ -1056,7 +1065,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
                         <div className="w-full">
                           <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                             <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                              <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60 ml-1" />
+                              {/* Attach */}
+                              <input ref={el => { if (el) fileInputRefs.current.set(colIdx, el); }} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
+                              <button onClick={() => fileInputRefs.current.get(colIdx)?.click()} disabled={!isActive}
+                                className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
+                                <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                              </button>
                               <textarea
                                 value={perInput[colIdx] || ''}
                                 onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
@@ -1133,7 +1147,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <div className="mx-2 mb-3 flex-shrink-0">
                     <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                       <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                        <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60 ml-1" />
+                        {/* Attach */}
+                        <button onClick={() => fileInputRefs.current.get(colIdx)?.click()} disabled={!isActive}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
+                          <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                        </button>
                         <textarea
                           value={perInput[colIdx] || ''}
                           onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
@@ -1215,6 +1233,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                     )}
                   </div>
+                  {/* Attach */}
+                  <button onClick={() => globalFileInputRef.current?.click()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10">
+                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                  </button>
                   <textarea
                     value={globalInput}
                     onChange={e => setGlobalInput(e.target.value)}
