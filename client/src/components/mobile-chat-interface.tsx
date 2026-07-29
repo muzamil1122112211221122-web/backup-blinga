@@ -52,6 +52,7 @@ import {
   GripVertical, Plus, Paperclip, FileSignature, Zap, BookOpen, TrendingUp, Lightbulb,
   Code, MessageSquare, Lock, Upload, LayoutGrid,
   PenLine, BarChart3, TestTube2, Cpu, BookOpenCheck, Shield, Leaf, Rocket,
+  CornerDownLeft,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabaseClient";
@@ -823,7 +824,21 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               {msg.content && (
                 <div className="group flex flex-col items-end">
                   <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 shadow-sm chat-bubble text-foreground text-[13.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] break-all w-fit">
-                    {msg.content}
+                    {(() => {
+                      const rm = msg.content.match(/^\[Re: "([\s\S]*?)"\]\n\n([\s\S]*)$/);
+                      if (rm) return (
+                        <>
+                          <div className="flex items-start gap-1.5 mb-2 pb-2 border-b border-zinc-300/60 dark:border-zinc-600/60">
+                            <CornerDownLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 italic line-clamp-2 leading-relaxed m-0">
+                              {rm[1].slice(0, 100)}{rm[1].length > 100 ? '…' : ''}
+                            </p>
+                          </div>
+                          <span>{rm[2]}</span>
+                        </>
+                      );
+                      return msg.content;
+                    })()}
                   </div>
                   {(showUserMsgActions ?? false) && (
                     <div className="flex items-center gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -1168,9 +1183,11 @@ interface MsgBarProps {
   onDocumentMode?: () => void;
   documentModeActive?: boolean;
   hasMessages?: boolean;
+  replyQuote?: string | null;
+  onClearReply?: () => void;
 }
 
-function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, centerViewport = false, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false, hasMessages = false }: MsgBarProps) {
+function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, centerViewport = false, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false, hasMessages = false, replyQuote, onClearReply }: MsgBarProps) {
   const { theme: _mbTheme } = useTheme();
   const _mbResolved = _mbTheme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -1520,6 +1537,17 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Reply quote chip ── */}
+      {replyQuote && (
+        <div className="flex items-center gap-2 mx-1 mb-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 text-xs text-blue-700 dark:text-blue-300 animate-in fade-in duration-150">
+          <CornerDownLeft className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
+          <span className="truncate italic opacity-80 flex-1">"{replyQuote.slice(0, 60)}{replyQuote.length > 60 ? '…' : ''}"</span>
+          <button onClick={onClearReply} className="hover:text-red-500 transition-colors flex-shrink-0">
+            <X className="w-3 h-3" />
+          </button>
         </div>
       )}
 
@@ -2644,7 +2672,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
 // ─── Welcome Cards (randomised each mount) ────────────────────────────────────
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport, replyQuote, onClearReply }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
@@ -2654,6 +2682,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
   ownMode?: boolean; onSwitchTab?: (tab: MobileTab) => void;
   centerViewport?: boolean;
+  replyQuote?: string | null; onClearReply?: () => void;
 }) {
   const { resolvedTheme } = useTheme();
   const endRef = useRef<HTMLDivElement>(null);
@@ -2724,7 +2753,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       {messages.length > 2 && (
         <ScrollButtons scrollAreaRef={scrollAreaRef} />
       )}
-          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-48" style={{ overscrollBehavior: "contain", position: 'relative', zIndex: 1 }}>
+          <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-48" data-msgarea="true" style={{ overscrollBehavior: "contain", position: 'relative', zIndex: 1 }}>
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col items-center min-h-full text-center relative" style={{justifyContent: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 'flex-end' : 'flex-start', paddingTop: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 0 : 8, paddingBottom: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 20 : 48, transition: 'padding 0.3s ease'}}>
             {/* Radial glow — center spread */}
@@ -2782,7 +2811,8 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
           onSettings={onSettings} onEducation={onEducation} showEnhance showModel
           onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
-          hasMessages={messages.length > 0 || isTyping} />
+          hasMessages={messages.length > 0 || isTyping}
+          replyQuote={replyQuote} onClearReply={onClearReply} />
         {/* Quick action chips — shown in empty state below msg bar */}
         {messages.length === 0 && !isTyping && (
           <div className="flex items-center justify-center gap-1.5 mt-4 flex-wrap px-3">
@@ -3632,6 +3662,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [askInput, setAskInput] = useState("");
   const [askTyping, setAskTyping] = useState(false);
   const [askDocumentMode, setAskDocumentMode] = useState(false);
+  const [askReplyQuote, setAskReplyQuote] = useState<string | null>(null);
+  const [askReplyBtnPos, setAskReplyBtnPos] = useState<{ x: number; y: number } | null>(null);
   const [askModel, setAskModelRaw] = useState("fius-lite");
   const setAskModel = useCallback((m: string) => {
     if (isChatModelLocked(m)) {
@@ -3686,6 +3718,41 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     const handler = () => setChatBg(localStorage.getItem("chatBg") || "plain");
     window.addEventListener("chatBgChanged", handler);
     return () => window.removeEventListener("chatBgChanged", handler);
+  }, []);
+
+  // ── Text-selection reply button (mobile) ──
+  useEffect(() => {
+    const handleSelectionEnd = () => {
+      setTimeout(() => {
+        const sel = window.getSelection();
+        const text = sel?.toString().trim();
+        if (!text || text.length < 3) { setAskReplyBtnPos(null); return; }
+        const node = sel?.anchorNode;
+        const parentEl = node instanceof Element ? node : node?.parentElement;
+        if (!parentEl) { setAskReplyBtnPos(null); return; }
+        if (parentEl.closest('input, textarea, [contenteditable="true"]')) { setAskReplyBtnPos(null); return; }
+        if (!parentEl.closest('[data-msgarea="true"]')) { setAskReplyBtnPos(null); return; }
+        try {
+          const range = sel!.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          if (rect.width === 0 && rect.height === 0) { setAskReplyBtnPos(null); return; }
+          setAskReplyBtnPos({ x: rect.left + rect.width / 2, y: rect.top - 4 });
+        } catch { setAskReplyBtnPos(null); }
+      }, 10);
+    };
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!(e.target as Element)?.closest?.('[data-reply-btn]')) {
+        setAskReplyBtnPos(null);
+      }
+    };
+    document.addEventListener('mouseup', handleSelectionEnd);
+    document.addEventListener('touchend', handleSelectionEnd);
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    return () => {
+      document.removeEventListener('mouseup', handleSelectionEnd);
+      document.removeEventListener('touchend', handleSelectionEnd);
+      document.removeEventListener('touchstart', handleTouchStart);
+    };
   }, []);
 
   // Periodic notification — same as PC, starts after 8s then every 3-5 min
@@ -3784,9 +3851,13 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const handleAskAttachmentSend = useCallback(async (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => {
     setAskTyping(true);
+    // Capture & clear reply quote
+    const currentReplyQuote = askReplyQuote;
+    if (currentReplyQuote) { setAskReplyQuote(null); setAskReplyBtnPos(null); }
+    const displayText = currentReplyQuote ? `[Re: "${currentReplyQuote}"]\n\n${text}` : text;
     // Build user message — images shown as grid, files as chips, text as bubble
     const userMsg: Msg = {
-      id: uid(), role: "user", content: text,
+      id: uid(), role: "user", content: displayText,
       images: images.length > 0 ? images.map(i => i.preview) : undefined,
       attachedFiles: files.length > 0 ? files.map(f => ({ name: f.name, size: f.size })) : undefined,
       timestamp: new Date(),
@@ -3843,17 +3914,25 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
     const text = askInput.trim(); if (!text || askTyping) return;
     const isDocRequest = askDocumentMode;
+    // Capture & clear reply quote before any state changes
+    const currentReplyQuote = askReplyQuote;
+    if (currentReplyQuote) { setAskReplyQuote(null); setAskReplyBtnPos(null); }
     setAskInput(""); setAskTyping(true);
     // Document mode now stays on across messages — user must cancel it manually
     // instead of it silently switching off after one message.
-    setAskMsgs(p => [...p, { id: uid(), role: "user", content: text, timestamp: new Date() }]);
+    setAskMsgs(p => [...p, {
+      id: uid(), role: "user",
+      content: currentReplyQuote ? `[Re: "${currentReplyQuote}"]\n\n${text}` : text,
+      timestamp: new Date()
+    }]);
     try {
       // In Own Mode skip conversation creation — no data is saved
       const convId = ownMode ? '' : await ensureConv(text);
       askAbortRef.current?.abort();
       const ctrl = new AbortController(); askAbortRef.current = ctrl;
       // DuckDuckGo web search — same as PC
-      let messageToSend = text;
+      // If replying, prepend the reply context so AI knows what it's responding to
+      let messageToSend = currentReplyQuote ? `[REPLYING TO: "${currentReplyQuote}"]\n\n${text}` : text;
       let sources: Array<{title: string; url: string; snippet: string}> = [];
       const skipSearch = isDocRequest || /^(hi|hello|hey|how are you|thanks|bye|ok|yes|no|lol|haha)[\s!?.]*$/i.test(text.trim()) || text.trim().split(/\s+/).length <= 2;
       if (!skipSearch) {
@@ -3880,7 +3959,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
               });
             }
             if (snippets.length > 0) {
-              messageToSend = `[Web search results for: "${text}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically below your response. Do NOT repeat source names inside your answer.]\nUser: ${text}`;
+              const baseMsg = currentReplyQuote ? `[REPLYING TO: "${currentReplyQuote}"]\n\n${text}` : text;
+              messageToSend = `[Web search results for: "${text}"]\n${snippets.join('\n')}\n\n[Use the above search results to inform your answer. Do NOT list sources yourself — they are shown automatically below your response. Do NOT repeat source names inside your answer.]\nUser: ${baseMsg}`;
             }
           }
         } catch { }
@@ -4214,7 +4294,9 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 documentModeActive={askDocumentMode}
                 onCancelDocumentMode={() => setAskDocumentMode(false)}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers}
-                ownMode={ownMode} onSwitchTab={changeMobileTab} />
+                ownMode={ownMode} onSwitchTab={changeMobileTab}
+                replyQuote={askReplyQuote}
+                onClearReply={() => { setAskReplyQuote(null); setAskReplyBtnPos(null); }} />
             </div>
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "nomad" ? 1 : 0, pointerEvents: tab === "nomad" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
               <NomadTab input={nomadInput} setInput={setNomadInput} onSend={handleNomadSend}
@@ -4239,6 +4321,31 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           </div>
         </div>
       </TooltipProvider>
+    {/* ── Floating text-selection Reply button (mobile) ── */}
+    {askReplyBtnPos && tab === "ask" && (
+      <div
+        data-reply-btn="true"
+        className="fixed z-[9999] pointer-events-auto"
+        style={{ left: askReplyBtnPos.x, top: askReplyBtnPos.y, transform: 'translate(-50%, -100%)' }}
+      >
+        <button
+          onPointerDown={(e) => {
+            e.preventDefault();
+            const sel = window.getSelection();
+            const text = sel?.toString().trim();
+            if (text) {
+              setAskReplyQuote(text);
+              sel?.removeAllRanges();
+            }
+            setAskReplyBtnPos(null);
+          }}
+          className="flex items-center gap-1.5 px-3 py-2 bg-foreground text-background text-xs font-semibold rounded-full shadow-lg hover:opacity-90 active:scale-95 transition-all animate-in fade-in duration-150"
+        >
+          <CornerDownLeft className="w-3 h-3" />
+          Reply
+        </button>
+      </div>
+    )}
     </ErrorBoundary>
     </MinimalModeCtx.Provider>
   );

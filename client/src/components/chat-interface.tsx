@@ -437,6 +437,7 @@ import {
   Leaf,
   Rocket,
   MessageSquare,
+  CornerDownLeft,
 } from "lucide-react";
 import { downloadTxt, downloadPdf } from "@/lib/document-export";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
@@ -1141,6 +1142,44 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     window.addEventListener('appFontChanged', handler);
     return () => window.removeEventListener('appFontChanged', handler);
   }, []);
+
+  // ── Text-selection reply button ──
+  useEffect(() => {
+    const handleMouseUp = () => {
+      setTimeout(() => {
+        const sel = window.getSelection();
+        const text = sel?.toString().trim();
+        if (!text || text.length < 3) { setReplyBtnPos(null); return; }
+        const node = sel?.anchorNode;
+        const parentEl = node instanceof Element ? node : node?.parentElement;
+        if (!parentEl) { setReplyBtnPos(null); return; }
+        // Don't show in input/textarea
+        if (parentEl.closest('input, textarea, [contenteditable="true"]')) { setReplyBtnPos(null); return; }
+        // Only show within message bubbles
+        if (!parentEl.closest('[data-msgarea="true"]')) { setReplyBtnPos(null); return; }
+        try {
+          const range = sel!.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          if (rect.width === 0 && rect.height === 0) { setReplyBtnPos(null); return; }
+          setReplyBtnPos({ x: rect.left + rect.width / 2, y: rect.top - 4 });
+        } catch { setReplyBtnPos(null); }
+      }, 10);
+    };
+    const handleMouseDown = (e: MouseEvent) => {
+      // Hide button if clicking outside the reply button itself
+      if (!(e.target as Element)?.closest?.('[data-reply-btn]')) {
+        setReplyBtnPos(null);
+      }
+    };
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchend', handleMouseUp);
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchend', handleMouseUp);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
   // UI Accent Color — listen for changes from settings
   useEffect(() => {
     const handler = () => { applyUiAccent(); setUiAccentColor(getActiveUiAccent()); };
@@ -1358,6 +1397,8 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [attachedImages, setAttachedImages] = useState<Array<{file: File, preview: string}>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{file: File, name: string, size: string, type: string}>>([]);
+  const [replyQuote, setReplyQuote] = useState<string | null>(null);
+  const [replyBtnPos, setReplyBtnPos] = useState<{ x: number; y: number } | null>(null);
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [exportingMsgId, setExportingMsgId] = useState<string | null>(null);
   const [docPdfExportingId, setDocPdfExportingId] = useState<string | null>(null);
@@ -2623,6 +2664,9 @@ Rules:
   const handleSendMessage = async () => {
     const content = inputValue.trim();
     if (!content && !attachedImages.length && !attachedFiles.length) return;
+    // Capture & clear reply quote before any state changes
+    const currentReplyQuote = replyQuote;
+    if (currentReplyQuote) { setReplyQuote(null); setReplyBtnPos(null); }
 
     if (isFreePlanExhausted) {
       showUpgradeLockToast();
@@ -2808,7 +2852,7 @@ Rules:
       id: Date.now().toString(),
       conversationId,
       role: 'user',
-      content: content || attachmentDesc,
+      content: currentReplyQuote ? `[Re: "${currentReplyQuote}"]\n\n${content || attachmentDesc}` : (content || attachmentDesc),
       createdAt: new Date(),
       imageUrl: attachedImages[0]?.preview
     };
@@ -2888,7 +2932,10 @@ Rules:
 
     // Always use direct API call for better reliability
     console.log('Using direct API call for better reliability...');
-    await handleDirectApiCall(content, conversationId, activeTab);
+    await handleDirectApiCall(
+      currentReplyQuote ? `[Re: "${currentReplyQuote}"]\n\n${content}` : content,
+      conversationId, activeTab
+    );
   };
 
   const handleStopResponse = () => {
@@ -4398,7 +4445,7 @@ Let's start the self-listen session!`;
             
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6" data-msgarea="true">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -4430,66 +4477,82 @@ Let's start the self-listen session!`;
                       </div>
                     ) : (
                     <>
-                    <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 w-fit chat-bubble shadow-sm [overflow-wrap:anywhere]">
-                      {/* Display uploaded image if present */}
-                      {message.imageUrl && (
-                        <div className="mb-3">
-                          <img 
-                            src={message.imageUrl} 
-                            alt="Uploaded image" 
-                            className="max-w-full h-auto rounded-lg shadow-sm border border-border cursor-zoom-in"
-                            onClick={() => setFullscreenImg(message.imageUrl!)}
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.onerror = null;
-                              target.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
-                        {message.content.length > 250 && !expandedMsgIds.has(message.id) ? (
-                          <p className="whitespace-pre-wrap break-words text-sm m-0">
-                            {message.content.slice(0, 250).trim()}&hellip;
-                            <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
-                              className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                              ...
-                            </button>
-                          </p>
-                        ) : (
-                          <>
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                img: ({src, alt}) => {
-                                  if (!src) return null;
-                                  return (
-                                    <img 
-                                      src={src} 
-                                      alt={alt || "Generated image"} 
-                                      className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.onerror = null;
-                                        target.style.display = 'none';
-                                      }}
-                                    />
-                                  );
-                                }
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
-                            {message.content.length > 250 && (
-                              <button onClick={() => setExpandedMsgIds(p => { const n = new Set(p); n.delete(message.id); return n; })}
-                                className="text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
-                                Show less
-                              </button>
-                            )}
-                          </>
+                    {(() => {
+                      const replyM = message.content.match(/^\[Re: "([\s\S]*?)"\]\n\n([\s\S]*)$/);
+                      const displayContent = replyM ? replyM[2] : message.content;
+                      const quotedPart = replyM ? replyM[1] : null;
+                      return (
+                      <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 w-fit chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                        {/* Reply quote chip */}
+                        {quotedPart && (
+                          <div className="flex items-start gap-1.5 mb-2 pb-2 border-b border-zinc-300/60 dark:border-zinc-600/60">
+                            <CornerDownLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 italic line-clamp-2 leading-relaxed">
+                              {quotedPart.slice(0, 120)}{quotedPart.length > 120 ? '…' : ''}
+                            </p>
+                          </div>
                         )}
+                        {/* Display uploaded image if present */}
+                        {message.imageUrl && (
+                          <div className="mb-3">
+                            <img 
+                              src={message.imageUrl} 
+                              alt="Uploaded image" 
+                              className="max-w-full h-auto rounded-lg shadow-sm border border-border cursor-zoom-in"
+                              onClick={() => setFullscreenImg(message.imageUrl!)}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="text-foreground prose prose-sm max-w-none dark:prose-invert">
+                          {displayContent.length > 250 && !expandedMsgIds.has(message.id) ? (
+                            <p className="whitespace-pre-wrap break-words text-sm m-0">
+                              {displayContent.slice(0, 250).trim()}&hellip;
+                              <button onClick={() => setExpandedMsgIds(p => new Set([...p, message.id]))}
+                                className="ml-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                ...
+                              </button>
+                            </p>
+                          ) : (
+                            <>
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  img: ({src, alt}) => {
+                                    if (!src) return null;
+                                    return (
+                                      <img 
+                                        src={src} 
+                                        alt={alt || "Generated image"} 
+                                        className="max-w-full h-auto rounded-lg my-2 shadow-sm border border-border" 
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.onerror = null;
+                                          target.style.display = 'none';
+                                        }}
+                                      />
+                                    );
+                                  }
+                                }}
+                              >
+                                {displayContent}
+                              </ReactMarkdown>
+                              {displayContent.length > 250 && (
+                                <button onClick={() => setExpandedMsgIds(p => { const n = new Set(p); n.delete(message.id); return n; })}
+                                  className="text-xs font-medium text-muted-foreground hover:text-foreground underline transition-colors">
+                                  Show less
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                      );
+                    })()}
                     {/* User Message Action Buttons — below bubble, shown on hover */}
                     {(settingsToggles.showUserMsgActions ?? false) && (
                       <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -6752,6 +6815,16 @@ Let's start the self-listen session!`;
           </div>
         )}
 
+        {replyQuote && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 text-xs text-blue-700 dark:text-blue-300 w-fit max-w-xs animate-in fade-in duration-150">
+            <CornerDownLeft className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
+            <span className="truncate italic opacity-80">"{replyQuote.slice(0, 60)}{replyQuote.length > 60 ? '…' : ''}"</span>
+            <button onClick={() => { setReplyQuote(null); setReplyBtnPos(null); }} className="ml-1 hover:text-red-500 transition-colors flex-shrink-0">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         {documentMode && (
           <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-xs font-medium text-indigo-600 dark:text-indigo-300 w-fit">
             <FileSignature className="w-3.5 h-3.5" />
@@ -8042,6 +8115,32 @@ Let's start the self-listen session!`;
         </motion.div>
       )}
     </AnimatePresence>
+
+    {/* ── Floating text-selection Reply button ── */}
+    {replyBtnPos && (
+      <div
+        data-reply-btn="true"
+        className="fixed z-[9999] pointer-events-auto"
+        style={{ left: replyBtnPos.x, top: replyBtnPos.y, transform: 'translate(-50%, -100%)' }}
+      >
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const sel = window.getSelection();
+            const text = sel?.toString().trim();
+            if (text) {
+              setReplyQuote(text);
+              sel?.removeAllRanges();
+            }
+            setReplyBtnPos(null);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-foreground text-background text-xs font-semibold rounded-full shadow-lg hover:opacity-90 active:scale-95 transition-all animate-in fade-in duration-150"
+        >
+          <CornerDownLeft className="w-3 h-3" />
+          Reply
+        </button>
+      </div>
+    )}
 
     </div>
     </TooltipProvider>
