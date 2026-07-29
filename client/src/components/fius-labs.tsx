@@ -844,46 +844,35 @@ export function FiusLabs({ user }: FiusLabsProps) {
             <div className="w-full max-w-[42rem] mb-4">
               <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                 <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                  {/* Panel count stepper */}
-                  <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 flex-shrink-0 ml-1">
+                  {/* Attach — far left */}
+                  <button onClick={() => globalFileInputRef.current?.click()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
+                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                  </button>
+                  {/* Panel picker — orientation-picker style: [-] [1][2][3][4] [+] */}
+                  <div className="flex items-center flex-shrink-0 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 px-1 py-0.5 gap-0.5">
                     <button onClick={removeLastColumn} disabled={slots.length <= 1}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
                       <Minus className="w-2.5 h-2.5" />
                     </button>
-                    <span className="text-[11px] font-bold w-3 text-center tabular-nums" style={{ color: dark ? '#f5f5f5' : '#171717' }}>{slots.length}</span>
+                    <div className="relative flex flex-row items-center">
+                      {superTargetPanel !== null && (
+                        <div className="absolute inset-y-0 rounded-full bg-zinc-800 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                      )}
+                      {slots.map((_, idx) => (
+                        <button key={idx} onClick={() => setSuperTargetPanel(idx)}
+                          className={`relative z-10 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full transition-colors duration-200 flex-shrink-0 ${superTargetPanel === idx ? 'text-white dark:text-black' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'}`}>
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
                     <button onClick={addColumn} disabled={slots.length >= 6}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
                       <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
-                  {/* Panel selector */}
-                  <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setOpenPanelPicker(!openPanelPicker)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition-all border ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
-                    >
-                      {superTargetPanel !== null ? <>Panel {superTargetPanel + 1}<span className="opacity-60 ml-0.5 hidden sm:inline truncate max-w-[60px]">· {slots[superTargetPanel]?.name}</span></> : 'Select Panel'}
-                      <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                    </button>
-                    {openPanelPicker && (
-                      <div className="absolute bottom-full mb-2 left-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 180 }}>
-                        {slots.map((m, idx) => (
-                          <button key={idx} onClick={() => { setSuperTargetPanel(idx); setOpenPanelPicker(false); }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all ${superTargetPanel === idx ? 'font-bold' : ''}`}>
-                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white" style={{ background: m.color }}>{idx + 1}</span>
-                            <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                            <span style={{ color: superTargetPanel === idx ? m.color : 'inherit' }}>{m.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Attach */}
                   <input ref={globalFileInputRef} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
-                  <button onClick={() => globalFileInputRef.current?.click()}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10">
-                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
-                  </button>
                   <textarea
                     ref={globalInputRef}
                     value={globalInput}
@@ -1199,45 +1188,34 @@ export function FiusLabs({ user }: FiusLabsProps) {
             <div className="max-w-[56rem] mx-auto">
               <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                 <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                  {/* Panel count stepper */}
-                  <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 flex-shrink-0 ml-1">
+                  {/* Attach — far left */}
+                  <button onClick={() => globalFileInputRef.current?.click()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
+                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                  </button>
+                  {/* Panel picker — orientation-picker style: [-] [1][2][3][4] [+] */}
+                  <div className="flex items-center flex-shrink-0 rounded-full bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200/60 dark:border-white/10 px-1 py-0.5 gap-0.5">
                     <button onClick={removeLastColumn} disabled={slots.length <= 1}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
                       <Minus className="w-2.5 h-2.5" />
                     </button>
-                    <span className="text-[11px] font-bold w-3 text-center tabular-nums" style={{ color: dark ? '#f5f5f5' : '#171717' }}>{slots.length}</span>
+                    <div className="relative flex flex-row items-center">
+                      {superTargetPanel !== null && (
+                        <div className="absolute inset-y-0 rounded-full bg-zinc-800 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                      )}
+                      {slots.map((_, idx) => (
+                        <button key={idx} onClick={() => setSuperTargetPanel(idx)}
+                          className={`relative z-10 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-full transition-colors duration-200 flex-shrink-0 ${superTargetPanel === idx ? 'text-white dark:text-black' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white'}`}>
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
                     <button onClick={addColumn} disabled={slots.length >= 6}
-                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors">
+                      className="w-4 h-4 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 transition-colors flex-shrink-0">
                       <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
-                  {/* Panel selector */}
-                  <div className="relative flex-shrink-0" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setOpenPanelPicker(!openPanelPicker)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold transition-all border ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
-                    >
-                      {superTargetPanel !== null ? <>Panel {superTargetPanel + 1}<span className="opacity-60 ml-0.5 hidden sm:inline truncate max-w-[60px]">· {slots[superTargetPanel]?.name}</span></> : 'Select Panel'}
-                      <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                    </button>
-                    {openPanelPicker && (
-                      <div className="absolute bottom-full mb-2 left-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 180 }}>
-                        {slots.map((m, idx) => (
-                          <button key={idx} onClick={() => { setSuperTargetPanel(idx); setOpenPanelPicker(false); }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all ${superTargetPanel === idx ? 'font-bold' : ''}`}>
-                            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 text-white" style={{ background: m.color }}>{idx + 1}</span>
-                            <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
-                            <span style={{ color: superTargetPanel === idx ? m.color : 'inherit' }}>{m.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Attach */}
-                  <button onClick={() => globalFileInputRef.current?.click()}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10">
-                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
-                  </button>
                   <textarea
                     value={globalInput}
                     onChange={e => setGlobalInput(e.target.value)}
