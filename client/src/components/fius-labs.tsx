@@ -870,14 +870,14 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Row 1: panel count ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
-                      <div className="relative flex flex-row items-center mb-3">
+                      <div className="relative flex flex-row items-center mb-3 w-full">
                         <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
                           style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                         {[1, 2, 3, 4, 5, 6].map(n => {
                           const isActive = slots.length === n;
                           return (
                             <button key={n} onClick={() => setColumnCount(n)}
-                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
                               {n}
                             </button>
                           );
@@ -885,7 +885,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                       {/* ── Row 2: send-to panel ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
-                      <div className="relative flex flex-row items-center">
+                      <div className="relative flex flex-row items-center w-full">
                         {superTargetPanel !== null && superTargetPanel < slots.length && (
                           <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
                             style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
@@ -894,9 +894,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           const isActive = superTargetPanel === idx;
                           return (
                             <button key={idx} onClick={() => setSuperTargetPanel(idx)}
-                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
                               {idx + 1}
-                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-40'}`}>{m.name}</span>
+                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-50'}`}>{m.name}</span>
                             </button>
                           );
                         })}
@@ -1235,14 +1235,14 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Row 1: panel count ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
-                      <div className="relative flex flex-row items-center mb-3">
+                      <div className="relative flex flex-row items-center mb-3 w-full">
                         <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
                           style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                         {[1, 2, 3, 4, 5, 6].map(n => {
                           const isActive = slots.length === n;
                           return (
                             <button key={n} onClick={() => setColumnCount(n)}
-                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
                               {n}
                             </button>
                           );
@@ -1250,7 +1250,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                       {/* ── Row 2: send-to panel ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
-                      <div className="relative flex flex-row items-center">
+                      <div className="relative flex flex-row items-center w-full">
                         {superTargetPanel !== null && superTargetPanel < slots.length && (
                           <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
                             style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
@@ -1259,9 +1259,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           const isActive = superTargetPanel === idx;
                           return (
                             <button key={idx} onClick={() => setSuperTargetPanel(idx)}
-                              className={`relative z-10 flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-[36px] ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isActive ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
                               {idx + 1}
-                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-40'}`}>{m.name}</span>
+                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isActive ? 'opacity-70' : 'opacity-50'}`}>{m.name}</span>
                             </button>
                           );
                         })}
