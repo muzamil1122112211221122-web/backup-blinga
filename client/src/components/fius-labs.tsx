@@ -859,15 +859,28 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
                     <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
                   </button>
-                  {/* Panel picker dropdown — orientation-changer style */}
+                  <input ref={globalFileInputRef} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
+                  <textarea
+                    ref={globalInputRef}
+                    value={globalInput}
+                    onChange={e => setGlobalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
+                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1}…` : 'Select a panel first…'}
+                    rows={1}
+                    disabled={superTargetPanel === null}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
+                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  />
+                  {/* Panel picker — model-selector position (right of textarea) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border flex-shrink-0 ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}>
+                      <button className={`flex items-center gap-1 px-2 h-7 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${superTargetPanel !== null ? 'text-zinc-800 dark:text-zinc-100 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15' : 'text-zinc-600 dark:text-zinc-300 bg-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
                         {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
                         <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                    <DropdownMenuContent side="top" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Row 1: panel count ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
                       <div className="relative flex flex-row items-center mb-3 w-full">
@@ -903,19 +916,6 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <input ref={globalFileInputRef} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
-                  <textarea
-                    ref={globalInputRef}
-                    value={globalInput}
-                    onChange={e => setGlobalInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
-                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
-                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1}…` : 'Select a panel first…'}
-                    rows={1}
-                    disabled={superTargetPanel === null}
-                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
-                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
-                  />
                   {/* Enhance — slides in when text present */}
                   <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                     <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
@@ -1224,15 +1224,26 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
                     <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
                   </button>
-                  {/* Panel picker dropdown — orientation-changer style */}
+                  <textarea
+                    value={globalInput}
+                    onChange={e => setGlobalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
+                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1} — ${slots[superTargetPanel]?.name}…` : 'Select a panel first…'}
+                    rows={1}
+                    disabled={superTargetPanel === null}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
+                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  />
+                  {/* Panel picker — model-selector position (right of textarea) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border flex-shrink-0 ${superTargetPanel !== null ? 'bg-zinc-800 dark:bg-white text-white dark:text-black border-transparent' : 'text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] border-zinc-200/60 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-white/10'}`}>
+                      <button className={`flex items-center gap-1 px-2 h-7 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${superTargetPanel !== null ? 'text-zinc-800 dark:text-zinc-100 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15' : 'text-zinc-600 dark:text-zinc-300 bg-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
                         {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
                         <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                    <DropdownMenuContent side="top" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Row 1: panel count ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
                       <div className="relative flex flex-row items-center mb-3 w-full">
@@ -1268,17 +1279,6 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <textarea
-                    value={globalInput}
-                    onChange={e => setGlobalInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
-                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
-                    placeholder={superTargetPanel !== null ? `Message Panel ${superTargetPanel + 1} — ${slots[superTargetPanel]?.name}…` : 'Select a panel first…'}
-                    rows={1}
-                    disabled={superTargetPanel === null}
-                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
-                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
-                  />
                   {/* Enhance — slides in when text present */}
                   <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                     <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
