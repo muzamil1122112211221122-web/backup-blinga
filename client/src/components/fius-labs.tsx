@@ -316,6 +316,47 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const isTypingAny = Object.values(typing).some(Boolean);
   const pool = labMode === 'normal' ? NORMAL_MODELS : SUPER_MODELS;
 
+  // ── Global input (empty state) ───────────────────────
+  const [globalInput, setGlobalInput] = useState('');
+  const globalInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const sendToAll = async () => {
+    const content = globalInput.trim();
+    if (!content) return;
+    setGlobalInput('');
+    // fire to every active slot
+    slots.forEach((_, idx) => {
+      if (active[idx]) {
+        setPerInput(prev => ({ ...prev, [idx]: content }));
+      }
+    });
+    // small delay so perInput is set, then send
+    setTimeout(() => {
+      slots.forEach((_, idx) => {
+        if (active[idx]) sendToColumn(idx);
+      });
+    }, 0);
+    // send directly instead of relying on perInput state
+    slots.forEach((model, idx) => {
+      if (!active[idx]) return;
+      const userMsgId = `u-${Date.now()}-${idx}`;
+      setMessages(prev => ({ ...prev, [idx]: [...(prev[idx] || []), { id: userMsgId, role: 'user', content }] }));
+      setTyping(prev => ({ ...prev, [idx]: true }));
+      authFetch('/api/test-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content, conversationId: `fius-labs-${idx}-${model.id}`, model: model.id, provider: model.provider, systemPrompt: buildSysPrompt(prefs, model.name) }),
+      }).then(async res => {
+        const data = res.ok ? await res.json() : null;
+        setMessages(prev => ({ ...prev, [idx]: [...(prev[idx] || []), { id: `a-${Date.now()}-${idx}`, role: 'assistant', content: data?.response || '⚠️ Error.' }] }));
+      }).catch(() => {
+        setMessages(prev => ({ ...prev, [idx]: [...(prev[idx] || []), { id: `e-${Date.now()}`, role: 'assistant', content: '⚠️ Network error.' }] }));
+      }).finally(() => {
+        setTyping(prev => ({ ...prev, [idx]: false }));
+      });
+    });
+  };
+
   // ── ONBOARDING ────────────────────────────────────────────────────────────
   if (phase === 'onboarding') {
     const q   = ONBOARDING_QUESTIONS[qIdx];
@@ -774,33 +815,87 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     </div>
                   </div>
 
-                  {/* ── Messages ────────── */}
-                  <div
-                    ref={el => { if (el) scrollRefs.current.set(colIdx, el); }}
-                    className="mx-2 flex flex-col pb-4 overflow-y-auto flex-1 min-h-0"
-                    style={{ scrollbarWidth: 'thin' }}
-                  >
+                  {/* ── Flex-1 area: empty state OR messages ── */}
+                  <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+
+                    {/* ── EMPTY STATE — ask tab layout ── */}
                     {msgs.length === 0 && !isTyping && (
-                      <div className="flex flex-col items-center justify-start min-h-full text-center pt-2 pb-12" style={{ position: 'relative' }}>
-                        {/* ── exact ask tab empty state ── */}
-                        <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <FiusLogo size="2xl" className="mt-2 mb-6 text-black dark:text-foreground" />
-                          <h2 className="text-3xl font-normal mb-1 text-foreground">Welcome to Fius</h2>
-                          <p className="text-lg text-foreground mb-8">Fly With Us!</p>
-                        </div>
-                        {/* Quick action chips — exact ask tab style */}
-                        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2, padding: '0 12px' }}>
+
+                        {/* Function bar — above message bar, exact ask tab pill style */}
+                        <div className="flex flex-wrap justify-center gap-2 mb-3">
                           {([
-                            { label: 'Explain a topic',   light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', prompt: 'Explain something to me in detail' },
-                            { label: 'Write something',   light: '/quick-files-light.png',     dark: '/quick-files-dark.png',      prompt: 'Help me write something' },
-                            { label: 'Brainstorm',        light: '/quick-visuals-light.png',   dark: '/quick-visuals-dark.png',    prompt: 'Brainstorm some ideas for me' },
-                            { label: 'Play a game',       light: '/quick-games-light.png',     dark: '/quick-games-dark.png',      prompt: 'Let\'s play a word game' },
+                            { icon: dark ? '/fn-voice-gray.png' : '/fn-voice-black.png', label: 'Long Answer' },
+                            { icon: dark ? '/fn-settings-gray.png' : '/fn-settings-black.png', label: 'Voice Mode' },
+                            { icon: dark ? '/fn-longans-gray.png' : '/fn-longans-black.png', label: 'Settings' },
+                          ] as const).map(({ icon, label }) => (
+                            <button key={label}
+                              className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md">
+                              <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center">
+                                <img src={icon} alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: dark ? 'screen' : 'multiply' }} />
+                              </span>
+                              <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Message bar — centered, exact same bar */}
+                        <div className="w-full mb-4">
+                          <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
+                            <div className="flex items-center px-3 py-2 gap-2">
+                              <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
+                              <textarea
+                                value={perInput[colIdx] || ''}
+                                onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToColumn(colIdx); } }}
+                                onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                                placeholder={`Message ${model.name}…`}
+                                rows={1}
+                                disabled={!isActive || typing[colIdx]}
+                                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
+                                style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                              />
+                              {labMode === 'super' && (
+                                <div className="relative flex-shrink-0">
+                                  <button
+                                    onClick={e => { e.stopPropagation(); setOpenDropdown(openDropdown === colIdx ? null : colIdx); }}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all border border-zinc-200/60 dark:border-white/10"
+                                  >
+                                    <img src={model.logo} alt="" className="w-3.5 h-3.5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                    <span className="truncate max-w-[60px]">{model.name}</span>
+                                    <ChevronDown className={`w-2.5 h-2.5 opacity-60 transition-transform duration-200 ${openDropdown === colIdx ? 'rotate-180' : ''}`} />
+                                  </button>
+                                  {openDropdown === colIdx && (
+                                    <div className="absolute bottom-full mb-2 right-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 170, width: 'max-content' }} onClick={e => e.stopPropagation()}>
+                                      {SUPER_MODELS.map(m => (
+                                        <button key={m.id} onClick={() => { changeSlotModel(colIdx, m); setOpenDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all" style={{ color: model.id === m.id ? m.color : 'inherit', fontWeight: model.id === m.id ? 700 : 400 }}>
+                                          <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                                          {m.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${(perInput[colIdx] || '').trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                                <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
+                                  <ArrowUp className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Quick chips — exact ask tab style */}
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {([
+                            { label: 'Create Visuals', light: '/quick-visuals-light.png',   dark: '/quick-visuals-dark.png',   prompt: 'Create some visuals for me' },
+                            { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', prompt: 'Search the web for: ' },
+                            { label: 'Create Files',   light: '/quick-files-light.png',     dark: '/quick-files-dark.png',     prompt: 'Help me create a file' },
+                            { label: 'Play Games',     light: '/quick-games-light.png',     dark: '/quick-games-dark.png',     prompt: "Let's play a word game" },
                           ] as const).map(({ label, light, dark: dIcon, prompt }) => (
-                            <button
-                              key={label}
-                              onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: prompt }))}
-                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]"
-                            >
+                            <button key={label} onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: prompt }))}
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
                               <img src={dark ? dIcon : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
                               {label}
                             </button>
@@ -809,43 +904,47 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </div>
                     )}
 
-                    {msgs.map(msg => (
-                      <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {msg.role === 'user' ? (
-                          <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 text-sm max-w-[85%] chat-bubble shadow-sm [overflow-wrap:anywhere]">
-                            <p className="text-foreground">{msg.content}</p>
-                          </div>
-                        ) : (
-                          <div className="max-w-[90%]">
-                            <div className="flex items-center gap-1.5 mb-1.5 ml-1">
-                              <img src="/fius-logo.png" alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" />
-                              <span className="text-[10px] font-semibold text-muted-foreground">{model.name}</span>
+                    {/* ── MESSAGES scroll ── */}
+                    <div
+                      ref={el => { if (el) scrollRefs.current.set(colIdx, el); }}
+                      className="mx-2 flex flex-col space-y-6 pb-4 overflow-y-auto h-full"
+                      style={{ scrollbarWidth: 'thin', display: msgs.length === 0 && !isTyping ? 'none' : 'flex' }}
+                    >
+                      {msgs.map(msg => (
+                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          {msg.role === 'user' ? (
+                            <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 text-sm max-w-[85%] chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                              <p className="text-foreground">{msg.content}</p>
                             </div>
-                            <div className="rounded-3xl px-4 py-3 chat-bubble">
-                              <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed">
-                                {msg.content}
+                          ) : (
+                            <div className="max-w-[90%]">
+                              <div className="flex items-center gap-1.5 mb-1.5 ml-1">
+                                <img src="/fius-logo.png" alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" />
+                                <span className="text-[10px] font-semibold text-muted-foreground">{model.name}</span>
+                              </div>
+                              <div className="rounded-3xl px-4 py-3 chat-bubble">
+                                <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed">
+                                  {msg.content}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {isTyping && (
-                      <div className="flex justify-start mb-2">
-                        <ThinkingCloud logo="/fius-logo.png" name={model.name} dark={dark} />
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      ))}
+                      {isTyping && (
+                        <div className="flex justify-start mb-2">
+                          <ThinkingCloud logo="/fius-logo.png" name={model.name} dark={dark} />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* ── Per-chat ask-tab-style message bar ─────────── */}
+                  {/* ── Bottom message bar — only when chat has messages ── */}
+                  {(msgs.length > 0 || isTyping) && (
                   <div className="mx-2 mb-3 flex-shrink-0">
                     <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
                       <div className="flex items-center px-3 py-2 gap-2">
-                        {/* Fius logo left */}
                         <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
-
-                        {/* Textarea */}
                         <textarea
                           value={perInput[colIdx] || ''}
                           onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
@@ -857,31 +956,17 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                           style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                         />
-
-                        {/* Model switcher pill (Super mode only) */}
                         {labMode === 'super' && (
                           <div className="relative flex-shrink-0">
-                            <button
-                              onClick={e => { e.stopPropagation(); setOpenDropdown(openDropdown === colIdx ? null : colIdx); }}
-                              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all border border-zinc-200/60 dark:border-white/10"
-                            >
+                            <button onClick={e => { e.stopPropagation(); setOpenDropdown(openDropdown === colIdx ? null : colIdx); }} className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.07] hover:bg-zinc-200 dark:hover:bg-white/10 transition-all border border-zinc-200/60 dark:border-white/10">
                               <img src={model.logo} alt="" className="w-3.5 h-3.5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                               <span className="truncate max-w-[60px]">{model.name}</span>
                               <ChevronDown className={`w-2.5 h-2.5 opacity-60 transition-transform duration-200 ${openDropdown === colIdx ? 'rotate-180' : ''}`} />
                             </button>
                             {openDropdown === colIdx && (
-                              <div
-                                className="absolute bottom-full mb-2 right-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1"
-                                style={{ background: dark ? '#383838' : '#ffffff', minWidth: 170, width: 'max-content' }}
-                                onClick={e => e.stopPropagation()}
-                              >
+                              <div className="absolute bottom-full mb-2 right-0 z-50 rounded-xl shadow-2xl overflow-hidden py-1" style={{ background: dark ? '#383838' : '#ffffff', minWidth: 170, width: 'max-content' }} onClick={e => e.stopPropagation()}>
                                 {SUPER_MODELS.map(m => (
-                                  <button
-                                    key={m.id}
-                                    onClick={() => { changeSlotModel(colIdx, m); setOpenDropdown(null); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all"
-                                    style={{ color: model.id === m.id ? m.color : 'inherit', fontWeight: model.id === m.id ? 700 : 400 }}
-                                  >
+                                  <button key={m.id} onClick={() => { changeSlotModel(colIdx, m); setOpenDropdown(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-black/10 dark:hover:bg-white/10 text-left transition-all" style={{ color: model.id === m.id ? m.color : 'inherit', fontWeight: model.id === m.id ? 700 : 400 }}>
                                     <img src={m.logo} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                                     {m.name}
                                   </button>
@@ -890,20 +975,15 @@ export function FiusLabs({ user }: FiusLabsProps) {
                             )}
                           </div>
                         )}
-
-                        {/* Send button */}
                         <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${(perInput[colIdx] || '').trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                          <button
-                            onClick={() => sendToColumn(colIdx)}
-                            disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
-                            className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
+                          <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]} className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
                             <ArrowUp className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                     </div>
                   </div>
+                  )}
 
                 </div>
               </div>
