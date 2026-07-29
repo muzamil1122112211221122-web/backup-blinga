@@ -242,6 +242,24 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const [isListeningGlobal, setIsListeningGlobal] = useState(false);
   const [enhancingMap,     setEnhancingMap]     = useState<Record<number, boolean>>({});
   const [isEnhancingGlobal, setIsEnhancingGlobal] = useState(false);
+  // ── After-message actions (labs) ─────────────────────
+  const [labLiked,    setLabLiked]    = useState<Set<string>>(new Set());
+  const [labDisliked, setLabDisliked] = useState<Set<string>>(new Set());
+  const [labCopiedId, setLabCopiedId] = useState<string | null>(null);
+
+  const handleLabLike = (id: string) => {
+    setLabLiked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setLabDisliked(prev => { const n = new Set(prev); n.delete(id); return n; });
+  };
+  const handleLabDislike = (id: string) => {
+    setLabDisliked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setLabLiked(prev => { const n = new Set(prev); n.delete(id); return n; });
+  };
+  const handleLabCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setLabCopiedId(id);
+    setTimeout(() => setLabCopiedId(null), 2000);
+  };
 
   // ── Mic helpers ─────────────────────────────────────
   const toggleMicCol = async (colIdx: number) => {
@@ -1149,6 +1167,42 @@ export function FiusLabs({ user }: FiusLabsProps) {
                                 <div className="text-sm text-foreground prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed">
                                   {msg.content}
                                 </div>
+                              </div>
+                              {/* Action row — Nomad style */}
+                              <div className="flex items-center gap-0.5 mt-1 ml-1">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button onClick={() => handleLabLike(msg.id)}
+                                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90">
+                                      {labLiked.has(msg.id)
+                                        ? <><img src="/icon-like-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="like" /><img src="/icon-like-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="like" /></>
+                                        : <><img src="/icon-like-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="like" /><img src="/icon-like-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="like" /></>}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Like</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button onClick={() => handleLabDislike(msg.id)}
+                                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90">
+                                      {labDisliked.has(msg.id)
+                                        ? <><img src="/icon-dislike-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="dislike" /><img src="/icon-dislike-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="dislike" /></>
+                                        : <><img src="/icon-dislike-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="dislike" /><img src="/icon-dislike-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="dislike" /></>}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Dislike</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button onClick={() => handleLabCopy(msg.content, msg.id)}
+                                      className="h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90">
+                                      {labCopiedId === msg.id
+                                        ? <><img src="/icon-copy-clicked-light.png" className="h-4 w-4 object-contain block dark:hidden" alt="copy" /><img src="/icon-copy-clicked-dark.png" className="h-4 w-4 object-contain hidden dark:block" alt="copy" /></>
+                                        : <><img src="/icon-copy-black.png" className="h-4 w-4 object-contain block dark:hidden brightness-0" alt="copy" /><img src="/icon-copy-gray2.png" className="h-4 w-4 object-contain hidden dark:block opacity-75" alt="copy" /></>}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>{labCopiedId === msg.id ? 'Copied!' : 'Copy'}</p></TooltipContent>
+                                </Tooltip>
                               </div>
                             </div>
                           )}
