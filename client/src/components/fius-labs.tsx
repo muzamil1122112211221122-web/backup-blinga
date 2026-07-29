@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
 import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2 } from 'lucide-react';
+import { FiusLogo } from './logo';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import normalLabWhiteIcon from '@assets/normal_lab_white_theme_1784982983175.png';
 import superLabWhiteIcon from '@assets/super_lab_white_theme_1784982983174.png';
@@ -780,33 +781,28 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     style={{ scrollbarWidth: 'thin' }}
                   >
                     {msgs.length === 0 && !isTyping && (
-                      <div className="flex flex-col items-center justify-center flex-1 min-h-[60%] text-center py-10 select-none px-3">
-                        {/* Model logo — mirrors ask tab's FiusLogo */}
-                        <img
-                          src={model.logo}
-                          alt={model.name}
-                          className="object-contain mb-5"
-                          style={{ width: 72, height: 72 }}
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        {/* Model name — mirrors ask tab h2 */}
-                        <h2 className="text-2xl font-normal text-foreground mb-1">{model.name}</h2>
-                        {/* Description — mirrors "Fly With Us!" */}
-                        <p className="text-sm text-muted-foreground mb-7 leading-relaxed">{model.description}</p>
-                        {/* Quick starter chips — mirrors ask tab action chips */}
-                        <div className="flex flex-col gap-2 w-full">
-                          {['Explain something to me', 'Help me write something', 'Brainstorm ideas'].map(prompt => (
+                      <div className="flex flex-col items-center justify-start min-h-full text-center pt-2 pb-12" style={{ position: 'relative' }}>
+                        {/* ── exact ask tab empty state ── */}
+                        <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <FiusLogo size="2xl" className="mt-2 mb-6 text-black dark:text-foreground" />
+                          <h2 className="text-3xl font-normal mb-1 text-foreground">Welcome to Fius</h2>
+                          <p className="text-lg text-foreground mb-8">Fly With Us!</p>
+                        </div>
+                        {/* Quick action chips — exact ask tab style */}
+                        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+                          {([
+                            { label: 'Explain a topic',   light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', prompt: 'Explain something to me in detail' },
+                            { label: 'Write something',   light: '/quick-files-light.png',     dark: '/quick-files-dark.png',      prompt: 'Help me write something' },
+                            { label: 'Brainstorm',        light: '/quick-visuals-light.png',   dark: '/quick-visuals-dark.png',    prompt: 'Brainstorm some ideas for me' },
+                            { label: 'Play a game',       light: '/quick-games-light.png',     dark: '/quick-games-dark.png',      prompt: 'Let\'s play a word game' },
+                          ] as const).map(({ label, light, dark: dIcon, prompt }) => (
                             <button
-                              key={prompt}
+                              key={label}
                               onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: prompt }))}
-                              className="w-full text-left px-4 py-2.5 rounded-2xl text-xs font-medium transition-all hover:scale-[1.02] active:scale-[0.97]"
-                              style={{
-                                background: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                                border: dark ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.08)',
-                                color: dark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)',
-                              }}
+                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]"
                             >
-                              {prompt}
+                              <img src={dark ? dIcon : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                              {label}
                             </button>
                           ))}
                         </div>
