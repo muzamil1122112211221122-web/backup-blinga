@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
-import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2 } from 'lucide-react';
+import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2 } from 'lucide-react';
+import microphoneIcon from "@assets/microphone__1784996516975.png";
+import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import { FiusLogo } from './logo';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import normalLabWhiteIcon from '@assets/normal_lab_white_theme_1784982983175.png';
@@ -232,6 +234,59 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const [inputMode,       setInputMode]       = useState<'separate' | 'super'>('separate');
   const [superTargetPanel, setSuperTargetPanel] = useState<number | null>(null);
   const [openPanelPicker,  setOpenPanelPicker]  = useState(false);
+  const [listenMap,        setListenMap]        = useState<Record<number, boolean>>({});
+  const [isListeningGlobal, setIsListeningGlobal] = useState(false);
+  const [enhancingMap,     setEnhancingMap]     = useState<Record<number, boolean>>({});
+  const [isEnhancingGlobal, setIsEnhancingGlobal] = useState(false);
+
+  // ── Mic helpers ─────────────────────────────────────
+  const toggleMicCol = async (colIdx: number) => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const key = `_sr_labs_${colIdx}`;
+    if (listenMap[colIdx] && (window as any)[key]) { try { (window as any)[key].stop(); } catch {} return; }
+    try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { return; }
+    const rec = new SR(); (window as any)[key] = rec;
+    rec.continuous = false; rec.interimResults = false; rec.lang = 'en-US';
+    rec.onresult = (e: any) => { const t = e.results[0][0].transcript; setPerInput(prev => ({ ...prev, [colIdx]: prev[colIdx] ? `${prev[colIdx]} ${t}` : t })); };
+    rec.onend = () => { setListenMap(prev => ({ ...prev, [colIdx]: false })); (window as any)[key] = null; };
+    rec.onerror = () => { setListenMap(prev => ({ ...prev, [colIdx]: false })); (window as any)[key] = null; };
+    rec.start(); setListenMap(prev => ({ ...prev, [colIdx]: true }));
+  };
+
+  const toggleMicGlobal = async () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    if (isListeningGlobal && (window as any)._sr_labs_global) { try { (window as any)._sr_labs_global.stop(); } catch {} return; }
+    try { await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { return; }
+    const rec = new SR(); (window as any)._sr_labs_global = rec;
+    rec.continuous = false; rec.interimResults = false; rec.lang = 'en-US';
+    rec.onresult = (e: any) => { const t = e.results[0][0].transcript; setGlobalInput(prev => prev ? `${prev} ${t}` : t); };
+    rec.onend = () => { setIsListeningGlobal(false); (window as any)._sr_labs_global = null; };
+    rec.onerror = () => { setIsListeningGlobal(false); (window as any)._sr_labs_global = null; };
+    rec.start(); setIsListeningGlobal(true);
+  };
+
+  const enhanceCol = async (colIdx: number) => {
+    const val = (perInput[colIdx] || '').trim();
+    if (!val || enhancingMap[colIdx]) return;
+    setEnhancingMap(prev => ({ ...prev, [colIdx]: true }));
+    try {
+      const res = await authFetch('/api/enhance-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ originalPrompt: val }) });
+      const data = await res.json();
+      if (data.enhancedPrompt) setPerInput(prev => ({ ...prev, [colIdx]: data.enhancedPrompt }));
+    } catch {} finally { setEnhancingMap(prev => ({ ...prev, [colIdx]: false })); }
+  };
+
+  const enhanceGlobal = async () => {
+    if (!globalInput.trim() || isEnhancingGlobal) return;
+    setIsEnhancingGlobal(true);
+    try {
+      const res = await authFetch('/api/enhance-prompt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ originalPrompt: globalInput }) });
+      const data = await res.json();
+      if (data.enhancedPrompt) setGlobalInput(data.enhancedPrompt);
+    } catch {} finally { setIsEnhancingGlobal(false); }
+  };
 
   const enterLab = (mode: LabMode, imode: 'separate' | 'super' = 'separate') => {
     const count = mode === 'normal' ? 4 : numChats;
@@ -832,13 +887,28 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                     style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                   />
-                  <button
-                    onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
-                    disabled={!globalInput.trim() || superTargetPanel === null}
-                    className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
-                  >
-                    <ArrowUp className="w-4 h-4" />
+                  {/* Enhance — slides in when text present */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 flex-shrink-0">
+                      {isEnhancingGlobal ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                    </button>
+                  </div>
+                  {/* Mic */}
+                  <button onClick={toggleMicGlobal}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListeningGlobal ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}>
+                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
                   </button>
+                  {/* Send — slides in when text present */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button
+                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                      disabled={!globalInput.trim() || superTargetPanel === null}
+                      className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -998,10 +1068,25 @@ export function FiusLabs({ user }: FiusLabsProps) {
                                 className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                                 style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                               />
-                              <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
-                                className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
-                                <ArrowUp className="w-4 h-4" />
+                              {/* Enhance — slides in when text present */}
+                              <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                                <button onClick={() => enhanceCol(colIdx)} disabled={!(perInput[colIdx] || '').trim() || enhancingMap[colIdx] || !isActive}
+                                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
+                                  {enhancingMap[colIdx] ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                                </button>
+                              </div>
+                              {/* Mic */}
+                              <button onClick={() => toggleMicCol(colIdx)} disabled={!isActive}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${listenMap[colIdx] ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} disabled:opacity-30`}>
+                                <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
                               </button>
+                              {/* Send — slides in when text present */}
+                              <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                                <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
+                                  className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
+                                  <ArrowUp className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1060,10 +1145,25 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                           style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                         />
-                        <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
-                          className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
-                          <ArrowUp className="w-4 h-4" />
+                        {/* Enhance — slides in when text present */}
+                        <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                          <button onClick={() => enhanceCol(colIdx)} disabled={!(perInput[colIdx] || '').trim() || enhancingMap[colIdx] || !isActive}
+                            className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
+                            {enhancingMap[colIdx] ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                          </button>
+                        </div>
+                        {/* Mic */}
+                        <button onClick={() => toggleMicCol(colIdx)} disabled={!isActive}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${listenMap[colIdx] ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} disabled:opacity-30`}>
+                          <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
                         </button>
+                        {/* Send — slides in when text present */}
+                        <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                          <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
+                            className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
+                            <ArrowUp className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1126,13 +1226,28 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
                     style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
                   />
-                  <button
-                    onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
-                    disabled={!globalInput.trim() || superTargetPanel === null}
-                    className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
-                  >
-                    <ArrowUp className="w-4 h-4" />
+                  {/* Enhance — slides in when text present */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 flex-shrink-0">
+                      {isEnhancingGlobal ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                    </button>
+                  </div>
+                  {/* Mic */}
+                  <button onClick={toggleMicGlobal}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListeningGlobal ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}>
+                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
                   </button>
+                  {/* Send — slides in when text present */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button
+                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                      disabled={!globalInput.trim() || superTargetPanel === null}
+                      className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
