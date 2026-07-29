@@ -699,11 +699,82 @@ export function FiusLabs({ user }: FiusLabsProps) {
       {/* ── Columns area + floating bar ────────────────── */}
       <div className="flex-1 relative overflow-hidden min-h-0">
 
-        {/* Columns */}
+        {/* ── GLOBAL EMPTY STATE — shown when no panel has messages ── */}
+        {!hasMessages && !isTypingAny && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4">
+            {/* Logo + Fly With Us */}
+            <FiusLogo size="2xl" className="mb-4 text-black dark:text-foreground" />
+            <h2 className="text-3xl font-normal mb-1 text-foreground text-center">
+              {prefs.name ? `Hey ${prefs.name}, the sky's the limit today!` : 'Welcome to Fius Labs'}
+            </h2>
+            <p className="text-lg text-foreground mb-8">Fly With Us!</p>
+
+            {/* Function bar — exact ask tab pill style */}
+            <div className="flex flex-wrap justify-center gap-2 mb-3">
+              {([
+                { icon: dark ? '/fn-voice-gray.png' : '/fn-voice-black.png', label: 'Long Answer' },
+                { icon: dark ? '/fn-settings-gray.png' : '/fn-settings-black.png', label: 'Voice Mode' },
+                { icon: dark ? '/fn-longans-gray.png' : '/fn-longans-black.png', label: 'Settings' },
+              ] as const).map(({ icon, label }) => (
+                <button key={label}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md">
+                  <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center">
+                    <img src={icon} alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: dark ? 'screen' : 'multiply' }} />
+                  </span>
+                  <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Message bar */}
+            <div className="w-full max-w-[42rem] mb-4">
+              <div className="relative bg-white dark:bg-[#383838] rounded-full glossy-outline !border-none !outline-none">
+                <div className="flex items-center px-3 py-2 gap-2">
+                  <img src="/fius-logo.png" alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-60" />
+                  <textarea
+                    ref={globalInputRef}
+                    value={globalInput}
+                    onChange={e => setGlobalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToAll(); } }}
+                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                    placeholder="Message all panels…"
+                    rows={1}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
+                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  />
+                  <div className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ease-out ${globalInput.trim() ? 'max-w-[40px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button onClick={sendToAll} disabled={!globalInput.trim()}
+                      className="w-8 h-8 bg-zinc-800 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed">
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 pill chips — exact ask tab */}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {([
+                { label: 'Create Visuals', light: '/quick-visuals-light.png',   dark: '/quick-visuals-dark.png',   prompt: 'Create some visuals for me' },
+                { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', prompt: 'Search the web for: ' },
+                { label: 'Create Files',   light: '/quick-files-light.png',     dark: '/quick-files-dark.png',     prompt: 'Help me create a file' },
+                { label: 'Play Games',     light: '/quick-games-light.png',     dark: '/quick-games-dark.png',     prompt: "Let's play a word game" },
+              ] as const).map(({ label, light, dark: dIcon, prompt }) => (
+                <button key={label} onClick={() => setGlobalInput(prompt)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
+                  <img src={dark ? dIcon : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Columns — only rendered when there are messages */}
         <div
           ref={colsRef}
           className="nomad-hscroll flex flex-nowrap h-full overflow-x-auto"
-          style={{ alignItems: 'stretch', scrollbarWidth: 'thin' }}
+          style={{ alignItems: 'stretch', scrollbarWidth: 'thin', display: hasMessages || isTypingAny ? 'flex' : 'none' }}
         >
           {slots.map((model, colIdx) => {
             const isActive = !!active[colIdx];
