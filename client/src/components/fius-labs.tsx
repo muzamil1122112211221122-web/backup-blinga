@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
-import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, RefreshCw, FileDown } from 'lucide-react';
+import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, Pencil, FileDown } from 'lucide-react';
 import microphoneIcon from "@assets/microphone_1784996715112.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/add_1784996715112.png";
@@ -1003,7 +1003,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     opacity: isActive ? 1 : 0.45,
                     transform: isActive ? 'scale(1)' : 'scale(0.97)',
                     transition: 'opacity 0.3s ease, transform 0.3s ease',
-                    borderRight: 'none',
+                    borderRight: isLast ? 'none' : '1px solid rgba(128,128,128,0.13)',
                   }}
                 >
                   {/* ── Header card (Nomad style) ─────── */}
@@ -1087,51 +1087,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   {/* ── Flex-1 area: empty state OR messages ── */}
                   <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
 
-                    {/* ── EMPTY STATE — separate mode only, simple Ask-tab-style bar ── */}
+                    {/* ── EMPTY STATE — separate mode only, centered placeholder ── */}
                     {msgs.length === 0 && !isTyping && inputMode === 'separate' && (
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 2, padding: '0 12px' }}>
-                        <div className="w-full">
-                          <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
-                            <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                              {/* Attach */}
-                              <input ref={el => { if (el) fileInputRefs.current.set(colIdx, el); }} type="file" accept="image/*" className="sr-only" onChange={() => {}} />
-                              <button onClick={() => fileInputRefs.current.get(colIdx)?.click()} disabled={!isActive}
-                                className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
-                                <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
-                              </button>
-                              <textarea
-                                value={perInput[colIdx] || ''}
-                                onChange={e => setPerInput(prev => ({ ...prev, [colIdx]: e.target.value }))}
-                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToColumn(colIdx); } }}
-                                onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
-                                placeholder={`Message ${model.name}…`}
-                                rows={1}
-                                disabled={!isActive || typing[colIdx]}
-                                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
-                                style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
-                              />
-                              {/* Enhance — slides in when text present */}
-                              <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                                <button onClick={() => enhanceCol(colIdx)} disabled={!(perInput[colIdx] || '').trim() || enhancingMap[colIdx] || !isActive}
-                                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30">
-                                  {enhancingMap[colIdx] ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
-                                </button>
-                              </div>
-                              {/* Mic */}
-                              <button onClick={() => toggleMicCol(colIdx)} disabled={!isActive}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${listenMap[colIdx] ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} disabled:opacity-30`}>
-                                <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
-                              </button>
-                              {/* Send — slides in when text present */}
-                              <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${(perInput[colIdx] || '').trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                                <button onClick={() => sendToColumn(colIdx)} disabled={!(perInput[colIdx] || '').trim() || !isActive || typing[colIdx]}
-                                  className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1">
-                                  <ArrowUp className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        <p className="text-sm text-muted-foreground opacity-50">Send a message to start</p>
                       </div>
                     )}
 
@@ -1146,10 +1105,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                         return (
                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           {msg.role === 'user' ? (
-                            <div className="user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 text-sm max-w-[85%] chat-bubble shadow-sm [overflow-wrap:anywhere]">
+                            <div className="group/usermsg user-msg-bubble bg-zinc-200 dark:bg-zinc-700 rounded-3xl rounded-br-none px-4 py-3 text-sm max-w-[85%] chat-bubble shadow-sm [overflow-wrap:anywhere]">
                               <p className="text-foreground">{msg.content}</p>
-                              {/* Hover buttons row */}
-                              <div className="flex items-center justify-end gap-1 mt-2">
+                              {/* Hover-only buttons row */}
+                              <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover/usermsg:opacity-100 transition-opacity duration-150">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button onClick={() => handleLabCopy(msg.content, msg.id)}
@@ -1164,10 +1123,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                                   <TooltipTrigger asChild>
                                     <button onClick={() => setPerInput(prev => ({ ...prev, [colIdx]: msg.content }))}
                                       className="h-6 w-6 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 active:scale-90">
-                                      <RefreshCw className="h-3.5 w-3.5" />
+                                      <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent><p>Edit & resend</p></TooltipContent>
+                                  <TooltipContent><p>Edit</p></TooltipContent>
                                 </Tooltip>
                               </div>
                             </div>
@@ -1175,7 +1134,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                             <div className="max-w-[90%]">
                               <div className="flex items-center gap-1.5 mb-1.5 ml-1">
                                 {model.provider === 'fius' ? (
-                                  <FiusLogo size="xs" className={dark ? 'text-white' : 'text-black'} />
+                                  <div className="w-4 h-4 rounded-full bg-black dark:bg-white flex items-center justify-center flex-shrink-0">
+                                    <span className="text-[9px] font-semibold text-white dark:text-black leading-none select-none" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>f</span>
+                                  </div>
                                 ) : (
                                   <img src={model.logo} alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = '/fius-logo.png'; }} />
                                 )}
@@ -1248,8 +1209,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     </div>
                   </div>
 
-                  {/* ── Per-panel bottom bar — separate mode only ── */}
-                  {inputMode === 'separate' && (msgs.length > 0 || isTyping) && (
+                  {/* ── Per-panel bottom bar — separate mode only, always at bottom ── */}
+                  {inputMode === 'separate' && (
                   <div className="mx-2 mb-3 flex-shrink-0">
                     <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                       <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
