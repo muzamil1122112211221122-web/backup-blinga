@@ -878,7 +878,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
       </div>
       {/* ── Columns area + floating bar ────────────────── */}
       <div className="flex-1 relative overflow-hidden min-h-0 flex flex-col"
-        style={{ backgroundImage: dark ? 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)' : 'radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+        style={{
+          backgroundImage: dark
+            ? 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
       >
 
         {/* ── GLOBAL EMPTY STATE — super inputMode only, when no messages ── */}
@@ -1018,99 +1023,6 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
         )}
 
-      {/* ── Super mode shared bottom bar — shows when has messages ── */}
-      {inputMode === 'super' && (hasMessages || isTypingAny) && (
-          <div className="px-4 pb-2 pt-2 flex-shrink-0">
-            <div className="max-w-[56rem] mx-auto">
-              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
-                <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
-                  {/* Attach — far left */}
-                  <button onClick={() => globalFileInputRef.current?.click()}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
-                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
-                  </button>
-                  <textarea
-                    value={globalInput}
-                    onChange={e => setGlobalInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
-                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
-                    placeholder={superTargetPanel !== null ? labTypingPlaceholder || `Message Panel ${superTargetPanel + 1}…` : 'Select a panel first…'}
-                    rows={1}
-                    disabled={superTargetPanel === null}
-                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
-                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
-                  />
-                  {/* Panel picker */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className={`flex items-center gap-1 px-2 h-7 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${superTargetPanel !== null ? 'text-zinc-800 dark:text-zinc-100 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15' : 'text-zinc-600 dark:text-zinc-300 bg-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
-                        {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
-                        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="bottom" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
-                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
-                      <div className="relative flex flex-row items-center mb-3 w-full">
-                        <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
-                          style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                        {[1, 2, 3, 4, 5, 6].map(n => {
-                          const isAct = slots.length === n;
-                          return (
-                            <button key={n} onClick={() => setColumnCount(n)}
-                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
-                              {n}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
-                      <div className="relative flex flex-row items-center w-full">
-                        {superTargetPanel !== null && superTargetPanel < slots.length && (
-                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
-                            style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
-                        )}
-                        {slots.map((m, idx) => {
-                          const isAct = superTargetPanel === idx;
-                          return (
-                            <button key={idx} onClick={() => setSuperTargetPanel(idx)}
-                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
-                              {idx + 1}
-                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isAct ? 'opacity-70' : 'opacity-50'}`}>{m.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  {/* Enhance */}
-                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                    <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 flex-shrink-0">
-                      {isEnhancingGlobal ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
-                    </button>
-                  </div>
-                  {/* Mic */}
-                  <button onClick={toggleMicGlobal}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListeningGlobal ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}>
-                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
-                  </button>
-                  {/* Send */}
-                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                    <button
-                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
-                      disabled={!globalInput.trim() || superTargetPanel === null}
-                      className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
-                    >
-                      <ArrowUp className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-
         {/* Columns — separate: always shown; super: only when has messages */}
         <div
           ref={colsRef}
@@ -1139,7 +1051,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     opacity: isActive ? 1 : 0.45,
                     transform: isActive ? 'scale(1)' : 'scale(0.97)',
                     transition: 'opacity 0.3s ease, transform 0.3s ease',
-                    borderRight: isLast ? 'none' : '2px solid rgba(128,128,128,0.07)',
+                    borderRight: isLast ? 'none' : dark ? '3px solid rgba(255,255,255,0.1)' : '3px solid rgba(0,0,0,0.14)',
                   }}
                 >
                   {/* ── Header card (Nomad style) ─────── */}
@@ -1393,6 +1305,99 @@ export function FiusLabs({ user }: FiusLabsProps) {
             );
           })}
         </div>
+
+      {/* ── Super mode shared bottom bar — shows when has messages ── */}
+      {inputMode === 'super' && (hasMessages || isTypingAny) && (
+          <div className="px-4 pb-2 pt-2 flex-shrink-0">
+            <div className="max-w-[56rem] mx-auto">
+              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
+                  {/* Attach — far left */}
+                  <button onClick={() => globalFileInputRef.current?.click()}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10 ml-0.5">
+                    <img src={plusButtonIcon} alt="Attach" className="w-5 h-5 composer-message-icon" />
+                  </button>
+                  <textarea
+                    value={globalInput}
+                    onChange={e => setGlobalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } } }}
+                    onInput={e => { const el = e.target as HTMLTextAreaElement; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 38) + 'px'; }}
+                    placeholder={superTargetPanel !== null ? labTypingPlaceholder || `Message Panel ${superTargetPanel + 1}…` : 'Select a panel first…'}
+                    rows={1}
+                    disabled={superTargetPanel === null}
+                    className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden disabled:opacity-40"
+                    style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                  />
+                  {/* Panel picker */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`flex items-center gap-1 px-2 h-7 rounded-full text-xs font-semibold transition-all flex-shrink-0 ${superTargetPanel !== null ? 'text-zinc-800 dark:text-zinc-100 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15' : 'text-zinc-600 dark:text-zinc-300 bg-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                        {superTargetPanel !== null ? `Panel ${superTargetPanel + 1}` : 'Panels'}
+                        <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="bottom" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
+                      <div className="relative flex flex-row items-center mb-3 w-full">
+                        <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          style={{ width: `${100 / 6}%`, transform: `translateX(${(slots.length - 1) * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        {[1, 2, 3, 4, 5, 6].map(n => {
+                          const isAct = slots.length === n;
+                          return (
+                            <button key={n} onClick={() => setColumnCount(n)}
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Send to</p>
+                      <div className="relative flex flex-row items-center w-full">
+                        {superTargetPanel !== null && superTargetPanel < slots.length && (
+                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                            style={{ width: `${100 / slots.length}%`, transform: `translateX(${superTargetPanel * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                        )}
+                        {slots.map((m, idx) => {
+                          const isAct = superTargetPanel === idx;
+                          return (
+                            <button key={idx} onClick={() => setSuperTargetPanel(idx)}
+                              className={`relative z-10 flex-1 flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl text-[10px] font-bold transition-colors duration-200 min-w-0 ${isAct ? 'text-zinc-800 dark:text-black' : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'}`}>
+                              {idx + 1}
+                              <span className={`text-[8px] font-normal truncate max-w-[48px] ${isAct ? 'opacity-70' : 'opacity-50'}`}>{m.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {/* Enhance */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button onClick={enhanceGlobal} disabled={!globalInput.trim() || isEnhancingGlobal || superTargetPanel === null}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 flex-shrink-0">
+                      {isEnhancingGlobal ? <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                    </button>
+                  </div>
+                  {/* Mic */}
+                  <button onClick={toggleMicGlobal}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${isListeningGlobal ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}>
+                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                  </button>
+                  {/* Send */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                    <button
+                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                      disabled={!globalInput.trim() || superTargetPanel === null}
+                      className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
     </TooltipProvider>
