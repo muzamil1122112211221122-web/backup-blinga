@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
-import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, Pencil, FileDown, X, Filter as FilterIcon } from 'lucide-react';
+import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, Pencil, FileDown, X, Filter as FilterIcon, Check } from 'lucide-react';
 import microphoneIcon from "@assets/microphone_1784996715112.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/add_1784996715112.png";
@@ -1540,20 +1540,21 @@ export function FiusLabs({ user }: FiusLabsProps) {
         onClick={e => { if (e.target === e.currentTarget) setModelPickerOpen(null); }}
       >
         <div
-          className="relative flex flex-col shadow-2xl w-full max-w-[520px] mx-4 overflow-hidden"
+          className="relative flex flex-col shadow-2xl w-full mx-4 overflow-hidden"
           style={{
-            maxHeight: '84vh',
+            maxWidth: 440,
+            maxHeight: '78vh',
             background: dark ? '#141414' : '#ffffff',
             color: dark ? '#f5f5f5' : '#111111',
-            borderRadius: 28,
+            borderRadius: 24,
           }}
           onClick={e => e.stopPropagation()}
         >
           {/* ── Header ── */}
-          <div className="px-6 pt-6 pb-4 flex-shrink-0">
+          <div className="px-5 pt-5 pb-3 flex-shrink-0">
             <div className="flex items-start justify-between mb-1">
               <div>
-                <h2 className="text-2xl font-bold">Choose a model</h2>
+                <h2 className="text-xl font-bold">Choose a model</h2>
                 <p className="text-sm mt-0.5" style={{ color: dark ? '#9ca3af' : '#6b7280' }}>
                   picks the best model for your task
                 </p>
@@ -1628,52 +1629,47 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
 
           {/* ── Divider ── */}
-          <div className="h-px mx-6" style={{ background: dark ? '#242424' : '#f0f0f0' }} />
+          <div className="h-px mx-5" style={{ background: dark ? '#242424' : '#f0f0f0' }} />
 
           {/* ── Model grid — scrollable ── */}
-          <div className="overflow-y-auto flex-1 px-5 py-4" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
+            <div className="grid grid-cols-2 gap-2">
               {SUPER_MODELS.filter(m =>
                 pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
                 const isSelected = pickerSelected === m.id;
                 const isPro = m.provider !== 'fius';
-                // Tinted logo bg using model color
-                const logoBg = `${m.color}28`;
                 return (
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-3 px-3.5 py-3.5 text-left transition-all"
+                    className="flex items-center gap-2.5 px-3 py-2.5 text-left transition-all"
                     style={{
-                      borderRadius: 18,
+                      borderRadius: 14,
                       border: `1.5px solid ${isSelected ? (dark ? '#555555' : '#aaaaaa') : (dark ? '#242424' : '#ebebeb')}`,
                       background: isSelected ? (dark ? '#1e1e1e' : '#f7f7f7') : 'transparent',
                     }}
                     onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = dark ? '#1a1a1a' : '#f4f4f4'; }}
                     onMouseOut={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    {/* Logo circle with model-color tint */}
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                      style={{ background: logoBg }}
-                    >
+                    {/* Logo — no background circle */}
+                    <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
                       {m.provider === 'fius' ? (
-                        <FiusLogo size="xs" className={dark ? 'text-white' : 'text-black'} scaleWhenCurrent="scale(1.4)" />
+                        <FiusLogo size="sm" className={dark ? 'text-white' : 'text-black'} scaleWhenCurrent="scale(1.3)" />
                       ) : (
-                        <img src={m.logo} alt={m.name} className="w-5 h-5 object-contain"
+                        <img src={m.logo} alt={m.name} className="w-6 h-6 object-contain"
                           onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
                       )}
                     </div>
 
-                    {/* Name */}
-                    <span className="flex-1 text-xs font-semibold truncate min-w-0">
+                    {/* Name — full, no truncate */}
+                    <span className="flex-1 text-[11px] font-semibold leading-tight">
                       {m.name}
                     </span>
 
                     {/* PRO badge */}
                     {isPro && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 flex-shrink-0"
+                      <span className="text-[8px] font-bold px-1 py-0.5 flex-shrink-0"
                         style={{
                           color: '#d97706',
                           background: dark ? 'rgba(217,119,6,0.15)' : 'rgba(217,119,6,0.08)',
@@ -1683,20 +1679,18 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </span>
                     )}
 
-                    {/* Radio — gradient fill when selected */}
+                    {/* Tick checkmark when selected */}
                     <div
-                      className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
-                      style={{ borderColor: isSelected ? (dark ? '#888888' : '#555555') : (dark ? '#444444' : '#cccccc') }}
+                      className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                      style={{
+                        borderColor: isSelected ? (dark ? '#ffffff' : '#111111') : (dark ? '#444444' : '#cccccc'),
+                        background: isSelected
+                          ? (dark ? 'linear-gradient(to bottom, #ffffff, #9ca3af)' : 'linear-gradient(to bottom, #111111, #aaaaaa)')
+                          : 'transparent',
+                      }}
                     >
                       {isSelected && (
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{
-                            background: dark
-                              ? 'linear-gradient(to bottom, #ffffff, #9ca3af)'
-                              : 'linear-gradient(to bottom, #000000, #ffffff)',
-                          }}
-                        />
+                        <Check className="w-2.5 h-2.5" style={{ color: dark ? '#111111' : '#ffffff', strokeWidth: 3 }} />
                       )}
                     </div>
                   </button>
@@ -1706,7 +1700,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
 
           {/* ── Continue button ── */}
-          <div className="px-6 py-5 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#242424' : '#f0f0f0'}` }}>
+          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#242424' : '#f0f0f0'}` }}>
             <button
               onClick={() => {
                 if (pickerSelected !== null && modelPickerOpen !== null) {
