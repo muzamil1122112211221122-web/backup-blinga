@@ -1542,8 +1542,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
         <div
           className="relative flex flex-col shadow-2xl w-full mx-4 overflow-hidden"
           style={{
-            maxWidth: 440,
-            maxHeight: '78vh',
+            maxWidth: 680,
+            height: '62vh',
             background: dark ? '#141414' : '#ffffff',
             color: dark ? '#f5f5f5' : '#111111',
             borderRadius: 24,
@@ -1633,24 +1633,27 @@ export function FiusLabs({ user }: FiusLabsProps) {
 
           {/* ── Model grid — scrollable ── */}
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {SUPER_MODELS.filter(m =>
                 pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
                 const isSelected = pickerSelected === m.id;
                 const isPro = m.provider !== 'fius';
+                const cardBg = dark ? '#C9C9C9' : '#F2F2F2';
+                const selectedBorder = dark ? '#888888' : '#888888';
+                const idleBorder = dark ? '#C9C9C9' : '#F2F2F2';
                 return (
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2.5 px-3 py-2.5 text-left transition-all"
+                    className="flex items-center gap-2 px-2.5 py-2.5 text-left transition-all"
                     style={{
                       borderRadius: 14,
-                      border: `1.5px solid ${isSelected ? (dark ? '#555555' : '#aaaaaa') : (dark ? '#242424' : '#ebebeb')}`,
-                      background: isSelected ? (dark ? '#1e1e1e' : '#f7f7f7') : 'transparent',
+                      border: `1.5px solid ${isSelected ? selectedBorder : idleBorder}`,
+                      background: cardBg,
                     }}
-                    onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = dark ? '#1a1a1a' : '#f4f4f4'; }}
-                    onMouseOut={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                    onMouseOver={e => { e.currentTarget.style.opacity = '0.85'; }}
+                    onMouseOut={e => { e.currentTarget.style.opacity = '1'; }}
                   >
                     {/* Logo — no background circle */}
                     <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
