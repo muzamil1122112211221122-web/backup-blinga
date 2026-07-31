@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch } from '@/lib/queryClient';
 import { useTheme } from './theme-provider';
-import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, Pencil, FileDown } from 'lucide-react';
+import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus, Plus, Trash2, Maximize2, Pencil, FileDown, X, Filter as FilterIcon } from 'lucide-react';
 import microphoneIcon from "@assets/microphone_1784996715112.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/add_1784996715112.png";
@@ -70,6 +70,24 @@ const SUPER_MODELS: ModelDef[] = [
   { id: 'perplexity',        name: 'Perplexity Sonar', description: 'Real-time web search & cited answers',          logo: '/kimi-logo.png',       color: '#38bdf8', provider: 'perplexity' },
   { id: 'copilot',           name: 'Copilot',          description: "Microsoft's AI powered by OpenAI models",       logo: '/copilot-logo.png',    color: '#0078d4', provider: 'microsoft'  },
 ];
+
+// ── Model category tags (for picker filter tabs) ─────────────────────────────
+const MODEL_TAGS: Record<string, string[]> = {
+  'fius-ai':           ['popular'],
+  'fius-prime':        ['popular', 'flagship', 'intelligent'],
+  'gpt-4o':            ['popular', 'flagship'],
+  'claude-3.5-sonnet': ['popular', 'flagship', 'intelligent'],
+  'gemini-pro':        ['popular', 'latest'],
+  'grok-4':            ['flagship', 'intelligent', 'latest'],
+  'deepseek-r1':       ['flagship', 'intelligent', 'latest'],
+  'doubao':            ['flagship', 'latest'],
+  'kimi':              ['intelligent', 'latest'],
+  'qwen':              ['intelligent'],
+  'llama-4':           ['latest'],
+  'mistral':           ['popular'],
+  'perplexity':        ['popular'],
+  'copilot':           ['latest'],
+};
 
 // ── Types ───────────────────────────────────────────────────────────────────
 type Msg = { id: string; role: 'user' | 'assistant'; content: string };
@@ -313,6 +331,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const [labDisliked, setLabDisliked] = useState<Set<string>>(new Set());
   const [labCopiedId, setLabCopiedId] = useState<string | null>(null);
 
+  // ── Model picker (super mode) ─────────────────────────
+  const [chatModelsChosen, setChatModelsChosen] = useState<Record<number, boolean>>({});
+  const [modelPickerOpen,  setModelPickerOpen]  = useState<number | null>(null);
+  const [pickerFilter,     setPickerFilter]     = useState<'popular' | 'flagship' | 'intelligent' | 'latest'>('popular');
+  const [pickerSelected,   setPickerSelected]   = useState<string | null>(null);
+
   const handleLabLike = (id: string) => {
     setLabLiked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
     setLabDisliked(prev => { const n = new Set(prev); n.delete(id); return n; });
@@ -390,6 +414,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
     setInputMode(imode);
     setSuperTargetPanel(null);
     setPendingLabMode(null);
+    setChatModelsChosen({});
     setPhase('lab');
   };
 
@@ -474,6 +499,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const hasMessages = Object.values(messages).some(arr => arr && arr.length > 0);
   const isTypingAny = Object.values(typing).some(Boolean);
   const pool = labMode === 'normal' ? NORMAL_MODELS : SUPER_MODELS;
+  // All super-mode chats must have an explicitly chosen model before sending
+  const allModelsChosen = labMode !== 'super' || inputMode !== 'super' || slots.every((_, i) => chatModelsChosen[i]);
 
   // ── Global input (empty state) ───────────────────────
   const [globalInput, setGlobalInput] = useState('');
@@ -969,6 +996,33 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="top" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                      {/* ── Models section ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Models</p>
+                      <div className="flex flex-col gap-0.5 mb-2">
+                        {slots.map((slotModel, idx) => (
+                          <button key={idx}
+                            onClick={e => { e.stopPropagation(); setPickerSelected(chatModelsChosen[idx] ? slotModel.id : null); setModelPickerOpen(idx); }}
+                            className="flex items-center gap-1.5 px-1.5 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-all w-full text-left">
+                            <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 w-9 flex-shrink-0 tabular-nums">Chat {idx + 1}</span>
+                            <Minus className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
+                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] flex-1 border transition-all ${chatModelsChosen[idx] ? 'border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-white/5' : 'border-dashed border-zinc-300 dark:border-zinc-600 bg-transparent'}`}>
+                              {chatModelsChosen[idx] ? (
+                                <>
+                                  {slotModel.provider === 'fius' ? (
+                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: slotModel.color }} />
+                                  ) : (
+                                    <img src={slotModel.logo} alt="" className="w-3 h-3 object-contain flex-shrink-0" onError={e2 => { (e2.target as HTMLImageElement).style.display='none'; }} />
+                                  )}
+                                  <span className="font-semibold text-foreground truncate max-w-[72px]">{slotModel.name}</span>
+                                </>
+                              ) : (
+                                <span className="text-zinc-400 dark:text-zinc-500 italic">Pick model…</span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="h-px bg-zinc-100 dark:bg-zinc-700 mb-2 mx-1" />
                       {/* ── Row 1: panel count ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
                       <div className="relative flex flex-row items-center mb-3 w-full">
@@ -1019,8 +1073,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   {/* Send — slides in when text present */}
                   <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                     <button
-                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
-                      disabled={!globalInput.trim() || superTargetPanel === null}
+                      onClick={() => { if (superTargetPanel !== null && globalInput.trim() && allModelsChosen) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                      disabled={!globalInput.trim() || superTargetPanel === null || !allModelsChosen}
+                      title={!allModelsChosen ? 'Pick a model for all chats first' : undefined}
                       className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
                     >
                       <ArrowUp className="w-4 h-4" />
@@ -1079,6 +1134,33 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="bottom" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                      {/* ── Models section ── */}
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Models</p>
+                      <div className="flex flex-col gap-0.5 mb-2">
+                        {slots.map((slotModel, idx) => (
+                          <button key={idx}
+                            onClick={e => { e.stopPropagation(); setPickerSelected(chatModelsChosen[idx] ? slotModel.id : null); setModelPickerOpen(idx); }}
+                            className="flex items-center gap-1.5 px-1.5 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-all w-full text-left">
+                            <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 w-9 flex-shrink-0 tabular-nums">Chat {idx + 1}</span>
+                            <Minus className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
+                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] flex-1 border transition-all ${chatModelsChosen[idx] ? 'border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-white/5' : 'border-dashed border-zinc-300 dark:border-zinc-600 bg-transparent'}`}>
+                              {chatModelsChosen[idx] ? (
+                                <>
+                                  {slotModel.provider === 'fius' ? (
+                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: slotModel.color }} />
+                                  ) : (
+                                    <img src={slotModel.logo} alt="" className="w-3 h-3 object-contain flex-shrink-0" onError={e2 => { (e2.target as HTMLImageElement).style.display='none'; }} />
+                                  )}
+                                  <span className="font-semibold text-foreground truncate max-w-[72px]">{slotModel.name}</span>
+                                </>
+                              ) : (
+                                <span className="text-zinc-400 dark:text-zinc-500 italic">Pick model…</span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="h-px bg-zinc-100 dark:bg-zinc-700 mb-2 mx-1" />
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Panels</p>
                       <div className="relative flex flex-row items-center mb-3 w-full">
                         <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
@@ -1127,8 +1209,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   {/* Send */}
                   <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${globalInput.trim() ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                     <button
-                      onClick={() => { if (superTargetPanel !== null && globalInput.trim()) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
-                      disabled={!globalInput.trim() || superTargetPanel === null}
+                      onClick={() => { if (superTargetPanel !== null && globalInput.trim() && allModelsChosen) { sendToColumn(superTargetPanel, globalInput.trim()); setGlobalInput(''); } }}
+                      disabled={!globalInput.trim() || superTargetPanel === null || !allModelsChosen}
+                      title={!allModelsChosen ? 'Pick a model for all chats first' : undefined}
                       className="w-8 h-8 composer-send-button text-white dark:text-black rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed mr-1"
                     >
                       <ArrowUp className="w-4 h-4" />
@@ -1425,6 +1508,149 @@ export function FiusLabs({ user }: FiusLabsProps) {
         </div>
       </div>
     </div>
+
+    {/* ── Model Picker Modal (Super mode) ──────────────────────────────── */}
+    {modelPickerOpen !== null && (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        onClick={e => { if (e.target === e.currentTarget) setModelPickerOpen(null); }}
+      >
+        <div
+          className={`relative flex flex-col rounded-2xl shadow-2xl w-full max-w-[500px] mx-4 overflow-hidden`}
+          style={{ maxHeight: '82vh', background: dark ? '#1a1a1a' : '#ffffff', color: dark ? '#f5f5f5' : '#111111' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-5 pt-5 pb-3 flex-shrink-0">
+            <div className="flex items-start justify-between mb-1">
+              <div>
+                <h2 className="text-xl font-bold">Choose a model</h2>
+                <p className="text-sm" style={{ color: dark ? '#9ca3af' : '#6b7280' }}>
+                  picks the best model for your task
+                </p>
+              </div>
+              <button
+                onClick={() => setModelPickerOpen(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ml-3"
+                style={{ color: dark ? '#9ca3af' : '#6b7280' }}
+                onMouseOver={e => (e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)')}
+                onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-2 mt-4">
+              <div className="flex items-center gap-0.5 rounded-full p-0.5 flex-1" style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }}>
+                {(['popular', 'flagship', 'intelligent', 'latest'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setPickerFilter(tab)}
+                    className="flex-1 px-2 py-1.5 rounded-full text-xs font-semibold transition-all capitalize"
+                    style={pickerFilter === tab
+                      ? { background: dark ? '#ffffff' : '#111111', color: dark ? '#111111' : '#ffffff' }
+                      : { background: 'transparent', color: dark ? '#9ca3af' : '#71717a' }}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <button
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs border flex-shrink-0 transition-all"
+                style={{ borderColor: dark ? '#3f3f46' : '#e4e4e7', color: dark ? '#9ca3af' : '#71717a' }}
+              >
+                <FilterIcon className="w-3 h-3" />
+                Filter
+              </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px mx-5" style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }} />
+
+          {/* Model grid — scrollable */}
+          <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
+            <div className="grid grid-cols-2 gap-2">
+              {SUPER_MODELS.filter(m =>
+                pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
+              ).map(m => {
+                const isSelected = pickerSelected === m.id;
+                const isPro = m.provider !== 'fius';
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setPickerSelected(m.id)}
+                    className="flex items-center gap-2.5 px-3 py-3 rounded-xl border transition-all text-left"
+                    style={{
+                      borderColor: isSelected ? (dark ? '#6b7280' : '#9ca3af') : (dark ? '#2e2e2e' : '#f4f4f5'),
+                      background: isSelected ? (dark ? '#2e2e2e' : '#f9f9f9') : 'transparent',
+                    }}
+                    onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = dark ? '#262626' : '#f4f4f5'; }}
+                    onMouseOut={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    {/* Logo circle */}
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                      style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }}
+                    >
+                      {m.provider === 'fius' ? (
+                        <div className="w-4 h-4 rounded-full" style={{ background: m.color }} />
+                      ) : (
+                        <img src={m.logo} alt={m.name} className="w-5 h-5 object-contain"
+                          onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
+                      )}
+                    </div>
+                    {/* Name */}
+                    <span className="flex-1 text-xs font-semibold truncate min-w-0">
+                      {m.name}
+                    </span>
+                    {/* PRO badge */}
+                    {isPro && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ color: '#d97706', background: dark ? 'rgba(217,119,6,0.15)' : 'rgba(217,119,6,0.08)' }}>
+                        PRO
+                      </span>
+                    )}
+                    {/* Radio */}
+                    <div
+                      className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
+                      style={{ borderColor: isSelected ? '#3b82f6' : (dark ? '#4b5563' : '#d1d5db') }}
+                    >
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Continue button */}
+          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#2e2e2e' : '#f4f4f5'}` }}>
+            <button
+              onClick={() => {
+                if (pickerSelected !== null && modelPickerOpen !== null) {
+                  const chosen = SUPER_MODELS.find(m => m.id === pickerSelected);
+                  if (chosen) {
+                    changeSlotModel(modelPickerOpen, chosen);
+                    setChatModelsChosen(prev => ({ ...prev, [modelPickerOpen]: true }));
+                  }
+                }
+                setModelPickerOpen(null);
+              }}
+              disabled={pickerSelected === null}
+              className="w-full py-3 rounded-full font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: dark ? '#ffffff' : '#111111',
+                color: dark ? '#111111' : '#ffffff',
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </TooltipProvider>
   );
 }
