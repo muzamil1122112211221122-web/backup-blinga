@@ -334,8 +334,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
   // ── Model picker (super mode) ─────────────────────────
   const [chatModelsChosen, setChatModelsChosen] = useState<Record<number, boolean>>({});
   const [modelPickerOpen,  setModelPickerOpen]  = useState<number | null>(null);
-  const [pickerFilter,     setPickerFilter]     = useState<'popular' | 'flagship' | 'intelligent' | 'latest'>('popular');
+  const [pickerFilter,     setPickerFilter]     = useState<'popular' | 'flagship' | 'latest'>('popular');
   const [pickerSelected,   setPickerSelected]   = useState<string | null>(null);
+  // Sliding pill for picker filter tabs
+  const pickerNavRef       = useRef<HTMLDivElement>(null);
+  const pickerTabRefs      = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pickerPillStyle,  setPickerPillStyle]  = useState({ left: 0, width: 0, ready: false });
+  const pickerPillAnim     = useRef(false);
 
   const handleLabLike = (id: string) => {
     setLabLiked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -463,6 +468,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
     setOpenDropdown(null);
   };
 
+  // Like changeSlotModel but does NOT clear messages — used by the model picker
+  // so choosing/changing a model mid-chat doesn't wipe the conversation.
+  const setSlotModelOnly = (idx: number, model: ModelDef) => {
+    setSlots(prev => prev.map((m, i) => i === idx ? model : m));
+    setOpenDropdown(null);
+  };
+
   const toggleColumn = (idx: number) => {
     setActive(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
@@ -501,6 +513,18 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const pool = labMode === 'normal' ? NORMAL_MODELS : SUPER_MODELS;
   // All super-mode chats must have an explicitly chosen model before sending
   const allModelsChosen = labMode !== 'super' || inputMode !== 'super' || slots.every((_, i) => chatModelsChosen[i]);
+
+  // ── Picker filter-tab sliding pill ───────────────────
+  const PICKER_TABS = ['popular', 'flagship', 'latest'] as const;
+  useEffect(() => {
+    const idx = PICKER_TABS.indexOf(pickerFilter as any);
+    const btn = pickerTabRefs.current[idx];
+    const nav = pickerNavRef.current;
+    if (!btn || !nav) return;
+    const br = btn.getBoundingClientRect();
+    const nr = nav.getBoundingClientRect();
+    setPickerPillStyle({ left: br.left - nr.left, width: br.width, ready: true });
+  }, [pickerFilter, modelPickerOpen]);
 
   // ── Global input (empty state) ───────────────────────
   const [globalInput, setGlobalInput] = useState('');
@@ -1516,22 +1540,27 @@ export function FiusLabs({ user }: FiusLabsProps) {
         onClick={e => { if (e.target === e.currentTarget) setModelPickerOpen(null); }}
       >
         <div
-          className={`relative flex flex-col rounded-2xl shadow-2xl w-full max-w-[500px] mx-4 overflow-hidden`}
-          style={{ maxHeight: '82vh', background: dark ? '#1a1a1a' : '#ffffff', color: dark ? '#f5f5f5' : '#111111' }}
+          className="relative flex flex-col shadow-2xl w-full max-w-[520px] mx-4 overflow-hidden"
+          style={{
+            maxHeight: '84vh',
+            background: dark ? '#141414' : '#ffffff',
+            color: dark ? '#f5f5f5' : '#111111',
+            borderRadius: 28,
+          }}
           onClick={e => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="px-5 pt-5 pb-3 flex-shrink-0">
+          {/* ── Header ── */}
+          <div className="px-6 pt-6 pb-4 flex-shrink-0">
             <div className="flex items-start justify-between mb-1">
               <div>
-                <h2 className="text-xl font-bold">Choose a model</h2>
-                <p className="text-sm" style={{ color: dark ? '#9ca3af' : '#6b7280' }}>
+                <h2 className="text-2xl font-bold">Choose a model</h2>
+                <p className="text-sm mt-0.5" style={{ color: dark ? '#9ca3af' : '#6b7280' }}>
                   picks the best model for your task
                 </p>
               </div>
               <button
                 onClick={() => setModelPickerOpen(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 ml-3"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 ml-3 mt-0.5"
                 style={{ color: dark ? '#9ca3af' : '#6b7280' }}
                 onMouseOver={e => (e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)')}
                 onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
@@ -1540,25 +1569,57 @@ export function FiusLabs({ user }: FiusLabsProps) {
               </button>
             </div>
 
-            {/* Filter pills */}
-            <div className="flex items-center gap-2 mt-4">
-              <div className="flex items-center gap-0.5 rounded-full p-0.5 flex-1" style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }}>
-                {(['popular', 'flagship', 'intelligent', 'latest'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setPickerFilter(tab)}
-                    className="flex-1 px-2 py-1.5 rounded-full text-xs font-semibold transition-all capitalize"
-                    style={pickerFilter === tab
-                      ? { background: dark ? '#ffffff' : '#111111', color: dark ? '#111111' : '#ffffff' }
-                      : { background: 'transparent', color: dark ? '#9ca3af' : '#71717a' }}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
+            {/* ── Sliding filter pills ── */}
+            <div className="flex items-center gap-2 mt-5">
+              <div
+                ref={pickerNavRef}
+                className="relative flex items-center p-1 flex-1"
+                style={{ background: dark ? '#222222' : '#f0f0f0', borderRadius: 999 }}
+              >
+                {/* Sliding pill underlay */}
+                {pickerPillStyle.ready && (
+                  <div
+                    aria-hidden
+                    style={{
+                      position: 'absolute',
+                      left: pickerPillStyle.left,
+                      width: pickerPillStyle.width,
+                      top: 4, bottom: 4,
+                      transition: 'left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.42s cubic-bezier(0.34,1.56,0.64,1)',
+                      pointerEvents: 'none',
+                      zIndex: 0,
+                      background: dark ? '#ffffff' : '#111111',
+                      borderRadius: 999,
+                      boxShadow: dark ? '0 1px 8px rgba(255,255,255,0.15)' : '0 1px 4px rgba(0,0,0,0.12)',
+                    }}
+                  />
+                )}
+                {(['popular', 'flagship', 'latest'] as const).map((tab, i) => {
+                  const isActive = pickerFilter === tab;
+                  return (
+                    <button
+                      key={tab}
+                      ref={el => { pickerTabRefs.current[i] = el; }}
+                      onClick={() => { pickerPillAnim.current = true; setPickerFilter(tab); }}
+                      className="relative z-10 flex-1 py-1.5 text-xs font-semibold transition-colors duration-200 capitalize"
+                      style={{
+                        color: isActive ? (dark ? '#111111' : '#ffffff') : (dark ? '#9ca3af' : '#71717a'),
+                        background: 'transparent',
+                        borderRadius: 999,
+                      }}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
               <button
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs border flex-shrink-0 transition-all"
-                style={{ borderColor: dark ? '#3f3f46' : '#e4e4e7', color: dark ? '#9ca3af' : '#71717a' }}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs border flex-shrink-0 transition-all"
+                style={{
+                  borderColor: dark ? '#333333' : '#e0e0e0',
+                  color: dark ? '#9ca3af' : '#71717a',
+                  borderRadius: 999,
+                }}
               >
                 <FilterIcon className="w-3 h-3" />
                 Filter
@@ -1566,58 +1627,77 @@ export function FiusLabs({ user }: FiusLabsProps) {
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="h-px mx-5" style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }} />
+          {/* ── Divider ── */}
+          <div className="h-px mx-6" style={{ background: dark ? '#242424' : '#f0f0f0' }} />
 
-          {/* Model grid — scrollable */}
-          <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-2 gap-2">
+          {/* ── Model grid — scrollable ── */}
+          <div className="overflow-y-auto flex-1 px-5 py-4" style={{ scrollbarWidth: 'thin' }}>
+            <div className="grid grid-cols-2 gap-2.5">
               {SUPER_MODELS.filter(m =>
                 pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
                 const isSelected = pickerSelected === m.id;
                 const isPro = m.provider !== 'fius';
+                // Tinted logo bg using model color
+                const logoBg = `${m.color}28`;
                 return (
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2.5 px-3 py-3 rounded-xl border transition-all text-left"
+                    className="flex items-center gap-3 px-3.5 py-3.5 text-left transition-all"
                     style={{
-                      borderColor: isSelected ? (dark ? '#6b7280' : '#9ca3af') : (dark ? '#2e2e2e' : '#f4f4f5'),
-                      background: isSelected ? (dark ? '#2e2e2e' : '#f9f9f9') : 'transparent',
+                      borderRadius: 18,
+                      border: `1.5px solid ${isSelected ? (dark ? '#555555' : '#aaaaaa') : (dark ? '#242424' : '#ebebeb')}`,
+                      background: isSelected ? (dark ? '#1e1e1e' : '#f7f7f7') : 'transparent',
                     }}
-                    onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = dark ? '#262626' : '#f4f4f5'; }}
+                    onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = dark ? '#1a1a1a' : '#f4f4f4'; }}
                     onMouseOut={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    {/* Logo circle */}
+                    {/* Logo circle with model-color tint */}
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                      style={{ background: dark ? '#2e2e2e' : '#f4f4f5' }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                      style={{ background: logoBg }}
                     >
                       {m.provider === 'fius' ? (
-                        <div className="w-4 h-4 rounded-full" style={{ background: m.color }} />
+                        <FiusLogo size="xs" className={dark ? 'text-white' : 'text-black'} scaleWhenCurrent="scale(1.4)" />
                       ) : (
                         <img src={m.logo} alt={m.name} className="w-5 h-5 object-contain"
                           onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
                       )}
                     </div>
+
                     {/* Name */}
                     <span className="flex-1 text-xs font-semibold truncate min-w-0">
                       {m.name}
                     </span>
+
                     {/* PRO badge */}
                     {isPro && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-                        style={{ color: '#d97706', background: dark ? 'rgba(217,119,6,0.15)' : 'rgba(217,119,6,0.08)' }}>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 flex-shrink-0"
+                        style={{
+                          color: '#d97706',
+                          background: dark ? 'rgba(217,119,6,0.15)' : 'rgba(217,119,6,0.08)',
+                          borderRadius: 999,
+                        }}>
                         PRO
                       </span>
                     )}
-                    {/* Radio */}
+
+                    {/* Radio — gradient fill when selected */}
                     <div
                       className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
-                      style={{ borderColor: isSelected ? '#3b82f6' : (dark ? '#4b5563' : '#d1d5db') }}
+                      style={{ borderColor: isSelected ? (dark ? '#888888' : '#555555') : (dark ? '#444444' : '#cccccc') }}
                     >
-                      {isSelected && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                      {isSelected && (
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{
+                            background: dark
+                              ? 'linear-gradient(to bottom, #ffffff, #9ca3af)'
+                              : 'linear-gradient(to bottom, #000000, #ffffff)',
+                          }}
+                        />
+                      )}
                     </div>
                   </button>
                 );
@@ -1625,24 +1705,28 @@ export function FiusLabs({ user }: FiusLabsProps) {
             </div>
           </div>
 
-          {/* Continue button */}
-          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#2e2e2e' : '#f4f4f5'}` }}>
+          {/* ── Continue button ── */}
+          <div className="px-6 py-5 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#242424' : '#f0f0f0'}` }}>
             <button
               onClick={() => {
                 if (pickerSelected !== null && modelPickerOpen !== null) {
                   const chosen = SUPER_MODELS.find(m => m.id === pickerSelected);
                   if (chosen) {
-                    changeSlotModel(modelPickerOpen, chosen);
+                    // Use setSlotModelOnly — does NOT clear messages, fixes "UI closes" bug
+                    setSlotModelOnly(modelPickerOpen, chosen);
                     setChatModelsChosen(prev => ({ ...prev, [modelPickerOpen]: true }));
                   }
                 }
                 setModelPickerOpen(null);
               }}
               disabled={pickerSelected === null}
-              className="w-full py-3 rounded-full font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: dark ? '#ffffff' : '#111111',
                 color: dark ? '#111111' : '#ffffff',
+                borderRadius: 999,
+                paddingTop: 13,
+                paddingBottom: 13,
               }}
             >
               Continue
