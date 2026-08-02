@@ -1646,7 +1646,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2 px-2.5 py-2.5 text-left transition-all"
+                    className="flex items-center gap-3 px-4 py-4 text-left transition-all"
                     style={{
                       borderRadius: 14,
                       border: `1.5px solid ${isSelected ? selectedBorder : idleBorder}`,
@@ -1656,23 +1656,23 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     onMouseOut={e => { e.currentTarget.style.opacity = '1'; }}
                   >
                     {/* Logo — no background circle */}
-                    <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
                       {m.provider === 'fius' ? (
                         <FiusLogo size="sm" className={dark ? 'text-white' : 'text-black'} scaleWhenCurrent="scale(1.3)" />
                       ) : (
-                        <img src={m.logo} alt={m.name} className="w-6 h-6 object-contain"
+                        <img src={m.logo} alt={m.name} className="w-9 h-9 object-contain"
                           onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
                       )}
                     </div>
 
                     {/* Name — full, no truncate */}
-                    <span className="flex-1 text-[11px] font-semibold leading-tight">
+                    <span className="flex-1 text-[13px] font-semibold leading-tight">
                       {m.name}
                     </span>
 
                     {/* PRO badge */}
                     {isPro && (
-                      <span className="text-[8px] font-bold px-1 py-0.5 flex-shrink-0"
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 flex-shrink-0"
                         style={{
                           color: '#d97706',
                           background: dark ? 'rgba(217,119,6,0.15)' : 'rgba(217,119,6,0.08)',
@@ -1684,7 +1684,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
 
                     {/* Tick checkmark when selected */}
                     <div
-                      className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                      className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
                       style={{
                         borderColor: isSelected ? (dark ? '#ffffff' : '#111111') : (dark ? '#444444' : '#cccccc'),
                         background: isSelected
@@ -1693,7 +1693,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       }}
                     >
                       {isSelected && (
-                        <Check className="w-2.5 h-2.5" style={{ color: dark ? '#111111' : '#ffffff', strokeWidth: 3 }} />
+                        <Check className="w-3 h-3" style={{ color: dark ? '#111111' : '#ffffff', strokeWidth: 3 }} />
                       )}
                     </div>
                   </button>
