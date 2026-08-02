@@ -1543,8 +1543,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
           className="relative flex flex-col shadow-2xl w-full mx-4 overflow-hidden"
           style={{
             maxWidth: 680,
-            height: '62vh',
-            background: dark ? '#141414' : '#ffffff',
+            height: '75vh',
+            background: dark ? '#404040' : '#ffffff',
             color: dark ? '#f5f5f5' : '#111111',
             borderRadius: 24,
           }}
@@ -1633,7 +1633,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
 
           {/* ── Model grid — scrollable ── */}
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {SUPER_MODELS.filter(m =>
                 pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
