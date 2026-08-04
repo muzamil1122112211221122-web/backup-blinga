@@ -1646,8 +1646,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     className="flex items-center gap-2 px-3 py-3 text-left transition-all"
                     style={{
                       borderRadius: 14,
-                      border: `1.5px solid ${isSelected ? '#888888' : '#545454'}`,
-                      background: '#545454',
+                      border: `1.5px solid ${isSelected ? '#888888' : '#404040'}`,
+                      background: '#404040',
                       position: 'relative',
                       zIndex: 1,
                       isolation: 'isolate',
@@ -1655,15 +1655,17 @@ export function FiusLabs({ user }: FiusLabsProps) {
                     onMouseOver={e => { e.currentTarget.style.opacity = '0.85'; }}
                     onMouseOut={e => { e.currentTarget.style.opacity = '1'; }}
                   >
-                    {/* Logo — no background circle */}
-                    <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      {m.provider === 'fius' ? (
-                        <FiusLogo size="sm" className="text-white" scaleWhenCurrent="scale(1.3)" />
-                      ) : (
-                        <img src={m.logo} alt={m.name} className="w-7 h-7 object-contain"
+                    {/* Logo */}
+                    {m.provider === 'fius' ? (
+                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46 }}>
+                        <FiusLogo size="sm" className="text-white" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46 }}>
+                        <img src={m.logo} alt={m.name} className="w-9 h-9 object-contain"
                           onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Name — full, no truncate */}
                     <span className="flex-1 text-[12px] font-semibold leading-tight" style={{ color: '#f5f5f5' }}>
