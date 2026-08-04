@@ -1025,7 +1025,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       <div className="flex flex-col gap-0.5 mb-2">
                         {slots.map((slotModel, idx) => (
                           <button key={idx}
-                            onClick={e => { e.stopPropagation(); setPickerSelected(chatModelsChosen[idx] ? slotModel.id : null); setModelPickerOpen(idx); }}
+                            onClick={e => { e.stopPropagation(); setPickerSelected(slotModel.id); setModelPickerOpen(idx); }}
                             className="flex items-center gap-1.5 px-1.5 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-all w-full text-left">
                             <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 w-9 flex-shrink-0 tabular-nums">Chat {idx + 1}</span>
                             <Minus className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
@@ -1163,7 +1163,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       <div className="flex flex-col gap-0.5 mb-2">
                         {slots.map((slotModel, idx) => (
                           <button key={idx}
-                            onClick={e => { e.stopPropagation(); setPickerSelected(chatModelsChosen[idx] ? slotModel.id : null); setModelPickerOpen(idx); }}
+                            onClick={e => { e.stopPropagation(); setPickerSelected(slotModel.id); setModelPickerOpen(idx); }}
                             className="flex items-center gap-1.5 px-1.5 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-all w-full text-left">
                             <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 w-9 flex-shrink-0 tabular-nums">Chat {idx + 1}</span>
                             <Minus className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600 flex-shrink-0" />
@@ -1555,15 +1555,15 @@ export function FiusLabs({ user }: FiusLabsProps) {
             <div className="flex items-start justify-between mb-1">
               <div>
                 <h2 className="text-xl font-bold">Choose a model</h2>
-                <p className="text-sm mt-0.5" style={{ color: dark ? '#9ca3af' : '#6b7280' }}>
+                <p className="text-sm mt-0.5" style={{ color: '#9ca3af' }}>
                   picks the best model for your task
                 </p>
               </div>
               <button
                 onClick={() => setModelPickerOpen(null)}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 ml-3 mt-0.5"
-                style={{ color: dark ? '#9ca3af' : '#6b7280' }}
-                onMouseOver={e => (e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)')}
+                style={{ color: '#9ca3af' }}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
                 onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <X className="w-4 h-4" />
@@ -1575,7 +1575,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               <div
                 ref={pickerNavRef}
                 className="relative flex items-center p-1 flex-1"
-                style={{ background: dark ? '#222222' : '#f0f0f0', borderRadius: 999 }}
+                style={{ background: '#222222', borderRadius: 999 }}
               >
                 {/* Sliding pill underlay */}
                 {pickerPillStyle.ready && (
@@ -1589,9 +1589,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       transition: 'left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.42s cubic-bezier(0.34,1.56,0.64,1)',
                       pointerEvents: 'none',
                       zIndex: 0,
-                      background: dark ? '#ffffff' : '#111111',
+                      background: '#ffffff',
                       borderRadius: 999,
-                      boxShadow: dark ? '0 1px 8px rgba(255,255,255,0.15)' : '0 1px 4px rgba(0,0,0,0.12)',
+                      boxShadow: '0 1px 8px rgba(255,255,255,0.15)',
                     }}
                   />
                 )}
@@ -1604,7 +1604,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       onClick={() => { pickerPillAnim.current = true; setPickerFilter(tab); }}
                       className="relative z-10 flex-1 py-1.5 text-xs font-semibold transition-colors duration-200 capitalize"
                       style={{
-                        color: isActive ? (dark ? '#111111' : '#ffffff') : (dark ? '#9ca3af' : '#71717a'),
+                        color: isActive ? '#111111' : '#9ca3af',
                         background: 'transparent',
                         borderRadius: 999,
                       }}
@@ -1617,8 +1617,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
               <button
                 className="flex items-center gap-1.5 px-3.5 py-2 text-xs border flex-shrink-0 transition-all"
                 style={{
-                  borderColor: dark ? '#333333' : '#e0e0e0',
-                  color: dark ? '#9ca3af' : '#71717a',
+                  borderColor: '#444444',
+                  color: '#9ca3af',
                   borderRadius: 999,
                 }}
               >
@@ -1629,7 +1629,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
 
           {/* ── Divider ── */}
-          <div className="h-px mx-5" style={{ background: dark ? '#242424' : '#f0f0f0' }} />
+          <div className="h-px mx-5" style={{ background: '#3a3a3a' }} />
 
           {/* ── Model grid — scrollable ── */}
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
@@ -1643,22 +1643,24 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2 px-3 py-3 text-left transition-all"
+                    className="flex items-center gap-2 px-3 py-3 text-left"
                     style={{
                       borderRadius: 14,
-                      border: `1.5px solid ${isSelected ? '#888888' : '#404040'}`,
-                      background: '#404040',
+                      border: `1.5px solid ${isSelected ? '#aaaaaa' : '#555555'}`,
+                      background: isSelected ? '#4a4a4a' : '#404040',
                       position: 'relative',
                       zIndex: 1,
                       isolation: 'isolate',
+                      transition: 'background 0.15s ease, border-color 0.15s ease',
+                      cursor: 'pointer',
                     }}
-                    onMouseOver={e => { e.currentTarget.style.opacity = '0.85'; }}
-                    onMouseOut={e => { e.currentTarget.style.opacity = '1'; }}
+                    onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = '#484848'; e.currentTarget.style.borderColor = '#666666'; } }}
+                    onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = '#404040'; e.currentTarget.style.borderColor = '#555555'; } }}
                   >
                     {/* Logo */}
                     {m.provider === 'fius' ? (
-                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46 }}>
-                        <FiusLogo size="sm" className="text-white" />
+                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 52, height: 52 }}>
+                        <FiusLogo size="md" className="text-white" />
                       </div>
                     ) : (
                       <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46 }}>
@@ -1705,13 +1707,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
 
           {/* ── Continue button ── */}
-          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#242424' : '#f0f0f0'}` }}>
+          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: '1px solid #3a3a3a' }}>
             <button
               onClick={() => {
                 if (pickerSelected !== null && modelPickerOpen !== null) {
                   const chosen = SUPER_MODELS.find(m => m.id === pickerSelected);
                   if (chosen) {
-                    // Use setSlotModelOnly — does NOT clear messages, fixes "UI closes" bug
                     setSlotModelOnly(modelPickerOpen, chosen);
                     setChatModelsChosen(prev => ({ ...prev, [modelPickerOpen]: true }));
                   }
@@ -1721,8 +1722,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
               disabled={pickerSelected === null}
               className="w-full font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
-                background: dark ? '#ffffff' : '#111111',
-                color: dark ? '#111111' : '#ffffff',
+                background: '#ffffff',
+                color: '#111111',
                 borderRadius: 999,
                 paddingTop: 13,
                 paddingBottom: 13,
