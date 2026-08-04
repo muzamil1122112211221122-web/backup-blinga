@@ -1544,7 +1544,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
           style={{
             maxWidth: 680,
             height: '75vh',
-            background: '#4D4D4D',
+            background: '#303030',
             color: '#f5f5f5',
             borderRadius: 24,
           }}
