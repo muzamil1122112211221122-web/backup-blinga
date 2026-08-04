@@ -1632,8 +1632,41 @@ export function FiusLabs({ user }: FiusLabsProps) {
           <div className="h-px mx-5" style={{ background: '#3a3a3a' }} />
 
           {/* ── Model grid — scrollable ── */}
+          <style>{`
+            .fius-picker-card {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 10px 12px;
+              border-radius: 999px;
+              border: 1.5px solid #555555;
+              background: #404040;
+              cursor: pointer;
+              user-select: none;
+              -webkit-user-select: none;
+              text-align: left;
+              width: 100%;
+              box-sizing: border-box;
+              outline: none;
+              transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            }
+            .fius-picker-card:hover {
+              background: #4a4a4a;
+              border-color: #777777;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            }
+            .fius-picker-card.selected {
+              background: #505050;
+              border-color: #aaaaaa;
+              box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
+            }
+            .fius-picker-card.selected:hover {
+              background: #565656;
+              border-color: #cccccc;
+            }
+          `}</style>
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {SUPER_MODELS.filter(m =>
                 pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
@@ -1642,70 +1675,43 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 return (
                   <button
                     key={m.id}
+                    type="button"
+                    className={`fius-picker-card${isSelected ? ' selected' : ''}`}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2 px-3 py-3 text-left select-none"
-                    style={{
-                      borderRadius: 999,
-                      border: `1.5px solid ${isSelected ? '#aaaaaa' : '#555555'}`,
-                      background: isSelected ? '#4a4a4a' : '#404040',
-                      position: 'relative',
-                      zIndex: 1,
-                      isolation: 'isolate',
-                      transition: 'box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease',
-                      cursor: 'pointer',
-                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.18)' : 'none',
-                    }}
-                    onMouseEnter={e => {
-                      const btn = e.currentTarget;
-                      btn.style.boxShadow = isSelected
-                        ? '0 0 0 2px rgba(255,255,255,0.28)'
-                        : '0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.boxShadow = isSelected ? '0 0 0 2px rgba(255,255,255,0.18)' : 'none';
-                    }}
                   >
                     {/* Logo */}
                     {m.provider === 'fius' ? (
-                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 52, height: 52 }}>
+                      <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <FiusLogo size="md" className="text-white" />
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46 }}>
-                        <img src={m.logo} alt={m.name} className="w-9 h-9 object-contain"
+                      <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <img src={m.logo} alt={m.name} style={{ width: 34, height: 34, objectFit: 'contain' }}
                           onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
                       </div>
                     )}
 
-                    {/* Name — full, no truncate */}
-                    <span className="flex-1 text-[12px] font-semibold leading-tight" style={{ color: '#f5f5f5' }}>
+                    {/* Name */}
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: '#f5f5f5', pointerEvents: 'none' }}>
                       {m.name}
                     </span>
 
                     {/* PRO badge */}
                     {isPro && (
-                      <span className="text-[8px] font-bold px-1 py-0.5 flex-shrink-0"
-                        style={{
-                          color: '#d97706',
-                          background: 'rgba(217,119,6,0.2)',
-                          borderRadius: 999,
-                        }}>
+                      <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', color: '#d97706', background: 'rgba(217,119,6,0.2)', borderRadius: 999, flexShrink: 0, pointerEvents: 'none' }}>
                         PRO
                       </span>
                     )}
 
-                    {/* Tick checkmark when selected */}
-                    <div
-                      className="w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
-                      style={{
-                        borderColor: isSelected ? '#ffffff' : '#777777',
-                        background: isSelected
-                          ? 'linear-gradient(to bottom, #ffffff, #9ca3af)'
-                          : 'transparent',
-                      }}
-                    >
+                    {/* Tick */}
+                    <div style={{
+                      width: 16, height: 16, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#666666'}`,
+                      background: isSelected ? 'linear-gradient(to bottom, #ffffff, #9ca3af)' : 'transparent',
+                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      pointerEvents: 'none',
+                    }}>
                       {isSelected && (
-                        <Check className="w-2.5 h-2.5" style={{ color: '#111111', strokeWidth: 3 }} />
+                        <Check style={{ width: 9, height: 9, color: '#111111', strokeWidth: 3, pointerEvents: 'none' }} />
                       )}
                     </div>
                   </button>
