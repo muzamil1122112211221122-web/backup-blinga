@@ -1643,7 +1643,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2 px-3 py-3 text-left select-none hover:scale-[1.03] active:scale-[0.98]"
+                    className="flex items-center gap-2 px-3 py-3 text-left select-none"
                     style={{
                       borderRadius: 999,
                       border: `1.5px solid ${isSelected ? '#aaaaaa' : '#555555'}`,
@@ -1651,8 +1651,18 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       position: 'relative',
                       zIndex: 1,
                       isolation: 'isolate',
-                      transition: 'transform 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+                      transition: 'box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease',
                       cursor: 'pointer',
+                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.18)' : 'none',
+                    }}
+                    onMouseEnter={e => {
+                      const btn = e.currentTarget;
+                      btn.style.boxShadow = isSelected
+                        ? '0 0 0 2px rgba(255,255,255,0.28)'
+                        : '0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = isSelected ? '0 0 0 2px rgba(255,255,255,0.18)' : 'none';
                     }}
                   >
                     {/* Logo */}
