@@ -1643,19 +1643,17 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     onClick={() => setPickerSelected(m.id)}
-                    className="flex items-center gap-2 px-3 py-3 text-left"
+                    className="flex items-center gap-2 px-3 py-3 text-left select-none hover:scale-[1.03] active:scale-[0.98]"
                     style={{
-                      borderRadius: 14,
+                      borderRadius: 999,
                       border: `1.5px solid ${isSelected ? '#aaaaaa' : '#555555'}`,
                       background: isSelected ? '#4a4a4a' : '#404040',
                       position: 'relative',
                       zIndex: 1,
                       isolation: 'isolate',
-                      transition: 'background 0.15s ease, border-color 0.15s ease',
+                      transition: 'transform 0.15s ease, border-color 0.15s ease, background 0.15s ease',
                       cursor: 'pointer',
                     }}
-                    onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = '#484848'; e.currentTarget.style.borderColor = '#666666'; } }}
-                    onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = '#404040'; e.currentTarget.style.borderColor = '#555555'; } }}
                   >
                     {/* Logo */}
                     {m.provider === 'fius' ? (
