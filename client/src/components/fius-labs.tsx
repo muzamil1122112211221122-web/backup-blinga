@@ -342,6 +342,15 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const [pickerPillStyle,  setPickerPillStyle]  = useState({ left: 0, width: 0, ready: false });
   const pickerPillAnim     = useRef(false);
 
+  // Dialog focus — auto-focus on open so first click works immediately (no "activation" click needed)
+  const pickerDialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (modelPickerOpen !== null) {
+      // rAF ensures the dialog is painted before we focus it
+      requestAnimationFrame(() => { pickerDialogRef.current?.focus(); });
+    }
+  }, [modelPickerOpen]);
+
   const handleLabLike = (id: string) => {
     setLabLiked(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
     setLabDisliked(prev => { const n = new Set(prev); n.delete(id); return n; });
@@ -1540,6 +1549,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
         onClick={e => { if (e.target === e.currentTarget) setModelPickerOpen(null); }}
       >
         <div
+          ref={pickerDialogRef}
+          tabIndex={-1}
           className="relative flex flex-col shadow-2xl w-full mx-4"
           style={{
             maxWidth: 680,
@@ -1548,6 +1559,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
             color: dark ? '#f5f5f5' : '#111111',
             borderRadius: 24,
             overflow: 'hidden',
+            outline: 'none',
           }}
           onClick={e => e.stopPropagation()}
         >
