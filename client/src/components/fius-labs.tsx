@@ -1541,24 +1541,27 @@ export function FiusLabs({ user }: FiusLabsProps) {
       >
         <div
           className="relative flex flex-col shadow-2xl w-full mx-4 overflow-hidden"
+          tabIndex={-1}
           style={{
             maxWidth: 680,
             height: '75vh',
-            background: '#303030',
-            color: '#f5f5f5',
+            background: dark ? '#303030' : '#ffffff',
+            color: dark ? '#f5f5f5' : '#111111',
             borderRadius: 24,
+            outline: 'none',
           }}
           onClick={e => e.stopPropagation()}
         >
-          {/* ── Card hover CSS — button stays fixed (hit area), inner div scales visually ── */}
+          {/* ── Card hover CSS — .fmp-btn is hit area, .fmp-inner scales visually ── */}
           <style>{`
-            button:hover .fmp-inner {
+            .fmp-btn:hover .fmp-inner {
               transform: scale(1.03);
-              box-shadow: 0 6px 22px rgba(0,0,0,0.18);
+              box-shadow: 0 6px 22px rgba(0,0,0,0.22);
             }
-            button:hover .fmp-sel {
-              box-shadow: 0 6px 22px rgba(0,0,0,0.18), 0 0 0 2.5px rgba(0,0,0,0.12);
+            .fmp-btn:hover .fmp-sel {
+              box-shadow: 0 6px 22px rgba(0,0,0,0.22), 0 0 0 2.5px rgba(0,0,0,0.14);
             }
+            .fmp-btn:focus { outline: none; }
           `}</style>
 
           {/* ── Header ── */}
@@ -1654,6 +1657,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     type="button"
+                    className="fmp-btn"
                     onClick={() => setPickerSelected(m.id)}
                     style={{
                       padding: 0,
@@ -1668,25 +1672,32 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       WebkitTapHighlightColor: 'transparent',
                     }}
                   >
-                    {/* Inner visual div — scales on hover, pointer-events none so hit area stays = button */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 14px',
-                      borderRadius: 999,
-                      background: isSelected ? '#ffffff' : '#efefef',
-                      border: `1.5px solid ${isSelected ? '#888888' : '#d4d4d4'}`,
-                      boxShadow: isSelected ? '0 0 0 2.5px rgba(0,0,0,0.12)' : 'none',
-                      pointerEvents: 'none',
-                      transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease',
-                    }}
-                    className={isSelected ? 'fmp-inner fmp-sel' : 'fmp-inner'}
+                    {/* Inner visual div — scales on hover; pointer-events:none keeps hit area = button box */}
+                    <div
+                      className={isSelected ? 'fmp-inner fmp-sel' : 'fmp-inner'}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 14px',
+                        borderRadius: 999,
+                        background: isSelected
+                          ? (dark ? '#4a4a4a' : '#ffffff')
+                          : (dark ? '#3a3a3a' : '#efefef'),
+                        border: `1.5px solid ${isSelected
+                          ? (dark ? '#888888' : '#888888')
+                          : (dark ? '#555555' : '#d4d4d4')}`,
+                        boxShadow: isSelected
+                          ? (dark ? '0 0 0 2.5px rgba(255,255,255,0.1)' : '0 0 0 2.5px rgba(0,0,0,0.1)')
+                          : 'none',
+                        pointerEvents: 'none',
+                        transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease',
+                      }}
                     >
                       {/* Logo */}
                       {m.provider === 'fius' ? (
                         <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <FiusLogo size="md" className="text-black" />
+                          <FiusLogo size="md" className={dark ? 'text-white' : 'text-black'} />
                         </div>
                       ) : (
                         <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -1696,7 +1707,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       )}
 
                       {/* Name */}
-                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: '#111111' }}>
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: dark ? '#f0f0f0' : '#111111' }}>
                         {m.name}
                       </span>
 
@@ -1710,12 +1721,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       {/* Tick */}
                       <div style={{
                         width: 16, height: 16, borderRadius: '50%',
-                        border: `2px solid ${isSelected ? '#111111' : '#aaaaaa'}`,
-                        background: isSelected ? '#111111' : 'transparent',
+                        border: `2px solid ${isSelected ? (dark ? '#ffffff' : '#111111') : (dark ? '#666666' : '#aaaaaa')}`,
+                        background: isSelected ? (dark ? '#ffffff' : '#111111') : 'transparent',
                         flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         {isSelected && (
-                          <Check style={{ width: 9, height: 9, color: '#ffffff', strokeWidth: 3 }} />
+                          <Check style={{ width: 9, height: 9, color: dark ? '#111111' : '#ffffff', strokeWidth: 3 }} />
                         )}
                       </div>
                     </div>
