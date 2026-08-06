@@ -1550,6 +1550,17 @@ export function FiusLabs({ user }: FiusLabsProps) {
           }}
           onClick={e => e.stopPropagation()}
         >
+          {/* ── Card hover CSS — button stays fixed (hit area), inner div scales visually ── */}
+          <style>{`
+            button:hover .fmp-inner {
+              transform: scale(1.03);
+              box-shadow: 0 6px 22px rgba(0,0,0,0.18);
+            }
+            button:hover .fmp-sel {
+              box-shadow: 0 6px 22px rgba(0,0,0,0.18), 0 0 0 2.5px rgba(0,0,0,0.12);
+            }
+          `}</style>
+
           {/* ── Header ── */}
           <div className="px-5 pt-5 pb-3 flex-shrink-0">
             <div className="flex items-start justify-between mb-1">
@@ -1632,39 +1643,6 @@ export function FiusLabs({ user }: FiusLabsProps) {
           <div className="h-px mx-5" style={{ background: '#3a3a3a' }} />
 
           {/* ── Model grid — scrollable ── */}
-          <style>{`
-            .fius-picker-card {
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              padding: 10px 12px;
-              border-radius: 999px;
-              border: 1.5px solid #555555;
-              background: #404040;
-              cursor: pointer;
-              user-select: none;
-              -webkit-user-select: none;
-              text-align: left;
-              width: 100%;
-              box-sizing: border-box;
-              outline: none;
-              transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-            }
-            .fius-picker-card:hover {
-              background: #4a4a4a;
-              border-color: #777777;
-              box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-            }
-            .fius-picker-card.selected {
-              background: #505050;
-              border-color: #aaaaaa;
-              box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
-            }
-            .fius-picker-card.selected:hover {
-              background: #565656;
-              border-color: #cccccc;
-            }
-          `}</style>
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
             <div className="grid grid-cols-2 gap-3">
               {SUPER_MODELS.filter(m =>
@@ -1676,43 +1654,70 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   <button
                     key={m.id}
                     type="button"
-                    className={`fius-picker-card${isSelected ? ' selected' : ''}`}
                     onClick={() => setPickerSelected(m.id)}
+                    style={{
+                      padding: 0,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      width: '100%',
+                      display: 'block',
+                      outline: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
                   >
-                    {/* Logo */}
-                    {m.provider === 'fius' ? (
-                      <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <FiusLogo size="md" className="text-white" />
-                      </div>
-                    ) : (
-                      <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <img src={m.logo} alt={m.name} style={{ width: 34, height: 34, objectFit: 'contain' }}
-                          onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
-                      </div>
-                    )}
-
-                    {/* Name */}
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: '#f5f5f5', pointerEvents: 'none' }}>
-                      {m.name}
-                    </span>
-
-                    {/* PRO badge */}
-                    {isPro && (
-                      <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', color: '#d97706', background: 'rgba(217,119,6,0.2)', borderRadius: 999, flexShrink: 0, pointerEvents: 'none' }}>
-                        PRO
-                      </span>
-                    )}
-
-                    {/* Tick */}
+                    {/* Inner visual div — scales on hover, pointer-events none so hit area stays = button */}
                     <div style={{
-                      width: 16, height: 16, borderRadius: '50%', border: `2px solid ${isSelected ? '#ffffff' : '#666666'}`,
-                      background: isSelected ? 'linear-gradient(to bottom, #ffffff, #9ca3af)' : 'transparent',
-                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 14px',
+                      borderRadius: 999,
+                      background: isSelected ? '#ffffff' : '#efefef',
+                      border: `1.5px solid ${isSelected ? '#888888' : '#d4d4d4'}`,
+                      boxShadow: isSelected ? '0 0 0 2.5px rgba(0,0,0,0.12)' : 'none',
                       pointerEvents: 'none',
-                    }}>
-                      {isSelected && (
-                        <Check style={{ width: 9, height: 9, color: '#111111', strokeWidth: 3, pointerEvents: 'none' }} />
+                      transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease',
+                    }}
+                    className={isSelected ? 'fmp-inner fmp-sel' : 'fmp-inner'}
+                    >
+                      {/* Logo */}
+                      {m.provider === 'fius' ? (
+                        <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <FiusLogo size="md" className="text-black" />
+                        </div>
+                      ) : (
+                        <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <img src={m.logo} alt={m.name} style={{ width: 34, height: 34, objectFit: 'contain' }}
+                            onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
+                        </div>
                       )}
+
+                      {/* Name */}
+                      <span style={{ flex: 1, fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: '#111111' }}>
+                        {m.name}
+                      </span>
+
+                      {/* PRO badge */}
+                      {isPro && (
+                        <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 5px', color: '#d97706', background: 'rgba(217,119,6,0.15)', borderRadius: 999, flexShrink: 0 }}>
+                          PRO
+                        </span>
+                      )}
+
+                      {/* Tick */}
+                      <div style={{
+                        width: 16, height: 16, borderRadius: '50%',
+                        border: `2px solid ${isSelected ? '#111111' : '#aaaaaa'}`,
+                        background: isSelected ? '#111111' : 'transparent',
+                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {isSelected && (
+                          <Check style={{ width: 9, height: 9, color: '#ffffff', strokeWidth: 3 }} />
+                        )}
+                      </div>
                     </div>
                   </button>
                 );
