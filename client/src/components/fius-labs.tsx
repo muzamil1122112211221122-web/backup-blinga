@@ -1540,28 +1540,23 @@ export function FiusLabs({ user }: FiusLabsProps) {
         onClick={e => { if (e.target === e.currentTarget) setModelPickerOpen(null); }}
       >
         <div
-          className="relative flex flex-col shadow-2xl w-full mx-4 overflow-hidden"
-          tabIndex={-1}
+          className="relative flex flex-col shadow-2xl w-full mx-4"
           style={{
             maxWidth: 680,
             height: '75vh',
             background: dark ? '#303030' : '#ffffff',
             color: dark ? '#f5f5f5' : '#111111',
             borderRadius: 24,
-            outline: 'none',
+            overflow: 'hidden',
           }}
           onClick={e => e.stopPropagation()}
         >
-          {/* ── Card hover CSS — .fmp-btn is hit area, .fmp-inner scales visually ── */}
+          {/* ── Card hover CSS ── */}
           <style>{`
             .fmp-btn:hover .fmp-inner {
-              transform: scale(1.03);
-              box-shadow: 0 6px 22px rgba(0,0,0,0.22);
+              transform: scale(1.025);
             }
-            .fmp-btn:hover .fmp-sel {
-              box-shadow: 0 6px 22px rgba(0,0,0,0.22), 0 0 0 2.5px rgba(0,0,0,0.14);
-            }
-            .fmp-btn:focus { outline: none; }
+            .fmp-btn:focus-visible { outline: none; }
           `}</style>
 
           {/* ── Header ── */}
@@ -1670,11 +1665,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       display: 'block',
                       outline: 'none',
                       WebkitTapHighlightColor: 'transparent',
+                      borderRadius: 999,
+                      overflow: 'hidden',   /* clips scaled inner div — hit area always = button bounds */
                     }}
                   >
-                    {/* Inner visual div — scales on hover; pointer-events:none keeps hit area = button box */}
+                    {/* Inner visual div — button clips it, so scale never overflows into adjacent cards */}
                     <div
-                      className={isSelected ? 'fmp-inner fmp-sel' : 'fmp-inner'}
+                      className="fmp-inner"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1685,13 +1682,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           ? (dark ? '#4a4a4a' : '#ffffff')
                           : (dark ? '#3a3a3a' : '#efefef'),
                         border: `1.5px solid ${isSelected
-                          ? (dark ? '#888888' : '#888888')
+                          ? (dark ? '#aaaaaa' : '#888888')
                           : (dark ? '#555555' : '#d4d4d4')}`,
                         boxShadow: isSelected
-                          ? (dark ? '0 0 0 2.5px rgba(255,255,255,0.1)' : '0 0 0 2.5px rgba(0,0,0,0.1)')
+                          ? (dark ? '0 0 0 2px rgba(255,255,255,0.12)' : '0 0 0 2px rgba(0,0,0,0.1)')
                           : 'none',
-                        pointerEvents: 'none',
-                        transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease',
+                        transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
                       }}
                     >
                       {/* Logo */}
