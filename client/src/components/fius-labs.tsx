@@ -72,21 +72,22 @@ const SUPER_MODELS: ModelDef[] = [
 ];
 
 // ── Model category tags (for picker filter tabs) ─────────────────────────────
+// latest = all models; flagship = models that have a flagship sub-section in Nomad
 const MODEL_TAGS: Record<string, string[]> = {
-  'fius-ai':           ['popular'],
-  'fius-prime':        ['popular', 'flagship', 'intelligent'],
-  'gpt-4o':            ['popular', 'flagship'],
-  'claude-3.5-sonnet': ['popular', 'flagship', 'intelligent'],
-  'gemini-pro':        ['popular', 'latest'],
-  'grok-4':            ['flagship', 'intelligent', 'latest'],
-  'deepseek-r1':       ['flagship', 'intelligent', 'latest'],
-  'doubao':            ['flagship', 'latest'],
-  'kimi':              ['intelligent', 'latest'],
-  'qwen':              ['intelligent'],
-  'llama-4':           ['latest'],
-  'mistral':           ['popular'],
-  'perplexity':        ['popular'],
-  'copilot':           ['latest'],
+  'fius-ai':           ['latest'],
+  'fius-prime':        ['latest', 'flagship'],
+  'gpt-4o':            ['latest', 'flagship'],
+  'claude-3.5-sonnet': ['latest', 'flagship'],
+  'gemini-pro':        ['latest', 'flagship'],
+  'grok-4':            ['latest', 'flagship'],
+  'deepseek-r1':       ['latest', 'flagship'],
+  'doubao':            ['latest', 'flagship'],
+  'kimi':              ['latest', 'flagship'],
+  'qwen':              ['latest', 'flagship'],
+  'llama-4':           ['latest', 'flagship'],
+  'mistral':           ['latest', 'flagship'],
+  'perplexity':        ['latest', 'flagship'],
+  'copilot':           ['latest', 'flagship'],
 };
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -334,7 +335,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
   // ── Model picker (super mode) ─────────────────────────
   const [chatModelsChosen, setChatModelsChosen] = useState<Record<number, boolean>>({});
   const [modelPickerOpen,  setModelPickerOpen]  = useState<number | null>(null);
-  const [pickerFilter,     setPickerFilter]     = useState<'popular' | 'flagship' | 'latest'>('popular');
+  const [pickerFilter,     setPickerFilter]     = useState<'latest' | 'flagship'>('latest');
   const [pickerSelected,   setPickerSelected]   = useState<string | null>(null);
   // Sliding pill for picker filter tabs
   const pickerNavRef       = useRef<HTMLDivElement>(null);
@@ -524,7 +525,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
   const allModelsChosen = labMode !== 'super' || inputMode !== 'super' || slots.every((_, i) => chatModelsChosen[i]);
 
   // ── Picker filter-tab sliding pill ───────────────────
-  const PICKER_TABS = ['popular', 'flagship', 'latest'] as const;
+  const PICKER_TABS = ['latest', 'flagship'] as const;
   useEffect(() => {
     const idx = PICKER_TABS.indexOf(pickerFilter as any);
     const btn = pickerTabRefs.current[idx];
@@ -1576,15 +1577,15 @@ export function FiusLabs({ user }: FiusLabsProps) {
             <div className="flex items-start justify-between mb-1">
               <div>
                 <h2 className="text-xl font-bold">Choose a model</h2>
-                <p className="text-sm mt-0.5" style={{ color: '#9ca3af' }}>
+                <p className="text-sm mt-0.5" style={{ color: dark ? '#9ca3af' : '#888888' }}>
                   picks the best model for your task
                 </p>
               </div>
               <button
                 onClick={() => setModelPickerOpen(null)}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all flex-shrink-0 ml-3 mt-0.5"
-                style={{ color: '#9ca3af' }}
-                onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+                style={{ color: dark ? '#9ca3af' : '#888888' }}
+                onMouseOver={e => (e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)')}
                 onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <X className="w-4 h-4" />
@@ -1596,7 +1597,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
               <div
                 ref={pickerNavRef}
                 className="relative flex items-center p-1 flex-1"
-                style={{ background: '#222222', borderRadius: 999 }}
+                style={{ background: dark ? '#222222' : '#ebebeb', borderRadius: 999 }}
               >
                 {/* Sliding pill underlay */}
                 {pickerPillStyle.ready && (
@@ -1610,13 +1611,13 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       transition: 'left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.42s cubic-bezier(0.34,1.56,0.64,1)',
                       pointerEvents: 'none',
                       zIndex: 0,
-                      background: '#ffffff',
+                      background: dark ? '#ffffff' : '#333333',
                       borderRadius: 999,
-                      boxShadow: '0 1px 8px rgba(255,255,255,0.15)',
+                      boxShadow: dark ? '0 1px 8px rgba(255,255,255,0.15)' : '0 1px 4px rgba(0,0,0,0.18)',
                     }}
                   />
                 )}
-                {(['popular', 'flagship', 'latest'] as const).map((tab, i) => {
+                {(['latest', 'flagship'] as const).map((tab, i) => {
                   const isActive = pickerFilter === tab;
                   return (
                     <button
@@ -1625,7 +1626,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       onClick={() => { pickerPillAnim.current = true; setPickerFilter(tab); }}
                       className="relative z-10 flex-1 py-1.5 text-xs font-semibold transition-colors duration-200 capitalize"
                       style={{
-                        color: isActive ? '#111111' : '#9ca3af',
+                        color: isActive ? (dark ? '#111111' : '#ffffff') : (dark ? '#9ca3af' : '#666666'),
                         background: 'transparent',
                         borderRadius: 999,
                       }}
@@ -1635,28 +1636,17 @@ export function FiusLabs({ user }: FiusLabsProps) {
                   );
                 })}
               </div>
-              <button
-                className="flex items-center gap-1.5 px-3.5 py-2 text-xs border flex-shrink-0 transition-all"
-                style={{
-                  borderColor: '#444444',
-                  color: '#9ca3af',
-                  borderRadius: 999,
-                }}
-              >
-                <FilterIcon className="w-3 h-3" />
-                Filter
-              </button>
             </div>
           </div>
 
           {/* ── Divider ── */}
-          <div className="h-px mx-5" style={{ background: '#3a3a3a' }} />
+          <div className="h-px mx-5" style={{ background: dark ? '#3a3a3a' : '#e0e0e0' }} />
 
           {/* ── Model grid — scrollable ── */}
           <div className="overflow-y-auto flex-1 px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
             <div className="grid grid-cols-2 gap-3">
               {SUPER_MODELS.filter(m =>
-                pickerFilter === 'popular' || MODEL_TAGS[m.id]?.includes(pickerFilter)
+                pickerFilter === 'latest' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
                 const isSelected = pickerSelected === m.id;
                 const isPro = m.provider !== 'fius';
@@ -1709,8 +1699,14 @@ export function FiusLabs({ user }: FiusLabsProps) {
                         </div>
                       ) : (
                         <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <img src={m.logo} alt={m.name} style={{ width: 34, height: 34, objectFit: 'contain' }}
-                            onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }} />
+                          <img
+                            src={m.logo} alt={m.name}
+                            style={{
+                              width: 34, height: 34, objectFit: 'contain',
+                              filter: !dark && (m.id === 'gpt-4o' || m.id === 'grok-4') ? 'brightness(0)' : undefined,
+                            }}
+                            onError={e2 => { (e2.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         </div>
                       )}
 
@@ -1745,7 +1741,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
           </div>
 
           {/* ── Continue button ── */}
-          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: '1px solid #3a3a3a' }}>
+          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${dark ? '#3a3a3a' : '#e0e0e0'}` }}>
             <button
               onClick={() => {
                 if (pickerSelected !== null && modelPickerOpen !== null) {
