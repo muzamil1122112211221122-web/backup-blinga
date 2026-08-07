@@ -205,7 +205,7 @@ export function playTabClick() {
   try {
     if (!uiClickAudio) {
       uiClickAudio = new Audio(UI_CLICK_AUDIO_FALLBACK);
-      uiClickAudio.volume = 0.85;
+      uiClickAudio.volume = 1.0;
       uiClickAudio.preload = 'auto';
     }
     uiClickAudio.currentTime = 0;
@@ -239,7 +239,7 @@ function playWebAudioClick() {
 
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.25, t + 0.005); // audible 5ms attack
+      gain.gain.linearRampToValueAtTime(0.7, t + 0.005); // clearly audible 5ms attack
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.095); // rounded 95ms decay
 
       osc.connect(gain);
