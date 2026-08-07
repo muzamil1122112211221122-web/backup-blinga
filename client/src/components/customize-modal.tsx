@@ -567,6 +567,7 @@ export function CustomizeModal({
     setUiSoundsEnabled(enabled);
     setIsDirty(true);
     localStorage.setItem('uiSoundsEnabled', enabled ? 'true' : 'false');
+    if (enabled) playTabClick();
   };
 
   const handleAppFontChange = (val: string) => {
