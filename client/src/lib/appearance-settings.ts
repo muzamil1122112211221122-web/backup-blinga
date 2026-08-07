@@ -200,22 +200,22 @@ export function playTabClick() {
     if (ctx.state === 'suspended') void ctx.resume();
     const t = ctx.currentTime;
 
-    // A small downward pitch movement gives this a tactile "tap" character
-    // instead of the old hard, static beep.
+    // Keep the pitch in the audible UI-tap range while adding a small
+    // downward movement so it feels tactile instead of like a static beep.
     const osc = ctx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(265, t);
-    osc.frequency.exponentialRampToValueAtTime(175, t + 0.095);
+    osc.frequency.setValueAtTime(420, t);
+    osc.frequency.exponentialRampToValueAtTime(255, t + 0.085);
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.12, t + 0.006); // gentle 6ms attack
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.105); // rounded 105ms decay
+    gain.gain.linearRampToValueAtTime(0.25, t + 0.005); // audible 5ms attack
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.095); // rounded 95ms decay
 
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(t);
-    osc.stop(t + 0.11);
+    osc.stop(t + 0.1);
   } catch (_) { /* ignore in environments without AudioContext */ }
 }
 
