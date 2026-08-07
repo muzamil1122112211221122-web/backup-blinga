@@ -186,30 +186,36 @@ export function applyUiAccent() {
 }
 
 // ─── UI Click Sound ────────────────────────────────────────────────────────────
-/** Play a crisp UI click sound for pill-bar tab switches. Respects the uiSoundsEnabled setting. */
+let uiClickAudioContext: AudioContext | null = null;
+
+/** Play a soft, tactile UI click for pill-bar tab switches. */
 export function playTabClick() {
   if (localStorage.getItem('uiSoundsEnabled') === 'false') return;
   try {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    // Keep one context alive so rapid tab changes do not create a stack of
+    // competing audio contexts (which can make short sounds feel clipped).
+    const ctx = uiClickAudioContext ?? (uiClickAudioContext = new AudioCtx());
+    if (ctx.state === 'suspended') void ctx.resume();
     const t = ctx.currentTime;
 
-    // Simple warm sine pop — no sweep, no noise, just clean
+    // A small downward pitch movement gives this a tactile "tap" character
+    // instead of the old hard, static beep.
     const osc = ctx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = 380;
+    osc.frequency.setValueAtTime(265, t);
+    osc.frequency.exponentialRampToValueAtTime(175, t + 0.095);
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(0.38, t + 0.001); // 1ms attack
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06); // 60ms decay
+    gain.gain.linearRampToValueAtTime(0.12, t + 0.006); // gentle 6ms attack
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.105); // rounded 105ms decay
 
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start(t);
-    osc.stop(t + 0.065);
-    osc.onended = () => ctx.close();
+    osc.stop(t + 0.11);
   } catch (_) { /* ignore in environments without AudioContext */ }
 }
 

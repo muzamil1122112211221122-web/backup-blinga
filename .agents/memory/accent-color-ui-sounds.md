@@ -15,7 +15,7 @@ description: How accent color and tab-click sounds are wired throughout the app.
 **Why:** CSS variable approach avoids prop-drilling through every Switch/bubble; class on body lets us scope all overrides without changing component internals.
 
 ## UI Sounds
-- `playTabClick()` in appearance-settings.ts uses Web Audio API (no external file) — sine wave chirp ~80ms.
+- `playTabClick()` in appearance-settings.ts uses Web Audio API (no external file) — a soft downward-sweeping sine tap with a gentle ~105ms decay and shared audio context.
 - Respects `localStorage.getItem('uiSoundsEnabled') === 'false'` (default: enabled).
 - Hooked to: main tab bar (changeTab), Nomad Multi/Ultimatum buttons, Fius Minds category pills, Games leaderboard filter, Settings sidebar tabs, Theme SlidingPillSelector, Message bar style SlidingPillSelector.
 - SlidingPillSelector got a `withSound` boolean prop — plays when selection changes.
