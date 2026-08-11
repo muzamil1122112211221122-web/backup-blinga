@@ -1848,6 +1848,9 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const { usage: planUsage } = useUsage();
   const isUltimatePlan = planUsage?.plan === "ultimate";
   const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark" || (
+    theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
   const [activeSection, setActiveSection] = useState<SettingsSection>("account");
   const [closing, setClosing] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -2100,7 +2103,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={showExitDialog ? undefined : stableHandleClose}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm"
+      <div className="absolute inset-0 bg-black/55"
         style={{ animation: `${closing ? "overlayExit 0.3s" : "overlayEnter 0.38s"} cubic-bezier(0.23,1,0.32,1) both` }} />
       <div ref={settingsDrag.sheetRef}
         className="relative bg-background rounded-t-[24px] flex flex-col overflow-hidden"
@@ -2682,7 +2685,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
 // ─── Welcome Cards (randomised each mount) ────────────────────────────────────
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport, replyQuote, onClearReply }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport, replyQuote, onClearReply, currentConvId }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
@@ -2693,8 +2696,10 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
   ownMode?: boolean; onSwitchTab?: (tab: MobileTab) => void;
   centerViewport?: boolean;
   replyQuote?: string | null; onClearReply?: () => void;
+  currentConvId?: string;
 }) {
   const { resolvedTheme } = useTheme();
+  const welcomeGreetingM = useMemo(() => pickGreetingIndexM(currentConvId), [currentConvId]);
   const endRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [expandImg, setExpandImg] = useState<string | null>(null);
@@ -3687,7 +3692,6 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (isFreePlan) setAskModelRaw('fius-lite');
   }, [isFreePlan]);
   const [currentConvId, setCurrentConvId] = useState<string | undefined>(() => localStorage.getItem('currentProjectId') || undefined);
-  const welcomeGreetingM = useMemo(() => pickGreetingIndexM(currentConvId), [currentConvId]);
   const askAbortRef = useRef<AbortController | null>(null);
 
   // Studio
@@ -4305,6 +4309,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 onCancelDocumentMode={() => setAskDocumentMode(false)}
                 onEducation={() => setEducationOpen(true)} {...voiceHandlers}
                 ownMode={ownMode} onSwitchTab={changeMobileTab}
+                 currentConvId={currentConvId}
                 replyQuote={askReplyQuote}
                 onClearReply={() => { setAskReplyQuote(null); setAskReplyBtnPos(null); }} />
             </div>
