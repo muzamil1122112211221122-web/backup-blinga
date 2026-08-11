@@ -1,8 +1,20 @@
+import crispClickSound from "@assets/freesound_gamestudio-click-1-384917_1786134700421.mp3";
+import normalClickSound from "@assets/audley_fergine-ui-mouse-click-366460_1786134700421.mp3";
+
 export const DEFAULT_GLOW_ACCENT = "blue";
 export const DEFAULT_APP_FONT = "google-sans-flex";
 export const DEFAULT_LOGO_STYLE = "current";
 export const DEFAULT_AUTO_ROTATE_LOGO = false;
+export const DEFAULT_UI_SOUND_STYLE = "crisp";
 const GLOW_DEFAULT_MIGRATION_KEY = "glowAccentColorDefaultMigrated";
+
+export const UI_SOUND_STYLE_OPTIONS = [
+  { value: "crisp", label: "Crisp", description: "Freesound click" },
+  { value: "normal", label: "Normal", description: "Standard mouse click" },
+] as const;
+
+export type UiSoundStyle = (typeof UI_SOUND_STYLE_OPTIONS)[number]["value"];
+const UI_SOUND_STYLE_KEY = "uiSoundStyle";
 
 export const LOGO_STYLE_OPTIONS = [
   { value: "current", label: "Current Fius Logo" },
