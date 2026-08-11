@@ -304,6 +304,7 @@ function SpotlightSearch({
 interface SidebarProps {
   isOpen: boolean;
   openMode?: 'mini' | 'full';
+  forceFull?: boolean;
   onModeChange?: (mode: 'mini' | 'full') => void;
   onClose: () => void;
   onLogout: () => void;
@@ -347,6 +348,7 @@ interface SidebarProps {
 export function Sidebar({
   isOpen,
   openMode = 'mini',
+  forceFull = false,
   onModeChange,
   onClose,
   onLogout,
@@ -375,7 +377,7 @@ export function Sidebar({
   closeButtonPosition = 'top',
 }: SidebarProps) {
   const { theme } = useTheme();
-  const [isMini, setIsMini] = useState(true);
+  const [isMini, setIsMini] = useState(!forceFull);
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState<string>('');
@@ -418,9 +420,9 @@ export function Sidebar({
       setIsMini(true);
       setSpotlightOpen(false);
     } else {
-      setIsMini(openMode !== 'full');
+      setIsMini(forceFull ? false : openMode !== 'full');
     }
-  }, [isOpen, openMode]);
+  }, [isOpen, openMode, forceFull]);
 
   const openSpotlight = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -433,6 +435,10 @@ export function Sidebar({
   }, [isMini, onModeChange]);
 
   const closeSidebarStage = () => {
+    if (forceFull) {
+      onClose();
+      return;
+    }
     if (isMini) {
       onClose();
     } else {
@@ -705,7 +711,7 @@ export function Sidebar({
               </button>
               <button
                 type="button"
-                aria-label="Minimize sidebar"
+                aria-label={forceFull ? "Close sidebar" : "Minimize sidebar"}
                 onClick={closeSidebarStage}
                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
               >

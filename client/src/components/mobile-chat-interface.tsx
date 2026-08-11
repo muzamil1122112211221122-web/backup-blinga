@@ -2364,6 +2364,13 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                           onCheckedChange={() => { setLocalToggles(p => ({ ...p, [item.key]: !p[item.key as keyof typeof p] })); markDirty(); }} />
                       </div>
                     ))}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-[12.5px] font-medium text-foreground">Tabs in Sidebar</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Mobile navigation is always kept in the sidebar</p>
+                      </div>
+                      <Switch checked disabled aria-label="Tabs in Sidebar is always enabled on mobile" />
+                    </div>
                   </div>
                 </div>
 
@@ -2615,7 +2622,7 @@ const TAB_ICONS: Record<string, { dark: string; light: string; size?: string }> 
 };
 
 // ─── PC-style Header ──────────────────────────────────────────────────────────
-function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMode }: { activeTab: MobileTab; onTabChange: (t: MobileTab) => void; onMenuClick: () => void; ownMode?: boolean; onToggleOwnMode?: () => void; }) {
+function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMode, tabsInSidebar = true }: { activeTab: MobileTab; onTabChange: (t: MobileTab) => void; onMenuClick: () => void; ownMode?: boolean; onToggleOwnMode?: () => void; tabsInSidebar?: boolean; }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const navRef = useRef<HTMLDivElement>(null);
@@ -2627,7 +2634,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
     return () => window.removeEventListener("storage", h);
   }, []);
   const showTabIcons = pcToggles.topbarTabIcons ?? true;
-  const tabsHidden = pcToggles.tabsInSidebar ?? false;
+  const tabsHidden = tabsInSidebar;
   const glossy = pcToggles.glossyOutline ?? true;
 
   // Only track pill when tabs are visible
@@ -3654,8 +3661,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
   const [tab, setTab] = useState<MobileTab>("ask");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarOpenMode, setSidebarOpenMode] = useState<'mini' | 'full'>('mini');
-  const centerEmptyBars = sidebarOpen && sidebarOpenMode === 'mini';
+  const centerEmptyBars = false;
   const minimalMode = false;
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -3668,9 +3674,6 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [ownMode, setOwnMode] = useState(false);
   const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() => localStorage.getItem("profilePicture") || undefined);
-  const [mobileSettingToggles, setMobileSettingToggles] = useState(() => { try { const s = localStorage.getItem("settingsToggles"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
-  // sync mobile settings when they change
-  useEffect(() => { const handler = () => { try { const s = localStorage.getItem("settingsToggles"); setMobileSettingToggles(s ? JSON.parse(s) : {}); } catch {} }; window.addEventListener("storage", handler); return () => window.removeEventListener("storage", handler); }, []);
 
   // Ask
   const [askMsgs, setAskMsgs] = useState<Msg[]>([]);
@@ -4147,7 +4150,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     <MinimalModeCtx.Provider value={minimalMode}>
     <ErrorBoundary>
       <TooltipProvider delayDuration={400}>
-        <div className={`fixed inset-0 bg-background flex flex-col overflow-hidden transition-[padding] duration-300 ${sidebarOpen && sidebarOpenMode === 'mini' ? 'md:pl-[76px]' : ''}`}
+        <div className="fixed inset-0 bg-background flex flex-col overflow-hidden"
           style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
 
           {isFreePlanExhausted && (
@@ -4165,25 +4168,25 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
           <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
 
           <Sidebar
-            isOpen={sidebarOpen} openMode={sidebarOpenMode} onModeChange={setSidebarOpenMode} onClose={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); }} onLogout={handleLogout}
+            isOpen={sidebarOpen} forceFull onClose={() => setSidebarOpen(false)} onLogout={handleLogout}
             projects={projects} currentProjectId={currentConvId}
-            onProjectSelect={id => { handleSelectConv(id); setSidebarOpen(false); setSidebarOpenMode('mini'); }}
-            onNewProject={() => { handleNewChat(); setSidebarOpen(false); setSidebarOpenMode('mini'); }}
+            onProjectSelect={id => { handleSelectConv(id); setSidebarOpen(false); }}
+            onNewProject={() => { handleNewChat(); setSidebarOpen(false); }}
             onDeleteProject={handleDeleteConv}
             onEditProject={async (id, title) => { try { await apiRequest("PATCH", `/api/conversations/${id}`, { title }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); } catch { } }}
             onUpdateAiRole={async (id, aiRole) => { try { await apiRequest("PATCH", `/api/conversations/${id}`, { aiRole }); queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }); } catch { } }}
             onOpenSettings={() => setSettingsOpen(true)}
-            onVoiceClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); openVoiceMode(); }}
-            onImagineClick={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("imagine"); }}
-            onTabChange={(t) => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab(t as MobileTab); }}
+            onVoiceClick={() => { setSidebarOpen(false); openVoiceMode(); }}
+            onImagineClick={() => { setSidebarOpen(false); changeMobileTab("imagine"); }}
+            onTabChange={(t) => { setSidebarOpen(false); changeMobileTab(t as MobileTab); }}
             activeTab={tab}
-            tabsInSidebar={mobileSettingToggles.tabsInSidebar ?? false}
+            tabsInSidebar
             user={user ? { email: user.email, username: user.username } : undefined}
             onUserRename={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
             profilePicture={profilePicture}
             onProfilePictureChange={d => { setProfilePicture(d); localStorage.setItem("profilePicture", d); }}
             nomadHistory={nomadHistSessions.map(s => ({ id: s.id, ts: s.ts, mode: s.mode, preview: s.preview }))}
-            onNomadHistorySelect={() => { setSidebarOpen(false); setSidebarOpenMode('mini'); changeMobileTab("nomad"); }}
+            onNomadHistorySelect={() => { setSidebarOpen(false); changeMobileTab("nomad"); }}
           />
 
           <VoiceModeModal isOpen={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} />
@@ -4245,7 +4248,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           {/* Header + model strip wrapped so we can add the bottom fade */}
           <div className="relative flex-shrink-0">
-            <PCHeader activeTab={tab} onTabChange={changeMobileTab} onMenuClick={() => { setSidebarOpenMode('full'); setSidebarOpen(true); }} ownMode={ownMode} onToggleOwnMode={handleToggleOwlMode} />
+            <PCHeader activeTab={tab} onTabChange={changeMobileTab} onMenuClick={() => setSidebarOpen(true)} ownMode={ownMode} onToggleOwnMode={handleToggleOwlMode} tabsInSidebar />
 
             {/* Model strip — top-left under nav bar, only on Ask tab */}
             {tab === "ask" && (
