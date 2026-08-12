@@ -905,11 +905,17 @@
 
 /* Onboarding fields keep one intentional outer border. The global app styles
    also touch inputs, so reset their native/legacy inner border explicitly. */
-.fius-onboarding-input,
-.fius-country-picker-input {
+#root .fius-onboarding-input,
+#root .fius-country-picker-input,
+body .fius-onboarding-input,
+body .fius-country-picker-input {
   border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
   outline: 0 !important;
   box-shadow: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
