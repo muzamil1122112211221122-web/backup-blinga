@@ -657,7 +657,7 @@ export function Sidebar({
       />
 
       <div
-        className={`fixed top-0 left-0 h-full ${isMini ? 'w-[76px]' : 'w-72'} bg-background text-zinc-900 dark:text-zinc-100 z-50 flex flex-col transition-[width,transform] duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full ${isMini ? 'w-[76px]' : 'w-72'} ${forceFull ? (isOpen ? 'mobile-sidebar-open' : 'mobile-sidebar-closed') : ''} bg-background text-zinc-900 dark:text-zinc-100 z-50 flex flex-col transition-[width,transform] duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ pointerEvents: 'auto' }}
         onMouseEnter={() => isMini && setIsLogoHovered(true)}
         onMouseLeave={() => setIsLogoHovered(false)}
@@ -1144,8 +1144,6 @@ export function Sidebar({
                     bg-transparent hover:bg-zinc-100/80 dark:hover:bg-white/[0.05]
                     transition-colors duration-200"
                   aria-label="Expand account menu"
-                  whileTap={{ scale: 0.985 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 >
                   {profilePicture ? (
                     <img src={profilePicture} alt="Profile" className="h-8 w-8 rounded-full flex-shrink-0 object-cover shadow" />

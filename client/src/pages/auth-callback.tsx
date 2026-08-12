@@ -53,8 +53,11 @@ export default function AuthCallback() {
           }
         }
 
-        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        setLocation("/chat", { replace: true });
+         // The session is now in Supabase localStorage. Let the onboarding
+         // screen fetch the profile with the fresh bearer token instead of
+         // racing an immediate refetch here.
+         queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
+         setLocation("/start", { replace: true });
       } catch (err: any) {
         console.error("[auth-callback] unexpected error:", err);
         setError(err?.message || "Something went wrong while signing you in.");

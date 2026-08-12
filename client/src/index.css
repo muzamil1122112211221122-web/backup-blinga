@@ -76,11 +76,9 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: var(--fius-app-font, 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif);
-    /* geometricPrecision = SVG-level rendering: glyphs are pure vector curves,
-       zero pixel-grid hinting → smooth at every size and zoom level.
-       auto smoothing: lets the browser use subpixel antialiasing which keeps
-       stroke weight natural (antialiased alone thins strokes → slim text).  */
-    text-rendering: geometricPrecision;
+    /* Use the browser's legible text renderer instead of forcing SVG-style
+       geometricPrecision, which can rasterize mobile UI text softly. */
+    text-rendering: optimizeLegibility;
     font-optical-sizing: auto;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     font-kerning: normal;
@@ -90,7 +88,7 @@
   }
 
   input, textarea, select {
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
     font-optical-sizing: auto;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     -webkit-font-smoothing: auto;
@@ -100,7 +98,7 @@
   /* Code blocks — monospace chars must stay distinct, no ligatures */
   code, pre, kbd, samp {
     font-feature-settings: 'kern' 0, 'liga' 0, 'calt' 0;
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: auto;
     -moz-osx-font-smoothing: auto;
   }
@@ -777,13 +775,12 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      FIUS TEXT SYSTEM — SVG-level sharpness across the entire app.
-     geometricPrecision = pure vector curves, no pixel-grid hinting,
-     smooth at every size and zoom level — exactly like SVG text.
+     Keep text legible without forcing a soft SVG-style rasterized layer.
      ═══════════════════════════════════════════════════════════════════ */
 
   /* ── Universal: every non-code element gets SVG-mode rendering ── */
   *:not(code):not(pre):not(kbd):not(samp) {
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     font-kerning: normal;
     font-optical-sizing: auto;
@@ -794,7 +791,7 @@
   /* ── AI message prose ── */
   .prose {
     font-optical-sizing: auto;
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   }
 
@@ -811,7 +808,7 @@
   .message-input,
   .dark .message-input {
     font-optical-sizing: auto;
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
   }
 
@@ -845,6 +842,77 @@
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fius-onboarding-enter {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fius-picker-backdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fius-picker-panel {
+  from { opacity: 0; transform: translateY(18px) scale(0.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fius-picker-row {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fius-logo-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.025); }
+}
+
+.fius-onboarding-enter {
+  animation: fius-onboarding-enter 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fius-logo-breathe {
+  animation: fius-logo-breathe 4.8s ease-in-out infinite;
+}
+
+.fius-account-icon {
+  animation: fius-onboarding-enter 0.7s 0.12s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fius-progress-sweep {
+  animation: fius-progress-sweep 1.2s 0.25s cubic-bezier(0.23, 1, 0.32, 1) both;
+  transform-origin: left;
+}
+
+@keyframes fius-progress-sweep {
+  from { transform: scaleX(0.18); opacity: 0.4; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+.fius-picker-backdrop {
+  animation: fius-picker-backdrop 0.22s ease-out both;
+}
+
+.fius-picker-panel {
+  animation: fius-picker-panel 0.42s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.fius-picker-row {
+  animation: fius-picker-row 0.28s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fius-onboarding-enter,
+  .fius-logo-breathe,
+  .fius-account-icon,
+  .fius-progress-sweep,
+  .fius-picker-backdrop,
+  .fius-picker-panel,
+  .fius-picker-row {
+    animation: none !important;
+  }
 }
 
 @keyframes popup-slide-up {
@@ -1600,5 +1668,46 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
   #root * {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  /*
+   * Touch browsers can keep :hover active after a tap. Scale/3D hover states
+   * then promote the control (and sometimes its parent) to a filtered bitmap,
+   * making nearby text look blurred. Mobile has no useful hover affordance, so
+   * retain color/background feedback but keep the layout on one pixel grid.
+   */
+  #root button:hover,
+  #root a:hover,
+  #root button:active,
+  #root a:active,
+  #root [class*="hover:scale-"]:hover,
+  #root [class*="active:scale-"]:active,
+  #root [class*="group-hover:scale-"]:hover,
+  #root .group:hover [class*="group-hover:scale-"] {
+    transform: none !important;
+  }
+
+  #root [class*="hover:scale-"],
+  #root [class*="active:scale-"],
+  #root [class*="group-hover:scale-"] {
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+  }
+
+  /* The full mobile sidebar is already in its final position when open. */
+  #root .mobile-sidebar-open {
+    transform: none !important;
+    transition-property: width !important;
+  }
+
+  /* Settings is intentionally a stable, non-composited surface. */
+  #root .mobile-settings-sheet,
+  #root .mobile-settings-sheet * {
+    backface-visibility: visible !important;
+    perspective: none !important;
+    will-change: auto !important;
+  }
+
+  #root .mobile-settings-sheet [class*="animate-"] {
+    animation: none !important;
   }
 }

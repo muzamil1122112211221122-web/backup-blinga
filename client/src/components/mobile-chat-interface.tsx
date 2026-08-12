@@ -3431,9 +3431,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
                       {[...MOBILE_STUDIO_TEMPLATES.slice(0,17), ...MOBILE_STUDIO_TEMPLATES.slice(0,17)].map((t, i) => (
                         <button key={`m1-${i}`} onClick={() => setInput(t.prompt)}
                           className="group relative shrink-0 overflow-hidden text-left"
-                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(-5deg) rotateX(3deg) translateY(-3px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 32px rgba(0,0,0,0.16)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.07)'; }}>
+                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0' }}>
                           <img src={t.image} alt={t.label} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
                           <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
                             <div className="px-1.5 pb-1.5"><div className="rounded-full py-0.5 text-center text-[8px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)' }}>✦ Try</div></div>
@@ -3451,9 +3449,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
                       {[...MOBILE_STUDIO_TEMPLATES.slice(17), ...MOBILE_STUDIO_TEMPLATES.slice(17)].map((t, i) => (
                         <button key={`m2-${i}`} onClick={() => setInput(t.prompt)}
                           className="group relative shrink-0 overflow-hidden text-left"
-                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0', transform: 'perspective(600px)', transition: 'transform 0.3s ease, box-shadow 0.3s ease' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px) rotateY(5deg) rotateX(-3deg) translateY(-3px) scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 14px 32px rgba(0,0,0,0.16)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'perspective(600px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.07)'; }}>
+                          style={{ width: 82, height: 112, borderRadius: 14, border: '1.5px solid rgba(0,0,0,0.08)', boxShadow: '0 4px 12px rgba(0,0,0,0.07)', background: '#f0f0f0' }}>
                           <img src={t.image} alt={t.label} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" loading="lazy" />
                           <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)' }}>
                             <div className="px-1.5 pb-1.5"><div className="rounded-full py-0.5 text-center text-[8px] font-semibold text-white" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)' }}>✦ Try</div></div>

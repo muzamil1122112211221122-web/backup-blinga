@@ -172,6 +172,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/user/profile', requireAuth, async (req: any, res) => {
+    try {
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      const phoneNumber = typeof req.body?.phoneNumber === 'string' ? req.body.phoneNumber.trim() : '';
+      const phoneCountryCode = typeof req.body?.phoneCountryCode === 'string' ? req.body.phoneCountryCode.trim() : '';
+
+      if (!name) return res.status(400).json({ message: 'Please enter your name.' });
+      if (!/^\+[1-9]\d{6,14}$/.test(phoneNumber)) {
+        return res.status(400).json({ message: 'Please enter a valid phone number.' });
+      }
+      if (!/^\+\d{1,7}$/.test(phoneCountryCode)) {
+        return res.status(400).json({ message: 'Please choose a valid country code.' });
+      }
+
+      const existing = await storage.getUserByPhone(phoneNumber);
+      if (existing && existing.id !== req.user.id) {
+        return res.status(409).json({ message: 'This phone number is already linked to another account.' });
+      }
+
+      const updated = await storage.updateUser(req.user.id, {
+        username: name,
+        displayName: name,
+        phoneNumber,
+        phoneCountryCode,
+      });
+      res.json(updated || req.user);
+    } catch (error: any) {
+      // The database constraint is the final protection against two requests
+      // racing to claim the same number.
+      if (error?.code === '23505') {
+        return res.status(409).json({ message: 'This phone number is already linked to another account.' });
+      }
+      console.error('[profile] save failed:', error);
+      res.status(500).json({ message: 'Could not save your profile. Please try again.' });
+    }
+  });
+
   // Conversation routes
   app.get('/api/conversations', requireAuth, async (req, res) => {
     try {

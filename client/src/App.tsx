@@ -62,7 +62,7 @@ function Router() {
   }, []);
 
   // ── Auth query — only fires once session is restored ──────────────────────
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading } = useQuery<{ phoneNumber?: string | null } | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
     enabled: sessionReady,
@@ -74,7 +74,7 @@ function Router() {
     if (isLoading || !sessionReady || redirected.current) return;
     redirected.current = true;
     if (user && (location === "/" || location === "/start")) {
-      navigate("/chat", { replace: true });
+      navigate(user.phoneNumber ? "/chat" : "/start", { replace: true });
     }
     if (!user && location === "/chat") {
       navigate("/start", { replace: true });

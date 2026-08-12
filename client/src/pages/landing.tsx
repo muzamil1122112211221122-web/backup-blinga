@@ -242,7 +242,7 @@ export default function Landing() {
             ))}
           </nav>
           <Button onClick={go}
-            className="font-bold px-5 py-2 text-sm rounded-full transition-all hover:scale-105 shadow-sm border-0 bg-zinc-900 text-white hover:bg-zinc-800">
+            className="font-bold px-5 py-2 text-sm rounded-full transition-colors shadow-sm border-0 bg-zinc-900 text-white hover:bg-zinc-800">
             Get Started
           </Button>
         </header>
@@ -264,7 +264,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button onClick={go} size="lg"
-              className="font-bold px-10 py-6 text-lg rounded-full transition-all hover:scale-105 shadow-lg border-0 bg-zinc-900 text-white hover:bg-zinc-800">
+              className="font-bold px-10 py-6 text-lg rounded-full transition-colors shadow-lg border-0 bg-zinc-900 text-white hover:bg-zinc-800">
               Begin Experience
             </Button>
             <button onClick={() => scrollTo("plans", "plans")}

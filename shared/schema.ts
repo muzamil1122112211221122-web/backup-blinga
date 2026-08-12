@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
+  phoneNumber: text("phone_number").unique(),
+  phoneCountryCode: varchar("phone_country_code", { length: 8 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

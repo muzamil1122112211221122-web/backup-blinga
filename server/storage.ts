@@ -9,6 +9,7 @@ export interface IStorage {
   // User operations — `id` is the Supabase auth user UUID
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phoneNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   upsertUser(profile: InsertUser): Promise<User>;
@@ -39,9 +40,18 @@ export class MemStorage implements IStorage {
 
   async getUser(id: string) { return this.users.get(id); }
   async getUserByEmail(email: string) { return Array.from(this.users.values()).find(u => u.email === email); }
+  async getUserByPhone(phoneNumber: string) { return Array.from(this.users.values()).find(u => u.phoneNumber === phoneNumber); }
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = insertUser.id || randomUUID();
-    const user: User = { displayName: null, avatarUrl: null, ...insertUser, id, createdAt: new Date() };
+    const user: User = {
+      displayName: null,
+      avatarUrl: null,
+      ...insertUser,
+      id,
+      createdAt: new Date(),
+      phoneNumber: insertUser.phoneNumber ?? null,
+      phoneCountryCode: insertUser.phoneCountryCode ?? null,
+    };
     this.users.set(id, user);
     return user;
   }
@@ -115,6 +125,13 @@ export class DatabaseStorage implements IStorage {
     const d = db();
     if (!d) return undefined;
     const [user] = await d.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
+    const d = db();
+    if (!d) return undefined;
+    const [user] = await d.select().from(users).where(eq(users.phoneNumber, phoneNumber));
     return user || undefined;
   }
 
