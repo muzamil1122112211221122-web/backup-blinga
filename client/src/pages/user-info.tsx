@@ -181,7 +181,7 @@ function ProfileSetup({ user }: { user: UserProfile }) {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder="What should we call you?"
-                    className="min-w-0 flex-1 bg-transparent text-base font-medium text-zinc-900 outline-none placeholder:text-zinc-300"
+                    className="fius-onboarding-input min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-zinc-900 outline-none shadow-none placeholder:text-zinc-300"
                   />
                 </div>
                 {nameError ? <p className="mt-2 px-1 text-xs font-medium text-red-600">{nameError}</p> : <p className="mt-2 px-1 text-xs text-zinc-400">Use any name you like.</p>}

@@ -903,6 +903,15 @@
   animation: fius-picker-row 0.28s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
+/* Onboarding fields keep one intentional outer border. The global app styles
+   also touch inputs, so reset their native/legacy inner border explicitly. */
+.fius-onboarding-input,
+.fius-country-picker-input {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fius-onboarding-enter,
   .fius-logo-breathe,
@@ -1668,6 +1677,13 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
   #root * {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  /* The country picker is portaled to body, but keep this exception for
+     preview/browser shells that still place the overlay under #root. */
+  #root .fius-picker-backdrop {
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
   }
 
   /*

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { COUNTRIES, DEFAULT_COUNTRY, flagUrl, formatNationalNumber, type Country } from "@/lib/countries";
 
@@ -69,7 +70,7 @@ export function CountryPhoneField({
           <span className="text-xs font-semibold tabular-nums text-zinc-600">{country.dialCode}</span>
           <ChevronDown className="ml-auto h-3.5 w-3.5 text-zinc-400" />
         </button>
-        <input
+          <input
           inputMode="tel"
           autoComplete="tel-national"
           aria-label={`${country.name} phone number`}
@@ -77,13 +78,13 @@ export function CountryPhoneField({
           disabled={disabled}
           onChange={(event) => onValueChange(event.target.value.replace(/\D/g, "").slice(0, country.maxDigits))}
           placeholder={country.placeholder}
-          className="min-w-0 flex-1 bg-transparent px-4 text-base font-medium tracking-[0.02em] text-zinc-900 outline-none placeholder:text-zinc-300 disabled:opacity-50"
+          className="fius-onboarding-input min-w-0 flex-1 border-0 bg-transparent px-4 text-base font-medium tracking-[0.02em] text-zinc-900 outline-none shadow-none placeholder:text-zinc-300 disabled:opacity-50"
         />
       </div>
       {error && <p className="px-1 text-xs font-medium text-red-600">{error}</p>}
 
-      {countryOpen && (
-        <div className="fius-picker-backdrop fixed inset-0 z-[300] flex items-end justify-center bg-zinc-900/30 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Choose your country">
+      {countryOpen && createPortal(
+        <div className="fius-picker-backdrop fixed inset-0 z-[300] flex items-end justify-center bg-zinc-900/30 p-0 backdrop-blur-[10px] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Choose your country">
           <button type="button" aria-label="Close country picker" className="absolute inset-0 cursor-default" onClick={() => setCountryOpen(false)} />
           <div className="fius-picker-panel relative flex max-h-[min(680px,88vh)] w-full max-w-md flex-col overflow-hidden rounded-t-[34px] border border-zinc-200 bg-white shadow-[0_28px_90px_rgba(0,0,0,0.2)] sm:rounded-[34px]">
             <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
@@ -98,7 +99,7 @@ export function CountryPhoneField({
             <div className="border-b border-zinc-100 px-5 py-3">
               <div className="flex h-11 items-center gap-2 rounded-xl bg-zinc-50 px-3 ring-1 ring-inset ring-zinc-200 focus-within:ring-zinc-400">
                 <Search className="h-4 w-4 text-zinc-400" />
-                <input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search country or code" className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400" />
+                <input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search country or code" className="fius-country-picker-input min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-900 outline-none shadow-none placeholder:text-zinc-400" />
               </div>
             </div>
             <div className="overflow-y-auto p-2">
@@ -119,7 +120,8 @@ export function CountryPhoneField({
               {!filteredCountries.length && <p className="px-3 py-10 text-center text-sm text-zinc-400">No country found.</p>}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
