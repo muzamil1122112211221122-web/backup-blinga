@@ -1405,8 +1405,8 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
   return (
     <>
-    <div className={`relative flex-shrink-0 ${centerViewport ? 'md:left-[-38px]' : ''} ${tab === 'imagine' ? 'bg-black' : hasMessages ? 'bg-background message-composer-with-messages' : ''}`}
-      style={{ zIndex: 1 }}
+    <div className={`fixed left-0 right-0 bottom-0 z-40 ${tab === 'imagine' ? 'bg-black' : hasMessages ? 'bg-background message-composer-with-messages' : ''}`}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       onDragEnter={handleComposeDragEnter} onDragOver={handleComposeDragOver} onDragLeave={handleComposeDragLeave} onDrop={handleComposeDrop}>
       {/* Fade feather — only when messages exist, fades content smoothly into the solid bar area */}
       {(hasMessages || tab === 'imagine') && (
@@ -1438,7 +1438,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
 
       {/* ── Function bar: centered icon + label buttons — hidden when "In Bar" style ── */}
       {showFnBar && fnBarStyle !== "message-bar" && (
-        <div className="macos-function-bar flex items-center justify-center mb-1.5 px-0.5" style={{ marginTop: fnBarStyle === 'pill' ? '38px' : '11px', transform: fnBarStyle === 'pill' ? 'translateX(-14px)' : undefined }}>
+        <div className="macos-function-bar flex items-center justify-center mb-1.5 px-0.5" style={{ marginTop: fnBarStyle === 'pill' ? '38px' : '11px' }}>
           {fnBarStyle === "pill" ? (
             /* ── Pill row style ── */
             <div className="flex items-center flex-wrap justify-center gap-2">
@@ -2106,11 +2106,19 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       <div className="absolute inset-0 bg-black/55"
         style={{ animation: `${closing ? "overlayExit 0.3s" : "overlayEnter 0.38s"} cubic-bezier(0.23,1,0.32,1) both` }} />
       <div ref={settingsDrag.sheetRef}
-        className="relative bg-background rounded-t-[24px] flex flex-col overflow-hidden"
+        className="mobile-settings-sheet relative bg-background rounded-t-[24px] flex flex-col overflow-hidden"
         style={{
           height: "78vh",
           boxShadow: "0 -10px 60px rgba(0,0,0,0.35)",
-          animation: `${closing ? "sheetExit 0.32s" : "sheetEnter 0.45s"} cubic-bezier(0.23,1,0.32,1) both`,
+          // Keep the settings UI on a stable, opaque layer. Transform/opacity
+          // animations rasterize mobile text and make the whole sheet look soft.
+          animation: "none",
+          opacity: 1,
+          transform: "none",
+          filter: "none",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
+          willChange: "auto",
         }}
         onClick={e => e.stopPropagation()}>
         {/* Drag handle — pill-shaped native drawer handle, ONLY this strip triggers drag-to-dismiss */}
@@ -2161,7 +2169,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
             </div>
           </div>
 
-          <div ref={settingsContentScrollRef} key={activeSection} className="flex-1 overflow-y-auto p-4 relative" style={{ animation: "fadeSlideIn 0.18s cubic-bezier(0.23,1,0.32,1) both" }}>
+          <div ref={settingsContentScrollRef} key={activeSection} className="mobile-settings-content flex-1 overflow-y-auto p-4 relative" style={{ opacity: 1, transform: "none", filter: "none", animation: "none" }}>
             {activeSection === "account" && (
               <div className="space-y-4">
                 {/* Hidden real file picker */}
@@ -2634,7 +2642,9 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
     return () => window.removeEventListener("storage", h);
   }, []);
   const showTabIcons = pcToggles.topbarTabIcons ?? true;
-  const tabsHidden = tabsInSidebar;
+  // Mobile navigation is always owned by the sidebar. Keep the top bar
+  // reserved for the menu and utility controls, regardless of saved settings.
+  const tabsHidden = true;
   const glossy = pcToggles.glossyOutline ?? true;
 
   // Only track pill when tabs are visible
@@ -2656,25 +2666,27 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
       <button onClick={onMenuClick} className="relative z-[46] w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         <Menu className="w-4 h-4" />
       </button>
-      <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-        <div ref={navRef} className="relative flex items-center min-w-max">
-          {!tabsHidden && pill.ready && (
-            <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, transition: "left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.35s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none", zIndex: 0 }}>
-              <div key={pill.left} style={{ position: "absolute", inset: 0, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.09)", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 4px rgba(0,0,0,0.08)", animation: "pill-squish 0.44s cubic-bezier(0.22,1,0.36,1) 0.32s both" }} />
-            </div>
-          )}
-          {!tabsHidden && TABS.map(({ id, label }, i) => {
-            const iconSet = TAB_ICONS[id];
-            return (
-              <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
-                className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === id ? "font-semibold" : ""}`}>
-                {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className={`${iconSet.size ?? 'w-3.5 h-3.5'} object-contain flex-shrink-0`} />}
-                {label}
-              </button>
-            );
-          })}
+      {!tabsHidden && (
+        <div className="flex-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          <div ref={navRef} className="relative flex items-center min-w-max">
+            {pill.ready && (
+              <div aria-hidden style={{ position: "absolute", left: pill.left, width: pill.width, top: 1, bottom: 1, transition: "left 0.42s cubic-bezier(0.34,1.56,0.64,1), width 0.35s cubic-bezier(0.34,1.56,0.64,1)", pointerEvents: "none", zIndex: 0 }}>
+                <div key={pill.left} style={{ position: "absolute", inset: 0, background: theme === "dark" ? "rgba(255,255,255,0.92)" : "rgba(0,0,0,0.09)", borderRadius: navR, boxShadow: theme === "dark" ? "0 1px 12px rgba(255,255,255,0.2)" : "0 1px 4px rgba(0,0,0,0.08)", animation: "pill-squish 0.44s cubic-bezier(0.22,1,0.36,1) 0.32s both" }} />
+              </div>
+            )}
+            {TABS.map(({ id, label }, i) => {
+              const iconSet = TAB_ICONS[id];
+              return (
+                <button key={id} ref={el => { tabRefs.current[i] = el; }} onClick={() => onTabChange(id)}
+                  className={`relative z-10 flex-shrink-0 text-[12px] px-2.5 py-1.5 rounded-2xl font-medium transition-colors duration-200 text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === id ? "font-semibold" : ""}`}>
+                  {showTabIcons && iconSet && <img src={resolvedTheme === 'dark' ? iconSet.dark : iconSet.light} alt="" className={`${iconSet.size ?? 'w-3.5 h-3.5'} object-contain flex-shrink-0`} />}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
       <button
         onClick={onToggleOwnMode}
         className={`w-8 h-8 flex items-center justify-center rounded-2xl transition-colors flex-shrink-0 border ${ownMode ? 'bg-zinc-900 dark:bg-zinc-700 border-zinc-500 shadow-md' : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'}`}
@@ -2777,7 +2789,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       )}
           <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 pt-3 pb-48" data-msgarea="true" style={{ overscrollBehavior: "contain", position: 'relative', zIndex: 1 }}>
         {messages.length === 0 && !isTyping ? (
-          <div className="flex flex-col items-center min-h-full text-center relative" style={{justifyContent: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 'flex-end' : 'flex-start', paddingTop: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 0 : 8, paddingBottom: askLocalToggles.hideFiusLogo && askLocalToggles.hideFlyWithUs ? 20 : 48, transition: 'padding 0.3s ease'}}>
+          <div className="flex flex-col items-center justify-center min-h-full text-center relative" style={{ paddingBottom: 48, transition: 'padding 0.3s ease' }}>
             {/* Radial glow — center spread */}
             <div className="pointer-events-none absolute inset-0 z-0" style={{
               background: getGlowGradient(glowAccentColor, resolvedTheme, true)
@@ -2786,13 +2798,13 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
             <div style={{position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center'}}>
               {/* Fius welcome */}
               <div style={{opacity:ownMode?0:1,transition:'opacity 0.4s ease',position:ownMode?'absolute':'relative',pointerEvents:ownMode?'none':'auto',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
-                {!(askLocalToggles.hideFiusLogo) && <FiusLogo size="xl" className="mt-2 mb-5 text-black dark:text-foreground" />}
+                <FiusLogo size="2xl" className="mb-6 text-black dark:text-foreground" />
                 <h2 className="text-[22px] font-normal text-foreground mb-0.5">
                   {user?.displayName || user?.username
                     ? WELCOME_GREETINGS_M[welcomeGreetingM](user.displayName || user.username!)
                     : "Welcome to Fius"}
                 </h2>
-                {!(askLocalToggles.hideFlyWithUs) && <p className="text-sm text-black dark:text-foreground mb-7">Fly With Us!</p>}
+                <p className="text-sm text-black dark:text-foreground mb-7">Fly With Us!</p>
               </div>
               {/* Owl Mode welcome */}
               <div style={{opacity:ownMode?1:0,transition:'opacity 0.4s ease',position:ownMode?'relative':'absolute',pointerEvents:ownMode?'auto':'none',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
@@ -2818,7 +2830,10 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           </>
         )}
       </div>
-      <div className={messages.length === 0 && !isTyping ? 'absolute left-0 right-0 z-20' : 'flex-shrink-0'} style={messages.length === 0 && !isTyping ? {top: 'calc(50% + 85px)', transform: 'translateY(-50%)'} : undefined}>
+      <div
+        className="absolute left-0 right-0 bottom-0 z-20"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         {documentModeActive && (
           <div className="flex items-center gap-2 mx-3 mb-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border border-indigo-500/30 text-[11px] font-medium text-indigo-600 dark:text-indigo-300 w-fit">
             <FileSignature className="w-3.5 h-3.5" />
@@ -2835,23 +2850,6 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
           onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
           hasMessages={messages.length > 0 || isTyping}
           replyQuote={replyQuote} onClearReply={onClearReply} />
-        {/* Quick action chips — shown in empty state below msg bar */}
-        {messages.length === 0 && !isTyping && (
-          <div className="flex items-center justify-center gap-1.5 mt-4 flex-wrap px-3">
-            {([
-              { label: 'Create Visuals', light: '/quick-visuals-light.png', dark: '/quick-visuals-dark.png', action: () => onSwitchTab?.('imagine') },
-              { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', action: () => setInput('Search the web for: ') },
-              { label: 'Create Files',   light: '/quick-files-light.png', dark: '/quick-files-dark.png', action: () => onDocumentMode?.() },
-              { label: 'Play Games',     light: '/quick-games-light.png', dark: '/quick-games-dark.png', action: () => onSwitchTab?.('games') },
-            ] as const).map(({ label, light, dark, action }) => (
-              <button key={label} onClick={action}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11.5px] font-medium transition-all active:scale-[0.96] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30">
-                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </>
   );
@@ -4246,44 +4244,15 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
             <NomadNotification onClose={handleNotifClose} />
           )}
 
-          {/* Header + model strip wrapped so we can add the bottom fade */}
-          <div className="relative flex-shrink-0">
-            <PCHeader activeTab={tab} onTabChange={changeMobileTab} onMenuClick={() => setSidebarOpen(true)} ownMode={ownMode} onToggleOwnMode={handleToggleOwlMode} tabsInSidebar />
-
-            {/* Model strip — top-left under nav bar, only on Ask tab */}
-            {tab === "ask" && (
-              <>
-                {topModelSheetOpen && (
-                  <ModelSheet models={ASK_MODELS} current={askModel}
-                    onSelect={m => { setAskModel(m); setTopModelSheetOpen(false); }}
-                    onClose={() => setTopModelSheetOpen(false)}
-                    isLocked={isChatModelLocked}
-                    onLockedSelect={() => toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" })} />
-                )}
-                <div className="flex items-center px-3 pt-1.5 pb-0.5 flex-shrink-0">
-                  <button onClick={() => setTopModelSheetOpen(true)}
-                    className="h-7 px-3 rounded-full flex items-center gap-1.5 bg-white/80 dark:bg-white/[0.08] border border-black/8 dark:border-white/10 shadow-sm transition-all active:scale-95">
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-zinc-400" />
-                    <span className="text-[11.5px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                      {ASK_MODELS.find(m => m.id === askModel)?.name || askModel}
-                    </span>
-                    <ChevronDown className="w-3 h-3 opacity-50 flex-shrink-0 text-zinc-500 dark:text-zinc-400" />
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Seamless bottom fade — matches message bar's top fade, same blur feather effect */}
-            <div
-              className="absolute left-0 right-0 bottom-0 pointer-events-none"
-              style={{
-                height: 28,
-                bottom: -28,
-                background: "linear-gradient(to bottom, var(--background) 0%, transparent 100%)",
-                zIndex: 5,
-              }}
-            />
-          </div>
+          {/* The mobile top navigation is intentionally removed. Tabs live only in the sidebar. */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+            className="fixed top-3 left-3 z-[46] w-10 h-10 flex items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm border border-border/60 backdrop-blur-sm transition-all active:scale-95"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <div className="absolute inset-0 flex flex-col" style={{ opacity: tab === "ask" ? 1 : 0, pointerEvents: tab === "ask" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
