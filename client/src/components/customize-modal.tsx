@@ -15,6 +15,7 @@ import { useUsage } from "@/hooks/use-usage";
 import { Crown, Sparkles as SparklesIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { UltimatePlanCard } from "@/components/ultimate-plan-card";
+import { COUNTRIES } from "@/lib/countries";
 import {
   APP_FONT_OPTIONS,
   DEFAULT_APP_FONT,
@@ -248,7 +249,14 @@ interface CustomizeModalProps {
   onSave: (preset: ChatPreset, customInstructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, aiOrder?: string[]) => void;
   toggles: any;
   aiOrder: string[];
-  user?: { email: string; username: string; displayName?: string | null } | null;
+  user?: {
+    email: string;
+    username: string;
+    displayName?: string | null;
+    phoneNumber?: string | null;
+    phoneCountryCode?: string | null;
+    phoneCountryIso?: string | null;
+  } | null;
   profilePicture?: string;
   onUserRename?: (name: string) => void;
   onProfilePictureChange?: (dataUrl: string) => void;
@@ -403,6 +411,8 @@ export function CustomizeModal({
   const [editName, setEditName] = useState('');
   const [previewPic, setPreviewPic] = useState('');
   const picInputRef = useRef<HTMLInputElement>(null);
+  const profileCountry = COUNTRIES.find(country => country.iso2 === user?.phoneCountryIso)
+    || COUNTRIES.find(country => country.dialCode === user?.phoneCountryCode);
 
   const [localToggles, setLocalToggles] = useState({
     wrapLines: true,
@@ -1521,6 +1531,18 @@ export function CustomizeModal({
                     Edit Profile
                   </Button>
                 </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Mobile number</p>
+                      <p className="mt-1 truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">{user?.phoneNumber || 'Not added'}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Country</p>
+                      <p className="mt-1 truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                        {profileCountry ? `${profileCountry.flag} ${profileCountry.name}` : 'Not added'}
+                      </p>
+                    </div>
+                  </div>
 
                 {showCustomizePanel && (
                   <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-4">

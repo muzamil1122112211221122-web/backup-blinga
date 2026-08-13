@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   phoneNumber: text("phone_number").unique(),
   phoneCountryCode: varchar("phone_country_code", { length: 8 }),
+  phoneCountryIso: varchar("phone_country_iso", { length: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

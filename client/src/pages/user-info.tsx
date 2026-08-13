@@ -17,6 +17,7 @@ type UserProfile = {
   avatarUrl?: string | null;
   phoneNumber?: string | null;
   phoneCountryCode?: string | null;
+  phoneCountryIso?: string | null;
 };
 
 function GoogleIcon() {
@@ -89,7 +90,8 @@ function LoadingCard() {
 
 function ProfileSetup({ user }: { user: UserProfile }) {
   const [, setLocation] = useLocation();
-  const savedCountry = COUNTRIES.find((country) => country.dialCode === user.phoneCountryCode);
+  const savedCountry = COUNTRIES.find((country) => country.iso2 === user.phoneCountryIso)
+    || COUNTRIES.find((country) => country.dialCode === user.phoneCountryCode);
   const [name, setName] = useState(user.displayName || user.username || "");
   const [country, setCountry] = useState<Country>(savedCountry || DEFAULT_COUNTRY);
   const [phoneDigits, setPhoneDigits] = useState(() => {
@@ -102,6 +104,12 @@ function ProfileSetup({ user }: { user: UserProfile }) {
   const [phoneError, setPhoneError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (user.phoneNumber) {
+      setLocation("/chat", { replace: true });
+    }
+  }, [setLocation, user.phoneNumber]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -130,6 +138,7 @@ function ProfileSetup({ user }: { user: UserProfile }) {
           name: cleanName,
           phoneNumber: toE164(country, cleanDigits),
           phoneCountryCode: country.dialCode,
+          phoneCountryIso: country.iso2,
         }),
       });
       const body = await response.json().catch(() => ({}));

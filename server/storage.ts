@@ -51,6 +51,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       phoneNumber: insertUser.phoneNumber ?? null,
       phoneCountryCode: insertUser.phoneCountryCode ?? null,
+      phoneCountryIso: insertUser.phoneCountryIso ?? null,
     };
     this.users.set(id, user);
     return user;
@@ -58,6 +59,16 @@ export class MemStorage implements IStorage {
   async updateUser(id: string, updates: Partial<User>) {
     const user = this.users.get(id);
     if (!user) return undefined;
+    if (updates.phoneNumber && updates.phoneNumber !== user.phoneNumber) {
+      const conflict = Array.from(this.users.values()).find(
+        candidate => candidate.id !== id && candidate.phoneNumber === updates.phoneNumber,
+      );
+      if (conflict) {
+        const error = new Error("Phone number is already linked to another account.");
+        (error as any).code = "23505";
+        throw error;
+      }
+    }
     const updated = { ...user, ...updates };
     this.users.set(id, updated);
     return updated;

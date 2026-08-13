@@ -1353,7 +1353,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [sidebarOpenMode, setSidebarOpenMode] = useState<'mini' | 'full'>('mini');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [projects, setProjects] = useState<Array<{id: string; title: string; createdAt: Date; hasNomad?: boolean}>>([]);
-  const [user, setUser] = useState<{email: string; username: string; displayName?: string | null} | null>(null);
+  const [user, setUser] = useState<{
+    email: string;
+    username: string;
+    displayName?: string | null;
+    phoneNumber?: string | null;
+    phoneCountryCode?: string | null;
+    phoneCountryIso?: string | null;
+  } | null>(null);
   const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
   const [input, setInput] = useState("");
   const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);

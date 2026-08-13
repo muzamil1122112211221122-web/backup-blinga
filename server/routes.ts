@@ -177,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
       const phoneNumber = typeof req.body?.phoneNumber === 'string' ? req.body.phoneNumber.trim() : '';
       const phoneCountryCode = typeof req.body?.phoneCountryCode === 'string' ? req.body.phoneCountryCode.trim() : '';
+      const phoneCountryIso = typeof req.body?.phoneCountryIso === 'string' ? req.body.phoneCountryIso.trim().toUpperCase() : '';
 
       if (!name) return res.status(400).json({ message: 'Please enter your name.' });
       if (!/^\+[1-9]\d{6,14}$/.test(phoneNumber)) {
@@ -184,6 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (!/^\+\d{1,7}$/.test(phoneCountryCode)) {
         return res.status(400).json({ message: 'Please choose a valid country code.' });
+      }
+      if (!/^[A-Z]{2}$/.test(phoneCountryIso)) {
+        return res.status(400).json({ message: 'Please choose a valid country.' });
       }
 
       const existing = await storage.getUserByPhone(phoneNumber);
@@ -196,6 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         displayName: name,
         phoneNumber,
         phoneCountryCode,
+        phoneCountryIso,
       });
       res.json(updated || req.user);
     } catch (error: any) {

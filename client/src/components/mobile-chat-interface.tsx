@@ -70,6 +70,7 @@ import { useUsage } from "@/hooks/use-usage";
 import { getStoredGlowAccent, getGlowGradient, getStoredLogoStyle, getStoredAutoRotateLogo, persistLogoStyle, persistAutoRotateLogo, assignLogoStyleToConversation, LOGO_STYLE_OPTIONS, DEFAULT_LOGO_STYLE, type LogoStyle } from "@/lib/appearance-settings";
 import { queryClient, apiRequest, authFetch, endGuestSession } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
+import { COUNTRIES } from "@/lib/countries";
 import microphoneIcon from "@assets/microphone__1784996516975.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/plus_button__1784996516977.png";
@@ -1841,7 +1842,14 @@ type SettingsSection = "account" | "appearance" | "behavior" | "general" | "noma
 
 function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictureChange, onUserRename, model, onModelChange, onChatBgChange }: {
   isOpen: boolean; onClose: () => void;
-  user?: { username: string; email: string; displayName?: string };
+  user?: {
+    username: string;
+    email: string;
+    displayName?: string;
+    phoneNumber?: string | null;
+    phoneCountryCode?: string | null;
+    phoneCountryIso?: string | null;
+  };
   profilePicture?: string; onProfilePictureChange?: (d: string) => void; onUserRename?: (n: string) => void;
   model?: string; onModelChange?: (m: string) => void; onChatBgChange?: (bg: string) => void;
 }) {
@@ -1876,6 +1884,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const settingsNavRef = useRef<HTMLDivElement>(null);
   const settingsContentScrollRef = useRef<HTMLDivElement | null>(null);
   const [settingsPill, setSettingsPill] = useState({ left: 0, width: 0, ready: false });
+  const profileCountry = COUNTRIES.find(country => country.iso2 === user?.phoneCountryIso)
+    || COUNTRIES.find(country => country.dialCode === user?.phoneCountryCode);
 
   // ── Dirty / exit-dialog state (mirrors PC CustomizeModal exactly) ──
   const [isDirty, setIsDirty] = useState(false);
@@ -2197,6 +2207,18 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs font-medium text-foreground hover:bg-accent/60 transition-all">
                       <Pencil className="w-3 h-3" /> Edit
                     </button>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/50 pt-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mobile number</p>
+                      <p className="mt-1 truncate text-xs font-medium text-foreground">{user?.phoneNumber || "Not added"}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Country</p>
+                      <p className="mt-1 truncate text-xs font-medium text-foreground">
+                        {profileCountry ? `${profileCountry.flag} ${profileCountry.name}` : "Not added"}
+                      </p>
+                    </div>
                   </div>
                   {showCustomizePanel && (
                     <div className="mt-4 pt-4 border-t border-border/50 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -3650,7 +3672,15 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
   // Free plan: only Fius Lite is usable in the Ask tab. Everything else needs Ultimate.
   const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'fius-lite', [isFreePlan]);
-  const { data: user } = useQuery<{ username: string; email: string; id: string; displayName?: string }>({ queryKey: ["/api/auth/user"], retry: false });
+  const { data: user } = useQuery<{
+    username: string;
+    email: string;
+    id: string;
+    displayName?: string;
+    phoneNumber?: string | null;
+    phoneCountryCode?: string | null;
+    phoneCountryIso?: string | null;
+  }>({ queryKey: ["/api/auth/user"], retry: false });
   const { data: convList = [] } = useQuery<Conv[]>({ queryKey: ["/api/conversations"], enabled: !!user });
 
   const [tab, setTab] = useState<MobileTab>("ask");
@@ -4227,7 +4257,14 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
 
           <MobileSettings
             isOpen={settingsOpen} onClose={() => setSettingsOpen(false)}
-            user={user ? { email: user.email, username: user.username, displayName: user.displayName } : undefined}
+            user={user ? {
+              email: user.email,
+              username: user.username,
+              displayName: user.displayName,
+              phoneNumber: user.phoneNumber,
+              phoneCountryCode: user.phoneCountryCode,
+              phoneCountryIso: user.phoneCountryIso,
+            } : undefined}
             profilePicture={profilePicture}
             onUserRename={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
             onProfilePictureChange={d => { setProfilePicture(d); localStorage.setItem("profilePicture", d); }}
