@@ -6408,21 +6408,21 @@ Let's start the self-listen session!`;
           <div className={`macos-function-bar ${!askFnBarCentered ? 'macos-function-bar-with-messages' : ''} rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'blinga-games' || activeTab === 'blinga-labs' || activeTab === 'imagine' || activeTab === 'nomad' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={askFnBarCentered ? {width: 'fit-content', position: 'fixed', top: isPill ? 'calc(50% - 48px)' : 'calc(50% - 68px)', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 38px)' : '50vw', transform: isPill ? 'translateX(calc(-50% - 14px))' : 'translateX(-50%)', zIndex: 20, marginBottom: '10px'} : {width: 'fit-content', marginLeft: 'auto', marginRight: 'auto', marginTop: isPill ? '43px' : '11px', marginBottom: '14px', transform: isPill ? 'translateX(-14px)' : undefined, position: 'relative', zIndex: 30}}>
             <div className={`flex flex-wrap justify-center p-3 bg-transparent !border-none ${isPill ? 'gap-2' : 'gap-4'}`}>
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{width:'26px',height:'26px'}} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
                 'Long Answer',
                 adjustBlinga,
                 blingaIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
                 'button-blinga-integration'
               )}
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{width:'26px',height:'26px'}} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
                 'Voice Mode',
                 openVoiceMode,
                 undefined,
                 'button-voice-mode-fn'
               )}
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="Settings" className="btn-icon" style={{width:'26px',height:'26px'}} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="Settings" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
                 'Settings',
                 () => setIsCustomizeModalOpen(true),
                 undefined,
@@ -7432,7 +7432,7 @@ Let's start the self-listen session!`;
             ] as const).map(({ label, light, dark, action }) => (
               <button key={label} onClick={action}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
-                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45 }} />
                 {label}
               </button>
             ))}
