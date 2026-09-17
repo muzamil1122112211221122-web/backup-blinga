@@ -330,7 +330,7 @@ function TemplateGalleryOverlay({
   return (
     <div
       className="fixed inset-0 z-[55] flex flex-col"
-      style={{ background: '#07070e', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}
+      style={{ background: '#07070e' }}
     >
       {/* Header */}
       <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
@@ -774,7 +774,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     const latestUrl   = editHistory[editHistory.length - 1] ?? editTarget.url;
     return (
       <div className="fixed inset-0 z-50 flex flex-col"
-        style={{ background: '#080810', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>
+        style={{ background: '#080810' }}>
         <div className="flex items-center gap-3 px-5 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <button onClick={() => setEditTarget(null)}
             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors text-sm">
@@ -959,7 +959,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
       )}
 
       <div className="fixed inset-0 z-50 flex flex-col"
-        style={{ background: '#fff', color: '#171717', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
+        style={{ background: '#fff', color: '#171717' }}>
 
         {/* ── Scrollable content area ── */}
         <div className="relative flex-1 overflow-y-auto">

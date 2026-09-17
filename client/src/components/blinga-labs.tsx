@@ -990,7 +990,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
                 { icon: dark ? '/fn-longans-gray.png' : '/fn-longans-black.png', label: 'Settings' },
               ] as const).map(({ icon, label }) => (
                 <button key={label}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md">
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#262626] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md">
                   <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center">
                     <img src={icon} alt="" className="w-[18px] h-[18px] object-contain" style={{ mixBlendMode: dark ? 'screen' : 'multiply' }} />
                   </span>
@@ -1001,7 +1001,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
 
             {/* Message bar — Ask tab style with panel count + panel selector inside */}
             <div className="w-full max-w-[42rem] mb-4">
-              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+              <div className="relative bg-white dark:bg-[#262626] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                 <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
                   {/* Attach — far left */}
                   <button onClick={() => globalFileInputRef.current?.click()}
@@ -1029,7 +1029,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
                         <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                    <DropdownMenuContent side="top" align="end" className="bg-white dark:bg-[#262626] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Models section ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Models</p>
                       <div className="flex flex-col gap-0.5 mb-2">
@@ -1141,7 +1141,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
       {inputMode === 'super' && (hasMessages || isTypingAny) && (
           <div className="px-4 pb-2 pt-2 flex-shrink-0">
             <div className="max-w-[56rem] mx-auto">
-              <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+              <div className="relative bg-white dark:bg-[#262626] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                 <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
                   {/* Attach — far left */}
                   <button onClick={() => globalFileInputRef.current?.click()}
@@ -1167,7 +1167,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
                         <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="bottom" align="end" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
+                    <DropdownMenuContent side="bottom" align="end" className="bg-white dark:bg-[#262626] border-none text-black dark:text-white rounded-2xl shadow-2xl p-2 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0" style={{ minWidth: 0 }}>
                       {/* ── Models section ── */}
                       <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-400 px-1 mb-1 select-none">Models</p>
                       <div className="flex flex-col gap-0.5 mb-2">
@@ -1467,7 +1467,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
                                       <img src="/icon-more-gray.png" className="h-3.5 w-3.5 object-contain hidden dark:block opacity-75" alt="more" />
                                     </button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
+                                  <DropdownMenuContent className="bg-white dark:bg-[#262626] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
                                     <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-labs-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                       <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                     </DropdownMenuItem>
@@ -1493,7 +1493,7 @@ export function BlingaLabs({ user }: BlingaLabsProps) {
                   {/* ── Per-panel bottom bar — separate mode only, always at bottom ── */}
                   {inputMode === 'separate' && (
                   <div className="mx-2 mb-3 flex-shrink-0">
-                    <div className="relative bg-white dark:bg-[#383838] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
+                    <div className="relative bg-white dark:bg-[#262626] transition-all duration-300 glossy-outline !border-none !outline-none rounded-full">
                       <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
                         {/* Attach */}
                         <button onClick={() => fileInputRefs.current.get(colIdx)?.click()} disabled={!isActive}

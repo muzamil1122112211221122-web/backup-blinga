@@ -937,7 +937,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                     Download
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#262626] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[190px] z-[200]">
                   <DropdownMenuItem onClick={async () => { setDocExportingId('pdf'); try { await downloadPdf(msg.content, msg.documentTitle || 'document'); } finally { setDocExportingId(null); } }}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-red-500" /> PDF (.pdf)
@@ -977,7 +977,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                 <DropdownMenuTrigger asChild>
                   <button className={ab}><img src="/icon-more-black.png" className="w-4 h-4 object-contain block dark:hidden brightness-0" alt="more" /><img src="/icon-more-gray.png" className="w-4 h-4 object-contain hidden dark:block opacity-75" alt="more" /></button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
+                <DropdownMenuContent className="bg-white dark:bg-[#262626] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[185px] z-[200]">
                   <DropdownMenuItem onClick={handleSpeak}
                     className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     {speaking ? <Square className="w-3.5 h-3.5 text-blue-500" /> : <Volume2 className="w-3.5 h-3.5 text-violet-500" />}
@@ -1391,7 +1391,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     onClick?: () => void; icon: React.ReactNode; label: string;
     active?: boolean; activeStyle?: string;
   }) => {
-    const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#383838]";
+    const defaultStyle = "text-zinc-800 dark:text-white/85 bg-white dark:bg-[#262626]";
     const resolvedActive = active ? "text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none" : undefined;
     const btnStyle = activeStyle || resolvedActive || defaultStyle;
     return (
@@ -1455,7 +1455,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 ${
                     active
                       ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
-                      : 'bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838]'
+                      : 'bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#262626]'
                   }`}
                 >
                   <span className="flex-shrink-0 w-[18px] h-[18px] flex items-center justify-center [&_img]:mix-blend-multiply dark:[&_img]:mix-blend-screen [&_img]:w-[18px] [&_img]:h-[18px] [&_img]:object-contain [&_img]:flex-shrink-0">{icon}</span>
@@ -1564,7 +1564,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#383838] ${glossyOutlineEnabled ? 'crisp-outline' : ''} overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#262626] ${glossyOutlineEnabled ? 'crisp-outline' : ''} overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -1599,7 +1599,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                       <img src={isDark ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                  <DropdownMenuContent className="bg-white dark:bg-[#262626] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
                      <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => fileInputRef.current?.click()}>
                        <FileText className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload File</span>
                      </DropdownMenuItem>
@@ -1685,7 +1685,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                     <img src={isDark ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
+                <DropdownMenuContent className="bg-white dark:bg-[#262626] border-none rounded-xl shadow-2xl p-1 min-w-[190px]" side="top" align="start">
                      <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer rounded-lg focus:bg-black/10 dark:focus:bg-white/10" style={{ color: isDark ? '#fff' : '#111' }} onClick={() => fileInputRef.current?.click()}>
                        <FileText className="w-4 h-4 flex-shrink-0" style={{ color: isDark ? '#a1a1aa' : '#71717a' }} /><span>Upload File</span>
                      </DropdownMenuItem>
@@ -2191,7 +2191,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     reader.onload = ev => setPreviewPic(ev.target?.result as string);
                     reader.readAsDataURL(f);
                   }} />
-                <div className="p-4 bg-zinc-50 dark:bg-[#383838] rounded-2xl border border-border/50">
+                <div className="p-4 bg-zinc-50 dark:bg-[#262626] rounded-2xl border border-border/50">
                   <div className="flex items-center gap-3">
                     {/* Tappable avatar — opens photo picker */}
                     <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 cursor-pointer ring-2 ring-offset-2 ring-transparent hover:ring-zinc-400 transition-all active:scale-95"
@@ -2252,7 +2252,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 </div>
 
                 {/* ── Plan / Usage card ── */}
-                <div className="p-4 bg-zinc-50 dark:bg-[#383838] rounded-2xl border border-border/50 space-y-3">
+                <div className="p-4 bg-zinc-50 dark:bg-[#262626] rounded-2xl border border-border/50 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Current Plan</p>
@@ -2346,7 +2346,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Custom Instructions</p>
                   <textarea value={customInstructions} onChange={e => { setCustomInstructions(e.target.value); markDirty(); }} placeholder="Tell Blinga how to respond…"
-                    className="w-full h-24 bg-zinc-50 dark:bg-[#383838] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
+                    className="w-full h-24 bg-zinc-50 dark:bg-[#262626] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Behavior</p>
@@ -2508,7 +2508,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       <div
                         key={name}
                         ref={el => { orderRowRefs.current[i] = el; }}
-                        className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#383838] rounded-xl border ${orderDraggingIndex === i ? '' : 'transition-all'} ${orderDragOverIndex === i && orderDraggingIndex !== i ? 'border-indigo-400 dark:border-indigo-500' : 'border-border/50'} ${orderDraggingIndex === i ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10' : ''}`}
+                        className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#262626] rounded-xl border ${orderDraggingIndex === i ? '' : 'transition-all'} ${orderDragOverIndex === i && orderDraggingIndex !== i ? 'border-indigo-400 dark:border-indigo-500' : 'border-border/50'} ${orderDraggingIndex === i ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10' : ''}`}
                         style={orderDraggingIndex === i ? { transform: `translateY(${orderDragOffsetY}px)` } : undefined}
                       >
                         <div className="flex items-center gap-2">

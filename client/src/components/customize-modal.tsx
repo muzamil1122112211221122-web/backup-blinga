@@ -119,7 +119,7 @@ function LearnedBehaviorsSection() {
           <Input value={newText} onChange={e => setNewText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && add()}
             placeholder="e.g. Prefers short concise answers"
-            className="h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800" autoFocus />
+            className="h-8 text-xs bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-800" autoFocus />
           <button onClick={add}
             className="px-2.5 py-1 rounded-md bg-zinc-200 dark:bg-white text-zinc-900 dark:text-black text-xs font-semibold hover:opacity-80 transition-opacity">
             Save
@@ -132,7 +132,7 @@ function LearnedBehaviorsSection() {
       ) : (
         <div className="space-y-2">
           {behaviors.map(b => (
-            <div key={b.id} className="flex items-start justify-between gap-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 group">
+            <div key={b.id} className="flex items-start justify-between gap-2 rounded-lg bg-[#fcfcfd] dark:bg-[#1e1e1e] px-3 py-2 group">
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-zinc-700 dark:text-zinc-200 break-words">{b.text}</p>
                 <p className="text-[10px] text-zinc-400 mt-0.5">{b.addedAt}</p>
@@ -156,7 +156,7 @@ function PlanUsageSection() {
 
   if (isLoading || !usage) {
     return (
-      <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center py-8">
+      <div className="p-4 bg-[#fcfcfd] dark:bg-[#1e1e1e] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center py-8">
         <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
       </div>
     );
@@ -262,7 +262,7 @@ interface CustomizeModalProps {
   onProfilePictureChange?: (dataUrl: string) => void;
 }
 
-type SettingsSection = 'profile' | 'looks' | 'general' | 'nomad' | 'subscription';
+type SettingsSection = 'general' | 'ai-preferences' | 'memory' | 'subscription' | 'profile';
 
 // ─── Shared sliding-pill selector ────────────────────────────────────────────
 function SlidingPillSelector({
@@ -283,11 +283,12 @@ function SlidingPillSelector({
   const activeIdx = Math.max(0, options.findIndex(o => o.value === value));
   const n = options.length;
   return (
-    <div className="relative flex items-center rounded-full bg-zinc-200 dark:bg-[#2a2a2a] p-1">
+    <div className="rounded-full bg-[#fcfcfd] dark:bg-[#1e1e1e] p-1">
+      <div className="relative flex items-center w-full">
       {/* sliding pill */}
       <div
         aria-hidden
-        className="absolute top-1 bottom-1 rounded-full pointer-events-none"
+        className="absolute top-0 bottom-0 rounded-full pointer-events-none"
         style={{
           width: `${100 / n}%`,
           left: `${(activeIdx / n) * 100}%`,
@@ -305,17 +306,18 @@ function SlidingPillSelector({
             type="button"
             onClick={() => { if (withSound && opt.value !== value) playTabClick(); onChange(opt.value); }}
             style={{ width: `${100 / n}%` }}
-            className={`relative z-10 flex flex-col items-center justify-center gap-1 ${tall ? 'py-3' : 'py-2.5'} rounded-xl transition-all duration-300 select-none ${
+            className={`relative z-10 flex flex-row items-center justify-center gap-2 py-2 rounded-full transition-all duration-300 select-none ${
               active ? 'text-zinc-900' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             {iconSrc && (
-              <img src={iconSrc} alt={opt.label} className="w-5 h-5 object-contain transition-all duration-300" />
+              <img src={iconSrc} alt={opt.label} className="w-[18px] h-[18px] object-contain transition-all duration-300" />
             )}
             <span className="text-[12px] font-semibold leading-none transition-all duration-300">{opt.label}</span>
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -338,8 +340,8 @@ function ThemeSegmentedTab({
   return (
     <div>
       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Theme</span>
-      <div className="mt-3 rounded-full bg-zinc-200 dark:bg-[#2a2a2a]">
-        <SlidingPillSelector value={value} onChange={onChange} options={options} isDark={isDark} tall withSound />
+      <div className="mt-3 rounded-full bg-[#fcfcfd] dark:bg-[#1e1e1e]">
+        <SlidingPillSelector value={value} onChange={onChange} options={options} isDark={isDark} withSound />
       </div>
     </div>
   );
@@ -359,11 +361,18 @@ export function CustomizeModal({
   onProfilePictureChange
 }: CustomizeModalProps) {
   const { theme, setTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
+  const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>('blinga-prime');
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>(
+    () => {
+      const stored = localStorage.getItem('selectedModel') as AvailableModel | null;
+      // Migrate away from blinga-prime which doesn't exist
+      if (!stored || stored === 'blinga-prime') return 'blinga-lite';
+      return stored;
+    }
+  );
   const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'blinga-ai']);
   // Per-model default sub-model selection (synced with localStorage)
   const [nomadDefaultModels, setNomadDefaultModels] = useState<Record<string, string>>(() => {
@@ -723,21 +732,21 @@ export function CustomizeModal({
   };
 
   // Icon paths: gray = dark theme, black = light theme (as specified)
-  const menuItems = [
-    { id: 'profile',      label: 'Profile',            imgD: '/settings-account-gray.png',      imgL: '/settings-account-black.png' },
-    { id: 'looks',        label: 'Looks',              imgD: '/settings-appearance-gray.png',   imgL: '/settings-appearance-black.png' },
-    { id: 'general',      label: 'General',            imgD: '/settings-general-gray.png',      imgL: '/settings-general-black.png' },
-    { id: 'nomad',        label: 'Nomad Preferences',  imgD: '/settings-nomad-gray.png',        imgL: '/settings-nomad-black.png' },
-    { id: 'subscription', label: 'Subscription Plan',  imgD: '/settings-subscription-gray.png', imgL: '/settings-subscription-black.png' },
+  const menuItems: { id: SettingsSection; label: string; icon: any }[] = [
+    { id: 'general', label: 'General', icon: Settings },
+    { id: 'ai-preferences', label: 'AI Preferences', icon: Sliders },
+    { id: 'memory', label: 'Memory', icon: Brain },
+    { id: 'subscription', label: 'Subscription', icon: Crown },
+    { id: 'profile', label: 'Profile', icon: User },
   ];
 
   // Save button label & visibility per section
   const saveLabel: Record<SettingsSection, string | null> = {
-    profile: 'Save Profile',
-    looks: 'Save Looks',
-    general: 'Save Changes',
-    nomad: 'Save Preferences',
+    general: 'Save General',
+    'ai-preferences': 'Save Preferences',
+    memory: 'Save Memory',
     subscription: null,
+    profile: 'Save Profile',
   };
 
   return (
@@ -745,9 +754,9 @@ export function CustomizeModal({
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) handleCloseAttempt();
     }}>
-      <DialogContent className="macos-dialog-content bg-[#f5f5f5] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-800/50 max-w-4xl h-[680px] shadow-2xl rounded-3xl [&>button]:hidden p-0 overflow-hidden flex flex-row z-[50]">
+      <DialogContent className="macos-dialog-content bg-[#f1f1f4] dark:bg-[#151515] border-zinc-200 dark:border-zinc-800/50 max-w-4xl h-[680px] shadow-2xl [&>button]:hidden p-0 overflow-hidden flex flex-row z-[50]" style={{ borderRadius: "48px" }}>
         {/* Close button — absolute top-right of whole modal */}
-        <div className="absolute top-1 right-1 z-[70]">
+        <div className="absolute top-4 right-4 z-[70]">
           <Button
             variant="ghost"
             size="icon"
@@ -758,9 +767,9 @@ export function CustomizeModal({
           </Button>
         </div>
         {/* Sidebar */}
-        <div className="w-56 bg-[#ebebeb] dark:bg-[#252525] p-4 flex flex-col border-r border-zinc-200/60 dark:border-[#333] flex-shrink-0 z-[60]">
-          <div className="flex items-center mb-5 px-2">
-            <h2 className="text-zinc-900 dark:text-white text-xl font-bold">Settings</h2>
+        <div className="w-56 bg-[#fcfcfd] dark:bg-[#1e1e1e] p-4 flex flex-col border-r border-zinc-300 dark:border-zinc-700 flex-shrink-0 z-[60]">
+          <div className="flex items-center mb-6 mt-2 px-3">
+            <h2 className="text-zinc-900 dark:text-white text-[22px] font-semibold tracking-tight">Settings</h2>
           </div>
           <div className="flex-1 flex flex-col space-y-1 overflow-y-auto min-h-0 relative [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {/* vertical sliding pill — spring overshoot on top gives the "fast brake" feel */}
@@ -779,29 +788,21 @@ export function CustomizeModal({
                   : 'none',
                 pointerEvents: 'none',
                 zIndex: 0,
-                background: theme === 'dark' ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.09)',
+                background: theme === 'dark' ? 'rgba(255,255,255,0.85)' : '#e3e3e8',
                 borderRadius: 10,
               }}
             />
             {menuItems.map((item, idx) => {
               const isActive = activeSection === item.id;
-              // Always use the black icon as base; invert to white when active in light theme
-              // Active dark theme  → black pill is white  → show black icon (imgL)
-              // Active light theme → black pill           → show white icon (imgL + invert)
-              // Inactive dark      → show gray icon (imgD)
-              // Inactive light     → show black icon (imgL, dimmed)
+              const Icon = item.icon;
               return (
                 <button
                   key={item.id}
                   ref={el => { tabButtonRefs.current[idx] = el; }}
                   onClick={() => { playTabClick(); setActiveSection(item.id as SettingsSection); }}
-                  className={`relative z-10 w-full flex items-center space-x-3 px-2.5 py-2 rounded-xl text-sm font-bold flex-shrink-0 transition-none ${isActive ? 'text-zinc-900' : 'text-zinc-900 dark:text-zinc-100'}`}
+                  className={`relative z-10 w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium flex-shrink-0 transition-none ${isActive ? 'text-zinc-900 dark:text-zinc-900' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'}`}
                 >
-                  <img
-                    src={theme === 'dark' && !isActive ? item.imgD : item.imgL}
-                    alt=""
-                    className={`object-contain flex-shrink-0 ${item.id === 'subscription' ? 'w-6 h-6' : 'w-5 h-5'}`}
-                  />
+                  <Icon className={`flex-shrink-0 w-5 h-5 ${isActive ? 'text-zinc-900' : 'text-zinc-600 dark:text-zinc-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -827,9 +828,25 @@ export function CustomizeModal({
         </div>
 
         {/* Content */}
-        <div ref={settingsContentRef} className="settings-content-scroll flex-1 p-8 overflow-y-auto relative bg-[#f5f5f5] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+        <div ref={settingsContentRef} className="settings-content-scroll flex-1 p-8 overflow-y-auto relative bg-[#f1f1f4] dark:bg-[#151515] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+          
+          <div className="mb-8">
+            <h2 className="text-[22px] font-medium text-zinc-900 dark:text-white tracking-tight">
+              {activeSection === 'general' ? 'General' :
+               activeSection === 'ai-preferences' ? 'AI model preferences' :
+               activeSection === 'memory' ? 'Memory' :
+               activeSection === 'profile' ? 'Profile information' :
+               'Subscription'}
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-400 text-[15px] mt-1">
+              {activeSection === 'general' || activeSection === 'ai-preferences' ? 'Make the app look the way you like.' :
+               activeSection === 'memory' ? 'Let the assistant remember important details across chats when available' :
+               activeSection === 'profile' ? 'Manage your basic profile details' :
+               'Manage your billing and plan details'}
+            </p>
+          </div>
           {/* SettingsScrollButtons removed — max-up/max-down disabled */}
-          {activeSection === 'looks' && (
+          {activeSection === 'general' && (
             <div className="space-y-8">
               <ThemeSegmentedTab
                 value={localTheme}
@@ -842,7 +859,7 @@ export function CustomizeModal({
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Message Bar Glow Color</span>
                   <p className="text-xs text-zinc-500 mt-0.5">Choose the soft glow behind the message bar on the Ask tab</p>
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+                <div className="flex flex-row items-center justify-between bg-[#fcfcfd] dark:bg-[#1e1e1e] rounded-full px-6 py-2 w-full overflow-hidden">
                   {GLOW_ACCENT_OPTIONS.map(opt => {
                     const selected = glowAccentColor === opt.value;
                     return (
@@ -852,17 +869,13 @@ export function CustomizeModal({
                         aria-label={opt.label}
                         aria-pressed={selected}
                         onClick={() => handleGlowAccentColorChange(opt.value)}
-                        className={`group flex flex-col items-center gap-2 rounded-xl border bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent p-3 transition-all ${
-                          selected
-                            ? 'border-zinc-500 dark:border-zinc-400'
-                            : 'border-transparent hover:border-zinc-200 dark:hover:border-zinc-800'
-                        }`}
+                        className="group flex flex-col items-center gap-2 p-2 transition-all"
                       >
                         <span
-                          className={`relative h-12 w-12 rounded-full border border-black/10 dark:border-white/15 transition-transform group-hover:scale-105 ${opt.swatch ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`}
+                          className={`relative h-10 w-10 rounded-full transition-transform group-hover:scale-105 ${opt.swatch ? '' : 'bg-[#eaeaec] dark:bg-[#252525]'} ${selected ? 'ring-2 ring-offset-2 ring-zinc-400 dark:ring-zinc-500 ring-offset-[#f1f1f4] dark:ring-offset-[#151515]' : ''}`}
                           style={opt.swatch ? { backgroundColor: opt.swatch } : undefined}
                         >
-                          {!opt.swatch && <span className="absolute left-1/2 top-1/2 h-px w-8 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-zinc-500" />}
+                          {!opt.swatch && <span className="absolute left-1/2 top-1/2 h-px w-7 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-zinc-500" />}
                         </span>
                         <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 text-center leading-tight">{opt.label.replace('Light ', '')}</span>
                       </button>
@@ -890,7 +903,7 @@ export function CustomizeModal({
                       onClick={() => handleUiAccentColorChange('multicolor')}
                       className={`w-full text-left rounded-xl border px-4 py-2.5 transition-all flex items-center gap-3 ${
                         uiAccentColor === 'multicolor'
-                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900'
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-[#eaeaec] dark:bg-[#252525]'
                           : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
                       }`}
                     >
@@ -945,8 +958,8 @@ export function CustomizeModal({
                         onClick={() => handleAppFontChange(opt.value)}
                         className={`text-left rounded-xl border px-4 py-3 transition-all ${
                           selected
-                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-50 dark:bg-zinc-900'
-                            : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
+                            ? 'border-zinc-500 dark:border-zinc-400 bg-[#eaeaec] dark:bg-[#252525]'
+                            : 'bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2 mb-2">
@@ -1095,8 +1108,8 @@ export function CustomizeModal({
                         onClick={() => handleFunctionBarStyleChange(opt.value)}
                         className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
                           active
-                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
-                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                            ? 'border-zinc-500 dark:border-zinc-400 bg-[#eaeaec] dark:bg-[#252525]'
+                            : 'border-zinc-200 dark:border-zinc-800 bg-[#fcfcfd] dark:bg-[#1e1e1e] hover:brightness-95 dark:hover:brightness-110'
                         }`}
                       >
                         {opt.value === 'square' && (
@@ -1151,7 +1164,7 @@ export function CustomizeModal({
                     value={localToggles.sidebarCloseTop ? 'top' : 'bottom'}
                     onValueChange={(val) => { setLocalToggles(prev => ({ ...prev, sidebarCloseTop: val === 'top' })); setIsDirty(true); }}
                   >
-                    <SelectTrigger className="w-28 h-8 text-xs bg-zinc-50 dark:bg-[#161616] border-zinc-200 dark:border-zinc-800">
+                    <SelectTrigger className="w-28 h-8 text-xs bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-800">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1181,12 +1194,12 @@ export function CustomizeModal({
                       onClick={() => handleChatBgChange(opt.value)}
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
                         chatBg === opt.value
-                          ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                          ? 'border-zinc-500 dark:border-zinc-400 bg-[#eaeaec] dark:bg-[#252525]'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-[#fcfcfd] dark:bg-[#1e1e1e] hover:brightness-95 dark:hover:brightness-110'
                       }`}
                     >
                       {opt.value === 'plain' && (
-                        <div className="w-24 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" />
+                        <div className="w-24 h-10 bg-[#eaeaec] dark:bg-[#252525] rounded-lg border border-zinc-200 dark:border-zinc-700" />
                       )}
                       {opt.value === 'gradient' && (
                         <div className="w-24 h-10 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700"
@@ -1260,7 +1273,7 @@ export function CustomizeModal({
             </div>
           )}
 
-          {activeSection === 'general' && (
+          {activeSection === 'memory' && (
             <div className="space-y-6 text-zinc-700 dark:text-zinc-200">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable Auto Scroll</span>
@@ -1273,7 +1286,7 @@ export function CustomizeModal({
           )}
 
 
-          {activeSection === 'nomad' && (
+          {activeSection === 'ai-preferences' && (
             <div className="space-y-6">
               <div className="space-y-4">
                 <h4 className="text-sm font-medium text-zinc-900 dark:text-white">Order Switcher</h4>
@@ -1318,7 +1331,7 @@ export function CustomizeModal({
                     <div key={name} className="relative">
                     <div
                       ref={el => { orderRowRefs.current[index] = el; }}
-                      className={`flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#161616] rounded-lg border ${draggingIndex === index ? '' : 'transition-all'} ${dragOverIndex === index && draggingIndex !== index ? 'border-indigo-400 dark:border-indigo-500' : 'border-zinc-200 dark:border-zinc-800'} ${draggingIndex === index ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10 cursor-grabbing' : ''}`}
+                      className={`flex items-center justify-between p-3 bg-[#fcfcfd] dark:bg-[#1e1e1e] rounded-lg border ${draggingIndex === index ? '' : 'transition-all'} ${dragOverIndex === index && draggingIndex !== index ? 'border-indigo-400 dark:border-indigo-500' : 'border-zinc-200 dark:border-zinc-800'} ${draggingIndex === index ? 'opacity-90 scale-[1.02] shadow-2xl ring-2 ring-indigo-400/60 relative z-10 cursor-grabbing' : ''}`}
                       style={draggingIndex === index ? { transform: `translateY(${dragOffsetY}px)` } : undefined}
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -1374,7 +1387,7 @@ export function CustomizeModal({
                     </div>
                     {/* Model sub-selector dropdown */}
                     {isOpen && subModels && (
-                      <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#383838] rounded-xl shadow-2xl overflow-hidden py-1" style={{ border: 'none' }}>
+                      <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-[#262626] rounded-xl shadow-2xl overflow-hidden py-1" style={{ border: 'none' }}>
                         <div className="px-3 pt-2 pb-1">
                           <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">Normal Models</span>
                         </div>
@@ -1392,7 +1405,7 @@ export function CustomizeModal({
                               className={`flex items-center gap-2 px-3 py-1.5 text-left text-[11px] transition-all rounded-full mx-1 hover:bg-black/10 dark:hover:bg-white/10 ${isSel ? 'text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-zinc-400'}`}>
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSel ? 'bg-zinc-900 dark:bg-white' : 'border border-zinc-400'}`} />
                               <span className="flex-1">{sm}</span>
-                              {sm === subModels.default && !isSel && <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-full px-1.5 py-0.5">default</span>}
+                              {sm === subModels.default && !isSel && <span className="text-[9px] text-zinc-400 bg-[#eaeaec] dark:bg-[#252525] rounded-full px-1.5 py-0.5">default</span>}
                             </button>
                           );
                         })}
@@ -1435,7 +1448,7 @@ export function CustomizeModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="max-w-[80%]">
-                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Blinga with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
+                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Blinga with your conversation history <span className="text-[10px] bg-[#eaeaec] dark:bg-[#252525] px-1 rounded">beta</span></span>
                       <p className="text-xs text-zinc-500 mt-1">Allow Blinga to remember details from your previous conversations.</p>
                     </div>
                     <Switch checked={localToggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
@@ -1447,7 +1460,7 @@ export function CustomizeModal({
                 </div>
               </div>
 
-              <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <div className="p-4 bg-[#fcfcfd] dark:bg-[#1e1e1e] rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center space-x-2 mb-4">
                   <Database className="w-4 h-4 text-zinc-900 dark:text-white" />
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">Storage Usage</span>
@@ -1462,7 +1475,7 @@ export function CustomizeModal({
 
           {activeSection === 'profile' && (
             <div className="space-y-4">
-              <div className="p-4 bg-zinc-50 dark:bg-[#161616] rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <div className="p-4 bg-[#fcfcfd] dark:bg-[#1e1e1e] rounded-xl border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
@@ -1482,7 +1495,7 @@ export function CustomizeModal({
                   </div>
                   <Button
                     variant="outline"
-                    className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-xs h-8 flex items-center gap-1.5"
+                    className="bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-700/50 text-zinc-900 dark:text-white text-xs h-8 flex items-center gap-1.5"
                     onClick={() => {
                       setEditName(user?.displayName || user?.username || '');
                       setPreviewPic('');
@@ -1514,7 +1527,7 @@ export function CustomizeModal({
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
                         placeholder="Enter your name"
-                        className="h-8 text-sm bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                        className="h-8 text-sm bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-700/50"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -1533,7 +1546,7 @@ export function CustomizeModal({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 text-xs flex items-center gap-1.5 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
+                          className="h-8 text-xs flex items-center gap-1.5 bg-[#fcfcfd] dark:bg-[#1e1e1e] border-zinc-200 dark:border-zinc-700/50"
                           onClick={() => picInputRef.current?.click()}
                         >
                           <Camera className="w-3 h-3" />

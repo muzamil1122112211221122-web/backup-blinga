@@ -2,7 +2,7 @@ import crispClickSound from "@assets/freesound_gamestudio-click-1-384917_1786134
 import normalClickSound from "@assets/audley_fergine-ui-mouse-click-366460_1786134700421.mp3";
 
 export const DEFAULT_GLOW_ACCENT = "yellow";
-export const DEFAULT_APP_FONT = "system";
+export const DEFAULT_APP_FONT = "figtree";
 export const DEFAULT_LOGO_STYLE = "rings";
 export const DEFAULT_AUTO_ROTATE_LOGO = false;
 export const DEFAULT_UI_SOUND_STYLE = "crisp";
@@ -83,11 +83,11 @@ export function assignLogoStyleToConversation(conversationId: string, style?: Lo
 export const GLOW_ACCENT_OPTIONS = [
   { value: "disabled", label: "Off", swatch: null },
   { value: "yellow", label: "Light Yellow", swatch: "#FFF8B4" },
-  { value: "blue", label: "Light Blue", swatch: "#B4DAFF" },
-  { value: "red", label: "Light Red", swatch: "#FFB9B9" },
-  { value: "green", label: "Light Green", swatch: "#B4FFC8" },
-  { value: "orange", label: "Light Orange", swatch: "#FFDCAA" },
-  { value: "purple", label: "Light Purple", swatch: "#DCB4FF" },
+  { value: "blue", label: "Light Blue", swatch: "#7BBFFF" },
+  { value: "red", label: "Light Red", swatch: "#FF8F8F" },
+  { value: "green", label: "Light Green", swatch: "#7DEEAA" },
+  { value: "orange", label: "Light Orange", swatch: "#FFBF6B" },
+  { value: "purple", label: "Light Purple", swatch: "#C47FFF" },
   { value: "midnight", label: "Midnight", swatch: "#3A3530" },
 ] as const;
 
@@ -99,7 +99,6 @@ export const APP_FONT_OPTIONS = [
   { value: "jetbrains-mono", label: "JetBrains Mono", googleFont: "JetBrains+Mono:wght@400;500;700", css: "'JetBrains Mono', monospace" },
   { value: "ibm-plex-sans", label: "IBM Plex Sans", googleFont: "IBM+Plex+Sans:wght@300;400;500;600;700", css: "'IBM Plex Sans', sans-serif" },
   { value: "source-serif", label: "Source Serif", googleFont: "Source+Serif+4:ital,wght@0,400;0,600;0,700", css: "'Source Serif 4', serif" },
-  { value: "system", label: "System (SF Pro)", googleFont: null, css: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif" },
   { value: "times-new-roman", label: "Times New Roman", googleFont: null, css: "'Times New Roman', Times, serif" },
 ] as const;
 
@@ -138,9 +137,9 @@ const GLOW_COLORS: Record<string, Record<GlowTheme, string>> = {
 };
 
 export function applyAppFont(fontValue = localStorage.getItem("appFont") || DEFAULT_APP_FONT) {
-  if (fontValue === "google-sans-flex") {
-    fontValue = "system";
-    localStorage.setItem("appFont", "system");
+  if (fontValue === "google-sans-flex" || fontValue === "system") {
+    fontValue = "figtree";
+    localStorage.setItem("appFont", "figtree");
   }
 
   const font = APP_FONT_OPTIONS.find(option => option.value === fontValue) || APP_FONT_OPTIONS[0];
@@ -282,12 +281,12 @@ export function getGlowGradient(
   const color = GLOW_COLORS[accentValue]?.[theme];
   if (!color) return "transparent";
 
-  const ellipse = compact ? "110% 55%" : "70% 60%";
-  const baseOpacity = theme === "dark" ? 0.28 : 0.14;
-  const middleOpacity = theme === "dark" ? 0.14 : 0.06;
+  const ellipse = compact ? "130% 65%" : "110% 80%";
+  const baseOpacity = theme === "dark" ? 0.35 : 0.20;
+  const middleOpacity = theme === "dark" ? 0.18 : 0.10;
   const edgeOpacity = theme === "dark" ? 0.03 : 0.01;
 
-  return `radial-gradient(ellipse ${ellipse} at 50% 62%, rgba(${color},${baseOpacity}) 0%, rgba(${color},${middleOpacity}) 20%, rgba(${color},${edgeOpacity}) 42%, transparent 58%)`;
+  return `radial-gradient(ellipse ${ellipse} at 50% 68%, rgba(${color},${baseOpacity}) 0%, rgba(${color},${middleOpacity}) 25%, rgba(${color},${edgeOpacity}) 50%, transparent 65%)`;
 }
 
 

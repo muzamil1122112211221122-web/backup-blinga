@@ -1,6 +1,5 @@
 import * as React from "react"
 import * as SwitchPrimitives from "@radix-ui/react-switch"
-
 import { cn } from "@/lib/utils"
 
 const Switch = React.forwardRef<
@@ -9,7 +8,13 @@ const Switch = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-zinc-300 dark:data-[state=unchecked]:bg-zinc-600",
+      "peer relative inline-flex h-[28px] w-[50px] shrink-0 cursor-pointer items-center rounded-full border-none outline-none p-[4px] box-border",
+      "transition-[background-color,box-shadow] duration-[450ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+      "focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+      "data-[state=unchecked]:bg-zinc-300 dark:data-[state=unchecked]:bg-zinc-600",
+      "data-[state=unchecked]:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)]",
+      "data-[state=checked]:bg-[#fcc603]",
+      "data-[state=checked]:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]",
       className
     )}
     {...props}
@@ -17,7 +22,11 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+        "pointer-events-none block h-[20px] w-[20px] rounded-full bg-white ring-0",
+        "shadow-[0_2px_6px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]",
+        "transition-transform duration-[480ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        "data-[state=unchecked]:translate-x-0 data-[state=unchecked]:scale-[0.90]",
+        "data-[state=checked]:translate-x-[22px] data-[state=checked]:scale-[1.30]",
       )}
     />
   </SwitchPrimitives.Root>

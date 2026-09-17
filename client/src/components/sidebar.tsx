@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Check, Settings, UserPen, LogOut, ChevronUp, ChevronDown, ChevronLeft, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Search, MessageSquare, Clock } from "lucide-react";
+import { Plus, X, Tag, Crown, Check, Settings, UserPen, LogOut, PanelLeftOpen, PanelLeftClose, ChevronUp, ChevronDown, ChevronLeft, Bot, ChefHat, Dumbbell, GraduationCap, Compass, Globe, TrendingUp, Pin, PinOff, Search, MessageSquare, Clock } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUsage } from "@/hooks/use-usage";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -16,12 +16,12 @@ import { useTheme } from "./theme-provider";
 import { SIDEBAR_ASSETS } from "@/lib/sidebar-assets";
 
 // ── Sidebar usage strip ────────────────────────────────────────────────────
-function UsageBar({ pct }: { pct: number }) {
+function UsageBar({ pct, colorClass }: { pct: number; colorClass: string }) {
   return (
-    <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+    <div className="w-full h-1.5 rounded-full bg-zinc-200 dark:bg-zinc-800/80 overflow-hidden mt-2 mb-1">
       <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: '#15803d' }}
+        className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
       />
     </div>
   );
@@ -29,86 +29,65 @@ function UsageBar({ pct }: { pct: number }) {
 
 function SidebarUsage({ compact = false, onOpenSettings }: { compact?: boolean; onOpenSettings?: () => void }) {
   const { usage, isLoading } = useUsage();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   if (isLoading || !usage) return null;
 
   const isUltimate = usage.plan === "ultimate";
+  const planName = isUltimate ? "Ultimate Plan" : "Free Plan";
 
-  // 30-day rolling reset from planActivatedAt (seeded for all users server-side)
-  const now = new Date();
-  const activatedAt = usage.planActivatedAt ? new Date(usage.planActivatedAt) : null;
-  const resetDate = activatedAt
-    ? new Date(activatedAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-    : new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const msLeft = Math.max(0, resetDate.getTime() - now.getTime());
-  const daysLeft = Math.floor(msLeft / (1000 * 60 * 60 * 24));
-  const hoursLeft = Math.floor((msLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-  // Token / message row
   const tokensRemaining = isUltimate ? (usage.tokensRemaining ?? 0) : (usage.messagesRemaining ?? 0);
   const tokensUsed      = isUltimate ? (usage.tokensUsed ?? 0)      : (usage.messagesUsed ?? 0);
   const tokensLimit     = isUltimate ? (usage.tokensLimit ?? 1)     : (usage.messagesLimit ?? 1);
   const tokensLabel     = isUltimate ? "Tokens" : "Messages";
   const tokensPct       = tokensLimit > 0 ? (tokensUsed / tokensLimit) * 100 : 0;
 
-  // Images row
-  const imagesRemaining = usage.imagesRemaining ?? 0;
-  const imagesUsed      = usage.imagesUsed ?? 0;
-  const imagesLimit     = usage.imagesLimit ?? 1;
-  const imagesPct       = imagesLimit > 0 ? (imagesUsed / imagesLimit) * 100 : 0;
+  const remainingFrac = tokensLimit > 0 ? tokensRemaining / tokensLimit : 1;
+  let barColorClass = "bg-emerald-500";
+  if (remainingFrac <= 0.4) barColorClass = "bg-red-500";
+  else if (remainingFrac <= 0.6) barColorClass = "bg-yellow-500";
 
   const fmtNum = (n: number) =>
     n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
     : n >= 1000    ? `${(n / 1000).toFixed(0)}K`
     : `${n}`;
 
-  // Theme-aware plan icons
-  const planIcon = isUltimate
-    ? (isDark ? '/plan-icon-ultimate-dark.png' : '/plan-icon-ultimate-light.png')
-    : (isDark ? '/plan-icon-free-dark.png'     : '/plan-icon-free-light.png');
-
   return (
-    <div className={`${compact ? 'px-3 pt-3 pb-2' : 'mx-3 mb-2 px-3 pt-3 pb-2'} flex flex-col items-center gap-2.5`}>
-      {/* ── Plan icon + name ── */}
-      <div className="flex items-center gap-1.5">
-        <img src={planIcon} alt={isUltimate ? 'Ultimate' : 'Free'} className="h-5 w-5 object-contain" />
-        <span className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-300">
-          {isUltimate ? 'Ultimate' : 'Free'}
-        </span>
+    <div className="flex flex-col w-full">
+      <div className={`${compact ? 'px-4 pt-4 pb-3' : 'mx-3 mb-0 px-4 pt-4 pb-3'} flex flex-col items-center`}>
+        {/* Plan icon + name */}
+        <div className="flex items-center gap-2 mb-3">
+          <Tag className="w-[18px] h-[18px] text-zinc-600 dark:text-zinc-300" strokeWidth={1.5} />
+          <span className="text-[14px] font-medium text-zinc-800 dark:text-zinc-100 tracking-tight">
+            {planName}
+          </span>
+        </div>
+
+        {/* Tokens / Messages Used */}
+        <div className="w-full">
+          <p className="text-[12.5px] text-zinc-600 dark:text-zinc-400 text-center">
+            {fmtNum(tokensUsed)} out of {fmtNum(tokensLimit)} {tokensLabel.toLowerCase()} used
+          </p>
+          <UsageBar pct={tokensPct} colorClass={barColorClass} />
+        </div>
       </div>
 
-      {/* ── Tokens / Messages ── */}
-      <div className="w-full space-y-1">
-        <p className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 text-center">
-          {fmtNum(tokensRemaining)} {tokensLabel} left
-        </p>
-        <UsageBar pct={tokensPct} />
-        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
-          {fmtNum(tokensUsed)} of {fmtNum(tokensLimit)}
-        </p>
-      </div>
-
-      {/* ── Reset countdown ── */}
-      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
-        Resets in {daysLeft}d {hoursLeft}h
-      </p>
-
-      {/* ── Upgrade button (free plan only) ── */}
+      {/* Upgrade button (free plan only) */}
       {!isUltimate && (
-        <button
-          onClick={onOpenSettings}
-          className="w-full mt-0.5 py-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] font-semibold hover:opacity-80 transition-opacity"
-        >
-          Upgrade to Ultimate
-        </button>
+        <div className="px-1 pb-1">
+          <button
+            onClick={onOpenSettings}
+            className="w-full py-2.5 rounded-xl bg-[#f0eee9] dark:bg-[#e4e2dd] text-zinc-900 text-[13px] font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 border border-[#e5e3de] dark:border-[#d4d2cc] shadow-sm"
+          >
+            <Crown className="w-[18px] h-[18px] text-zinc-800" strokeWidth={1.5} />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-cyan-700 font-semibold tracking-tight">Upgrade Now</span>
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-// ── Spotlight Search Component ────────────────────────────────────────────────
+// ? Spotlight Search Component
 function SpotlightSearch({
   query,
   onQueryChange,
@@ -669,10 +648,10 @@ export function Sidebar({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Close sidebar"
+                  aria-label="Expand sidebar"
                   onMouseEnter={() => setIsLogoHovered(true)}
                   onMouseLeave={() => setIsLogoHovered(false)}
-                  onClick={(e) => { e.stopPropagation(); closeSidebarStage(); }}
+                  onClick={(e) => { e.stopPropagation(); setIsMini(false); onOpenModeChange?.('full'); }}
                   className="relative rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 p-1.5 transition-colors"
                   style={{width: 48, height: 48, display:'flex', alignItems:'center', justifyContent:'center'}}
                 >
@@ -681,7 +660,7 @@ export function Sidebar({
                     position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
                     opacity: isLogoHovered ? 0 : 1,
                     transition: 'opacity 0.2s ease',
-                    transform: 'scale(1.15)', transformOrigin:'center',
+                    transform: 'scale(0.85)', transformOrigin:'center',
                   }}>
                     <BlingaLogo size="sm" className="text-black dark:text-white" />
                   </div>
@@ -691,11 +670,11 @@ export function Sidebar({
                     opacity: isLogoHovered ? 1 : 0,
                     transition: 'opacity 0.2s ease',
                   }}>
-                    <img src={sidebarAsset("close")} alt="" style={{width:26,height:26}} className="object-contain" />
+                    <PanelLeftOpen className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
                   </div>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Close sidebar</TooltipContent>
+              <TooltipContent side="right">Expand sidebar</TooltipContent>
             </Tooltip>
           ) : (
             <>
@@ -705,7 +684,7 @@ export function Sidebar({
                 onClick={(event) => event.stopPropagation()}
                 className="cursor-default"
               >
-                <div style={{ transform: 'scale(1.35)', transformOrigin: 'center' }}>
+                <div style={{ transform: 'scale(1.0)', transformOrigin: 'center' }}>
                   <BlingaLogo size="sm" className="text-black dark:text-white" />
                 </div>
               </button>
@@ -715,7 +694,7 @@ export function Sidebar({
                 onClick={closeSidebarStage}
                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
               >
-                <img src={sidebarAsset("close")} alt="" className="h-6 w-6 object-contain" />
+                <PanelLeftClose className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               </button>
             </>
           )}
@@ -918,7 +897,7 @@ export function Sidebar({
                                 <Input
                                   value={editTitle}
                                   onChange={(e) => setEditTitle(e.target.value)}
-                                  className="text-xs h-7 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                                  className="text-xs h-7 bg-card border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
                                   autoFocus
                                 />
                                 <div className="flex space-x-1">
@@ -1021,7 +1000,7 @@ export function Sidebar({
             )
           ) : (
             /* Full mode: joined card */
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-900 overflow-hidden" ref={profileMenuRef}>
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-card overflow-hidden" ref={profileMenuRef}>
               {/* Usage stats inside card */}
               <SidebarUsage compact onOpenSettings={onOpenSettings} />
 
@@ -1041,7 +1020,7 @@ export function Sidebar({
                     style={{ overflow: "hidden" }}
                   >
                     {isCustomizing ? (
-                      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                      <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-card">
                         <div className="flex items-center justify-between mb-4">
                           <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100">Customize profile</p>
                           <button onClick={() => setIsCustomizing(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
@@ -1198,7 +1177,7 @@ export function Sidebar({
       )}
       {/* ── Chat Config Dialog ── */}
       <Dialog open={chatConfigOpen} onOpenChange={setChatConfigOpen}>
-        <DialogContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
+        <DialogContent className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-2xl p-0 max-w-sm w-full overflow-hidden shadow-2xl">
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
             <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Chat Settings</DialogTitle>
             <DialogDescription className="text-xs text-zinc-400 mt-0.5">Rename this chat, set an AI role, or delete it.</DialogDescription>
@@ -1229,7 +1208,7 @@ export function Sidebar({
                       className={`flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl border text-center transition-all ${
                         active
                           ? 'border-zinc-300 dark:border-zinc-500 bg-zinc-50 dark:bg-zinc-800 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                          : 'border-zinc-200 dark:border-zinc-800 bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800'
                       }`}>
                       <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: active ? color + '22' : color + '11' }}>
                         <Icon className="w-4 h-4" style={{ color }} />
@@ -1291,3 +1270,10 @@ export function Sidebar({
     </TooltipProvider>
   );
 }
+
+
+
+
+
+
+

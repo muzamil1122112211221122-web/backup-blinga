@@ -2,6 +2,16 @@ if (localStorage.getItem("force_wipe_v1") !== "true") {
   localStorage.clear();
   localStorage.setItem("force_wipe_v1", "true");
 }
+
+// Force migrate to blinga-lite for this update
+if (localStorage.getItem("force_wipe_v2") !== "true") {
+  localStorage.setItem("selectedModel", "blinga-lite");
+  localStorage.setItem("force_wipe_v2", "true");
+}
+// Migrate blinga-prime out of localStorage (model doesn't exist)
+if (localStorage.getItem("selectedModel") === "blinga-prime") {
+  localStorage.setItem("selectedModel", "blinga-lite");
+}
 import "./preload-images"; // kick off background memory-caching immediately
 import { createRoot } from "react-dom/client";
 import App from "./App";
@@ -58,4 +68,5 @@ requestAnimationFrame(() => {
     document.documentElement.classList.remove('preload');
   });
 });
+
 

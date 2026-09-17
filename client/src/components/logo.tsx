@@ -31,11 +31,11 @@ export function Logo({
     ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
     : (theme || "light");
     
-  const asset = resolvedTheme === "dark" ? ringLogoLight : ringLogoDark;
+  const asset = ringLogoLight; // always use dark-theme logo in both themes
 
   const content = (
     <div
-      className={cn("inline-flex flex-shrink-0 items-center justify-center relative", className)}
+      className={cn("inline-flex flex-shrink-0 items-center justify-center relative hover:scale-[1.08] transition-transform duration-[2500ms] ease-out cursor-pointer", className)}
       style={{ width: px, height: px }}
       data-testid="logo-blinga"
     >
@@ -56,3 +56,4 @@ export function Logo({
 }
 
 export const BlingaLogo = Logo;
+

@@ -1022,15 +1022,9 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { toast } = useToast();
   const { usage: planUsage } = useUsage();
 
-  // Default ultimate users to Blinga Pro, not Lite
+  // Always default to blinga-lite regardless of plan
   useEffect(() => {
-    if (planUsage?.plan === 'ultimate') {
-      const saved = localStorage.getItem('selectedModel');
-      if (!saved || saved === 'blinga-lite') {
-        setSelectedModel('blinga-prime' as AvailableModel);
-        localStorage.setItem('selectedModel', 'blinga-prime');
-      }
-    } else if (planUsage?.plan === 'free') {
+    if (planUsage?.plan === 'free') {
       // Free plan is locked to Blinga Lite only — force it regardless of what was saved.
       setSelectedModel('blinga-lite' as AvailableModel);
       localStorage.setItem('selectedModel', 'blinga-lite');
@@ -1071,11 +1065,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const welcomeGreeting = useMemo(() => pickGreetingIndex(currentProjectId), [currentProjectId]);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>(() => {
-    return (localStorage.getItem('selectedModel') as AvailableModel) || "blinga-lite";
+    const saved = localStorage.getItem('selectedModel');
+    // Clear blinga-prime if saved — default to blinga-lite
+    if (!saved || saved === 'blinga-prime') {
+      localStorage.setItem('selectedModel', 'blinga-lite');
+      return 'blinga-lite';
+    }
+    return saved as AvailableModel;
   });
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [ownMode, setOwnMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'blinga-games' | 'imagine' | 'blinga-labs'>('ask');
@@ -2592,10 +2593,22 @@ Rules:
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      if (messageBarStyle === 'compact') {
+        // Measure real height without transition
+        const prevTransition = textarea.style.transition;
+        textarea.style.transition = 'none';
+        textarea.style.height = '38px';
+        const target = Math.min(textarea.scrollHeight, 200) + 'px';
+        textarea.style.height = target;
+        // Force reflow then re-enable transition
+        void textarea.offsetHeight;
+        textarea.style.transition = prevTransition;
+      } else {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+      }
     }
-  }, [inputValue]);
+  }, [inputValue, messageBarStyle]);
 
   // Hide/show background animation during AI thinking
   useEffect(() => {
@@ -6868,8 +6881,8 @@ Let's start the self-listen session!`;
             /* ── Compact: single-row pill layout ── */
             <div className="flex items-center px-2 pt-2 pb-[10px] gap-1">
               {/* LEFT: Attachment + function-bar buttons */}
-              <Tooltip>
-                <DropdownMenu>
+              <Tooltip open={attachOpen ? false : undefined}>
+                <DropdownMenu open={attachOpen} onOpenChange={setAttachOpen}>
                   <TooltipTrigger asChild>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -6878,7 +6891,7 @@ Let's start the self-listen session!`;
                         className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
-                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18, transform: attachOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" }} alt="attach" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
@@ -6955,8 +6968,8 @@ Let's start the self-listen session!`;
                 onKeyDown={handleKeyDown}
                 onPaste={handleComposePaste}
                 placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : typingPlaceholder}
-                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !p-0 !min-h-0 !rounded-none [&::-webkit-scrollbar]:hidden"
-                style={{ height: '38px', maxHeight: '38px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none' }}
+                className="flex-1 bg-transparent dark:text-white text-black placeholder-zinc-400 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-sm leading-normal !rounded-none [&::-webkit-scrollbar]:hidden transition-[height] duration-300 ease-out"
+                style={{ height: '38px', minHeight: '38px', maxHeight: '200px', lineHeight: '1.5', overflowY: 'auto', scrollbarWidth: 'none', paddingTop: '10px', paddingBottom: '10px', paddingLeft: '4px', paddingRight: '4px' }}
                 data-testid="input-message"
               />
               {/* RIGHT: expand + model selector + mic + send */}
@@ -7027,7 +7040,7 @@ Let's start the self-listen session!`;
                 <SelectTrigger className="h-7 px-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 !border-none !border-0 bg-transparent shadow-none !shadow-none ring-0 !ring-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 transition-all rounded-full outline-none flex-shrink-0 w-auto">
                   <span className="truncate">{MODEL_OPTIONS.find(m => m.id === selectedModel)?.name ?? selectedModel}</span>
                 </SelectTrigger>
-                <SelectContent forceMount className="bg-white dark:bg-[#383838] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none p-1">
+                <SelectContent className="bg-white dark:bg-[#383838] !border-none !border-0 text-black dark:text-white rounded-xl shadow-2xl overflow-hidden ring-0 !ring-0 outline-none !outline-none p-1">
                   {tabModelOptions.map((modelOption) => (
                     <SelectItem key={modelOption.id} value={modelOption.id} className={`text-xs !w-auto !rounded-full mx-0.5 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer focus:bg-black/10 dark:focus:bg-white/10 ${isChatModelLocked(modelOption.id) ? 'opacity-50' : ''}`}>
                       <div className="flex items-center gap-2">
@@ -7048,7 +7061,7 @@ Let's start the self-listen session!`;
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 rounded-full transition-all flex-shrink-0 text-zinc-400 hover:text-white hover:bg-white/10"
+                        className="w-8 h-8 bg-transparent border-none rounded-full transition-all flex-shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                         onClick={handleEnhancePrompt}
                         disabled={!inputValue.trim() || isEnhancing}
                         data-testid="button-enhance"
@@ -7070,7 +7083,7 @@ Let's start the self-listen session!`;
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
+                    className={`w-8 h-8 bg-transparent border-none ${isListening ? 'text-emerald-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'} rounded-full transition-all flex-shrink-0`}
                     onClick={toggleListening}
                     disabled={!speechSupported}
                     data-testid="button-mic"
@@ -7094,7 +7107,7 @@ Let's start the self-listen session!`;
                 <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 '}`}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 composer-send-button hover:opacity-90 text-white rounded-full flex items-center justify-center transition-all flex-shrink-0" data-testid="button-send-message">
+                      <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 bg-[#fcc603] dark:bg-[#fcd703] hover:opacity-90 text-white rounded-full flex items-center justify-center transition-all flex-shrink-0" data-testid="button-send-message">
                         <ArrowUp className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
