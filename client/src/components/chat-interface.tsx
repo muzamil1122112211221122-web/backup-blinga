@@ -5633,7 +5633,7 @@ Let's start the self-listen session!`;
                                       <Button variant="ghost" size="icon"
                                         className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
                                         onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                                        <img src={microphoneIcon} alt="Mic" className="w-4 h-4 composer-message-icon" />
+                                        <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-4 h-4" />
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -5728,7 +5728,7 @@ Let's start the self-listen session!`;
                                           <Button variant="ghost" size="icon"
                                             className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all`}
                                             onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                                            <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                                            <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -5737,7 +5737,7 @@ Let's start the self-listen session!`;
                                         <TooltipTrigger asChild>
                                           <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10"
                                             onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
-                                            {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                                            {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />}
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>Enhance prompt</TooltipContent>
@@ -6619,7 +6619,7 @@ Let's start the self-listen session!`;
                     <Button variant="ghost" size="icon"
                       className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
                       onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                      <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                      <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -6728,7 +6728,7 @@ Let's start the self-listen session!`;
                         <Button variant="ghost" size="icon"
                           className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
                           onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                          <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                          <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -6738,7 +6738,7 @@ Let's start the self-listen session!`;
                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full transition-all text-zinc-400 hover:text-white hover:bg-white/10"
                           onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
-                          {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />}
+                          {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Enhance prompt</TooltipContent>
@@ -7069,7 +7069,7 @@ Let's start the self-listen session!`;
                         {isEnhancing ? (
                           <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
                         ) : (
-                          <img src={improvePromptIcon} alt="Enhance" className="w-5 h-5 composer-message-icon" />
+                          <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -7088,7 +7088,7 @@ Let's start the self-listen session!`;
                     disabled={!speechSupported}
                     data-testid="button-mic"
                   >
-                    <img src={microphoneIcon} alt="Mic" className="w-5 h-5 composer-message-icon" />
+                    <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -7360,9 +7360,9 @@ Let's start the self-listen session!`;
                           <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full"></div>
                         ) : (
                           <img
-                            src={improvePromptIcon}
+                            src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"}
                             alt="Enhance"
-                            className="w-5 h-5 composer-message-icon"
+                            className="w-5 h-5"
                           />
                         )}
                       </Button>
@@ -7380,9 +7380,9 @@ Let's start the self-listen session!`;
                         data-testid="button-mic"
                       >
                         <img
-                          src={microphoneIcon}
+                          src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"}
                           alt="Mic"
-                          className="w-5 h-5 composer-message-icon"
+                          className="w-5 h-5"
                         />
                       </Button>
                     </TooltipTrigger>
