@@ -5566,7 +5566,7 @@ Let's start the self-listen session!`;
                                       <TooltipTrigger asChild>
                                         <DropdownMenuTrigger asChild>
                                           <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0 p-0">
-                                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
                                           </Button>
                                         </DropdownMenuTrigger>
                                       </TooltipTrigger>
@@ -5711,7 +5711,7 @@ Let's start the self-listen session!`;
                                           <TooltipTrigger asChild>
                                             <DropdownMenuTrigger asChild>
                                               <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all p-0">
-                                                <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                                                <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
                                               </Button>
                                             </DropdownMenuTrigger>
                                           </TooltipTrigger>
@@ -6540,7 +6540,7 @@ Let's start the self-listen session!`;
                     <TooltipTrigger asChild>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" data-testid="button-attachment">
-                          <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                          <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
                         </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
@@ -6701,7 +6701,7 @@ Let's start the self-listen session!`;
                         <TooltipTrigger asChild>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all" data-testid="button-attachment">
-                              <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                              <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
                             </Button>
                           </DropdownMenuTrigger>
                         </TooltipTrigger>
@@ -6891,7 +6891,7 @@ Let's start the self-listen session!`;
                         className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
-                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18, transform: attachOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" }} alt="attach" />
+                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18, transform: attachOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" }} alt="attach" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
@@ -7292,7 +7292,7 @@ Let's start the self-listen session!`;
                             className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
                             data-testid="button-attachment"
                           >
-                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ width: 18, height: 18 }} alt="attach" />
+                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
