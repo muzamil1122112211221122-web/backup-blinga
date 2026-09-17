@@ -5566,7 +5566,7 @@ Let's start the self-listen session!`;
                                       <TooltipTrigger asChild>
                                         <DropdownMenuTrigger asChild>
                                           <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0 p-0">
-                                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
+                                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18 }} alt="attach" />
                                           </Button>
                                         </DropdownMenuTrigger>
                                       </TooltipTrigger>
@@ -5633,7 +5633,7 @@ Let's start the self-listen session!`;
                                       <Button variant="ghost" size="icon"
                                         className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
                                         onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                                        <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-4 h-4" />
+                                        <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-4 h-4" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -5711,7 +5711,7 @@ Let's start the self-listen session!`;
                                           <TooltipTrigger asChild>
                                             <DropdownMenuTrigger asChild>
                                               <Button variant="ghost" className="w-10 h-10 text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10 rounded-full transition-all p-0">
-                                                <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
+                                                <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18 }} alt="attach" />
                                               </Button>
                                             </DropdownMenuTrigger>
                                           </TooltipTrigger>
@@ -5728,7 +5728,7 @@ Let's start the self-listen session!`;
                                           <Button variant="ghost" size="icon"
                                             className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10'} rounded-full transition-all`}
                                             onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                                            <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
+                                            <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -5737,7 +5737,7 @@ Let's start the self-listen session!`;
                                         <TooltipTrigger asChild>
                                           <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full text-zinc-400 bg-zinc-200/70 hover:text-white hover:bg-white/10"
                                             onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
-                                            {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />}
+                                            {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />}
                                           </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>Enhance prompt</TooltipContent>
@@ -6408,21 +6408,21 @@ Let's start the self-listen session!`;
           <div className={`macos-function-bar ${!askFnBarCentered ? 'macos-function-bar-with-messages' : ''} rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'blinga-games' || activeTab === 'blinga-labs' || activeTab === 'imagine' || activeTab === 'nomad' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={askFnBarCentered ? {width: 'fit-content', position: 'fixed', top: isPill ? 'calc(50% - 48px)' : 'calc(50% - 68px)', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 38px)' : '50vw', transform: isPill ? 'translateX(calc(-50% - 14px))' : 'translateX(-50%)', zIndex: 20, marginBottom: '10px'} : {width: 'fit-content', marginLeft: 'auto', marginRight: 'auto', marginTop: isPill ? '43px' : '11px', marginBottom: '14px', transform: isPill ? 'translateX(-14px)' : undefined, position: 'relative', zIndex: 30}}>
             <div className={`flex flex-wrap justify-center p-3 bg-transparent !border-none ${isPill ? 'gap-2' : 'gap-4'}`}>
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width:'26px',height:'26px' }} />,
                 'Long Answer',
                 adjustBlinga,
                 blingaIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
                 'button-blinga-integration'
               )}
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width:'26px',height:'26px' }} />,
                 'Voice Mode',
                 openVoiceMode,
                 undefined,
                 'button-voice-mode-fn'
               )}
               {renderFunctionBtn(
-                <img src={resolvedTheme === 'dark' ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="Settings" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width:'26px',height:'26px' }} />,
+                <img src={resolvedTheme === 'dark' ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="Settings" className="btn-icon" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width:'26px',height:'26px' }} />,
                 'Settings',
                 () => setIsCustomizeModalOpen(true),
                 undefined,
@@ -6540,7 +6540,7 @@ Let's start the self-listen session!`;
                     <TooltipTrigger asChild>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0" data-testid="button-attachment">
-                          <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
+                          <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18 }} alt="attach" />
                         </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
@@ -6619,7 +6619,7 @@ Let's start the self-listen session!`;
                     <Button variant="ghost" size="icon"
                       className={`w-8 h-8 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'} rounded-full transition-all flex-shrink-0`}
                       onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                      <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
+                      <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -6701,7 +6701,7 @@ Let's start the self-listen session!`;
                         <TooltipTrigger asChild>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all" data-testid="button-attachment">
-                              <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
+                              <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18 }} alt="attach" />
                             </Button>
                           </DropdownMenuTrigger>
                         </TooltipTrigger>
@@ -6728,7 +6728,7 @@ Let's start the self-listen session!`;
                         <Button variant="ghost" size="icon"
                           className={`w-9 h-9 ${isListening ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'} rounded-full transition-all`}
                           onClick={toggleListening} disabled={!speechSupported} data-testid="button-mic">
-                          <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
+                          <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -6738,7 +6738,7 @@ Let's start the self-listen session!`;
                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full transition-all text-zinc-400 hover:text-white hover:bg-white/10"
                           onClick={handleEnhancePrompt} disabled={!inputValue.trim() || isEnhancing} data-testid="button-enhance">
-                          {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />}
+                          {isEnhancing ? <div className="animate-spin w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full" /> : <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Enhance prompt</TooltipContent>
@@ -6891,7 +6891,7 @@ Let's start the self-listen session!`;
                         className="w-8 h-8 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all flex-shrink-0"
                         data-testid="button-attachment"
                       >
-                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18, transform: attachOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" }} alt="attach" />
+                        <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18, transform: attachOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)" }} alt="attach" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
@@ -7069,7 +7069,7 @@ Let's start the self-listen session!`;
                         {isEnhancing ? (
                           <div className="animate-spin w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full" />
                         ) : (
-                          <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" />
+                          <img src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"} alt="Enhance" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -7088,7 +7088,7 @@ Let's start the self-listen session!`;
                     disabled={!speechSupported}
                     data-testid="button-mic"
                   >
-                    <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" />
+                    <img src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"} alt="Mic" className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -7292,7 +7292,7 @@ Let's start the self-listen session!`;
                             className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
                             data-testid="button-attachment"
                           >
-                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45, width: 18, height: 18 }} alt="attach" />
+                            <img src={resolvedTheme === "dark" ? "/plus-gray.png" : "/plus-black.png"} style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65, width: 18, height: 18 }} alt="attach" />
                           </Button>
                         </DropdownMenuTrigger>
                       </TooltipTrigger>
@@ -7362,8 +7362,7 @@ Let's start the self-listen session!`;
                           <img
                             src={resolvedTheme === "dark" ? "/enhance-icon-dark.png" : "/enhance-icon-light.png"}
                             alt="Enhance"
-                            className="w-5 h-5"
-                          />
+                            className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -7382,8 +7381,7 @@ Let's start the self-listen session!`;
                         <img
                           src={resolvedTheme === "dark" ? "/mic-icon-dark.png" : "/mic-icon-light.png"}
                           alt="Mic"
-                          className="w-5 h-5"
-                        />
+                          className="w-5 h-5" style={{ filter: resolvedTheme === "dark" ? "none" : "brightness(0.65)" }} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
@@ -7432,7 +7430,7 @@ Let's start the self-listen session!`;
             ] as const).map(({ label, light, dark, action }) => (
               <button key={label} onClick={action}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
-                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.45 }} />
+                <img src={resolvedTheme === 'dark' ? dark : light} alt="" className="w-4 h-4 object-contain flex-shrink-0" style={{ opacity: resolvedTheme === "dark" ? 1 : 0.65 }} />
                 {label}
               </button>
             ))}
