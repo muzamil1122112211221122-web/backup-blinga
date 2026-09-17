@@ -26,7 +26,7 @@ export default function Privacy() {
           <div className="h-4 w-px bg-zinc-200" />
           <div className="flex items-center gap-2">
             <Logo size="sm" className="text-zinc-900" />
-            <span className="text-sm font-bold text-zinc-900">Fius</span>
+            <span className="text-sm font-bold text-zinc-900">Blinga</span>
           </div>
           <span className="text-zinc-400 text-sm">/ Privacy Policy</span>
         </div>
@@ -47,7 +47,7 @@ export default function Privacy() {
             {[
               {
                 title: "Information We Collect",
-                body: "When you use Fius, we may collect:",
+                body: "When you use Blinga, we may collect:",
                 list: [
                   "Email address and profile information from Google OAuth",
                   "Chat conversations and messages",
@@ -92,7 +92,7 @@ export default function Privacy() {
           </div>
 
           {/* footer note */}
-          <p className="mt-12 text-center text-xs text-zinc-400">© 2026 Fius. All rights reserved. · Fly With Us!</p>
+          <p className="mt-12 text-center text-xs text-zinc-400">© 2026 Blinga. All rights reserved. · Fly With Us!</p>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-/* Fius Text System — Inter Variable for sharp, optical-size-aware rendering */
+/* Blinga Text System — Inter Variable for sharp, optical-size-aware rendering */
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 @tailwind base;
@@ -28,7 +28,7 @@
   --ring: hsl(240, 5%, 64.9%);
   --radius: 1.25rem;
 
-  /* Custom Fius colors */
+  /* Custom Blinga colors */
   --light-primary: hsl(0, 0%, 100%);
   --light-secondary: hsl(240, 4.8%, 95.9%);
   --light-accent: hsl(240, 4.8%, 95.9%);
@@ -41,7 +41,7 @@
   --macos-gray-dark: hsl(220, 13%, 18%);
   --macos-border-light: hsl(220, 8%, 75%);
   /* UI accent color — overridden by JS when accent is enabled */
-  --fius-ui-accent: #3b82f6;
+  --blinga-ui-accent: #3b82f6;
 }
 
 .dark {
@@ -75,7 +75,7 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: var(--fius-app-font, 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif);
+    font-family: var(--blinga-app-font, 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif);
     /* Use the browser's legible text renderer instead of forcing SVG-style
        geometricPrecision, which can rasterize mobile UI text softly. */
     text-rendering: optimizeLegibility;
@@ -101,6 +101,13 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: auto;
     -moz-osx-font-smoothing: auto;
+  }
+
+  /* Limit maximum font weight to 500 across the app as requested */
+  h1, h2, h3, h4, h5, h6,
+  strong, b,
+  .font-semibold, .font-bold, .font-extrabold, .font-black {
+    font-weight: 500 !important;
   }
 }
 
@@ -209,7 +216,7 @@
     border: none !important;
   }
 
-  /* Fix Fius settings text color in dark theme */
+  /* Fix Blinga settings text color in dark theme */
   .dark .sidebar-settings {
     color: hsl(0, 0%, 98%) !important;
   }
@@ -774,7 +781,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     FIUS TEXT SYSTEM — SVG-level sharpness across the entire app.
+     BLINGA TEXT SYSTEM — SVG-level sharpness across the entire app.
      Keep text legible without forcing a soft SVG-style rasterized layer.
      ═══════════════════════════════════════════════════════════════════ */
 
@@ -844,71 +851,71 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fius-onboarding-enter {
+@keyframes blinga-onboarding-enter {
   from { opacity: 0; transform: translateY(18px) scale(0.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes fius-picker-backdrop {
+@keyframes blinga-picker-backdrop {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes fius-picker-panel {
+@keyframes blinga-picker-panel {
   from { opacity: 0; transform: translateY(18px) scale(0.975); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes fius-picker-row {
+@keyframes blinga-picker-row {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fius-logo-breathe {
+@keyframes blinga-logo-breathe {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-2px) scale(1.025); }
 }
 
-.fius-onboarding-enter {
-  animation: fius-onboarding-enter 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
+.blinga-onboarding-enter {
+  animation: blinga-onboarding-enter 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-.fius-logo-breathe {
-  animation: fius-logo-breathe 4.8s ease-in-out infinite;
+.blinga-logo-breathe {
+  animation: blinga-logo-breathe 4.8s ease-in-out infinite;
 }
 
-.fius-account-icon {
-  animation: fius-onboarding-enter 0.7s 0.12s cubic-bezier(0.23, 1, 0.32, 1) both;
+.blinga-account-icon {
+  animation: blinga-onboarding-enter 0.7s 0.12s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-.fius-progress-sweep {
-  animation: fius-progress-sweep 1.2s 0.25s cubic-bezier(0.23, 1, 0.32, 1) both;
+.blinga-progress-sweep {
+  animation: blinga-progress-sweep 1.2s 0.25s cubic-bezier(0.23, 1, 0.32, 1) both;
   transform-origin: left;
 }
 
-@keyframes fius-progress-sweep {
+@keyframes blinga-progress-sweep {
   from { transform: scaleX(0.18); opacity: 0.4; }
   to { transform: scaleX(1); opacity: 1; }
 }
 
-.fius-picker-backdrop {
-  animation: fius-picker-backdrop 0.22s ease-out both;
+.blinga-picker-backdrop {
+  animation: blinga-picker-backdrop 0.22s ease-out both;
 }
 
-.fius-picker-panel {
-  animation: fius-picker-panel 0.42s cubic-bezier(0.23, 1, 0.32, 1) both;
+.blinga-picker-panel {
+  animation: blinga-picker-panel 0.42s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
-.fius-picker-row {
-  animation: fius-picker-row 0.28s cubic-bezier(0.23, 1, 0.32, 1) both;
+.blinga-picker-row {
+  animation: blinga-picker-row 0.28s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 /* Onboarding fields keep one intentional outer border. The global app styles
    also touch inputs, so reset their native/legacy inner border explicitly. */
-#root .fius-onboarding-input,
-#root .fius-country-picker-input,
-body .fius-onboarding-input,
-body .fius-country-picker-input {
+#root .blinga-onboarding-input,
+#root .blinga-country-picker-input,
+body .blinga-onboarding-input,
+body .blinga-country-picker-input {
   border: 0 !important;
   border-width: 0 !important;
   border-style: none !important;
@@ -919,13 +926,13 @@ body .fius-country-picker-input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fius-onboarding-enter,
-  .fius-logo-breathe,
-  .fius-account-icon,
-  .fius-progress-sweep,
-  .fius-picker-backdrop,
-  .fius-picker-panel,
-  .fius-picker-row {
+  .blinga-onboarding-enter,
+  .blinga-logo-breathe,
+  .blinga-account-icon,
+  .blinga-progress-sweep,
+  .blinga-picker-backdrop,
+  .blinga-picker-panel,
+  .blinga-picker-row {
     animation: none !important;
   }
 }
@@ -1420,10 +1427,10 @@ body.voice-mode-active [data-message-bar] {
 
 /* ─── Logo wavy circle (traveling-wave style) ─── */
 /* Light mode: dark gray ring + letter; Dark mode: full white */
-:root .fius-logo-ring   { stroke-opacity: 1; }
-:root .fius-logo-letter { fill-opacity:   1; }
-.dark .fius-logo-ring   { stroke-opacity: 1; }
-.dark .fius-logo-letter { fill-opacity:   1; }
+:root .blinga-logo-ring   { stroke-opacity: 1; }
+:root .blinga-logo-letter { fill-opacity:   1; }
+.dark .blinga-logo-ring   { stroke-opacity: 1; }
+.dark .blinga-logo-letter { fill-opacity:   1; }
 /* Animation is handled entirely via SVG <animateTransform> in logo.tsx */
 
 /* ─── Thinking animation ─── */
@@ -1567,8 +1574,8 @@ img, a, button, [role="button"] {
   color: inherit;
 }
 /* When a solid accent is active: tint the selection with the accent colour       */
-.fius-accent-on ::selection {
-  background-color: color-mix(in srgb, var(--fius-ui-accent) 38%, transparent);
+.blinga-accent-on ::selection {
+  background-color: color-mix(in srgb, var(--blinga-ui-accent) 38%, transparent);
   color: inherit;
 }
 
@@ -1586,48 +1593,48 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
   caret-color: #fff;
 }
 /* Accent overrides both when a solid accent is active                            */
-.fius-accent-on textarea,
-.fius-accent-on input[type="text"],
-.fius-accent-on input[type="search"],
-.fius-accent-on input[type="email"],
-.fius-accent-on input[type="password"] {
-  caret-color: var(--fius-ui-accent) !important;
+.blinga-accent-on textarea,
+.blinga-accent-on input[type="text"],
+.blinga-accent-on input[type="search"],
+.blinga-accent-on input[type="email"],
+.blinga-accent-on input[type="password"] {
+  caret-color: var(--blinga-ui-accent) !important;
 }
 
 /* ─── Accent Color ───────────────────────────────────────────────────────────── */
-/* When uiAccentEnabled=true & a specific color is chosen, body gets .fius-accent-on */
+/* When uiAccentEnabled=true & a specific color is chosen, body gets .blinga-accent-on */
 
 /* Switches: checked = accent bg + always-white thumb so on/off is always clear */
-.fius-accent-on [data-state=checked] {
-  background-color: var(--fius-ui-accent) !important;
+.blinga-accent-on [data-state=checked] {
+  background-color: var(--blinga-ui-accent) !important;
 }
-.fius-accent-on [data-state=checked] > span {
+.blinga-accent-on [data-state=checked] > span {
   background-color: #ffffff !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
 }
 /* Unchecked: subtle accent border so you can clearly see checked vs unchecked */
-.fius-accent-on [data-state=unchecked] {
-  border: 2px solid color-mix(in srgb, var(--fius-ui-accent) 35%, transparent) !important;
+.blinga-accent-on [data-state=unchecked] {
+  border: 2px solid color-mix(in srgb, var(--blinga-ui-accent) 35%, transparent) !important;
 }
 
-.fius-accent-on .user-msg-bubble {
-  background-color: var(--fius-ui-accent) !important;
+.blinga-accent-on .user-msg-bubble {
+  background-color: var(--blinga-ui-accent) !important;
   color: #fff !important;
 }
-.fius-accent-on .user-msg-bubble * {
+.blinga-accent-on .user-msg-bubble * {
   color: #fff !important;
 }
 
 /* ─── Logo variant 2 (rings) accent colour ───────────────────────────────────── */
 /* Overlay div uses mix-blend-mode:color to recolour the spinning rings PNG.
    The ƒ letter (z-index:2) sits above it and also picks up the accent.          */
-.fius-accent-on .fius-rings-accent-tint {
-  background-color: var(--fius-ui-accent);
+.blinga-accent-on .blinga-rings-accent-tint {
+  background-color: var(--blinga-ui-accent);
   mix-blend-mode: color;
   opacity: 0.82;
 }
-.fius-accent-on [data-testid="logo-fius-rings"] span {
-  color: var(--fius-ui-accent) !important;
+.blinga-accent-on [data-testid="logo-blinga-rings"] span {
+  color: var(--blinga-ui-accent) !important;
 }
 
 /* Reply button pop — scales up from small with a spring overshoot */
@@ -1687,7 +1694,7 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
 
   /* The country picker is portaled to body, but keep this exception for
      preview/browser shells that still place the overlay under #root. */
-  #root .fius-picker-backdrop {
+  #root .blinga-picker-backdrop {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
   }
@@ -1732,4 +1739,11 @@ textarea, input[type="text"], input[type="search"], input[type="email"], input[t
   #root .mobile-settings-sheet [class*="animate-"] {
     animation: none !important;
   }
+}
+
+.crisp-outline {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+.dark .crisp-outline {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.4);
 }

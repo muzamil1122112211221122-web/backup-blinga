@@ -6,19 +6,19 @@ import { ArrowUp, ChevronRight, ChevronDown, FlaskConical, Zap, RotateCcw, Minus
 import microphoneIcon from "@assets/microphone_1784996715112.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
 import plusButtonIcon from "@assets/add_1784996715112.png";
-import { FiusLogo } from './logo';
+import { BlingaLogo } from './logo';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import normalLabWhiteIcon from '@assets/normal_lab_white_theme_1784982983175.png';
 import superLabWhiteIcon from '@assets/super_lab_white_theme_1784982983174.png';
 import normalLabDarkIcon from '@assets/normal_lab_dark_theme_1784983374592.png';
 import superLabDarkIcon from '@assets/super_lab_dark_theme_1784983374593.png';
-import fiusLabLogoWhite from '@assets/fius_lab_logo_white_theme_1784984081369.png';
-import fiusLabLogoDark from '@assets/fius_lab_logo_dark_theme_1784984081368.png';
+import blingaLabLogoWhite from '@assets/blinga_lab_logo_white_theme_1784984081369.png';
+import blingaLabLogoDark from '@assets/blinga_lab_logo_dark_theme_1784984081368.png';
 
 // ── Storage keys ────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'fius_labs_onboarded';
-const PREFS_KEY   = 'fius_labs_prefs';
+const STORAGE_KEY = 'blinga_labs_onboarded';
+const PREFS_KEY   = 'blinga_labs_prefs';
 
 // ── Onboarding questions ────────────────────────────────────────────────────
 const ONBOARDING_QUESTIONS = [
@@ -32,7 +32,7 @@ const ONBOARDING_QUESTIONS = [
   { id: 'lang',      text: 'What language do you prefer for responses?',              placeholder: 'English, Urdu, Arabic…' },
   { id: 'goal',      text: "What's your main goal when using an AI assistant?",       placeholder: 'Learning, Productivity, Coding…' },
   { id: 'creative',  text: 'Are you more creative or analytical? Or both?',           placeholder: 'Creative / Analytical / Both' },
-  { id: 'usecase',   text: 'What will you mostly use Fius Labs for?',                 placeholder: 'Research, Writing, Coding, Chatting…' },
+  { id: 'usecase',   text: 'What will you mostly use Blinga Labs for?',                 placeholder: 'Research, Writing, Coding, Chatting…' },
   { id: 'humor',     text: 'Do you like a touch of humor in responses?',              placeholder: 'Yes / No / Sometimes' },
   { id: 'depth',     text: 'When learning, do you prefer examples first or theory?',  placeholder: 'Examples / Theory / Mixed' },
   { id: 'time',      text: 'Quick sessions or long deep-dive work?',                  placeholder: 'Quick / Long / Both' },
@@ -45,8 +45,8 @@ interface ModelDef {
 }
 
 const NORMAL_MODELS: ModelDef[] = [
-  { id: 'fius-lite',  name: 'Fius Lite', description: 'Fast & efficient for everyday tasks',  logo: '/fius-logo.png', color: '#a855f7', provider: 'fius' },
-  { id: 'fius-prime', name: 'Fius Pro',  description: 'Most advanced general AI by Fius',     logo: '/fius-logo.png', color: '#7c3aed', provider: 'fius' },
+  { id: 'blinga-lite',  name: 'Blinga Lite', description: 'Fast & efficient for everyday tasks',  logo: '/blinga-logo.png', color: '#a855f7', provider: 'blinga' },
+  { id: 'blinga-max', name: 'Blinga Pro',  description: 'Most advanced general AI by Blinga',     logo: '/blinga-logo.png', color: '#7c3aed', provider: 'blinga' },
 ];
 
 // Normal Lab: 4 slots — alternate Lite / Pro
@@ -55,8 +55,8 @@ const NORMAL_DEFAULT_SLOTS: ModelDef[] = [
 ];
 
 const SUPER_MODELS: ModelDef[] = [
-  { id: 'fius-ai',           name: 'Fius Lite',         description: 'Fast & efficient, powered by Fius',            logo: '/fius-logo.png',       color: '#a855f7', provider: 'fius'       },
-  { id: 'fius-prime',        name: 'Fius Pro',          description: 'Most advanced general AI by Fius',             logo: '/fius-logo.png',       color: '#7c3aed', provider: 'fius'       },
+  { id: 'blinga-ai',           name: 'Blinga Lite',         description: 'Fast & efficient, powered by Blinga',            logo: '/blinga-logo.png',       color: '#a855f7', provider: 'blinga'       },
+  { id: 'blinga-max',        name: 'Blinga Pro',          description: 'Most advanced general AI by Blinga',             logo: '/blinga-logo.png',       color: '#7c3aed', provider: 'blinga'       },
   { id: 'gpt-4o',            name: 'GPT-5 mini',        description: 'Advanced reasoning & multimodal AI by OpenAI', logo: '/chatgpt-logo.png',    color: '#10a37f', provider: 'openai'     },
   { id: 'claude-3.5-sonnet', name: 'Claude Haiku 4.5',  description: 'Nuanced writing, analysis & coding by Anthropic', logo: '/claude-logo.png',  color: '#f97316', provider: 'anthropic'  },
   { id: 'gemini-pro',        name: 'Gemini Flash-Lite', description: "Google's multimodal reasoning model",          logo: '/gemini-logo.png',     color: '#14b8a6', provider: 'google'     },
@@ -74,8 +74,8 @@ const SUPER_MODELS: ModelDef[] = [
 // ── Model category tags (for picker filter tabs) ─────────────────────────────
 // latest = all models; flagship = models that have a flagship sub-section in Nomad
 const MODEL_TAGS: Record<string, string[]> = {
-  'fius-ai':           ['latest'],
-  'fius-prime':        ['latest', 'flagship'],
+  'blinga-ai':           ['latest'],
+  'blinga-max':        ['latest', 'flagship'],
   'gpt-4o':            ['latest', 'flagship'],
   'claude-3.5-sonnet': ['latest', 'flagship'],
   'gemini-pro':        ['latest', 'flagship'],
@@ -94,7 +94,7 @@ const MODEL_TAGS: Record<string, string[]> = {
 type Msg = { id: string; role: 'user' | 'assistant'; content: string };
 type LabMode = 'normal' | 'super';
 
-interface FiusLabsProps {
+interface BlingaLabsProps {
   user?: { displayName?: string | null; username?: string; id?: number | string } | null;
 }
 
@@ -102,7 +102,7 @@ interface FiusLabsProps {
 function buildSysPrompt(prefs: Record<string, string>, modelName: string) {
   const p = (k: string) => prefs[k] || '';
   return [
-    `You are ${modelName}, an AI inside Fius Labs.`,
+    `You are ${modelName}, an AI inside Blinga Labs.`,
     p('name')    && `The user's name is ${p('name')}.`,
     p('field')   && `Their field: ${p('field')}.`,
     p('topics')  && `Favourite topics: ${p('topics')}.`,
@@ -133,9 +133,9 @@ const LAB_PLACEHOLDERS = [
   "Explain quantum computing simply",
 ];
 
-// ── Animated Fius Logo ──────────────────────────────────────────────────────
-function AnimatedFiusLogo({ dark, size = 44, src }: { dark: boolean; size?: number; src?: string }) {
-  const logoSrc = src || (dark ? fiusLabLogoDark : fiusLabLogoWhite);
+// ── Animated Blinga Logo ──────────────────────────────────────────────────────
+function AnimatedBlingaLogo({ dark, size = 44, src }: { dark: boolean; size?: number; src?: string }) {
+  const logoSrc = src || (dark ? blingaLabLogoDark : blingaLabLogoWhite);
   return (
     <div style={{ width: size, height: size, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {/* Pulsing glow ring */}
@@ -167,7 +167,7 @@ function AnimatedFiusLogo({ dark, size = 44, src }: { dark: boolean; size?: numb
       {/* Logo image with subtle breathe */}
       <motion.img
         src={logoSrc}
-        alt="Fius Labs"
+        alt="Blinga Labs"
         style={{ width: size, height: size, objectFit: 'contain', position: 'relative', zIndex: 1 }}
         animate={{ scale: [1, 1.06, 1] }}
         transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
@@ -211,8 +211,8 @@ function ThinkingCloud({ logo, name, dark }: { logo: string; name: string; dark:
   );
 }
 
-// ── Main FiusLabs component ─────────────────────────────────────────────────
-export function FiusLabs({ user }: FiusLabsProps) {
+// ── Main BlingaLabs component ─────────────────────────────────────────────────
+export function BlingaLabs({ user }: BlingaLabsProps) {
   const { theme } = useTheme();
   const dark = theme === 'dark';
 
@@ -503,7 +503,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
       const res = await authFetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content, conversationId: `fius-labs-${colIdx}-${model.id}`, model: model.id, provider: model.provider, systemPrompt: buildSysPrompt(prefs, model.name) }),
+        body: JSON.stringify({ message: content, conversationId: `blinga-labs-${colIdx}-${model.id}`, model: model.id, provider: model.provider, systemPrompt: buildSysPrompt(prefs, model.name) }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -565,7 +565,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
       authFetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content, conversationId: `fius-labs-${idx}-${model.id}`, model: model.id, provider: model.provider, systemPrompt: buildSysPrompt(prefs, model.name) }),
+        body: JSON.stringify({ message: content, conversationId: `blinga-labs-${idx}-${model.id}`, model: model.id, provider: model.provider, systemPrompt: buildSysPrompt(prefs, model.name) }),
       }).then(async res => {
         const data = res.ok ? await res.json() : null;
         setMessages(prev => ({ ...prev, [idx]: [...(prev[idx] || []), { id: `a-${Date.now()}-${idx}`, role: 'assistant', content: data?.response || '⚠️ Error.' }] }));
@@ -594,7 +594,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
         <div className="flex flex-col items-center mb-10">
           <img
             src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
-            alt="Fius Labs"
+            alt="Blinga Labs"
             className="object-contain mb-3"
             style={{ width: 72, height: 72 }}
           />
@@ -602,7 +602,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
             className="text-foreground tracking-tight"
             style={{ fontSize: '2rem', fontWeight: 1000, lineHeight: 1 }}
           >
-            Fius Labs
+            Blinga Labs
           </span>
         </div>
 
@@ -713,7 +713,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12 relative z-10 flex flex-col items-center">
           <img
             src={dark ? '/tab-labs-dark.png' : '/tab-labs-light.png'}
-            alt="Fius Labs"
+            alt="Blinga Labs"
             className="object-contain mb-4"
             style={{ width: 110, height: 110 }}
           />
@@ -721,7 +721,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
             className="tracking-tight mb-1"
             style={{ fontSize: '3rem', fontWeight: 1000, color: dark ? '#f5f5f5' : '#171717', lineHeight: 1 }}
           >
-            Fius Labs
+            Blinga Labs
           </h1>
           <p className="text-muted-foreground text-sm mt-2">
             {prefs.name ? `Welcome back, ${prefs.name}!` : 'Welcome!'} Pick a lab mode.
@@ -753,12 +753,12 @@ export function FiusLabs({ user }: FiusLabsProps) {
           >
             <img
               src={dark ? normalLabDarkIcon : normalLabWhiteIcon}
-              alt="Normal Fius Lab"
+              alt="Normal Blinga Lab"
               className="w-32 h-32 object-contain mb-8"
             />
-            <h2 className="text-3xl font-bold mb-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">Normal Fius Lab</h2>
+            <h2 className="text-3xl font-bold mb-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">Normal Blinga Lab</h2>
             <p className="text-sm leading-relaxed mb-5 text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              4 AI panels side-by-side. One message bar sends to all active chats. Only Fius Lite and Fius Pro models.
+              4 AI panels side-by-side. One message bar sends to all active chats. Only Blinga Lite and Blinga Pro models.
             </p>
             <div className="flex flex-wrap gap-1.5 mb-6">
               {NORMAL_MODELS.map(m => (
@@ -801,11 +801,11 @@ export function FiusLabs({ user }: FiusLabsProps) {
           >
             <img
               src={dark ? superLabDarkIcon : superLabWhiteIcon}
-              alt="Super Fius Lab"
+              alt="Super Blinga Lab"
               className="w-32 h-32 object-contain mb-8 relative z-10"
             />
             <div className="flex items-center gap-2 mb-3 relative z-10">
-              <h2 className="text-3xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">Super Fius Lab</h2>
+              <h2 className="text-3xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)]">Super Blinga Lab</h2>
               <span className="text-[10px] px-2 py-1 rounded-full font-bold tracking-wide bg-black text-white">SUPER</span>
             </div>
             <p className="text-sm leading-relaxed mb-5 relative z-10 text-white/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
@@ -903,7 +903,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
 
       {/* ── Top strip ───────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-1.5 flex-shrink-0" style={{}}>
-        <AnimatedFiusLogo
+        <AnimatedBlingaLogo
           dark={dark}
           size={28}
           src={labMode === 'super'
@@ -911,7 +911,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
             : (dark ? normalLabDarkIcon : normalLabWhiteIcon)}
         />
         <span className="font-semibold text-sm" style={{ color: dark ? '#f5f5f5' : '#171717' }}>
-          {labMode === 'normal' ? 'Normal Fius Lab' : 'Super Fius Lab'}
+          {labMode === 'normal' ? 'Normal Blinga Lab' : 'Super Blinga Lab'}
         </span>
         <span className="text-xs text-muted-foreground">— {slots.length} panel{slots.length !== 1 ? 's' : ''}</span>
 
@@ -976,9 +976,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
         {inputMode === 'super' && !hasMessages && !isTypingAny && (
           <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-4">
             {/* Logo + Fly With Us */}
-            <FiusLogo size="2xl" className="mb-4 text-black dark:text-foreground" />
+            <BlingaLogo size="2xl" className="mb-4 text-black dark:text-foreground" />
             <h2 className="text-3xl font-normal mb-1 text-foreground text-center">
-              {prefs.name ? `Hey ${prefs.name}, the sky's the limit today!` : 'Welcome to Fius Labs'}
+              {prefs.name ? `Hey ${prefs.name}, the sky's the limit today!` : 'Welcome to Blinga Labs'}
             </h2>
             <p className="text-lg text-foreground mb-8">Fly With Us!</p>
 
@@ -1042,7 +1042,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] flex-1 border transition-all ${chatModelsChosen[idx] ? 'border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-white/5' : 'border-dashed border-zinc-300 dark:border-zinc-600 bg-transparent'}`}>
                               {chatModelsChosen[idx] ? (
                                 <>
-                                  {slotModel.provider === 'fius' ? (
+                                  {slotModel.provider === 'blinga' ? (
                                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: slotModel.color }} />
                                   ) : (
                                     <img src={slotModel.logo} alt="" className="w-3 h-3 object-contain flex-shrink-0" onError={e2 => { (e2.target as HTMLImageElement).style.display='none'; }} />
@@ -1180,7 +1180,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] flex-1 border transition-all ${chatModelsChosen[idx] ? 'border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-white/5' : 'border-dashed border-zinc-300 dark:border-zinc-600 bg-transparent'}`}>
                               {chatModelsChosen[idx] ? (
                                 <>
-                                  {slotModel.provider === 'fius' ? (
+                                  {slotModel.provider === 'blinga' ? (
                                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: slotModel.color }} />
                                   ) : (
                                     <img src={slotModel.logo} alt="" className="w-3 h-3 object-contain flex-shrink-0" onError={e2 => { (e2.target as HTMLImageElement).style.display='none'; }} />
@@ -1298,8 +1298,8 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       <div className="flex flex-row items-center gap-3 px-3.5 py-3">
                         {/* Logo */}
                         <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
-                          {model.provider === 'fius' ? (
-                            <FiusLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" className={dark ? 'text-white' : 'text-black'} />
+                          {model.provider === 'blinga' ? (
+                            <BlingaLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" className={dark ? 'text-white' : 'text-black'} />
                           ) : (
                             <img
                               src={model.logo}
@@ -1416,10 +1416,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                           ) : (
                             <div className="max-w-[90%]">
                               <div className="flex items-center gap-1.5 mb-1.5 ml-1">
-                                {model.provider === 'fius' ? (
-                                  <FiusLogo size="sm" className="flex-shrink-0 text-black dark:text-foreground" />
+                                {model.provider === 'blinga' ? (
+                                  <BlingaLogo size="sm" className="flex-shrink-0 text-black dark:text-foreground" />
                                 ) : (
-                                  <img src={model.logo} alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = '/fius-logo.png'; }} />
+                                  <img src={model.logo} alt={model.name} className="w-4 h-4 object-contain rounded-full flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = '/blinga-logo.png'; }} />
                                 )}
                                 <span className="text-[10px] font-semibold text-muted-foreground">{model.name}</span>
                               </div>
@@ -1468,10 +1468,10 @@ export function FiusLabs({ user }: FiusLabsProps) {
                                     </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-xl shadow-2xl p-1 min-w-[180px] z-[200]">
-                                    <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-labs-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                    <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-labs-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                       <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-labs-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                    <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-labs-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                       <FileDown className="w-3.5 h-3.5 text-violet-500" /> Export as Markdown
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -1649,7 +1649,7 @@ export function FiusLabs({ user }: FiusLabsProps) {
                 pickerFilter === 'latest' || MODEL_TAGS[m.id]?.includes(pickerFilter)
               ).map(m => {
                 const isSelected = pickerSelected === m.id;
-                const isPro = m.provider !== 'fius';
+                const isPro = m.provider !== 'blinga';
                 return (
                   <button
                     key={m.id}
@@ -1693,9 +1693,9 @@ export function FiusLabs({ user }: FiusLabsProps) {
                       }}
                     >
                       {/* Logo */}
-                      {m.provider === 'fius' ? (
+                      {m.provider === 'blinga' ? (
                         <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <FiusLogo size="md" className={dark ? 'text-white' : 'text-black'} />
+                          <BlingaLogo size="md" className={dark ? 'text-white' : 'text-black'} />
                         </div>
                       ) : (
                         <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

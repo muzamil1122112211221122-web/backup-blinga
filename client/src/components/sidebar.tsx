@@ -8,7 +8,7 @@ import { useUsage } from "@/hooks/use-usage";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { FiusLogo } from "./logo";
+import { BlingaLogo } from "./logo";
 import { format, isToday, isYesterday, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getVibrantColor } from "@/lib/utils";
@@ -676,14 +676,14 @@ export function Sidebar({
                   className="relative rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/70 p-1.5 transition-colors"
                   style={{width: 48, height: 48, display:'flex', alignItems:'center', justifyContent:'center'}}
                 >
-                  {/* Fius logo — fades out on hover */}
+                  {/* Blinga logo — fades out on hover */}
                   <div style={{
                     position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
                     opacity: isLogoHovered ? 0 : 1,
                     transition: 'opacity 0.2s ease',
                     transform: 'scale(1.15)', transformOrigin:'center',
                   }}>
-                    <FiusLogo size="sm" className="text-black dark:text-white" />
+                    <BlingaLogo size="sm" className="text-black dark:text-white" />
                   </div>
                   {/* Close icon — fades in on hover */}
                   <div style={{
@@ -706,7 +706,7 @@ export function Sidebar({
                 className="cursor-default"
               >
                 <div style={{ transform: 'scale(1.35)', transformOrigin: 'center' }}>
-                  <FiusLogo size="sm" className="text-black dark:text-white" />
+                  <BlingaLogo size="sm" className="text-black dark:text-white" />
                 </div>
               </button>
               <button
@@ -742,9 +742,9 @@ export function Sidebar({
               </Tooltip>
               <MiniNavButton asset="ask" label="Ask" onClick={() => onTabChange?.('ask')} active={activeTab === 'ask' && askHasMessages} iconSize="25px" />
               <MiniNavButton asset="nomad" label="Nomad" onClick={() => onTabChange?.('nomad')} active={activeTab === 'nomad'} />
-              <MiniNavButton asset="minds" label="Fius Minds" onClick={() => onTabChange?.('philosopher')} active={activeTab === 'philosopher'} iconSize="23px" />
-              <MiniNavButton asset="games" label="Fius Games" onClick={() => onTabChange?.('fius-games')} active={activeTab === 'fius-games'} iconSize="26px" />
-              <MiniNavButton asset="labs" label="Fius Labs" onClick={() => onTabChange?.('fius-labs')} active={activeTab === 'fius-labs'} iconSize="26px" />
+              <MiniNavButton asset="minds" label="Blinga Minds" onClick={() => onTabChange?.('philosopher')} active={activeTab === 'philosopher'} iconSize="23px" />
+              <MiniNavButton asset="games" label="Blinga Games" onClick={() => onTabChange?.('blinga-games')} active={activeTab === 'blinga-games'} iconSize="26px" />
+              <MiniNavButton asset="labs" label="Blinga Labs" onClick={() => onTabChange?.('blinga-labs')} active={activeTab === 'blinga-labs'} iconSize="26px" />
             </>)}
             <MiniNavButton asset="history" label="Chats" onClick={() => setIsMini(false)} />
             {/* Free space — tooltip + click to expand, only fires on empty area since buttons stopPropagation */}
@@ -825,23 +825,23 @@ export function Sidebar({
                   className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-[0.97] text-left ${activeTab === 'philosopher' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("minds")} alt="" className="object-contain" style={{width:'23px',height:'23px'}} /></span>
-                  <span className="text-[14px] font-medium">Fius Minds</span>
+                  <span className="text-[14px] font-medium">Blinga Minds</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => { onTabChange?.('fius-games'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-[0.97] text-left ${activeTab === 'fius-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  onClick={() => { onTabChange?.('blinga-games'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-[0.97] text-left ${activeTab === 'blinga-games' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("games")} alt="" className="object-contain" style={{width:'28px',height:'28px'}} /></span>
-                  <span className="text-[14px] font-medium">Fius Games</span>
+                  <span className="text-[14px] font-medium">Blinga Games</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => { onTabChange?.('fius-labs'); }}
-                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-[0.97] text-left ${activeTab === 'fius-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
+                  onClick={() => { onTabChange?.('blinga-labs'); }}
+                  className={`w-full flex items-center gap-3 px-3 py-1 rounded-full transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-[0.97] text-left ${activeTab === 'blinga-labs' ? 'bg-zinc-100 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/70'}`}
                 >
                   <span className="w-6 flex items-center justify-center flex-shrink-0"><img src={sidebarAsset("labs")} alt="" className="object-contain" style={{width:'28px',height:'28px'}} /></span>
-                  <span className="text-[14px] font-medium">Fius Labs</span>
+                  <span className="text-[14px] font-medium">Blinga Labs</span>
                 </button>
               </>)}
             </div>

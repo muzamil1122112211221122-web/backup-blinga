@@ -151,7 +151,7 @@ export function EducationModal({ isOpen, onClose, onStartExamination, onStartSel
         >
           <CardHeader className="text-center">
             <GraduationCap className="mx-auto h-12 w-12 text-blue-500" />
-            <CardTitle>Fius Examination</CardTitle>
+            <CardTitle>Blinga Examination</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -167,7 +167,7 @@ export function EducationModal({ isOpen, onClose, onStartExamination, onStartSel
         >
           <CardHeader className="text-center">
             <BookOpen className="mx-auto h-12 w-12 text-green-500" />
-            <CardTitle>Fius Self Listen</CardTitle>
+            <CardTitle>Blinga Self Listen</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -405,7 +405,7 @@ export function EducationModal({ isOpen, onClose, onStartExamination, onStartSel
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            Fius Education
+            Blinga Education
           </DialogTitle>
         </DialogHeader>
         

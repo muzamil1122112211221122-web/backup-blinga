@@ -143,13 +143,13 @@ const NOTIFICATION_VARIANTS = [
   {
     id: "philosopher",
     image: "/philosopher-avatar.png",
-    title: "Meet Fius Minds...",
+    title: "Meet Blinga Minds...",
     description: "Dive deep into ideas with AI-powered historical figures",
     dotColor: "bg-purple-400",
   },
   {
-    id: "fius-games",
-    image: "/fius-games-avatar.png",
+    id: "blinga-games",
+    image: "/blinga-games-avatar.png",
     title: "Meet Game Zone",
     description: "Challenge yourself and play with AI companions",
     dotColor: "bg-blue-400",

@@ -1,4 +1,4 @@
-// Advanced API Manager for Fius
+// Advanced API Manager for Blinga
 // Primary: Gemini (up to 3 keys, round-robin)
 // Secondary: Groq (1-2 keys)
 

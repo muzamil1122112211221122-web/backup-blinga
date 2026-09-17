@@ -1,4 +1,4 @@
-// AUTO-GENERATED list of recognizable subjects in the Fius Heavy app.
+// AUTO-GENERATED list of recognizable subjects in the Blinga Heavy app.
 // Used as a hint to vision models so they can correctly identify
 // uploaded images of these specific people, brands, or icons.
 
@@ -14,7 +14,7 @@ export const NOMAD_AI_LOGOS: string[] = [
   'Qwen (Alibaba) — orange/red icon, often shown with the word Qwen',
   'Llama 4 (Meta) — llama or geometric icon, often shown with the word Llama or Meta',
   'Mistral AI — orange/red gradient icon, often shown with the word Mistral',
-  'Fius / Fius Pro — the in-app brand mark for the Fius AI assistant',
+  'Blinga / Blinga Pro — the in-app brand mark for the Blinga AI assistant',
 ];
 
 export const HISTORICAL_FIGURES: string[] = [

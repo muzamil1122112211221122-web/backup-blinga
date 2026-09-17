@@ -21,7 +21,7 @@ export interface ChatConversation {
   userId: string;
   title: string;
   isPrivate: boolean;
-  preset: 'custom' | 'concise' | 'formal' | 'socratic' | 'fius-education';
+  preset: 'custom' | 'concise' | 'formal' | 'socratic' | 'blinga-education';
   customInstructions?: string;
   model: string;
   createdAt: Date;
@@ -47,18 +47,18 @@ export interface WebSocketMessage {
 
 export const MODEL_OPTIONS = [
   { 
-    id: 'fius-lite', 
-    name: 'Fius Lite', 
+    id: 'blinga-lite', 
+    name: 'Blinga Lite', 
     description: 'Fast & efficient for everyday tasks', 
-    provider: 'fius',
+    provider: 'blinga',
     speed: 'fastest',
     intelligence: 'high'
   },
   { 
-    id: 'fius-prime', 
-    name: 'Fius Pro', 
+    id: 'blinga-max', 
+    name: 'Blinga Max', 
     description: 'Our most advanced general AI', 
-    provider: 'fius',
+    provider: 'blinga',
     speed: 'fast',
     intelligence: 'high'
   },
@@ -95,41 +95,41 @@ export const MODEL_OPTIONS = [
     intelligence: 'high'
   },
   { 
-    id: 'fius-education', 
-    name: 'Fius Education', 
+    id: 'blinga-education', 
+    name: 'Blinga Education', 
     description: 'Specialized for learning and teaching', 
-    provider: 'fius',
+    provider: 'blinga',
     speed: 'fast',
     intelligence: 'high'
   },
   { 
-    id: 'fius-imagine-super', 
-    name: 'Fius Imagine Super', 
+    id: 'blinga-imagine-super', 
+    name: 'Blinga Imagine Super', 
     description: 'Highest quality AI image generation', 
-    provider: 'fius-imagine',
+    provider: 'blinga-imagine',
     speed: 'medium',
     intelligence: 'highest'
   },
   { 
-    id: 'fius-imagine-fast', 
-    name: 'Fius Imagine Fast', 
+    id: 'blinga-imagine-fast', 
+    name: 'Blinga Imagine Fast', 
     description: 'Rapid AI image generation', 
-    provider: 'fius-imagine',
+    provider: 'blinga-imagine',
     speed: 'fastest',
     intelligence: 'high'
   }
 ] as const;
 
 export const AVAILABLE_MODELS = [
-  'fius-lite',
-  'fius-prime',        
+  'blinga-lite',
+  'blinga-max',        
   'gpt-4o',
   'claude-3.5-sonnet',
   'gemini-pro',
   'llama-3.3-70b-versatile',
-  'fius-education',
-  'fius-imagine-super',
-  'fius-imagine-fast',
+  'blinga-education',
+  'blinga-imagine-super',
+  'blinga-imagine-fast',
 ] as const;
 
 export type AvailableModel = typeof AVAILABLE_MODELS[number];
@@ -137,7 +137,7 @@ export type AvailableModel = typeof AVAILABLE_MODELS[number];
 export const CHAT_PRESETS = {
   custom: {
     name: "Custom",
-    description: "Customize how Fius API responds.",
+    description: "Customize how Blinga API responds.",
   },
   concise: {
     name: "Concise", 
@@ -151,8 +151,8 @@ export const CHAT_PRESETS = {
     name: "Socratic",
     description: "Responds in a way to help you learn.",
   },
-  "fius-education": {
-    name: "Fius Education",
+  "blinga-education": {
+    name: "Blinga Education",
     description: "Advanced educational assistant with examination and listening features.",
   },
 } as const;

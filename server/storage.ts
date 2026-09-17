@@ -86,7 +86,7 @@ export class MemStorage implements IStorage {
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
     const id = randomUUID();
     const now = new Date();
-    const conversation: Conversation = { ...insertConversation, id, isPrivate: insertConversation.isPrivate ?? false, isProject: insertConversation.isProject ?? false, preset: insertConversation.preset ?? "custom", customInstructions: insertConversation.customInstructions ?? null, model: insertConversation.model ?? "fius-prime", createdAt: now, updatedAt: now };
+    const conversation: Conversation = { ...insertConversation, id, isPrivate: insertConversation.isPrivate ?? false, isProject: insertConversation.isProject ?? false, preset: insertConversation.preset ?? "custom", customInstructions: insertConversation.customInstructions ?? null, model: insertConversation.model ?? "blinga-prime", createdAt: now, updatedAt: now };
     this.conversations.set(id, conversation);
     return conversation;
   }

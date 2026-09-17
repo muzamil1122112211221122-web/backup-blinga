@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, Component, useMemo } from "react";
 import { motion } from "framer-motion";
 
-// ── Fius Ultimatum card pool (mirrors desktop) ────────────────────────────────
+// ── Blinga Ultimatum card pool (mirrors desktop) ────────────────────────────────
 type UltimatumCardM = { Icon: React.ElementType; label: string; prompt: string; modelName: string; modelLogo: string; color: string };
 const ULTIMATUM_CARD_POOL_M: UltimatumCardM[] = [
   { Icon: Brain,         label: 'Deep Reasoning',  prompt: 'Break down a complex problem step by step',    modelName: 'DeepSeek R1', modelLogo: '/deepseek-logo.png',   color: '#6366f1' },
@@ -17,7 +17,7 @@ const ULTIMATUM_CARD_POOL_M: UltimatumCardM[] = [
   { Icon: TrendingUp,    label: 'Business Plan',    prompt: 'Build a go-to-market or growth strategy',      modelName: 'Grok 4',      modelLogo: '/grok-logo.png',       color: '#ef4444' },
   { Icon: BookOpenCheck, label: 'Research',         prompt: 'Deep-dive research with cited sources',        modelName: 'Perplexity',  modelLogo: '/perplexity-logo.png', color: '#3b82f6' },
   { Icon: Globe,         label: 'Translation',      prompt: 'Translate with cultural nuance intact',        modelName: 'DeepSeek',    modelLogo: '/deepseek-logo.png',   color: '#f97316' },
-  { Icon: Zap,           label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Fius',        modelLogo: '/fius-logo.png',       color: '#fbbf24' },
+  { Icon: Zap,           label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Blinga',        modelLogo: '/blinga-logo.png',       color: '#fbbf24' },
   { Icon: Target,        label: 'Problem Solving',  prompt: 'Find the best path through any challenge',     modelName: 'DeepSeek R1', modelLogo: '/deepseek-logo.png',   color: '#f43f5e' },
   { Icon: GraduationCap, label: 'Learning',         prompt: 'Teach me something new from scratch',          modelName: 'Gemini',      modelLogo: '/gemini-logo.png',     color: '#0891b2' },
   { Icon: MessageSquare, label: 'Debate & Argue',   prompt: 'Build the strongest case for a position',      modelName: 'Claude',      modelLogo: '/claude-logo.png',     color: '#d946ef' },
@@ -31,9 +31,9 @@ function shuffleUltimatumM<T>(arr: T[]): T[] {
   return a;
 }
 import { useQuery } from "@tanstack/react-query";
-import { FiusGames, preloadGamesData } from "./fius-games";
+import { BlingaGames, preloadGamesData } from "./blinga-games";
 import { getCachedWikiImage, fetchWikiImage, preloadWikiImages } from "@/lib/wiki-image-cache";
-import { FiusLogo, Logo } from "./logo";
+import { BlingaLogo, Logo } from "./logo";
 import { Sidebar } from "./sidebar";
 import { VoiceModeModal } from "./voice-mode-modal";
 import { UpgradeModal } from "./upgrade-modal";
@@ -70,6 +70,7 @@ import { useUsage } from "@/hooks/use-usage";
 import { getStoredGlowAccent, getGlowGradient, getStoredLogoStyle, getStoredAutoRotateLogo, persistLogoStyle, persistAutoRotateLogo, assignLogoStyleToConversation, LOGO_STYLE_OPTIONS, DEFAULT_LOGO_STYLE, type LogoStyle } from "@/lib/appearance-settings";
 import { queryClient, apiRequest, authFetch, endGuestSession } from "@/lib/queryClient";
 import { getVibrantColor } from "@/lib/utils";
+import { flagUrl } from "@/lib/countries";
 import { COUNTRIES } from "@/lib/countries";
 import microphoneIcon from "@assets/microphone__1784996516975.png";
 import improvePromptIcon from "@assets/improve_promt__1784996516976.png";
@@ -111,9 +112,9 @@ const TABS: { id: MobileTab; label: string }[] = [
 ];
 
 const ASK_MODELS = [
-  { id: "fius-lite", name: "Fius Lite", dot: "#9ca3af" },
-  { id: "fius-pro", name: "Fius Pro", dot: "#9ca3af" },
-  { id: "fius-education", name: "Fius Education", dot: "#9ca3af" },
+  { id: "blinga-lite", name: "Blinga Lite", dot: "#9ca3af" },
+  { id: "blinga-pro", name: "Blinga Pro", dot: "#9ca3af" },
+  { id: "blinga-education", name: "Blinga Education", dot: "#9ca3af" },
 ];
 
 const IMAGINE_STYLES_LOCAL: Record<string, string> = {
@@ -174,10 +175,10 @@ const NOMAD_CONFIG: Record<string, { name: string; logo: string; color: string; 
   "qwen":            { name: "Qwen 3.7 Max",           logo: "/mistral-logo.png",    color: "#6366f1", description: "Alibaba's multilingual language expert" },
   "llama-4":         { name: "Llama 4 Maverick",       logo: "/llama-logo.png",      color: "#3b82f6", description: "Meta's open-source frontier AI model" },
   "mistral":         { name: "Mistral Medium 3.5",     logo: "/doubao-logo.png",     color: "#7c3aed", description: "Fast & efficient European open AI" },
-  "fius-ai":         { name: "Fius Pro",               logo: "/fius-logo.png",       color: "#a855f7", description: "Specialized productivity AI by Muzamil Ali" },
+  "blinga-ai":         { name: "Blinga Pro",               logo: "/blinga-logo.png",       color: "#a855f7", description: "Specialized productivity AI by Muzamil Ali" },
 };
 
-const NOMAD_DEFAULT_MODELS = ["fius-ai", "gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral"];
+const NOMAD_DEFAULT_MODELS = ["blinga-ai", "gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral"];
 
 // ─── Nomad session type (shared between NomadTab and parent) ─────────────────
 type NomadSession = {
@@ -384,7 +385,7 @@ function ThinkingCloud({ label = "Thinking" }: { label?: string }) {
       <div className="thinking-pill">
         <div className="thinking-logo-breathe">
           <div className="thinking-logo-spin">
-            <FiusLogo size="sm" />
+            <BlingaLogo size="sm" />
           </div>
         </div>
         <span className="thinking-label">{label}</span>
@@ -753,7 +754,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
   };
   const handleExport = () => {
     const blob = new Blob([msg.content], { type: "text/plain" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.txt"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "blinga-export.txt"; a.click();
   };
   const handleLike = () => {
     const next = liked === "up" ? null : "up";
@@ -784,7 +785,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
               onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400"; }} />
             <div className="flex items-center gap-1 px-2 py-1.5 border-t border-border">
               <button onClick={async () => {
-                try { const a = document.createElement("a"); const blob = await (await fetch(msg.imageUrl!)).blob(); a.href = URL.createObjectURL(blob); a.download = "fius-image.png"; a.click(); } catch { window.open(msg.imageUrl, "_blank"); }
+                try { const a = document.createElement("a"); const blob = await (await fetch(msg.imageUrl!)).blob(); a.href = URL.createObjectURL(blob); a.download = "blinga-image.png"; a.click(); } catch { window.open(msg.imageUrl, "_blank"); }
               }} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
                 <Download className="w-3.5 h-3.5" /> Save
               </button>
@@ -801,7 +802,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
         {!isUser && (
           ownMode
             ? <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className="flex-shrink-0 mt-1 ml-1 h-9 w-9 object-contain" />
-            : <FiusLogo size="sm" className="flex-shrink-0 mt-1 ml-1" />
+            : <BlingaLogo size="sm" className="flex-shrink-0 mt-1 ml-1" />
         )}
         <div className={`flex flex-col ${isUser ? "max-w-[85%] items-end" : "flex-1 min-w-0 items-start"} ${!isUser ? "ml-0.5" : ""}`}>
           {isUser ? (
@@ -992,14 +993,14 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     const blob = new Blob([msg.content], { type: "text/markdown" });
-                    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "fius-export.md"; a.click();
+                    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "blinga-export.md"; a.click();
                   }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     const win = window.open('', '_blank');
                     if (!win) return;
-                    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${msg.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
+                    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Blinga Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${msg.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`);
                     win.document.close(); win.focus(); setTimeout(() => { win.print(); }, 500);
                   }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                     <FileDown className="w-3.5 h-3.5 text-red-500" /> Export as PDF
@@ -1016,7 +1017,7 @@ function MsgBubble({ msg, onExpandImg, onNewChat, onRetry, onRetryUser, isLatest
             <FollowUpSuggestions msgContent={msg.content} onSelect={q => onFollowUp?.(q)} />
           )}
           {!isUser && done && (
-            <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+            <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
           )}
         </div>
       </div>
@@ -1176,7 +1177,7 @@ interface MsgBarProps {
   tab: MobileTab;
   centerViewport?: boolean;
   model?: string; onModelChange?: (m: string) => void;
-  fiusIntegrationMode?: boolean; onIntegration?: () => void;
+  blingaIntegrationMode?: boolean; onIntegration?: () => void;
   onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   showEnhance?: boolean; showModel?: boolean; onCameraRef?: () => void;
   hidden?: boolean;
@@ -1188,7 +1189,7 @@ interface MsgBarProps {
   onClearReply?: () => void;
 }
 
-function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, centerViewport = false, model, onModelChange, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false, hasMessages = false, replyQuote, onClearReply }: MsgBarProps) {
+function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placeholder, tab, centerViewport = false, model, onModelChange, blingaIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, showEnhance = true, showModel = true, hidden = false, onAttachmentSend, onDocumentMode, documentModeActive = false, hasMessages = false, replyQuote, onClearReply }: MsgBarProps) {
   const { theme: _mbTheme } = useTheme();
   const _mbResolved = _mbTheme === 'system'
     ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -1396,7 +1397,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
     return (
       <button onClick={onClick}
         className="flex flex-col items-center gap-1 group flex-shrink-0 px-1 py-0.5">
-        <div className={`w-11 h-11 ${isCircleFn ? "rounded-full" : "rounded-[10px]"} flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button ${glossyOutlineEnabled ? 'glossy-outline' : ''} ${btnStyle}`}>
+        <div className={`w-11 h-11 ${isCircleFn ? "rounded-full" : "rounded-[10px]"} flex items-center justify-center transition-all duration-300 group-active:scale-[1.2] macos-button ${glossyOutlineEnabled ? 'crisp-outline' : ''} ${btnStyle}`}>
           {icon}
         </div>
         <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
@@ -1444,7 +1445,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             /* ── Pill row style ── */
             <div className="flex items-center flex-wrap justify-center gap-2">
               {[
-                { icon: <img src={isDark ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Long Answer", onClick: onIntegration, active: fiusIntegrationMode },
+                { icon: <img src={isDark ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Long Answer", onClick: onIntegration, active: blingaIntegrationMode },
                 { icon: <img src={isDark ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Voice Mode", onClick: onVoiceMode, active: false },
                 { icon: <img src={isDark ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="" className="w-[18px] h-[18px] btn-icon" />, label: "Settings", onClick: onSettings, active: false },
               ].map(({ icon, label, onClick, active }) => (
@@ -1461,7 +1462,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                   <span className="text-[13px] font-medium whitespace-nowrap">{label}</span>
                 </button>
               ))}
-              {model === "fius-education" && onEducation && (
+              {model === "blinga-education" && onEducation && (
                 <button onClick={onEducation} className="flex items-center gap-2 px-4 py-2 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[13px] font-medium active:scale-95 transition-all">
                   <GraduationCap className="w-[18px] h-[18px]" /><span>Education</span>
                 </button>
@@ -1472,13 +1473,13 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             <div className="flex items-center gap-1.5">
               <FnBtn
                 onClick={onIntegration}
-                active={fiusIntegrationMode}
+                active={blingaIntegrationMode}
                 icon={<img src={isDark ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="" className="w-5 h-5 btn-icon" />}
                 label="Long Answer"
               />
               <FnBtn onClick={onVoiceMode} icon={<img src={isDark ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="" className="w-5 h-5 btn-icon" />} label="Voice Mode" />
               <FnBtn onClick={onSettings} icon={<img src={isDark ? '/fn-longans-gray.png' : '/fn-longans-black.png'} alt="" className="w-5 h-5 btn-icon" />} label="Settings" />
-              {model === "fius-education" && onEducation && (
+              {model === "blinga-education" && onEducation && (
                 <FnBtn onClick={onEducation}
                   activeStyle="text-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-none"
                   active
@@ -1563,7 +1564,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
       )}
 
       {/* ── Main input pill ── */}
-      <div className={`bg-white dark:bg-[#383838] ${glossyOutlineEnabled ? 'glossy-outline' : ''} overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
+      <div className={`bg-white dark:bg-[#383838] ${glossyOutlineEnabled ? 'crisp-outline' : ''} overflow-hidden relative ${msgBarStyle === "default" ? "rounded-[1.5rem]" : "rounded-full"}`}>
 
         {msgBarStyle === "default" ? (
           /* ── Default: two-row layout matching PC (scaled for mobile) ── */
@@ -1571,7 +1572,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             {/* "In Bar" icon strip inside pill top when function bar is hidden */}
             {showFnBar && fnBarStyle === "message-bar" && (
               <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-0">
-                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
+                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${blingaIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
                   <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
                 </button>
                 <button onClick={onVoiceMode} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
@@ -1652,7 +1653,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
             {/* "In Bar" icon strip inside pill top */}
             {showFnBar && fnBarStyle === "message-bar" && (
               <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
-                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${fiusIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
+                <button onClick={onIntegration} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${blingaIntegrationMode ? "bg-blue-500/15" : "bg-zinc-100 dark:bg-zinc-700/80"}`}>
                   <img src="/integration-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
                 </button>
                 <button onClick={onVoiceMode} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
@@ -1661,7 +1662,7 @@ function MobileMessageBar({ value, onChange, onSend, onStop, isTyping, placehold
                 <button onClick={onSettings} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-700/80 transition-all active:scale-90">
                   <img src="/settings-icon.png" alt="" style={{ width: 14, height: 14 }} className={imgCls} />
                 </button>
-                {model === "fius-education" && onEducation && (
+                {model === "blinga-education" && onEducation && (
                   <button onClick={onEducation} className="w-7 h-7 rounded-full flex items-center justify-center bg-amber-500/15 transition-all active:scale-90">
                     <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
                   </button>
@@ -1870,15 +1871,15 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
   const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
   const [localToggles, setLocalToggles] = useState({
     autoScroll: true, richText: true, improveModel: true, personalize: true,
-    nomadGrid: true, nomadNotification: true, philosopherNotification: true, fiusGamesNotification: true,
-    wrapLines: false, showPreviews: true, showFiusLogo: true,
-    hideFiusLogo: false, hideFlyWithUs: false, glossyOutline: true,
+    nomadGrid: true, nomadNotification: true, philosopherNotification: true, blingaGamesNotification: true,
+    wrapLines: false, showPreviews: true, showBlingaLogo: true,
+    hideBlingaLogo: false, hideFlyWithUs: false, glossyOutline: true,
   });
   const [functionBarStyle, setFunctionBarStyle] = useState(() => localStorage.getItem("functionBarStyle") || "pill");
   const [messageBarStyle, setMessageBarStyle] = useState(() => localStorage.getItem("messageBarStyle") || "compact");
   const [logoStyle, setLogoStyle] = useState(() => getStoredLogoStyle());
   const [autoRotateLogo, setAutoRotateLogo] = useState(() => getStoredAutoRotateLogo());
-  const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"]);
+  const [localAiOrder, setLocalAiOrder] = useState(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "blinga-ai"]);
   const picInputRef = useRef<HTMLInputElement>(null);
   const settingsTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const settingsNavRef = useRef<HTMLDivElement>(null);
@@ -1901,10 +1902,10 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     functionBarStyle: "pill", messageBarStyle: "compact",
     logoStyle: DEFAULT_LOGO_STYLE, autoRotateLogo: false,
     togglesRaw: {} as Record<string, string>,
-    aiOrder: ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"] as string[],
+    aiOrder: ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "blinga-ai"] as string[],
   });
 
-  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","fiusGamesNotification","wrapLines","showPreviews","showFiusLogo","hideFiusLogo","hideFlyWithUs","glossyOutline"];
+  const TOGGLE_KEYS = ["autoScroll","richText","improveModel","personalize","nomadGrid","nomadNotification","philosopherNotification","blingaGamesNotification","wrapLines","showPreviews","showBlingaLogo","hideBlingaLogo","hideFlyWithUs","glossyOutline"];
 
   const makeTogglesBool = () => ({
     autoScroll: localStorage.getItem("autoScroll") !== "false",
@@ -1914,11 +1915,11 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     nomadGrid: localStorage.getItem("nomadGrid") !== "false",
     nomadNotification: localStorage.getItem("nomadNotification") !== "false",
     philosopherNotification: localStorage.getItem("philosopherNotification") !== "false",
-    fiusGamesNotification: localStorage.getItem("fiusGamesNotification") !== "false",
+    blingaGamesNotification: localStorage.getItem("blingaGamesNotification") !== "false",
     wrapLines: localStorage.getItem("wrapLines") === "true",
     showPreviews: localStorage.getItem("showPreviews") !== "false",
-    showFiusLogo: localStorage.getItem("showFiusLogo") !== "false",
-    hideFiusLogo: localStorage.getItem("hideFiusLogo") === "true",
+    showBlingaLogo: localStorage.getItem("showBlingaLogo") !== "false",
+    hideBlingaLogo: localStorage.getItem("hideBlingaLogo") === "true",
     hideFlyWithUs: localStorage.getItem("hideFlyWithUs") === "true",
     glossyOutline: localStorage.getItem("glossyOutline") !== "false",
   });
@@ -1943,7 +1944,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
       TOGGLE_KEYS.forEach(k => { togglesRaw[k] = localStorage.getItem(k) ?? ""; });
 
       const aiOrderRaw = localStorage.getItem("nomadAiOrder");
-      const aiOrder: string[] = aiOrderRaw ? (() => { try { return JSON.parse(aiOrderRaw); } catch { return null; } })() ?? ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"] : ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "fius-ai"];
+      const aiOrder: string[] = aiOrderRaw ? (() => { try { return JSON.parse(aiOrderRaw); } catch { return null; } })() ?? ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "blinga-ai"] : ["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "blinga-ai"];
       originalValuesRef.current = { aiPreset: preset, customInstructions: instructions, chatBg: bg, functionBarStyle: fnStyle, messageBarStyle: msgStyle, logoStyle: savedLogoStyle, autoRotateLogo: savedAutoRotateLogo, togglesRaw, aiOrder };
 
       setSelectedPreset(preset);
@@ -2088,7 +2089,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
     window.addEventListener('pointercancel', onUp);
   };
 
-  const MODEL_NAMES: Record<string, string> = { "gpt-4o": "ChatGPT 5", "claude-3.5-sonnet": "Claude Sonnet 4", "gemini-pro": "Gemini 3.1 Pro", "perplexity": "Perplexity Sonar Pro", "grok-4": "Grok 4", "deepseek-r1": "Deepseek v3", "fius-ai": "Fius Pro" };
+  const MODEL_NAMES: Record<string, string> = { "gpt-4o": "ChatGPT 5", "claude-3.5-sonnet": "Claude Sonnet 4", "gemini-pro": "Gemini 3.1 Pro", "perplexity": "Perplexity Sonar Pro", "grok-4": "Grok 4", "deepseek-r1": "Deepseek v3", "blinga-ai": "Blinga Pro" };
   const initials = (user?.displayName || user?.username || "?").charAt(0).toUpperCase();
 
   const menuItems: { id: SettingsSection; label: string; icon: React.ComponentType<any> }[] = [
@@ -2215,8 +2216,19 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Country</p>
-                      <p className="mt-1 truncate text-xs font-medium text-foreground">
-                        {profileCountry ? `${profileCountry.flag} ${profileCountry.name}` : "Not added"}
+                      <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-foreground">
+                        {profileCountry ? (
+                          <>
+                            <img
+                              src={flagUrl(profileCountry)}
+                              alt=""
+                              className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover"
+                              onError={(event) => { event.currentTarget.style.display = "none"; }}
+                            />
+                            <span className="shrink-0" aria-hidden="true">{profileCountry.flag}</span>
+                            <span className="truncate">{profileCountry.name}</span>
+                          </>
+                        ) : "Not added"}
                       </p>
                     </div>
                   </div>
@@ -2244,7 +2256,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Current Plan</p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">{isUltimatePlan ? "Fius Ultimate" : "Free"}</p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">{isUltimatePlan ? "Blinga Ultimate" : "Free"}</p>
                     </div>
                     {isUltimatePlan
                       ? <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-600 text-white">✦ Ultimate</span>
@@ -2300,12 +2312,12 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                     <button
                       onClick={() => { window.dispatchEvent(new Event('openUpgradeModal')); }}
                       className="w-full py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-violet-500 to-purple-600 text-white active:scale-[0.98] transition-all">
-                      ✦ Upgrade to Fius Ultimate
+                      ✦ Upgrade to Blinga Ultimate
                     </button>
                   )}
                   {isUltimatePlan && (
                     <div className="px-3 py-2 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-600/10 border border-violet-400/20 text-center">
-                      <p className="text-[11px] font-bold text-violet-500">✦ Active — Fius Ultimate</p>
+                      <p className="text-[11px] font-bold text-violet-500">✦ Active — Blinga Ultimate</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">Premium AI access unlocked</p>
                     </div>
                   )}
@@ -2333,7 +2345,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Custom Instructions</p>
-                  <textarea value={customInstructions} onChange={e => { setCustomInstructions(e.target.value); markDirty(); }} placeholder="Tell Fius how to respond…"
+                  <textarea value={customInstructions} onChange={e => { setCustomInstructions(e.target.value); markDirty(); }} placeholder="Tell Blinga how to respond…"
                     className="w-full h-24 bg-zinc-50 dark:bg-[#383838] border border-border/60 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors" />
                 </div>
                 <div>
@@ -2343,7 +2355,7 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { key: "autoScroll", label: "Enable Auto Scroll", desc: "" },
                       { key: "richText", label: "Rich Text Editor", desc: "Code blocks and lists" },
                       { key: "improveModel", label: "Improve the Model", desc: "Allow data to improve AI quality" },
-                      { key: "personalize", label: "Personalize Fius", desc: "Remember details from past chats" },
+                      { key: "personalize", label: "Personalize Blinga", desc: "Remember details from past chats" },
                     ].map(item => (
                       <div key={item.key} className="flex items-center justify-between gap-3">
                         <div className="flex-1"><p className="text-[12.5px] font-medium text-foreground">{item.label}</p>{item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}</div>
@@ -2380,8 +2392,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                       { key: "glossyOutline", label: "Glossy Outline", desc: "Shiny border on message bar, function bar & top bar" },
                       { key: "wrapLines", label: "Wrap Long Lines", desc: "Wrap code blocks by default" },
                       { key: "showPreviews", label: "Conversation Previews", desc: "Show previews in history sidebar" },
-                      { key: "showFiusLogo", label: "Show Fius Logo in Responses", desc: "Display logo next to AI replies" },
-                      { key: "hideFiusLogo", label: "Hide Fius Logo", desc: "Hide logo from the welcome screen" },
+                      { key: "showBlingaLogo", label: "Show Blinga Logo in Responses", desc: "Display logo next to AI replies" },
+                      { key: "hideBlingaLogo", label: "Hide Blinga Logo", desc: "Hide logo from the welcome screen" },
                       { key: "hideFlyWithUs", label: "Hide Fly With Us", desc: 'Hide the "Fly With Us!" tagline' },
                       { key: "nomadGrid", label: "Nomad Grid Background", desc: "Animated grid in Nomad tab" },
                     ].map(item => (
@@ -2410,8 +2422,8 @@ function MobileSettings({ isOpen, onClose, user, profilePicture, onProfilePictur
                   <div className="space-y-4">
                     {[
                       { key: "nomadNotification", label: "Nomad Notifications", desc: "Pop-up every 3–5 minutes" },
-                      { key: "philosopherNotification", label: "Fius Minds Notifications", desc: "Include Fius Minds variant" },
-                      { key: "fiusGamesNotification", label: "Fius Games Notifications", desc: "Include Fius Games variant" },
+                      { key: "philosopherNotification", label: "Blinga Minds Notifications", desc: "Include Blinga Minds variant" },
+                      { key: "blingaGamesNotification", label: "Blinga Games Notifications", desc: "Include Blinga Games variant" },
                     ].map(item => (
                       <div key={item.key} className="flex items-center justify-between gap-3">
                         <div className="flex-1">
@@ -2648,7 +2660,7 @@ const TAB_ICONS: Record<string, { dark: string; light: string; size?: string }> 
   imagine:    { dark: '/tab-imagine-dark.png', light: '/tab-imagine-light.png' },
   philosopher:{ dark: '/tab-minds-dark.png',  light: '/tab-minds-light.png'  },
   games:      { dark: '/tab-games-dark.png',  light: '/tab-games-light.png',  size: 'w-5 h-5' },
-  'fius-labs':{ dark: '/tab-labs-dark.png',   light: '/tab-labs-light.png',   size: 'w-5 h-5' },
+  'blinga-labs':{ dark: '/tab-labs-dark.png',   light: '/tab-labs-light.png',   size: 'w-5 h-5' },
 };
 
 // ─── PC-style Header ──────────────────────────────────────────────────────────
@@ -2684,7 +2696,7 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
 
   const navR = 14;
   return (
-    <header className={`relative flex-shrink-0 bg-card px-2 py-1.5 flex items-center gap-1 z-[46] rounded-full mx-3 mt-2 mb-1 ${glossy ? 'border border-border glossy-outline' : ''}`}>
+    <header className={`relative flex-shrink-0 bg-card px-2 py-1.5 flex items-center gap-1 z-[46] rounded-full mx-3 mt-2 mb-1 crisp-outline`}>
       <button onClick={onMenuClick} className="relative z-[46] w-8 h-8 flex items-center justify-center rounded-2xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0">
         <Menu className="w-4 h-4" />
       </button>
@@ -2726,12 +2738,12 @@ function PCHeader({ activeTab, onTabChange, onMenuClick, ownMode, onToggleOwnMod
 // ─── Welcome Cards (randomised each mount) ────────────────────────────────────
 
 // ─── Ask Tab ──────────────────────────────────────────────────────────────────
-function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport, replyQuote, onClearReply, currentConvId }: {
+function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, blingaIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, ownMode, onSwitchTab, centerViewport, replyQuote, onClearReply, currentConvId }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model: string; setModel: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
-  fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
+  blingaIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
   onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
   ownMode?: boolean; onSwitchTab?: (tab: MobileTab) => void;
@@ -2751,11 +2763,11 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
       const saved = localStorage.getItem("settingsToggles");
       const parsed = saved ? JSON.parse(saved) : {};
       return {
-        hideFiusLogo: parsed.hideFiusLogo === true,
+        hideBlingaLogo: parsed.hideBlingaLogo === true,
         hideFlyWithUs: parsed.hideFlyWithUs === true,
       };
     } catch {
-      return { hideFiusLogo: false, hideFlyWithUs: false };
+      return { hideBlingaLogo: false, hideFlyWithUs: false };
     }
   });
   const [askMobileSettingToggles] = useState<Record<string, boolean>>(() => {
@@ -2816,15 +2828,15 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
             <div className="pointer-events-none absolute inset-0 z-0" style={{
               background: getGlowGradient(glowAccentColor, resolvedTheme, true)
             }} />
-            {/* Welcome screen — crossfade between Fius and Owl Mode */}
+            {/* Welcome screen — crossfade between Blinga and Owl Mode */}
             <div style={{position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center'}}>
-              {/* Fius welcome */}
+              {/* Blinga welcome */}
               <div style={{opacity:ownMode?0:1,transition:'opacity 0.4s ease',position:ownMode?'absolute':'relative',pointerEvents:ownMode?'none':'auto',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
-                <FiusLogo size="2xl" className="mb-6 text-black dark:text-foreground" />
+                <BlingaLogo size="2xl" className="mb-6 text-black dark:text-foreground" />
                 <h2 className="text-[22px] font-normal text-foreground mb-0.5">
                   {user?.displayName || user?.username
                     ? WELCOME_GREETINGS_M[welcomeGreetingM](user.displayName || user.username!)
-                    : "Welcome to Fius"}
+                    : "Welcome to Blinga"}
                 </h2>
                 <p className="text-sm text-black dark:text-foreground mb-7">Fly With Us!</p>
               </div>
@@ -2867,7 +2879,7 @@ function AskTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat
         )}
         <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping} centerViewport={centerViewport && messages.length === 0 && !isTyping}
           placeholder={documentModeActive ? "e.g. Elon Musk — I'll write the full document…" : typingPlaceholder} tab="ask" model={model} onModelChange={setModel}
-          fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
+          blingaIntegrationMode={blingaIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
           onSettings={onSettings} onEducation={onEducation} showEnhance showModel
           onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
           hasMessages={messages.length > 0 || isTyping}
@@ -2919,14 +2931,14 @@ function NomadColumnMsgs({ msgs, modelId, isTyping }: {
 }
 
 // ─── Nomad Tab (multi-column + auto mode) ────────────────────────────────────────
-function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, soloModel, setSoloModel, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode, nomadGrid, nomadHistSessionsProp, setNomadHistSessionsProp, centerViewport }: {
+function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTyping, activeModels, onToggleModel, soloModel, setSoloModel, onVoiceMode, onSettings, onIntegration, blingaIntegrationMode, nomadGrid, nomadHistSessionsProp, setNomadHistSessionsProp, centerViewport }: {
   input: string; setInput: (v: string) => void; onSend: () => void; isTyping: boolean;
   nomadMessages: Record<string, { id: string; role: "user" | "ai"; content: string }[]>;
   nomadTyping: Record<string, boolean>;
   nomadGrid?: boolean;
   activeModels: Set<string>; onToggleModel: (id: string) => void;
   soloModel: string | null; setSoloModel: (m: string | null) => void;
-  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; blingaIntegrationMode?: boolean;
   nomadHistSessionsProp?: NomadSession[];
   setNomadHistSessionsProp?: React.Dispatch<React.SetStateAction<NomadSession[]>>;
   centerViewport?: boolean;
@@ -2938,7 +2950,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [summarizing, setSummarizing] = useState(false);
   // Use lifted state from parent if provided, otherwise manage internally
   const [nomadHistSessionsInternal, setNomadHistSessionsInternal] = useState<NomadSession[]>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('blinga-nomad-history') || '[]'); } catch { return []; }
   });
   const nomadHistSessions = nomadHistSessionsProp ?? nomadHistSessionsInternal;
   const setNomadHistSessions = (nomadHistSessionsProp !== undefined && setNomadHistSessionsProp) ? setNomadHistSessionsProp : setNomadHistSessionsInternal;
@@ -2948,7 +2960,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     authFetch('/api/nomad/history').then(r => r.ok ? r.json() : null).then(data => {
       if (Array.isArray(data) && data.length > 0) {
         setNomadHistSessions(data as NomadSession[]);
-        try { localStorage.setItem('fius-nomad-history', JSON.stringify(data)); } catch {}
+        try { localStorage.setItem('blinga-nomad-history', JSON.stringify(data)); } catch {}
       }
     }).catch(() => {});
   }, []);
@@ -2959,7 +2971,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
   const [ultimatumCardsM, setUltimatumCardsM] = useState(() => shuffleUltimatumM(ULTIMATUM_CARD_POOL_M).slice(0, 2));
   const autoEndRef = useRef<HTMLDivElement>(null);
   const autoContainerRef = useRef<HTMLDivElement>(null);
-  // Refresh cards every time user switches to Fius Ultimatum; scroll to top
+  // Refresh cards every time user switches to Blinga Ultimatum; scroll to top
   useEffect(() => {
     if (nomadMode === 'auto') {
       setUltimatumCardsM(shuffleUltimatumM(ULTIMATUM_CARD_POOL_M).slice(0, 2));
@@ -3030,7 +3042,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
     const aiMsgId = uid();
     setAutoMessages(prev => [...prev, { id: userMsgId, role: 'user', content: text }, { id: aiMsgId, role: 'ai', content: '', pickedModel: picked }]);
     setTimeout(() => autoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    const ctx = `You are ${picked.modelName}, operating within Fius — a multi-AI chat platform. Fius is NOT AI Fiesta — they are completely separate products. Fius is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
+    const ctx = `You are ${picked.modelName}, operating within Blinga — a multi-AI chat platform. Blinga is NOT AI Fiesta — they are completely separate products. Blinga is a platform that lets users chat with multiple top AIs in one place. Be helpful, accurate, and conversational.`;
     const history = autoMessages.slice(-12).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     try {
       const res = await authFetch('/api/test-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, model: picked.model, systemPrompt: ctx, history }) });
@@ -3038,7 +3050,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
       setAutoMessages(prev => {
         const updated = prev.map(m => m.id === aiMsgId ? { ...m, content: data?.response || 'No response received.' } : m);
         const sess: NomadSession = { id: Date.now().toString(), ts: Date.now(), mode: 'auto', preview: text.slice(0, 60), autoMsgs: updated, multiMsgs: {} };
-        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('fius-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
+        setNomadHistSessions(prevH => { const next = [sess, ...prevH].slice(0, 20); try { localStorage.setItem('blinga-nomad-history', JSON.stringify(next)); } catch { try { localStorage.setItem('blinga-nomad-history', JSON.stringify(next.slice(0,5))); } catch {} } authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {}); return next; });
         return updated;
       });
     } catch {
@@ -3061,7 +3073,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
           <button onClick={() => setNomadMode('auto')}
             className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1 ${nomadMode === 'auto' ? 'bg-zinc-200 dark:bg-zinc-100 text-zinc-800 dark:text-zinc-900' : 'bg-secondary text-muted-foreground'}`}>
             <img src="/nomad-auto-icon.png" alt="auto" className={`w-3 h-3 object-contain ${nomadMode !== 'auto' ? 'dark:invert' : ''}`} />
-            Fius Ultimatum
+            Blinga Ultimatum
           </button>
           {nomadMode === 'auto' && <span className="text-[10px] text-muted-foreground">Best AI per prompt</span>}
         </div>
@@ -3095,8 +3107,8 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                 <img src="/nomad-auto-icon.png" alt="auto" className="w-9 h-9 object-contain" style={{ filter: 'invert(1)' }} />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-foreground mb-1">Fius Ultimatum</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
+                <h3 className="text-base font-semibold text-foreground mb-1">Blinga Ultimatum</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">Blinga picks the best AI for your prompt — coding, writing, math, search, and more.</p>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full mt-2">
                 {ultimatumCardsM.map(c => (
@@ -3112,7 +3124,7 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     <p className="text-[11px] font-bold text-foreground mb-0.5 leading-tight">{c.label}</p>
                     <p className="text-[9px] text-muted-foreground leading-snug mb-1.5">{c.prompt}</p>
                     <div className="flex items-center gap-1">
-                      <img src={c.modelLogo} alt={c.modelName} className={`${c.modelLogo === '/fius-logo.png' ? 'w-7 h-7' : 'w-3 h-3'} object-contain rounded-full flex-shrink-0`} onError={e => { e.currentTarget.style.display='none'; }} />
+                      <img src={c.modelLogo} alt={c.modelName} className={`${c.modelLogo === '/blinga-logo.png' ? 'w-7 h-7' : 'w-3 h-3'} object-contain rounded-full flex-shrink-0`} onError={e => { e.currentTarget.style.display='none'; }} />
                       <span className="text-[8px] font-semibold text-muted-foreground">{c.modelName}</span>
                     </div>
                   </div>
@@ -3171,10 +3183,10 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                   style={{ width: 220, opacity: isActive ? 1 : 0.45, borderRight: isLast ? 'none' : '1px solid rgba(128,128,128,0.25)' }}
                 >
                   <div className="mx-2.5 mt-2.5 mb-2.5 rounded-xl border-2 transition-all duration-300 bg-card p-2.5 flex flex-col items-center gap-1"
-                    style={{ borderColor: isActive ? (modelId === 'fius-ai' ? '#6b7280' : cfg.color) : "rgba(128,128,128,0.2)" }}>
-                    <div className={`${modelId === "fius-ai" ? "w-12 h-12" : "w-8 h-8"} flex items-center justify-center flex-shrink-0 rounded-lg`} style={{ background: modelId === 'fius-ai' ? 'rgba(107,114,128,0.15)' : cfg.color + '20', padding: modelId === "fius-ai" ? 2 : 4 }}>
-                      {modelId === "fius-ai"
-                        ? <FiusLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" />
+                    style={{ borderColor: isActive ? (modelId === 'blinga-ai' ? '#6b7280' : cfg.color) : "rgba(128,128,128,0.2)" }}>
+                    <div className={`${modelId === "blinga-ai" ? "w-12 h-12" : "w-8 h-8"} flex items-center justify-center flex-shrink-0 rounded-lg`} style={{ background: modelId === 'blinga-ai' ? 'rgba(107,114,128,0.15)' : cfg.color + '20', padding: modelId === "blinga-ai" ? 2 : 4 }}>
+                      {modelId === "blinga-ai"
+                        ? <BlingaLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" />
                         : <img src={cfg.logo} alt={cfg.name} className={`w-full h-full object-contain ${iconFilter(modelId)}`}
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />}
                     </div>
@@ -3182,12 +3194,12 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
                     <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2 px-0.5">{cfg.description}</span>
                     <div className="flex flex-col items-center gap-1.5 mt-1 w-full">
                       <button onClick={() => handleToggleWithOrder(modelId)} className="relative flex-shrink-0 rounded-full transition-all duration-300"
-                        style={{ width: 36, height: 18, background: isActive ? (modelId === 'fius-ai' ? 'linear-gradient(135deg,#ffffff,#374151)' : cfg.color) : "#d1d5db" }}>
+                        style={{ width: 36, height: 18, background: isActive ? (modelId === 'blinga-ai' ? 'linear-gradient(135deg,#ffffff,#374151)' : cfg.color) : "#d1d5db" }}>
                         <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
                       </button>
                       <button onClick={() => setSoloModel(modelId)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all active:scale-95 w-full justify-center"
-                        style={modelId === 'fius-ai' ? { background: 'rgba(107,114,128,0.1)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.3)' } : { background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}50` }}>
+                        style={modelId === 'blinga-ai' ? { background: 'rgba(107,114,128,0.1)', color: '#6b7280', border: '1px solid rgba(107,114,128,0.3)' } : { background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}50` }}>
                         <Target className="w-2.5 h-2.5 flex-shrink-0" />
                         Chat only
                       </button>
@@ -3332,19 +3344,19 @@ function NomadTab({ input, setInput, onSend, isTyping, nomadMessages, nomadTypin
 
       <MobileMessageBar value={input} onChange={setInput} onSend={handleSendDispatch} isTyping={isTyping || autoLoading} centerViewport={centerViewport && !hasMessages}
         placeholder={nomadMode === 'auto' ? "Ask anything — best AI auto-selected…" : "Ask all AIs at once…"} tab="nomad" showEnhance={false} showModel={false}
-        fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings}
+        blingaIntegrationMode={blingaIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode} onSettings={onSettings}
         hasMessages={hasMessages} />
     </>
   );
 }
 
 // ─── Studio (Imagine) Tab — mirrors Ask tab UI ────────────────────────────────
-function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, fiusIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, centerViewport, isActive }: {
+function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewChat, onRetry, model, setModel, user, blingaIntegrationMode, onIntegration, onVoiceMode, onSettings, onEducation, onAttachmentSend, onDocumentMode, documentModeActive, onCancelDocumentMode, centerViewport, isActive }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop?: () => void; onNewChat?: (content: string) => void; onRetry?: () => void;
   model?: string; setModel?: (m: string) => void;
   user?: { username: string; email: string; displayName?: string };
-  fiusIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
+  blingaIntegrationMode?: boolean; onIntegration?: () => void; onVoiceMode?: () => void; onSettings?: () => void; onEducation?: () => void;
   onAttachmentSend?: (images: Array<{file: File; preview: string}>, files: Array<{file: File; name: string; size: string}>, text: string) => void;
   onDocumentMode?: () => void; documentModeActive?: boolean; onCancelDocumentMode?: () => void;
   centerViewport?: boolean; isActive?: boolean;
@@ -3368,14 +3380,14 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length, isTyping]);
 
   const STUDIO_COLS = [
-    { id: 'fius-imagine-super', name: 'Fius Imagine Super', abbr: 'Fius',    sub: 'Ultra quality', logo: '/fius-logo.png',      gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
+    { id: 'blinga-imagine-super', name: 'Blinga Imagine Super', abbr: 'Blinga',    sub: 'Ultra quality', logo: '/blinga-logo.png',      gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
     { id: 'seedream-4.5',       name: 'Seedream 4.5',       abbr: 'Seedream', sub: 'Dreamlike art', logo: '/bytedance-logo.png', gradient: 'from-emerald-400 to-teal-500',   letter: '❋', color: '#10b981' },
     { id: 'nano-banana-pro',    name: 'Nano Banana Pro',    abbr: 'Nano',     sub: 'Fast & crisp',  logo: '/gemini-logo.png',    gradient: 'from-yellow-400 to-orange-400',  letter: '⚡', color: '#f59e0b' },
     { id: 'gpt-5.5-pro',        name: 'GPT 5.5 pro',        abbr: 'GPT 5.5',  sub: 'Precision AI',  logo: '/chatgpt-logo.png',   gradient: 'from-sky-400 to-blue-500',       letter: 'G',  color: '#0ea5e9' },
   ];
 
   const isEmpty = messages.length === 0 && !isTyping;
-  const hideFiusLogoStudio = localStorage.getItem("hideFiusLogo") === "true";
+  const hideBlingaLogoStudio = localStorage.getItem("hideBlingaLogo") === "true";
   const hideFlyWithUsStudio = localStorage.getItem("hideFlyWithUs") === "true";
 
   return (
@@ -3406,7 +3418,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
               <div className="flex items-center justify-between pt-3">
                 <div className="flex items-center gap-2 text-[12px] font-semibold text-foreground">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-card shadow-sm ring-1 ring-border"><Sparkles className="h-3.5 w-3.5 text-amber-400" /></span>
-                  Fius Studio
+                  Blinga Studio
                 </div>
                 <button onClick={toggleStudioGrid} className="rounded-full border border-border bg-card/80 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground shadow-sm transition hover:bg-card">
                   {studioGrid ? "Models on" : "Models off"}
@@ -3415,7 +3427,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
 
               <div className="flex flex-col items-center pt-[220px]">
                 <h2 className="text-center tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(24px,6vw,32px)', lineHeight: 1.15 }}>
-                  <span className="font-extrabold">Fius Labs</span>{' '}
+                  <span className="font-extrabold">Blinga Labs</span>{' '}
                   <span className="font-extrabold">Imagine Studio</span>
                 </h2>
                 <p className="mt-2 text-center font-medium text-muted-foreground" style={{ fontSize: 'clamp(13px,3.5vw,16px)' }}>The Canvas of Tomorrow ✦</p>
@@ -3516,7 +3528,7 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
           )}
           <MobileMessageBar value={input} onChange={setInput} onSend={onSend} onStop={onStop} isTyping={isTyping}
             placeholder="Imagine anything…" tab="imagine" model={model} onModelChange={setModel}
-            fiusIntegrationMode={fiusIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
+            blingaIntegrationMode={blingaIntegrationMode} onIntegration={onIntegration} onVoiceMode={onVoiceMode}
             onSettings={onSettings} onEducation={onEducation} showEnhance showModel
             onAttachmentSend={onAttachmentSend} onDocumentMode={onDocumentMode} documentModeActive={documentModeActive}
             hasMessages={messages.length > 0 || isTyping} />
@@ -3527,10 +3539,10 @@ function StudioTab({ messages, isTyping, input, setInput, onSend, onStop, onNewC
 }
 
 // ─── Philosopher (Minds) Tab ───────────────────────────────────────────────────
-function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, personality, setPersonality, onVoiceMode, onSettings, onIntegration, fiusIntegrationMode }: {
+function PhilosopherTab({ messages, isTyping, input, setInput, onSend, onStop, personality, setPersonality, onVoiceMode, onSettings, onIntegration, blingaIntegrationMode }: {
   messages: Msg[]; isTyping: boolean; input: string; setInput: (v: string) => void;
   onSend: () => void; onStop: () => void; personality: Personality | null; setPersonality: (p: Personality | null) => void;
-  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; fiusIntegrationMode?: boolean;
+  onVoiceMode?: () => void; onSettings?: () => void; onIntegration?: () => void; blingaIntegrationMode?: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState("All");
@@ -3668,10 +3680,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const showUpgradeLockToast = useCallback(() => {
     setIsUpgradeModalOpen(true);
   }, []);
-  const freeNomadModels = planUsage?.freeNomadModels ?? ["fius-ai"];
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["blinga-ai"];
   const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
-  // Free plan: only Fius Lite is usable in the Ask tab. Everything else needs Ultimate.
-  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'fius-lite', [isFreePlan]);
+  // Free plan: only Blinga Lite is usable in the Ask tab. Everything else needs Ultimate.
+  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'blinga-lite', [isFreePlan]);
   const { data: user } = useQuery<{
     username: string;
     email: string;
@@ -3693,8 +3705,8 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizLoading, setQuizLoading] = useState(false);
-  const [quizTitle, setQuizTitle] = useState("Fius Examination");
-  const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
+  const [quizTitle, setQuizTitle] = useState("Blinga Examination");
+  const [blingaIntegrationMode, setBlingaIntegrationMode] = useState(false);
   const [ownMode, setOwnMode] = useState(false);
   const [chatBg, setChatBg] = useState(() => localStorage.getItem("chatBg") || "plain");
   const [profilePicture, setProfilePicture] = useState<string | undefined>(() => localStorage.getItem("profilePicture") || undefined);
@@ -3706,17 +3718,17 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [askDocumentMode, setAskDocumentMode] = useState(false);
   const [askReplyQuote, setAskReplyQuote] = useState<string | null>(null);
   const [askReplyBtnPos, setAskReplyBtnPos] = useState<{ x: number; y: number } | null>(null);
-  const [askModel, setAskModelRaw] = useState("fius-lite");
+  const [askModel, setAskModelRaw] = useState("blinga-lite");
   const setAskModel = useCallback((m: string) => {
     if (isChatModelLocked(m)) {
-      toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+      toast({ title: "Locked on Free plan", description: "Upgrade to Blinga Ultimate to unlock this model.", variant: "destructive" });
       return;
     }
     setAskModelRaw(m);
   }, [isChatModelLocked, toast]);
   const [topModelSheetOpen, setTopModelSheetOpen] = useState(false);
   useEffect(() => {
-    if (isFreePlan) setAskModelRaw('fius-lite');
+    if (isFreePlan) setAskModelRaw('blinga-lite');
   }, [isFreePlan]);
   const [currentConvId, setCurrentConvId] = useState<string | undefined>(() => localStorage.getItem('currentProjectId') || undefined);
   const askAbortRef = useRef<AbortController | null>(null);
@@ -3739,10 +3751,10 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const [nomadMessages, setNomadMessages] = useState<Record<string, { id: string; role: "user" | "ai"; content: string }[]>>({});
   // Nomad history — lifted so sidebar can display it
   const [nomadHistSessions, setNomadHistSessions] = useState<NomadSession[]>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-history') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('blinga-nomad-history') || '[]'); } catch { return []; }
   });
 
-  // Warm the Philosophers avatar cache and the Fius Games leaderboard/logo
+  // Warm the Philosophers avatar cache and the Blinga Games leaderboard/logo
   // data as soon as the mobile interface mounts — not when the user opens
   // those tabs — so both render instantly with no pop-in/blank state.
   useEffect(() => {
@@ -3751,7 +3763,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   }, []);
   const [nomadIsTyping, setNomadIsTyping] = useState<Record<string, boolean>>({});
   const [nomadSoloModel, setNomadSoloModel] = useState<string | null>(null);
-  const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral", "fius-ai"]));
+  const [activeModels, setActiveModels] = useState<Set<string>>(new Set(["gpt-4o", "claude-3.5-sonnet", "gemini-pro", "perplexity", "grok-4", "deepseek-r1", "doubao", "kimi", "qwen", "llama-4", "mistral", "blinga-ai"]));
   const [showNomadNotif, setShowNomadNotif] = useState(false);
   const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -4110,7 +4122,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
       const sess: NomadSession = { id: Date.now().toString(), ts: Date.now(), mode: 'multi', preview: text.slice(0, 60), autoMsgs: [], multiMsgs: multiResponses };
       setNomadHistSessions(prevH => {
         const next = [sess, ...prevH].slice(0, 20);
-        try { localStorage.setItem('fius-nomad-history', JSON.stringify(next)); } catch {}
+        try { localStorage.setItem('blinga-nomad-history', JSON.stringify(next)); } catch {}
         authFetch('/api/nomad/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessions: next }) }).catch(() => {});
         return next;
       });
@@ -4127,7 +4139,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
         setNomadSoloModel(prev2 => prev2 === id ? null : prev2);
       } else {
         if (isNomadModelLocked(id)) {
-          toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+          toast({ title: "Locked on Free plan", description: "Upgrade to Blinga Ultimate to unlock this model.", variant: "destructive" });
           return prev;
         }
         n.add(id);
@@ -4142,7 +4154,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
   const openVoiceMode = useCallback(() => {
     if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
     if (isFreePlan) {
-      toast({ title: "Locked on Free plan", description: "Voice Mode requires Fius Ultimate.", variant: "destructive" });
+      toast({ title: "Locked on Free plan", description: "Voice Mode requires Blinga Ultimate.", variant: "destructive" });
       return;
     }
     setVoiceModalOpen(true);
@@ -4156,11 +4168,11 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     if (isFreePlan && (t === "nomad" || t === "imagine" || t === "philosopher" || t === "games")) {
       const lockedLabel = t === "nomad" ? "Nomad (multi-AI compare)"
         : t === "imagine" ? "Imagine Studio"
-        : t === "philosopher" ? "Fius Minds"
-        : "Fius Games";
+        : t === "philosopher" ? "Blinga Minds"
+        : "Blinga Games";
       toast({
         title: "Locked on Free plan",
-        description: `${lockedLabel} requires Fius Ultimate.`,
+        description: `${lockedLabel} requires Blinga Ultimate.`,
         variant: "destructive",
       });
       return;
@@ -4168,7 +4180,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
     setTab(t);
   }, [isFreePlan, isFreePlanExhausted, showUpgradeLockToast, tab, toast]);
 
-  const voiceHandlers = { onVoiceMode: openVoiceMode, onSettings: () => setSettingsOpen(true), onIntegration: () => setFiusIntegrationMode(v => !v), fiusIntegrationMode };
+  const voiceHandlers = { onVoiceMode: openVoiceMode, onSettings: () => setSettingsOpen(true), onIntegration: () => setBlingaIntegrationMode(v => !v), blingaIntegrationMode };
 
   return (
     <MinimalModeCtx.Provider value={minimalMode}>
@@ -4336,7 +4348,7 @@ export function MobileChatInterface({ onShowAuth }: { onShowAuth: () => void }) 
                 personality={philPerson} setPersonality={p => { setPhilPerson(p); setPhilMsgs([]); }} {...voiceHandlers} />
             </div>
             <div className="absolute inset-0 overflow-hidden bg-background" style={{ opacity: tab === "games" ? 1 : 0, pointerEvents: tab === "games" ? "auto" : "none", transition: "opacity 0.18s cubic-bezier(0.23,1,0.32,1)" }}>
-              <FiusGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
+              <BlingaGames playerName={user?.displayName || user?.username || "Player"} userId={user?.id} />
             </div>
           </div>
         </div>

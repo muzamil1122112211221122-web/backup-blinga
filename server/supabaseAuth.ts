@@ -38,7 +38,7 @@ async function tryGuestAuth(req: AuthedRequest): Promise<boolean> {
     profile = await storage.upsertUser({
       id: guestId,
       username: "Guest",
-      email: `${guestId}@guest.fius.local`,
+      email: `${guestId}@guest.blinga.local`,
       displayName: "Guest",
       avatarUrl: null,
     });

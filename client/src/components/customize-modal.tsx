@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { FiusLogo, Logo } from "./logo";
+import { BlingaLogo, Logo } from "./logo";
 import { getVibrantColor } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -80,7 +80,7 @@ function SettingsScrollButtons({ scrollAreaRef }: { scrollAreaRef: { current: HT
 
 // ─── Learned Behaviors Section ─────────────────────────────────────────────────
 function LearnedBehaviorsSection() {
-  const STORAGE_KEY = 'fius_learned_behaviors';
+  const STORAGE_KEY = 'blinga_learned_behaviors';
   const [behaviors, setBehaviors] = useState<{ id: string; text: string; addedAt: string }[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
   });
@@ -112,7 +112,7 @@ function LearnedBehaviorsSection() {
           <Plus className="w-3 h-3" /> Add
         </button>
       </div>
-      <p className="text-xs text-zinc-400 mb-3">Things Fius remembers about you across conversations.</p>
+      <p className="text-xs text-zinc-400 mb-3">Things Blinga remembers about you across conversations.</p>
 
       {adding && (
         <div className="flex gap-2 mb-3">
@@ -128,7 +128,7 @@ function LearnedBehaviorsSection() {
       )}
 
       {behaviors.length === 0 ? (
-        <p className="text-xs text-zinc-400 italic py-2">No behaviors learned yet. Add one above or chat with Fius.</p>
+        <p className="text-xs text-zinc-400 italic py-2">No behaviors learned yet. Add one above or chat with Blinga.</p>
       ) : (
         <div className="space-y-2">
           {behaviors.map(b => (
@@ -167,7 +167,7 @@ function PlanUsageSection() {
   const handleUpgrade = async () => {
     try {
       await upgrade.mutateAsync();
-      toast({ title: "Fius Ultimate activated", description: "You now have 3M tokens and 250 images this month." });
+      toast({ title: "Blinga Ultimate activated", description: "You now have 3M tokens and 250 images this month." });
     } catch {
       toast({ title: "Couldn't activate plan", description: "Please try again in a moment.", variant: "destructive" });
     }
@@ -183,7 +183,7 @@ function PlanUsageSection() {
   };
 
   if (!isUltimate) {
-    // ── Free plan: exact same Fius Ultimate card as the landing page ────────
+    // ── Free plan: exact same Blinga Ultimate card as the landing page ────────
     return (
       <div className="space-y-3">
         <UltimatePlanCard onUpgrade={handleUpgrade} ctaBusy={upgrade.isPending} />
@@ -226,7 +226,7 @@ function PlanUsageSection() {
 
 // ── Nomad sub-model options (Normal & Flagship) ────────────────────────────
 const NOMAD_SUB_MODELS: Record<string, { normal: string[]; flagship: string[]; default: string }> = {
-  'fius-ai':          { normal: ['Fius Lite'],                                                                  flagship: ['Fius Pro'],                                                default: 'Fius Lite' },
+  'blinga-ai':          { normal: ['Blinga Lite'],                                                                  flagship: ['Blinga Pro'],                                                default: 'Blinga Lite' },
   'gpt-4o':           { normal: ['GPT-5 mini'],                                                                 flagship: ['GPT-5', 'GPT-5 Pro'],                                      default: 'GPT-5 mini' },
   'claude-3.5-sonnet':{ normal: ['Claude Haiku 4.5'],                                                           flagship: ['Claude Sonnet 5', 'Claude Opus 4.8'],                      default: 'Claude Haiku 4.5' },
   'gemini-pro':       { normal: ['Gemini 3.5 Flash-Lite', 'Gemini 3.6 Flash'],                                 flagship: ['Gemini 3.1 Pro'],                                          default: 'Gemini 3.5 Flash-Lite' },
@@ -363,11 +363,11 @@ export function CustomizeModal({
   const [selectedPreset, setSelectedPreset] = useState<ChatPreset>(currentPreset);
   const [instructions, setInstructions] = useState(customInstructions);
   const [isEnabled, setIsEnabled] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<AvailableModel>('fius-prime');
-  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'fius-ai']);
+  const [selectedModel, setSelectedModel] = useState<AvailableModel>('blinga-prime');
+  const [localAiOrder, setLocalAiOrder] = useState(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'blinga-ai']);
   // Per-model default sub-model selection (synced with localStorage)
   const [nomadDefaultModels, setNomadDefaultModels] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}'); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem('blinga-nomad-sub-models') || '{}'); } catch { return {}; }
   });
   const [isDirty, setIsDirty] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -427,8 +427,8 @@ export function CustomizeModal({
     personalize: true,
     linkSharing: true,
     sidebarCloseTop: true,
-    showFiusLogo: true,
-    hideFiusLogo: false,
+    showBlingaLogo: true,
+    hideBlingaLogo: false,
     hideFlyWithUs: false,
     showUserMsgActions: true,
     glossyOutline: true,
@@ -931,7 +931,7 @@ export function CustomizeModal({
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
                 <div>
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Global App Font</span>
-                  <p className="text-xs text-zinc-500 mt-0.5">Use this font throughout Fius</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Use this font throughout Blinga</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {APP_FONT_OPTIONS.map(opt => {
@@ -988,7 +988,7 @@ export function CustomizeModal({
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm text-zinc-700 dark:text-zinc-200">Tabs in Sidebar</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Move Ask, Nomad, Imagine Studio, Fius Minds, Fius Games &amp; Labs to the sidebar; hides them from the top bar</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">Move Ask, Nomad, Imagine Studio, Blinga Minds, Blinga Games &amp; Labs to the sidebar; hides them from the top bar</p>
                   </div>
                   <Switch checked={localToggles.tabsInSidebar ?? true} onCheckedChange={() => handleToggle('tabsInSidebar')} />
                 </div>
@@ -1019,17 +1019,17 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Fius Logo in Responses</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Display the Fius logo next to AI responses in chat</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Show Blinga Logo in Responses</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Display the Blinga logo next to AI responses in chat</p>
                   </div>
-                  <Switch checked={localToggles.showFiusLogo ?? true} onCheckedChange={() => handleToggle('showFiusLogo')} />
+                  <Switch checked={localToggles.showBlingaLogo ?? true} onCheckedChange={() => handleToggle('showBlingaLogo')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Hide Fius Logo</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Hide the Fius logo from the welcome screen</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Hide Blinga Logo</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Hide the Blinga logo from the welcome screen</p>
                   </div>
-                  <Switch checked={localToggles.hideFiusLogo ?? false} onCheckedChange={() => handleToggle('hideFiusLogo')} />
+                  <Switch checked={localToggles.hideBlingaLogo ?? false} onCheckedChange={() => handleToggle('hideBlingaLogo')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -1047,8 +1047,8 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Minds Grid Background</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Show a subtle grid pattern behind the Fius Minds personality cards</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Blinga Minds Grid Background</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Show a subtle grid pattern behind the Blinga Minds personality cards</p>
                   </div>
                   <Switch checked={localToggles.mindsGrid ?? true} onCheckedChange={() => handleToggle('mindsGrid')} />
                 </div>
@@ -1061,17 +1061,17 @@ export function CustomizeModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Minds Notifications</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Include the Fius Minds variant in periodic pop-ups</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Blinga Minds Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Blinga Minds variant in periodic pop-ups</p>
                   </div>
                   <Switch checked={localToggles.philosopherNotification ?? true} onCheckedChange={() => handleToggle('philosopherNotification')} />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Fius Games Notifications</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Include the Fius Games variant in periodic pop-ups</p>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Blinga Games Notifications</span>
+                    <p className="text-xs text-zinc-500 mt-0.5">Include the Blinga Games variant in periodic pop-ups</p>
                   </div>
-                  <Switch checked={localToggles.fiusGamesNotification ?? true} onCheckedChange={() => handleToggle('fiusGamesNotification')} />
+                  <Switch checked={localToggles.blingaGamesNotification ?? true} onCheckedChange={() => handleToggle('blingaGamesNotification')} />
                 </div>
               </div>
 
@@ -1139,44 +1139,6 @@ export function CustomizeModal({
                     { value: 'compact', label: 'Compact' },
                   ]}
                 />
-              </div>
-
-              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-4">
-                <div>
-                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Logo Style</span>
-                  <p className="text-xs text-zinc-500 mt-0.5">Choose the Fius logo shown in welcome screens and responses</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {LOGO_STYLE_OPTIONS.map(opt => {
-                    const active = logoStyle === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleLogoStyleChange(opt.value)}
-                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                          active
-                            ? 'border-zinc-500 dark:border-zinc-400 bg-zinc-100 dark:bg-zinc-800'
-                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                        }`}
-                      >
-                        <FiusLogo
-                          size="md"
-                          styleOverride={opt.value}
-                          className={theme === 'dark' ? 'text-white' : 'text-black'}
-                        />
-                        <span className="text-[11px] text-zinc-600 dark:text-zinc-400 text-center leading-tight">{opt.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-between gap-3 pt-1">
-                  <div>
-                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Auto-rotate Logo</span>
-                    <p className="text-xs text-zinc-500 mt-0.5">Use a different logo style for each new chat</p>
-                  </div>
-                  <Switch checked={autoRotateLogo} onCheckedChange={handleAutoRotateLogoChange} />
-                </div>
               </div>
 
               <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 space-y-3">
@@ -1329,7 +1291,7 @@ export function CustomizeModal({
                     'llama-4': 'Llama',
                     'mistral': 'Mistral',
                     'copilot': 'Copilot',
-                    'fius-ai': 'Fius',
+                    'blinga-ai': 'Blinga',
                   };
                   const modelLogos: Record<string, string | null> = {
                     'gpt-4o': theme === 'dark' ? '/chatgpt-logo-white.png' : '/chatgpt-logo.png',
@@ -1344,7 +1306,7 @@ export function CustomizeModal({
                     'llama-4': '/llama-logo.png',
                     'mistral': '/mistral-logo.png',
                     'copilot': '/copilot-logo.png',
-                    'fius-ai': null,
+                    'blinga-ai': null,
                   };
                   return (
                 <div className="space-y-2">
@@ -1367,7 +1329,7 @@ export function CustomizeModal({
                         >
                           <GripVertical className="h-4 w-4" />
                         </span>
-                        {name === 'fius-ai'
+                        {name === 'blinga-ai'
                           ? <Logo size="sm" />
                           : modelLogos[name] && (
                             <img
@@ -1423,7 +1385,7 @@ export function CustomizeModal({
                               onClick={() => {
                                 const updated = { ...nomadDefaultModels, [name]: sm };
                                 setNomadDefaultModels(updated);
-                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(updated)); } catch {}
+                                try { localStorage.setItem('blinga-nomad-sub-models', JSON.stringify(updated)); } catch {}
                                 setOpenSettingsModelDropdown(null);
                                 setIsDirty(true);
                               }}
@@ -1444,7 +1406,7 @@ export function CustomizeModal({
                               onClick={() => {
                                 const updated = { ...nomadDefaultModels, [name]: sm };
                                 setNomadDefaultModels(updated);
-                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(updated)); } catch {}
+                                try { localStorage.setItem('blinga-nomad-sub-models', JSON.stringify(updated)); } catch {}
                                 setOpenSettingsModelDropdown(null);
                                 setIsDirty(true);
                               }}
@@ -1473,8 +1435,8 @@ export function CustomizeModal({
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="max-w-[80%]">
-                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Fius with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
-                      <p className="text-xs text-zinc-500 mt-1">Allow Fius to remember details from your previous conversations.</p>
+                      <span className="text-sm text-zinc-900 dark:text-white">Personalize Blinga with your conversation history <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-1 rounded">beta</span></span>
+                      <p className="text-xs text-zinc-500 mt-1">Allow Blinga to remember details from your previous conversations.</p>
                     </div>
                     <Switch checked={localToggles.personalize} onCheckedChange={() => handleToggle('personalize')} />
                   </div>

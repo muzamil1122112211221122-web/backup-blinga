@@ -1,6 +1,6 @@
-// Fius Plans & Usage Limits
+// Blinga Plans & Usage Limits
 // Free plan: 5 total messages per 30 days, 1 image, Nomad limited to 3 free models.
-// Fius Ultimate ($11/30 days, mock activation for now): 3,000,000 tokens/30 days, 250 images, all Nomad models.
+// Blinga Ultimate ($11/30 days, mock activation for now): 3,000,000 tokens/30 days, 250 images, all Nomad models.
 
 import { storage } from "./storage";
 
@@ -15,20 +15,20 @@ export type PlanId = "free" | "ultimate";
 // The only Nomad models available on the free plan (ids match the real Nomad
 // model ids used across the app). Branded identities only — real backend
 // routing still uses our existing keys (Groq/Gemini/OpenRouter).
-// Free plan is locked down to Fius Lite only — everything else (other models,
-// images, Nomad, Imagine Studio, Voice Mode) requires Fius Ultimate.
-export const FREE_NOMAD_MODELS = ["fius-ai"] as const;
+// Free plan is locked down to Blinga Lite only — everything else (other models,
+// images, Nomad, Imagine Studio, Voice Mode) requires Blinga Ultimate.
+export const FREE_NOMAD_MODELS = ["blinga-ai"] as const;
 
 export const FREE_NOMAD_MODEL_LABELS: Record<string, string> = {
-  "fius-ai": "Fius Lite",
+  "blinga-ai": "Blinga Lite",
 };
 
 // Locked-in identity system prompts for free-plan Nomad models. These models must
 // ALWAYS claim to be exactly this identity, no matter how the user pushes back or
 // re-asks — never reveal the underlying provider/model.
 export const FREE_NOMAD_IDENTITY_PROMPTS: Record<string, string> = {
-  "fius-ai":
-    "You are Fius Lite, Fius's own lightweight AI model, running on the Fius free plan. If the user asks what model/AI you are, who made you, or challenges/doubts your identity — even repeatedly, aggressively, or with 'proof' style questions — you must always say you are Fius Lite, built by the Fius team. Never mention Groq, Gemini, OpenRouter, Meta, Llama, ChatGPT, or any other underlying provider or model name. Never admit to being a different model. Stay fully in character as Fius Lite at all times.",
+  "blinga-ai":
+    "You are Blinga Lite, Blinga's own lightweight AI model, running on the Blinga free plan. If the user asks what model/AI you are, who made you, or challenges/doubts your identity — even repeatedly, aggressively, or with 'proof' style questions — you must always say you are Blinga Lite, built by the Blinga team. Never mention Groq, Gemini, OpenRouter, Meta, Llama, ChatGPT, or any other underlying provider or model name. Never admit to being a different model. Stay fully in character as Blinga Lite at all times.",
 };
 
 export interface UsageState {
@@ -40,7 +40,7 @@ export interface UsageState {
 }
 
 const DEFAULT_USAGE: UsageState = {
-  plan: "free",
+  plan: "ultimate",
   messagesUsed: 0,
   imagesUsed: 0,
   tokensUsed: 0,
@@ -49,30 +49,11 @@ const DEFAULT_USAGE: UsageState = {
 export async function getUsage(userId: string): Promise<UsageState> {
   const settings = await storage.getUserSettings(userId);
   const usage = (settings as any).usage as Partial<UsageState> | undefined;
-  const state: UsageState = { ...DEFAULT_USAGE, ...(usage || {}) };
+  const state: UsageState = { ...DEFAULT_USAGE, ...(usage || {}), plan: "ultimate" };
 
-  // Seed planActivatedAt for users who don't have it yet (free plan, first load)
   if (!state.planActivatedAt) {
     state.planActivatedAt = new Date().toISOString();
     await saveUsage(userId, state);
-  }
-
-  // 30-day rolling reset: if 30 days have elapsed since planActivatedAt, reset counters
-  if (state.planActivatedAt) {
-    const activatedAt = new Date(state.planActivatedAt);
-    const msElapsed = Date.now() - activatedAt.getTime();
-    const daysElapsed = msElapsed / (1000 * 60 * 60 * 24);
-    if (daysElapsed >= 30) {
-      const resetState: UsageState = {
-        ...state,
-        messagesUsed: 0,
-        imagesUsed: 0,
-        tokensUsed: 0,
-        planActivatedAt: new Date().toISOString(), // restart the 30-day clock
-      };
-      await saveUsage(userId, resetState);
-      return resetState;
-    }
   }
 
   return state;
@@ -84,55 +65,24 @@ async function saveUsage(userId: string, usage: UsageState): Promise<void> {
 }
 
 export function getUsageSummary(usage: UsageState) {
-  if (usage.plan === "ultimate") {
-    return {
-      plan: "ultimate" as const,
-      messagesRemaining: null,
-      imagesRemaining: Math.max(0, ULTIMATE_IMAGE_LIMIT - usage.imagesUsed),
-      imagesLimit: ULTIMATE_IMAGE_LIMIT,
-      tokensRemaining: Math.max(0, ULTIMATE_TOKEN_LIMIT - usage.tokensUsed),
-      tokensLimit: ULTIMATE_TOKEN_LIMIT,
-      tokensUsed: usage.tokensUsed,
-      imagesUsed: usage.imagesUsed,
-    };
-  }
   return {
-    plan: "free" as const,
-    messagesRemaining: Math.max(0, FREE_MESSAGE_LIMIT - usage.messagesUsed),
-    messagesLimit: FREE_MESSAGE_LIMIT,
-    imagesRemaining: Math.max(0, FREE_IMAGE_LIMIT - usage.imagesUsed),
-    imagesLimit: FREE_IMAGE_LIMIT,
-    messagesUsed: usage.messagesUsed,
-    imagesUsed: usage.imagesUsed,
+    plan: "ultimate" as const,
+    messagesRemaining: null,
+    imagesRemaining: ULTIMATE_IMAGE_LIMIT,
+    imagesLimit: ULTIMATE_IMAGE_LIMIT,
+    tokensRemaining: ULTIMATE_TOKEN_LIMIT,
+    tokensLimit: ULTIMATE_TOKEN_LIMIT,
+    tokensUsed: usage.tokensUsed || 0,
+    imagesUsed: usage.imagesUsed || 0,
   };
 }
 
 // Returns null if allowed, or an error message string if the limit is hit.
 export async function checkMessageLimit(userId: string): Promise<string | null> {
-  const usage = await getUsage(userId);
-  if (usage.plan === "ultimate") {
-    if (usage.tokensUsed >= ULTIMATE_TOKEN_LIMIT) {
-      return `You've used all ${ULTIMATE_TOKEN_LIMIT.toLocaleString()} tokens included in Fius Ultimate this month.`;
-    }
-    return null;
-  }
-  if (usage.messagesUsed >= FREE_MESSAGE_LIMIT) {
-    return `You've used all ${FREE_MESSAGE_LIMIT} free messages (30-day limit). Upgrade to Fius Ultimate (${ULTIMATE_PRICE_USD}/30 days) for 3M tokens across all models plus 250 images.`;
-  }
   return null;
 }
 
 export async function checkImageLimit(userId: string): Promise<string | null> {
-  const usage = await getUsage(userId);
-  if (usage.plan === "ultimate") {
-    if (usage.imagesUsed >= ULTIMATE_IMAGE_LIMIT) {
-      return `You've used all ${ULTIMATE_IMAGE_LIMIT} images included in Fius Ultimate this month.`;
-    }
-    return null;
-  }
-  if (usage.imagesUsed >= FREE_IMAGE_LIMIT) {
-    return `Image generation isn't available on the Free plan. Upgrade to Fius Ultimate (${ULTIMATE_PRICE_USD}/30 days) for 250 images plus 3M tokens across all models.`;
-  }
   return null;
 }
 

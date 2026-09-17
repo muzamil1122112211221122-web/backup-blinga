@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UltimatePlanCard } from "@/components/ultimate-plan-card";
 
 const FREE_FEATURES = [
-  "Select AI models (Llama, Fius Lite)",
+  "Select AI models (Llama, Blinga Lite)",
   "5 messages per 30 days",
   "1 image generation per 30 days",
   "Basic chat & document features",
@@ -20,7 +20,7 @@ export function UpgradeModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   const handleUpgrade = async () => {
     try {
       await upgrade.mutateAsync();
-      toast({ title: "Fius Ultimate activated!", description: "You now have 3M tokens, 250 images, and full model access." });
+      toast({ title: "Blinga Ultimate activated!", description: "You now have 3M tokens, 250 images, and full model access." });
       onClose();
     } catch {
       toast({ title: "Couldn't activate plan", description: "Please try again.", variant: "destructive" });
@@ -33,13 +33,13 @@ export function UpgradeModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
         className="max-w-4xl w-[calc(100%-1.5rem)] max-h-[92vh] overflow-y-auto p-0 overflow-x-hidden border-white/10 bg-black"
         style={{ borderRadius: 28 }}
       >
-        <DialogTitle className="sr-only">Upgrade to Fius Ultimate</DialogTitle>
+        <DialogTitle className="sr-only">Upgrade to Blinga Ultimate</DialogTitle>
 
         <div className="px-6 sm:px-10 pt-10 pb-14">
           {/* Header */}
           <div className="text-center mb-10">
             <p className="text-xs font-bold uppercase tracking-widest text-zinc-600 mb-2">Free plan limit reached</p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Upgrade to Fius Ultimate</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Upgrade to Blinga Ultimate</h2>
             <p className="text-zinc-500 text-sm sm:text-base">30-day plans. Cancel anytime.</p>
           </div>
 

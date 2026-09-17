@@ -1,33 +1,33 @@
 import { AvailableModel } from "../types/chat";
 
-// API Keys for different Fius models
-const FIUS_API_KEYS = {
-  'fius-prime': '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',
-  'fius-code': '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',
-  'fius-flash': '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',
-  'fius-creative': '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',
-  'fius-lite': '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',
-  'fius-speed': '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',
-  'fius-context': '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',
-  'fius-auto': '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',
-  'fius-education': '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',
+// API Keys for different Blinga models
+const BLINGA_API_KEYS = {
+  'blinga-max': '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',
+  'blinga-code': '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',
+  'blinga-flash': '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',
+  'blinga-creative': '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',
+  'blinga-lite': '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',
+  'blinga-speed': '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',
+  'blinga-context': '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',
+  'blinga-auto': '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',
+  'blinga-education': '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',
   'gpt-4o': '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',
   'claude-3.5-sonnet': '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',
   'gemini-pro': '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',
   'llama-3.3-70b-versatile': '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',
 };
 
-// Map Fius model names to actual OpenRouter models
+// Map Blinga model names to actual OpenRouter models
 const MODEL_MAPPING = {
-  'fius-prime': 'anthropic/claude-3.5-sonnet',
-  'fius-code': 'openai/gpt-4o',
-  'fius-flash': 'google/gemini-2.0-flash-exp',
-  'fius-creative': 'meta-llama/llama-3.1-70b-instruct',
-  'fius-lite': 'openai/gpt-4o-mini',
-  'fius-speed': 'anthropic/claude-3-haiku',
-  'fius-context': 'google/gemini-pro-1.5',
-  'fius-auto': 'openrouter/auto',
-  'fius-education': 'anthropic/claude-3.5-sonnet',
+  'blinga-max': 'anthropic/claude-3.5-sonnet',
+  'blinga-code': 'openai/gpt-4o',
+  'blinga-flash': 'google/gemini-2.0-flash-exp',
+  'blinga-creative': 'meta-llama/llama-3.1-70b-instruct',
+  'blinga-lite': 'openai/gpt-4o-mini',
+  'blinga-speed': 'anthropic/claude-3-haiku',
+  'blinga-context': 'google/gemini-pro-1.5',
+  'blinga-auto': 'openrouter/auto',
+  'blinga-education': 'anthropic/claude-3.5-sonnet',
   'gpt-4o': 'openai/gpt-4o',
   'claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
   'gemini-pro': 'google/gemini-pro',
@@ -53,20 +53,20 @@ export class OpenRouterService {
   private baseURL = 'https://openrouter.ai/api/v1';
 
   private getApiKey(model: AvailableModel): string {
-    const apiKey = FIUS_API_KEYS[model];
+    const apiKey = BLINGA_API_KEYS[model];
     if (!apiKey) {
       throw new Error(`API key not configured for model: ${model}`);
     }
     return apiKey;
   }
 
-  private mapModel(fiusModel: AvailableModel): string {
-    return MODEL_MAPPING[fiusModel] || fiusModel;
+  private mapModel(blingaModel: AvailableModel): string {
+    return MODEL_MAPPING[blingaModel] || blingaModel;
   }
 
   async chatCompletion(
     messages: Array<{ role: string; content: string }>,
-    model: AvailableModel = 'fius-prime',
+    model: AvailableModel = 'blinga-max',
     options: {
       temperature?: number;
       maxTokens?: number;
@@ -76,13 +76,13 @@ export class OpenRouterService {
     const apiKey = this.getApiKey(model);
     const mappedModel = this.mapModel(model);
 
-    // Generate thinking process for Fius Pro (fius-prime) model
-    const thinking = model === 'fius-prime' ? this.generateThinkingProcess(messages[messages.length - 1]?.content || '') : undefined;
+    // Generate thinking process for Blinga Pro (blinga-max) model
+    const thinking = model === 'blinga-max' ? this.generateThinkingProcess(messages[messages.length - 1]?.content || '') : undefined;
 
-    // Add DeepSeek-style thinking system prompt for Fius Pro
+    // Add DeepSeek-style thinking system prompt for Blinga Pro
     let finalMessages = messages;
     if (thinking) {
-      const systemPrompt = `You are Fius Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST show your thinking process before providing your final answer.
+      const systemPrompt = `You are Blinga Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST show your thinking process before providing your final answer.
 
 First, display your internal reasoning process exactly as provided below, then give your response.
 
@@ -99,7 +99,7 @@ Important: Always show the <thinking> tags and reasoning steps, then provide you
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'Fius API',
+        'X-Title': 'Blinga API',
       },
       body: JSON.stringify({
         model: mappedModel,
@@ -211,7 +211,7 @@ Important: Always show the <thinking> tags and reasoning steps, then provide you
 
   async *streamCompletion(
     messages: Array<{ role: string; content: string }>,
-    model: AvailableModel = 'fius-prime',
+    model: AvailableModel = 'blinga-max',
     options: {
       temperature?: number;
       maxTokens?: number;
@@ -226,7 +226,7 @@ Important: Always show the <thinking> tags and reasoning steps, then provide you
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'Fius API',
+        'X-Title': 'Blinga API',
       },
       body: JSON.stringify({
         model: mappedModel,
@@ -280,17 +280,17 @@ Important: Always show the <thinking> tags and reasoning steps, then provide you
   }
 
   async getModels(): Promise<Array<{ id: string; name: string; description?: string }>> {
-    // Return Fius branded models
+    // Return Blinga branded models
     return [
-      { id: 'fius-prime', name: 'Fius Pro', description: 'Advanced reasoning & analysis' },
-      { id: 'fius-code', name: 'Fius Code', description: 'Programming & development' },
-      { id: 'fius-flash', name: 'Fius Flash', description: 'Fast responses & multimodal' },
-      { id: 'fius-creative', name: 'Fius Creative', description: 'Creative writing & storytelling' },
-      { id: 'fius-lite', name: 'Fius Lite', description: 'Quick tasks & efficiency' },
-      { id: 'fius-speed', name: 'Fius Speed', description: 'Ultra-fast processing' },
-      { id: 'fius-context', name: 'Fius Context', description: 'Long document processing' },
-      { id: 'fius-auto', name: 'Fius Auto', description: 'Intelligent model selection' },
-      { id: 'fius-education', name: 'Fius Education', description: 'Educational content & tutoring' },
+      { id: 'blinga-max', name: 'Blinga Pro', description: 'Advanced reasoning & analysis' },
+      { id: 'blinga-code', name: 'Blinga Code', description: 'Programming & development' },
+      { id: 'blinga-flash', name: 'Blinga Flash', description: 'Fast responses & multimodal' },
+      { id: 'blinga-creative', name: 'Blinga Creative', description: 'Creative writing & storytelling' },
+      { id: 'blinga-lite', name: 'Blinga Lite', description: 'Quick tasks & efficiency' },
+      { id: 'blinga-speed', name: 'Blinga Speed', description: 'Ultra-fast processing' },
+      { id: 'blinga-context', name: 'Blinga Context', description: 'Long document processing' },
+      { id: 'blinga-auto', name: 'Blinga Auto', description: 'Intelligent model selection' },
+      { id: 'blinga-education', name: 'Blinga Education', description: 'Educational content & tutoring' },
     ];
   }
 }

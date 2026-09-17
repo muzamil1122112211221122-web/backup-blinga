@@ -26,12 +26,12 @@ function PageShell() {
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
       <div className="flex flex-col items-center space-y-4">
         <img
-          src="/fius-logo.png"
-          alt="Fius"
+          src="/blinga-logo.png"
+          alt="Blinga"
           className="w-16 h-16 object-contain animate-pulse"
           // image is already preloaded in index.html so this is instant
         />
-        <p className="text-white text-xl font-bold tracking-widest animate-pulse">FIUS</p>
+        <p className="text-white text-xl font-bold tracking-widest animate-pulse">BLINGA</p>
       </div>
     </div>
   );
@@ -47,7 +47,7 @@ function Router() {
     const errorDescription = params.get("error_description") || params.get("error");
     if (errorDescription && location !== "/start") {
       const message = decodeURIComponent(errorDescription.replace(/\+/g, " "));
-      sessionStorage.setItem("fius_auth_error", message);
+      sessionStorage.setItem("blinga_auth_error", message);
       navigate("/start", { replace: true });
     }
   }, [location, navigate]);
@@ -68,13 +68,41 @@ function Router() {
     enabled: sessionReady,
   });
 
+  // ── Radix UI cleanup: remove stale scroll locks / aria-hidden on route change ─
+  // When a Radix Dialog, Select, or Popover is open and the component tree
+  // unmounts due to navigation (e.g. /start → /chat), the library sometimes
+  // fails to clean up:
+  //   • data-scroll-locked + pointer-events:none on <body>
+  //   • aria-hidden="true" on #root (makes the whole app invisible to pointer events)
+  // This effect runs whenever the location changes and defensively clears both.
+  useEffect(() => {
+    // Remove scroll lock attributes/styles injected by react-remove-scroll
+    document.body.removeAttribute('data-scroll-locked');
+    document.body.style.removeProperty('pointer-events');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+    // Remove aria-hidden that Radix sets on the #root sibling of its portal
+    const root = document.getElementById('root');
+    if (root) root.removeAttribute('aria-hidden');
+    if (root) root.removeAttribute('inert');
+    // Remove orphaned Radix popper wrappers stuck in the DOM
+    document.querySelectorAll('[data-radix-popper-content-wrapper]').forEach(el => {
+      const parent = el.closest('[data-state="open"]');
+      if (!parent) el.remove();
+    });
+  }, [location]);
+
   // ── Background redirect once auth resolves (no blocking spinner) ──────────
   const redirected = useRef(false);
   useEffect(() => {
     if (isLoading || !sessionReady || redirected.current) return;
     redirected.current = true;
-    if (user && (location === "/" || location === "/start")) {
-      navigate(user.phoneNumber ? "/chat" : "/start", { replace: true });
+    if (user) {
+      if (location === "/") {
+        if (user.phoneNumber) navigate("/chat", { replace: true });
+      } else if (location === "/start") {
+        if (user.phoneNumber) navigate("/chat", { replace: true });
+      }
     }
     if (!user && location === "/chat") {
       navigate("/start", { replace: true });
@@ -102,7 +130,7 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="fius-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="blinga-ui-theme">
         <TooltipProvider>
           <Toaster />
           <Router />

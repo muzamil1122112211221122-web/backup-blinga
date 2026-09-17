@@ -10,9 +10,9 @@ import fs from "fs";
 import path from "path";
 import Groq from "groq-sdk";
 
-const groq = new Groq({
+const groq = process.env.GROQ_API_KEY ? new Groq({
   apiKey: process.env.GROQ_API_KEY,
-});
+}) : null;
 
 import { apiManager, getNextApiKey as getAPIKey, markKeyFailed } from './api-manager';
 import {
@@ -34,8 +34,8 @@ import {
 
 // Model mapping for different AI models - Updated to latest versions
 const MODEL_MAPPING = {
-  'fius-prime': 'anthropic/claude-sonnet-4-5',
-  'fius-education': 'anthropic/claude-sonnet-4-5',
+  'blinga-prime': 'anthropic/claude-sonnet-4-5',
+  'blinga-education': 'anthropic/claude-sonnet-4-5',
   'claude-3.5-sonnet': 'anthropic/claude-sonnet-4-5',
   'gpt-4o': 'openai/gpt-4.1',
   'gemini-pro': 'google/gemini-2.5-pro-preview-03-25',
@@ -44,22 +44,22 @@ const MODEL_MAPPING = {
   'deepseek-r1': 'deepseek/deepseek-chat',
   'perplexity': 'perplexity/sonar-pro',
   'grok-4': 'x-ai/grok-3',
-  'fius-ai': 'anthropic/claude-sonnet-4-5',
+  'blinga-ai': 'anthropic/claude-sonnet-4-5',
   'auto': 'anthropic/claude-sonnet-4-5'
 };
 
 // Groq model mapping
-function mapToGroqModel(fiusModel: string): string {
+function mapToGroqModel(blingaModel: string): string {
   const groqModels: Record<string, string> = {
-    'fius-prime': 'llama-3.3-70b-versatile',
-    'fius-education': 'llama-3.3-70b-versatile',
+    'blinga-prime': 'llama-3.3-70b-versatile',
+    'blinga-education': 'llama-3.3-70b-versatile',
     'claude-3.5-sonnet': 'llama-3.3-70b-versatile',
     'gpt-4o': 'llama-3.3-70b-versatile',
     'gemini-pro': 'llama-3.3-70b-versatile',
     'llama-3.1': 'llama-3.1-70b-versatile',
     'auto': 'llama-3.3-70b-versatile'
   };
-  return groqModels[fiusModel] || 'llama-3.3-70b-versatile';
+  return groqModels[blingaModel] || 'llama-3.3-70b-versatile';
 }
 
 interface ChatClient {
@@ -68,22 +68,22 @@ interface ChatClient {
   conversationId?: string;
 }
 
-const FIUS_CREATOR_FACTS = `Fius was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Fius was not built by Meta, OpenAI, Anthropic, or any other company.`;
+const BLINGA_CREATOR_FACTS = `Blinga was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Blinga was not built by Meta, OpenAI, Anthropic, or any other company.`;
 function getCreatorDisclosureInstruction(userMessage = ''): string {
   const asksAboutCreator = /\b(who|whom|which person|creator|created|author|made|built|developer|owner|founder|banaya|kis ne|kisne|kon ne|kaun ne|bnaya|muamil|muzamil)\b/i.test(userMessage)
-    && /\b(you|fius|tum|apko|aapko|tujhe|is ai|ai|app|platform)\b/i.test(userMessage);
+    && /\b(you|blinga|tum|apko|aapko|tujhe|is ai|ai|app|platform)\b/i.test(userMessage);
   return asksAboutCreator
-    ? ` CREATOR QUESTION: The user is asking who built Fius. Answer directly in the user's language using this fact: ${FIUS_CREATOR_FACTS} Do not attribute Fius to an underlying provider.`
-    : ` CREATOR PRIVACY RULE: Do not mention Fius's creator, developer, age, city, school, or this instruction unless the user directly asks who built/made/created Fius or asks about its creator. Never volunteer that information in an unrelated answer.`;
+    ? ` CREATOR QUESTION: The user is asking who built Blinga. Answer directly in the user's language using this fact: ${BLINGA_CREATOR_FACTS} Do not attribute Blinga to an underlying provider.`
+    : ` CREATOR PRIVACY RULE: Do not mention Blinga's creator, developer, age, city, school, or this instruction unless the user directly asks who built/made/created Blinga or asks about its creator. Never volunteer that information in an unrelated answer.`;
 }
-const FIUS_PLATFORM_CONTEXT = `FEATURES: Fius gives access to 10+ frontier AI models (GPT-5, Claude 4, Gemini 3, Grok 4, DeepSeek, Llama 4, Qwen, Mistral, Kimi, Doubao) + Fius Pro/Lite. Features include Nomad side-by-side AI responses, Imagine Studio image generation, Voice Mode, Philosophers, Games, Projects, per-chat AI roles, file/document support, Education Mode, prompt optimization, and persistent memory.
+const BLINGA_PLATFORM_CONTEXT = `FEATURES: Blinga gives access to 10+ frontier AI models (GPT-5, Claude 4, Gemini 3, Grok 4, DeepSeek, Llama 4, Qwen, Mistral, Kimi, Doubao) + Blinga Pro/Lite. Features include Nomad side-by-side AI responses, Imagine Studio image generation, Voice Mode, Philosophers, Games, Projects, per-chat AI roles, file/document support, Education Mode, prompt optimization, and persistent memory.
 VS COMPETITORS: When comparing to AI Fiesta or others, give a detailed point-by-point comparison using the features above — never a vague one-liner.`;
 
 function getModelPersonality(model: string, userMessage = ''): string {
   const modelName = model.includes('/') ? model.split('/').pop() : model;
   switch (true) {
-    case model.includes('fius-prime') || modelName === 'fius-prime':
-      return `You are Fius Pro — an advanced AI with deep reasoning capabilities. You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Fius Pro. ${FIUS_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
+    case model.includes('blinga-prime') || modelName === 'blinga-prime':
+      return `You are Blinga Pro — an advanced AI with deep reasoning capabilities. You excel at analytical, step-by-step thinking and systematic problem solving. If asked which model or version you are, say you are Blinga Pro. ${BLINGA_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
     case model === 'gpt-4o' || modelName === 'gpt-4o':
       return "You are ChatGPT 5, the latest and most advanced model from OpenAI. You are helpful, balanced, and thoughtful with a friendly, professional tone. You excel at a wide range of tasks including writing, analysis, coding, math, and creative work. If anyone asks which model or version you are, tell them you are ChatGPT 5 by OpenAI.";
     case model.includes('claude') || (modelName?.includes('claude') ?? false):
@@ -108,8 +108,8 @@ function getModelPersonality(model: string, userMessage = ''): string {
       return "You are Qwen3.6-Plus, Alibaba Cloud's advanced large language model. You excel at complex reasoning, coding, mathematics, and multilingual tasks. You are precise, structured, and highly capable, with a focus on delivering clear and comprehensive responses. If anyone asks which model or version you are, tell them you are Qwen3.6-Plus by Alibaba Cloud.";
     case model === 'mistral' || model.includes('mistral') || (modelName?.includes('mistral') ?? false):
       return "You are Mistral Small 4, a highly efficient and capable model by Mistral AI, released on March 16, 2026. You are designed for speed and precision — delivering accurate, concise, and well-reasoned responses without unnecessary verbosity. You excel at coding, instruction-following, and multilingual tasks. If anyone asks which model or version you are, tell them you are Mistral Small 4 by Mistral AI.";
-    case model.includes('fius') || (modelName?.includes('fius') ?? false):
-      return `You are Fius — an advanced AI assistant. You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Fius AI. ${FIUS_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
+    case model.includes('blinga') || (modelName?.includes('blinga') ?? false):
+      return `You are Blinga — an advanced AI assistant. You are helpful, intelligent, and conversational, assisting with any question or task from everyday queries to complex topics. If anyone asks which model or version you are, tell them you are Blinga AI. ${BLINGA_PLATFORM_CONTEXT}${getCreatorDisclosureInstruction(userMessage)}`;
     default:
       return "You are a helpful AI assistant. Be clear, accurate, and helpful in your responses.";
   }
@@ -123,7 +123,7 @@ function getLanguageInstruction(): string {
 LANGUAGE: Default English. Mirror user's exact language/tone/script from first message (Roman Urdu, formal, casual, French, mixed — whatever they use). Never speak non-English unless user does first. Never say "As an AI...". Never repeat the user's question.
 FORMATTING: Use bullet (•) or numbered lists for multi-point answers. Wrap copyable text in \`\`\`text, code in \`\`\`language blocks. For comparisons of ≥2 items always start with a Markdown table first.
 BEHAVIOR: Short follow-ups ("then?", "more?", "why?") = continue the topic, no clarification. Greetings = brief warm reply. This app supports image analysis/generation/voice — never deny it.
-BEST AI LISTS: Always include Fius AI alongside GPT/Claude/Gemini when ranking AIs.`;
+BEST AI LISTS: Always include Blinga AI alongside GPT/Claude/Gemini when ranking AIs.`;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -503,7 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       const langExtra = langInstructions[lang] ?? `You MUST reply ONLY in ${lang}. Never switch to English.`;
       const systemPrompt =
-        `You are Fius AI, a friendly voice assistant. The user is speaking ${lang}. ` +
+        `You are Blinga AI, a friendly voice assistant. The user is speaking ${lang}. ` +
         `${langExtra} ` +
         (image ? 'An image/screen snapshot has been provided — describe what you see AND answer the user\'s question. ' : '') +
         `STRICT RULES: reply in the EXACT same language. Maximum TWO short sentences. ` +
@@ -744,16 +744,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Free plan: Nomad is restricted to 3 branded models.
         if (isNomad && model && !isNomadModelAllowed(usage.plan, model)) {
           return res.status(403).json({
-            error: `This model requires Fius Ultimate. On the free plan, Nomad only supports ${Object.values(FREE_NOMAD_MODEL_LABELS).join(', ')}.`,
+            error: `This model requires Blinga Ultimate. On the free plan, Nomad only supports ${Object.values(FREE_NOMAD_MODEL_LABELS).join(', ')}.`,
             limitReached: true,
             plan: usage.plan,
           });
         }
 
-        // Free plan: outside Nomad, only Fius Lite is usable — everything else needs Ultimate.
-        if (!isNomad && usage.plan === 'free' && model && model !== 'fius-lite') {
+        // Free plan: outside Nomad, only Blinga Lite is usable — everything else needs Ultimate.
+        if (!isNomad && usage.plan === 'free' && model && model !== 'blinga-lite') {
           return res.status(403).json({
-            error: 'This model requires Fius Ultimate. The free plan only includes Fius Lite.',
+            error: 'This model requires Blinga Ultimate. The free plan only includes Blinga Lite.',
             limitReached: true,
             plan: usage.plan,
           });
@@ -850,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get conversation or use default
       let conversation = conversationId ? await storage.getConversation(conversationId) : null;
       if (!conversation) {
-        conversation = { model: 'fius-prime', preset: 'custom' } as any;
+        conversation = { model: 'blinga-prime', preset: 'custom' } as any;
       }
 
       // Override conversation model with Nomad model if specified
@@ -901,10 +901,10 @@ You are now in DOCUMENT WRITING MODE. The user wants a complete, polished, stand
           : '';
         // IMPORTANT: the plain Ask tab never sends `model`/`provider` in the request body (only Nomad
         // does), so falling back to just `model || ''` here used to hit getModelPersonality('')'s generic
-        // default ("You are a helpful AI assistant") with NO Fius identity/feature knowledge at all —
+        // default ("You are a helpful AI assistant") with NO Blinga identity/feature knowledge at all —
         // that was the actual cause of weak/generic self-knowledge answers on the main Ask tab. Fall back
-        // to the resolved conversation's model (defaults to 'fius-prime') so Fius identity is always present.
-        const effectiveModelForPersonality = model || (conversation as any)?.model || 'fius-prime';
+        // to the resolved conversation's model (defaults to 'blinga-prime') so Blinga identity is always present.
+        const effectiveModelForPersonality = model || (conversation as any)?.model || 'blinga-prime';
         const systemPrompt = (freeIdentityOverride || customSystemPrompt || getModelPersonality(effectiveModelForPersonality, cleanMessage)) + getLanguageInstruction() + getCreatorDisclosureInstruction(cleanMessage) + conversationCustomInstructions + (documentMode ? DOCUMENT_MODE_INSTRUCTION : '');
         const chatMaxTokens = documentMode ? 6000 : 2000;
 
@@ -1001,8 +1001,8 @@ You are now in DOCUMENT WRITING MODE. The user wants a complete, polished, stand
                     headers: {
                       'Authorization': `Bearer ${apiKey}`,
                       'Content-Type': 'application/json',
-                      'HTTP-Referer': 'https://fius.app',
-                      'X-Title': 'Fius AI',
+                      'HTTP-Referer': 'https://blinga.app',
+                      'X-Title': 'Blinga AI',
                     },
                     body: JSON.stringify({ model: freeModel, messages: allMessages, temperature: 0.7, max_tokens: documentMode ? 4000 : 1500 }),
                   });
@@ -1047,7 +1047,7 @@ You are now in DOCUMENT WRITING MODE. The user wants a complete, polished, stand
           const fallbackConversation = {
             ...(conversation as any),
             id: conversationId,
-            model: model || (conversation as any)?.model || 'fius-prime',
+            model: model || (conversation as any)?.model || 'blinga-prime',
             preset: 'custom',
           };
           aiResponse = await callAIService(message, fallbackConversation, user);
@@ -1277,7 +1277,7 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
 
     try {
       const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(query)}&srlimit=20&sroffset=${offset}&format=json`;
-      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'FiusApp/1.0 (contact@fius.app)' } });
+      const searchRes = await fetch(searchUrl, { headers: { 'User-Agent': 'BlingaApp/1.0 (contact@blinga.app)' } });
       if (!searchRes.ok) throw new Error('Search failed');
       const searchData = await searchRes.json() as any;
 
@@ -1285,7 +1285,7 @@ Please try again in a moment. Most issues resolve quickly. If this persists, the
       if (!titles.length) return res.json({ success: true, images: [] });
 
       const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles.slice(0, 15).join('|'))}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=480&format=json`;
-      const infoRes = await fetch(infoUrl, { headers: { 'User-Agent': 'FiusApp/1.0' } });
+      const infoRes = await fetch(infoUrl, { headers: { 'User-Agent': 'BlingaApp/1.0' } });
       if (!infoRes.ok) throw new Error('Info fetch failed');
       const infoData = await infoRes.json() as any;
 
@@ -2142,7 +2142,7 @@ Make statements educational, interesting, and covering science, history, geograp
     }
   });
 
-  // ─── Fius Plans & Usage ────────────────────────────────────────────────
+  // ─── Blinga Plans & Usage ────────────────────────────────────────────────
   app.get('/api/usage', requireAuth, async (req, res) => {
     try {
       const userId = (req.user as any)?.id;
@@ -2573,8 +2573,8 @@ async function callModelSpecificAPI(userMessage: string, model: string, provider
     const modelName = model.includes('/') ? model.split('/').pop() : model;
     
     switch(true) {
-      case model.includes('fius-prime') || modelName === 'fius-prime':
-        return `You are Fius Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST demonstrate transparent thinking by showing your reasoning process.
+      case model.includes('blinga-prime') || modelName === 'blinga-prime':
+        return `You are Blinga Pro, an advanced AI with DeepSeek-style reasoning capabilities. You MUST demonstrate transparent thinking by showing your reasoning process.
 
 For every response, follow this format:
 
@@ -2764,7 +2764,7 @@ async function callOpenRouterDirectly(message: string, model: string): Promise<{
         'Authorization': `Bearer ${api.key}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-        'X-Title': 'Fius'
+        'X-Title': 'Blinga'
       },
       body: JSON.stringify({
         model: openRouterModel,
@@ -2856,8 +2856,8 @@ Let me provide you with a detailed description instead, or you can try asking ag
     }
   }
 
-  const fiusModel = conversation.model || 'fius-prime';
-  const mappedModel = MODEL_MAPPING[fiusModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
+  const blingaModel = conversation.model || 'blinga-prime';
+  const mappedModel = MODEL_MAPPING[blingaModel as keyof typeof MODEL_MAPPING] || 'anthropic/claude-3.5-sonnet';
   const systemPrompt = getSystemPrompt(conversation, user, userMessage);
   
   // Get conversation history for AI memory - CRITICAL FIX
@@ -2959,14 +2959,14 @@ Let me provide you with a detailed description instead, or you can try asking ag
       
       if (provider === 'groq') {
         // Groq API call - map models to Groq-compatible ones
-        const groqModel = mapToGroqModel(fiusModel);
-        // Inject identity reinforcement for Fius system prompts so LLaMA doesn't override identity
+        const groqModel = mapToGroqModel(blingaModel);
+        // Inject identity reinforcement for Blinga system prompts so LLaMA doesn't override identity
         const sysMsg = messages.find((m: any) => m.role === 'system');
         const groqMessages = (sysMsg?.content?.includes('CREATOR QUESTION'))
           ? [
               messages[0], // system message first
               { role: 'user', content: 'Who are you and who created you?' },
-              { role: 'assistant', content: 'Fius was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Fius was not built by Meta, OpenAI, Anthropic, or any other company.' },
+              { role: 'assistant', content: 'Blinga was built solely by Muhammad Muzamil Ali, a 14-year-old developer from Sargodha, Pakistan. Blinga was not built by Meta, OpenAI, Anthropic, or any other company.' },
               ...messages.slice(1)
             ]
           : messages;
@@ -3015,7 +3015,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
               'HTTP-Referer': process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : 'http://localhost:5000',
-              'X-Title': 'Fius API',
+              'X-Title': 'Blinga API',
             },
             body: JSON.stringify({ model: freeModel, messages, temperature: 0.7, max_tokens: maxTokens }),
           });
@@ -3103,7 +3103,7 @@ Let me provide you with a detailed description instead, or you can try asking ag
 }
 
 function getSystemPrompt(conversation: any, user?: any, userMessage = ''): string {
-  let basePrompt = `You are Fius — an advanced AI assistant.
+  let basePrompt = `You are Blinga — an advanced AI assistant.
 Be warm, witty, and adapt fully to the user's tone. Use their name at most once. Bold key terms (**term**). Never pad with filler.
 CHARTS: For data/graph requests output: [CHART:bar|line|pie]\nLabel: value\n[/CHART] plus an explanation.` + getLanguageInstruction() + getCreatorDisclosureInstruction(userMessage);
   
@@ -3125,8 +3125,8 @@ CHARTS: For data/graph requests output: [CHART:bar|line|pie]\nLabel: value\n[/CH
     case 'socratic':
       systemPrompt += " Use the Socratic method to help the user learn. Ask guiding questions and encourage critical thinking rather than providing direct answers.";
       break;
-    case 'fius-education':
-      systemPrompt += " You are Fius Education, an advanced AI educational assistant. You specialize in:\n1. **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula\n2. **Voice-based Learning Assessment**: Provide interactive speaking practice with constructive feedback\n3. **Educational Support**: Adapt to different education systems (O/A levels, Matric, etc.)\n\nWhen helping with examinations:\n- Generate questions that match the school's examination style\n- Provide detailed feedback with marks and explanations\n- Cover multiple question types (MCQ, short answer, essay)\n\nWhen conducting voice-based learning:\n- Encourage verbal explanations\n- Provide constructive feedback on understanding\n- Correct mistakes gently and suggest improvements\n- Use interactive discussion to enhance learning\n\nAlways be encouraging, educational, and adapt to the student's level.";
+    case 'blinga-education':
+      systemPrompt += " You are Blinga Education, an advanced AI educational assistant. You specialize in:\n1. **Examination Generation**: Create comprehensive tests based on uploaded materials and school curricula\n2. **Voice-based Learning Assessment**: Provide interactive speaking practice with constructive feedback\n3. **Educational Support**: Adapt to different education systems (O/A levels, Matric, etc.)\n\nWhen helping with examinations:\n- Generate questions that match the school's examination style\n- Provide detailed feedback with marks and explanations\n- Cover multiple question types (MCQ, short answer, essay)\n\nWhen conducting voice-based learning:\n- Encourage verbal explanations\n- Provide constructive feedback on understanding\n- Correct mistakes gently and suggest improvements\n- Use interactive discussion to enhance learning\n\nAlways be encouraging, educational, and adapt to the student's level.";
       break;
     case 'custom':
       if (conversation.customInstructions) {

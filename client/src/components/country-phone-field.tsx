@@ -78,15 +78,15 @@ export function CountryPhoneField({
           disabled={disabled}
           onChange={(event) => onValueChange(event.target.value.replace(/\D/g, "").slice(0, country.maxDigits))}
           placeholder={country.placeholder}
-          className="fius-onboarding-input min-w-0 flex-1 border-0 bg-transparent px-4 text-base font-medium tracking-[0.02em] text-zinc-900 outline-none shadow-none placeholder:text-zinc-300 disabled:opacity-50"
+          className="blinga-onboarding-input min-w-0 flex-1 border-0 bg-transparent px-4 text-base font-medium tracking-[0.02em] text-zinc-900 outline-none shadow-none placeholder:text-zinc-300 disabled:opacity-50"
         />
       </div>
       {error && <p className="px-1 text-xs font-medium text-red-600">{error}</p>}
 
       {countryOpen && createPortal(
-        <div className="fius-picker-backdrop fixed inset-0 z-[300] flex items-end justify-center bg-zinc-900/30 p-0 backdrop-blur-[10px] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Choose your country">
+        <div className="blinga-picker-backdrop fixed inset-0 z-[300] flex items-end justify-center bg-zinc-900/30 p-0 backdrop-blur-[10px] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Choose your country">
           <button type="button" aria-label="Close country picker" className="absolute inset-0 cursor-default" onClick={() => setCountryOpen(false)} />
-          <div className="fius-picker-panel relative flex max-h-[min(680px,88vh)] w-full max-w-md flex-col overflow-hidden rounded-t-[34px] border border-zinc-200 bg-white shadow-[0_28px_90px_rgba(0,0,0,0.2)] sm:rounded-[34px]">
+          <div className="blinga-picker-panel relative flex max-h-[min(680px,88vh)] w-full max-w-md flex-col overflow-hidden rounded-t-[34px] border border-zinc-200 bg-white shadow-[0_28px_90px_rgba(0,0,0,0.2)] sm:rounded-[34px]">
             <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
               <div>
                 <h2 className="text-base font-bold text-zinc-900">Choose your country</h2>
@@ -99,14 +99,14 @@ export function CountryPhoneField({
             <div className="border-b border-zinc-100 px-5 py-3">
               <div className="flex h-11 items-center gap-2 rounded-xl bg-zinc-50 px-3 ring-1 ring-inset ring-zinc-200 focus-within:ring-zinc-400">
                 <Search className="h-4 w-4 text-zinc-400" />
-                <input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search country or code" className="fius-country-picker-input min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-900 outline-none shadow-none placeholder:text-zinc-400" />
+                <input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search country or code" className="blinga-country-picker-input min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-900 outline-none shadow-none placeholder:text-zinc-400" />
               </div>
             </div>
             <div className="overflow-y-auto p-2">
               {filteredCountries.map((item) => {
                 const selected = item.iso2 === country.iso2 && item.dialCode === country.dialCode;
                 return (
-                  <button key={`${item.iso2}-${item.dialCode}`} type="button" onClick={() => chooseCountry(item)} className="fius-picker-row flex w-full items-center gap-3 rounded-2xl bg-transparent px-3 py-3 text-left outline-none transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 active:bg-transparent" data-selected={selected || undefined} style={{ WebkitTapHighlightColor: "transparent", animationDelay: `${Math.min(180, filteredCountries.indexOf(item) * 8)}ms` }}>
+                  <button key={`${item.iso2}-${item.dialCode}`} type="button" onClick={() => chooseCountry(item)} className="blinga-picker-row flex w-full items-center gap-3 rounded-2xl bg-transparent px-3 py-3 text-left outline-none transition-colors hover:bg-zinc-50 focus-visible:bg-zinc-50 active:bg-transparent" data-selected={selected || undefined} style={{ WebkitTapHighlightColor: "transparent", animationDelay: `${Math.min(180, filteredCountries.indexOf(item) * 8)}ms` }}>
                     <span className="relative flex h-6 w-8 shrink-0 items-center justify-center overflow-hidden">
                       <CountryFlag country={item} className="h-5 w-7" />
                       <span className="hidden text-xl leading-none">{item.flag}</span>

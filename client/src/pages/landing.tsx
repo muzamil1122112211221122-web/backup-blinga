@@ -45,7 +45,7 @@ function HubLogo() {
   return (
     <div className="flex flex-col items-center gap-2 flex-shrink-0">
       <Logo size="lg" className="text-zinc-900" />
-      <span className="text-xs font-bold tracking-widest uppercase text-zinc-500">Fius</span>
+      <span className="text-xs font-bold tracking-widest uppercase text-zinc-500">Blinga</span>
     </div>
   );
 }
@@ -87,17 +87,17 @@ const AI_MODELS = {
 
 // ── Stacked scrollable feature cards ─────────────────────────────────────
 const FEATURE_CARDS = [
-  { icon: <Layers className="w-6 h-6" />, title: "Nomad: Multi-AI Comparison Mode", subtitle: "One prompt. Multiple perspectives. Side-by-side.", desc: "Send a single message and instantly see responses from GPT-5, Claude 4, Gemini 3, and Grok 4 simultaneously. Compare, contrast, and pick the best — all in one interface. Exclusive to Fius.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%)" },
+  { icon: <Layers className="w-6 h-6" />, title: "Nomad: Multi-AI Comparison Mode", subtitle: "One prompt. Multiple perspectives. Side-by-side.", desc: "Send a single message and instantly see responses from GPT-5, Claude 4, Gemini 3, and Grok 4 simultaneously. Compare, contrast, and pick the best — all in one interface. Exclusive to Blinga.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%)" },
   { icon: <Img className="w-6 h-6" />, title: "Imagine Studio", subtitle: "Generate. Refine. Create. All in your browser.", desc: "AI image generation with curated style presets — photorealistic, cinematic, anime, oil painting, abstract and more. Your creations save locally and are always accessible in My Images.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f2f2f2 100%)" },
   { icon: <Mic className="w-6 h-6" />, title: "Voice Interaction Mode", subtitle: "Speak naturally. Hear AI respond.", desc: "Full voice-to-voice interaction powered by real-time speech recognition. Have natural conversations with any model hands-free. Perfect for when typing feels like too much.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f1f1f1 100%)" },
   { icon: <Zap className="w-6 h-6" />, title: "Prompt Optimizer", subtitle: "One click to 10× your results.", desc: "Automatically rewrites and enhances your prompts using AI. Weak questions become precise, expert-level queries. Every response you get back is measurably better.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%)" },
   { icon: <MessageSquare className="w-6 h-6" />, title: "Smart Documents", subtitle: "From prompt to PDF in seconds.", desc: "Generate professional PDFs, formatted Word documents, and presentation slides directly from a prompt. AI writes, structures, and exports — you just download.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f3f3f3 100%)" },
   { icon: <Star className="w-6 h-6" />, title: "Philosopher Mode", subtitle: "50+ minds from across human history.", desc: "Converse with Einstein, Socrates, Da Vinci, Cleopatra, Nikola Tesla and more — each with their own personality, worldview, and way of thinking. Genuinely unlike anything else.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f1f1f1 100%)" },
   { icon: <Sparkles className="w-6 h-6" />, title: "10+ Frontier AI Models", subtitle: "GPT-5, Claude 4, Gemini 3, Grok 4 & more.", desc: "Every major frontier model, unified under one roof. Switch between them instantly — no separate subscriptions, no juggling apps, no compromises on quality.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%)" },
-  { icon: <Bot className="w-6 h-6" />, title: "Fius Pro & Lite", subtitle: "Our own proprietary models, built in-house.", desc: "Two exclusive Fius models tuned for speed and depth — Fius Lite for instant everyday answers, Fius Pro for heavier reasoning. Available nowhere else.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f2f2f2 100%)" },
+  { icon: <Bot className="w-6 h-6" />, title: "Blinga Pro & Lite", subtitle: "Our own proprietary models, built in-house.", desc: "Two exclusive Blinga models tuned for speed and depth — Blinga Lite for instant everyday answers, Blinga Pro for heavier reasoning. Available nowhere else.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f2f2f2 100%)" },
   { icon: <Coins className="w-6 h-6" />, title: "3,000,000 Tokens / 30 Days", subtitle: "Room to actually use premium models.", desc: "A massive monthly allowance across premium models — enough for real, sustained work instead of running out of quota after a handful of prompts.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f1f1f1 100%)" },
   { icon: <Gauge className="w-6 h-6" />, title: "Priority Response Speed", subtitle: "Skip the queue on every model.", desc: "Ultimate members get priority routing across all models, meaning faster replies even during peak hours — your questions never wait in line.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f0f0f0 100%)" },
-  { icon: <Gift className="w-6 h-6" />, title: "Exclusive Extras", subtitle: "Fius Minds, games & hidden modes.", desc: "Unlock members-only extras you won't find anywhere else — Fius Minds personas, built-in games, and secret modes tucked away for Ultimate subscribers.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f3f3f3 100%)" },
+  { icon: <Gift className="w-6 h-6" />, title: "Exclusive Extras", subtitle: "Blinga Minds, games & hidden modes.", desc: "Unlock members-only extras you won't find anywhere else — Blinga Minds personas, built-in games, and secret modes tucked away for Ultimate subscribers.", accent: "linear-gradient(135deg, #f9f9f9 0%, #f3f3f3 100%)" },
 ];
 
 function StackedFeatures() {
@@ -175,12 +175,12 @@ function StackedFeatures() {
 }
 
 const FAQS = [
-  { q: "What do I get on the free plan?", a: "Free users get 5 messages per 30-day period and 1 image generation. You can access select AI models including Llama variants and Fius Lite. Upgrade to Fius Ultimate for unlimited premium access across all models." },
-  { q: "How many tokens / messages do I get with Ultimate?", a: "Fius Ultimate gives you 3 Million tokens per 30 days plus 250 images. Note: premium models like Claude Sonnet 4, ChatGPT 5, and Gemini 3 Pro count 4× per token — giving you roughly 750,000 effective premium-model tokens, or 3M with Fius-tier models." },
-  { q: "What AI models are included in Fius Ultimate?", a: "Fius Ultimate unlocks all 10+ premium models: ChatGPT 5, Claude Sonnet 4, Google Gemini 3.1 Pro, Grok 4, DeepSeek v3, Perplexity Sonar Pro, Kimi K2.5, Qwen 3.6 Plus, Mistral Small 4, and all Fius Pro models." },
-  { q: "What is Nomad (Side-by-side) mode?", a: "Nomad is Fius's exclusive multi-AI comparison feature — send one message and see responses from multiple top AIs simultaneously, side-by-side in real time. Available exclusively on Fius Ultimate." },
+  { q: "What do I get on the free plan?", a: "Free users get 5 messages per 30-day period and 1 image generation. You can access select AI models including Llama variants and Blinga Lite. Upgrade to Blinga Ultimate for unlimited premium access across all models." },
+  { q: "How many tokens / messages do I get with Ultimate?", a: "Blinga Ultimate gives you 3 Million tokens per 30 days plus 250 images. Note: premium models like Claude Sonnet 4, ChatGPT 5, and Gemini 3 Pro count 4× per token — giving you roughly 750,000 effective premium-model tokens, or 3M with Blinga-tier models." },
+  { q: "What AI models are included in Blinga Ultimate?", a: "Blinga Ultimate unlocks all 10+ premium models: ChatGPT 5, Claude Sonnet 4, Google Gemini 3.1 Pro, Grok 4, DeepSeek v3, Perplexity Sonar Pro, Kimi K2.5, Qwen 3.6 Plus, Mistral Small 4, and all Blinga Pro models." },
+  { q: "What is Nomad (Side-by-side) mode?", a: "Nomad is Blinga's exclusive multi-AI comparison feature — send one message and see responses from multiple top AIs simultaneously, side-by-side in real time. Available exclusively on Blinga Ultimate." },
   { q: "When does my plan reset?", a: "Both free and Ultimate plans run on a 30-day rolling period from your account creation date. Your remaining messages, images, and tokens are always visible in the sidebar." },
-  { q: "Can I cancel Fius Ultimate anytime?", a: "Yes, absolutely. No contracts, no lock-ins. Cancel anytime from Settings — your access continues until the end of your current 30-day period." },
+  { q: "Can I cancel Blinga Ultimate anytime?", a: "Yes, absolutely. No contracts, no lock-ins. Cancel anytime from Settings — your access continues until the end of your current 30-day period." },
   { q: "Is my data private?", a: "Yes. Your conversations are private and securely stored. We never sell your data to third parties. You can delete your entire chat history at any time from Settings." },
 ];
 
@@ -227,7 +227,7 @@ export default function Landing() {
           style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(24px)", boxShadow: "0 4px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)" }}>
           <div className="flex items-center gap-2.5">
             <Logo size="sm" className="text-zinc-900" />
-            <span className="text-base font-bold text-zinc-900 tracking-tight">Fius</span>
+            <span className="text-base font-bold text-zinc-900 tracking-tight">Blinga</span>
           </div>
           <nav className="hidden sm:flex items-center gap-1">
             {([
@@ -295,7 +295,7 @@ export default function Landing() {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5 max-w-3xl mx-auto">
-            {["Kimi K2.5", "Qwen 3.6 Plus", "Mistral Small 4", "Fius Pro", "Fius Lite", "+ More"].map(n => (
+            {["Kimi K2.5", "Qwen 3.6 Plus", "Mistral Small 4", "Blinga Pro", "Blinga Lite", "+ More"].map(n => (
               <span key={n} className="text-xs px-3 py-1.5 rounded-full border border-zinc-200 text-zinc-500 bg-zinc-50">{n}</span>
             ))}
           </div>
@@ -304,7 +304,7 @@ export default function Landing() {
         {/* ── Features ──────────────────────────────────────────── */}
         <section className="container mx-auto pb-28">
           <div className="text-center mb-12 px-6">
-            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">Why Fius?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 mb-3">Why Blinga?</h2>
             <p className="text-zinc-500 text-base max-w-lg mx-auto">Everything you need. Nothing you don't.</p>
           </div>
           <StackedFeatures />
@@ -328,7 +328,7 @@ export default function Landing() {
                 </div>
                 <p className="text-xs text-zinc-400 mb-6">No credit card required</p>
                 <ul className="space-y-2.5 mb-6">
-                  {["Select AI models (Llama, Fius Lite)", "5 messages per 30 days", "1 image generation per 30 days", "Basic chat & document features"].map(item => (
+                  {["Select AI models (Llama, Blinga Lite)", "5 messages per 30 days", "1 image generation per 30 days", "Basic chat & document features"].map(item => (
                     <li key={item} className="flex items-start gap-3 text-sm text-zinc-600">
                       <span className="text-zinc-400 flex-shrink-0 mt-0.5 text-base font-light">⤳</span>{item}
                     </li>
@@ -386,7 +386,7 @@ export default function Landing() {
           <div className="container mx-auto px-6 text-center">
             <div className="flex items-center justify-center gap-2.5 mb-3">
               <Logo size="sm" className="text-zinc-900" />
-              <span className="text-base font-bold text-zinc-900">Fius</span>
+              <span className="text-base font-bold text-zinc-900">Blinga</span>
             </div>
             <div className="flex items-center justify-center gap-3 mb-4">
               <button onClick={() => window.location.href = "/privacy"}
@@ -399,7 +399,7 @@ export default function Landing() {
                 Terms of Service
               </button>
             </div>
-            <p className="text-zinc-400 text-xs">© 2026 Fius. All rights reserved. · Fly With Us!</p>
+            <p className="text-zinc-400 text-xs">© 2026 Blinga. All rights reserved. · Fly With Us!</p>
           </div>
         </footer>
       </div>

@@ -31,7 +31,7 @@ const STATIC_IMAGES: string[] = [
   '/qwen-logo.png',
   '/llama-logo.png',
   '/doubao-logo.png',
-  '/fius-logo.png',
+  '/blinga-logo.png',
   '/bytedance-logo.png',
   '/copilot-logo.png',
   '/meta-ai-logo.png',
@@ -44,7 +44,7 @@ const STATIC_IMAGES: string[] = [
   '/nomad-multi-dark.png',
   '/nomad-multi-light.png',
   '/philosopher-avatar.png',
-  '/fius-games-avatar.png',
+  '/blinga-games-avatar.png',
   '/forus-games-avatar.png',
   '/lumin-avatar.png',
   '/incognito-dark.png',
@@ -95,7 +95,7 @@ const STATIC_IMAGES: string[] = [
   // ── Imagine style thumbnails ───────────────────────────────────────────────
   '/style-anime.png',
 
-  // ── Fius Games — banner + logo for every game ─────────────────────────────
+  // ── Blinga Games — banner + logo for every game ─────────────────────────────
   '/game-memory-banner.png',
   '/game-memory-logo.png',
   '/game-maths-banner.png',
@@ -111,7 +111,7 @@ const STATIC_IMAGES: string[] = [
   '/game-rps.png',
   '/game-tictactoe.png',
 
-  // ── Fius Imagine templates ─────────────────────────────────────────────────
+  // ── Blinga Imagine templates ─────────────────────────────────────────────────
   '/templates/anime.png',
   '/templates/ceo.png',
   '/templates/redecorate.png',
@@ -120,7 +120,7 @@ const STATIC_IMAGES: string[] = [
   '/templates/style-upgrade.png',
   '/templates/winter.png',
 
-  // ── Fius Minds — personality avatars (all 27) ─────────────────────────────
+  // ── Blinga Minds — personality avatars (all 27) ─────────────────────────────
   '/personalities/akbar.png',
   '/personalities/alexander.png',
   '/personalities/aristotle.png',

@@ -1,9 +1,9 @@
 import crispClickSound from "@assets/freesound_gamestudio-click-1-384917_1786134700421.mp3";
 import normalClickSound from "@assets/audley_fergine-ui-mouse-click-366460_1786134700421.mp3";
 
-export const DEFAULT_GLOW_ACCENT = "blue";
-export const DEFAULT_APP_FONT = "google-sans-flex";
-export const DEFAULT_LOGO_STYLE = "current";
+export const DEFAULT_GLOW_ACCENT = "yellow";
+export const DEFAULT_APP_FONT = "system";
+export const DEFAULT_LOGO_STYLE = "rings";
 export const DEFAULT_AUTO_ROTATE_LOGO = false;
 export const DEFAULT_UI_SOUND_STYLE = "crisp";
 const GLOW_DEFAULT_MIGRATION_KEY = "glowAccentColorDefaultMigrated";
@@ -17,15 +17,15 @@ export type UiSoundStyle = (typeof UI_SOUND_STYLE_OPTIONS)[number]["value"];
 const UI_SOUND_STYLE_KEY = "uiSoundStyle";
 
 export const LOGO_STYLE_OPTIONS = [
-  { value: "current", label: "Current Fius Logo" },
+  { value: "current", label: "Current Blinga Logo" },
   { value: "rings", label: "Animated Rings" },
 ] as const;
 
 export type LogoStyle = (typeof LOGO_STYLE_OPTIONS)[number]["value"];
-const LOGO_STYLE_KEY = "fiusLogoStyle";
-const AUTO_ROTATE_LOGO_KEY = "fiusAutoRotateLogo";
-const LOGO_STYLE_MAP_KEY = "fiusLogoStylesByConversation";
-const LOGO_LAST_AUTO_STYLE_KEY = "fiusLastAutoLogoStyle";
+const LOGO_STYLE_KEY = "blingaLogoStyle";
+const AUTO_ROTATE_LOGO_KEY = "blingaAutoRotateLogo";
+const LOGO_STYLE_MAP_KEY = "blingaLogoStylesByConversation";
+const LOGO_LAST_AUTO_STYLE_KEY = "blingaLastAutoLogoStyle";
 
 function readLogoStyleMap(): Record<string, LogoStyle> {
   try {
@@ -106,15 +106,13 @@ export const APP_FONT_OPTIONS = [
 export function getStoredGlowAccent() {
   const stored = localStorage.getItem("glowAccentColor");
   if (!stored) return DEFAULT_GLOW_ACCENT;
-
-  // Yellow was the previous implicit default. Migrate that legacy value once
-  // so existing users receive the new blue default, while future explicit
-  // yellow selections remain untouched.
-  if (stored === "yellow" && localStorage.getItem(GLOW_DEFAULT_MIGRATION_KEY) !== "true") {
-    localStorage.setItem("glowAccentColor", DEFAULT_GLOW_ACCENT);
-    localStorage.setItem(GLOW_DEFAULT_MIGRATION_KEY, "true");
-    return DEFAULT_GLOW_ACCENT;
+  if (stored === "blue" && localStorage.getItem("migratedToYellowGlow") !== "true") {
+    localStorage.setItem("glowAccentColor", "yellow");
+    localStorage.setItem("migratedToYellowGlow", "true");
+    return "yellow";
   }
+
+  
 
   return stored;
 }
@@ -140,6 +138,11 @@ const GLOW_COLORS: Record<string, Record<GlowTheme, string>> = {
 };
 
 export function applyAppFont(fontValue = localStorage.getItem("appFont") || DEFAULT_APP_FONT) {
+  if (fontValue === "google-sans-flex") {
+    fontValue = "system";
+    localStorage.setItem("appFont", "system");
+  }
+
   const font = APP_FONT_OPTIONS.find(option => option.value === fontValue) || APP_FONT_OPTIONS[0];
 
   if (font.googleFont) {
@@ -153,7 +156,7 @@ export function applyAppFont(fontValue = localStorage.getItem("appFont") || DEFA
     }
   }
 
-  document.documentElement.style.setProperty("--fius-app-font", font.css);
+  document.documentElement.style.setProperty("--blinga-app-font", font.css);
   document.body.style.fontFamily = font.css;
 }
 
@@ -189,11 +192,11 @@ export function getActiveUiAccent(): string | null {
 export function applyUiAccent() {
   const active = getActiveUiAccent();
   if (active) {
-    document.documentElement.style.setProperty('--fius-ui-accent', active);
-    document.body.classList.add('fius-accent-on');
+    document.documentElement.style.setProperty('--blinga-ui-accent', active);
+    document.body.classList.add('blinga-accent-on');
   } else {
-    document.documentElement.style.removeProperty('--fius-ui-accent');
-    document.body.classList.remove('fius-accent-on');
+    document.documentElement.style.removeProperty('--blinga-ui-accent');
+    document.body.classList.remove('blinga-accent-on');
   }
 }
 
@@ -286,3 +289,5 @@ export function getGlowGradient(
 
   return `radial-gradient(ellipse ${ellipse} at 50% 62%, rgba(${color},${baseOpacity}) 0%, rgba(${color},${middleOpacity}) 20%, rgba(${color},${edgeOpacity}) 42%, transparent 58%)`;
 }
+
+

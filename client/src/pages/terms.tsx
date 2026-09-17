@@ -26,7 +26,7 @@ export default function Terms() {
           <div className="h-4 w-px bg-zinc-200" />
           <div className="flex items-center gap-2">
             <Logo size="sm" className="text-zinc-900" />
-            <span className="text-sm font-bold text-zinc-900">Fius</span>
+            <span className="text-sm font-bold text-zinc-900">Blinga</span>
           </div>
           <span className="text-zinc-400 text-sm">/ Terms of Service</span>
         </div>
@@ -47,12 +47,12 @@ export default function Terms() {
             {[
               {
                 title: "Acceptance of Terms",
-                body: "By accessing and using Fius, you accept and agree to be bound by the terms and provision of this agreement.",
+                body: "By accessing and using Blinga, you accept and agree to be bound by the terms and provision of this agreement.",
                 list: [],
               },
               {
                 title: "Use License",
-                body: "Permission is granted to temporarily use Fius for personal, non-commercial purposes only.",
+                body: "Permission is granted to temporarily use Blinga for personal, non-commercial purposes only.",
                 list: [
                   "This is the grant of a license, not a transfer of title",
                   "This license shall automatically terminate if you violate any of these restrictions",
@@ -61,12 +61,12 @@ export default function Terms() {
               },
               {
                 title: "Disclaimer",
-                body: "The materials on Fius are provided on an 'as is' basis. Fius makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.",
+                body: "The materials on Blinga are provided on an 'as is' basis. Blinga makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.",
                 list: [],
               },
               {
                 title: "Limitations",
-                body: "In no event shall Fius or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use Fius, even if Fius or an authorized representative has been notified of the possibility of such damage.",
+                body: "In no event shall Blinga or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use Blinga, even if Blinga or an authorized representative has been notified of the possibility of such damage.",
                 list: [],
               },
               {
@@ -93,7 +93,7 @@ export default function Terms() {
           </div>
 
           {/* footer note */}
-          <p className="mt-12 text-center text-xs text-zinc-400">© 2026 Fius. All rights reserved. · Fly With Us!</p>
+          <p className="mt-12 text-center text-xs text-zinc-400">© 2026 Blinga. All rights reserved. · Fly With Us!</p>
         </div>
       </div>
     </div>

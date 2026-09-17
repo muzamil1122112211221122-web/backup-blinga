@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { createPortal } from "react-dom";
 import { playTabClick } from "@/lib/appearance-settings";
 import { Button } from "@/components/ui/button";
 import { Brain, Calculator, BookOpen, Gamepad2, ChevronRight, ChevronLeft, Star, Layers, Zap, Car, HelpCircle, Shuffle, X } from "lucide-react";
@@ -27,8 +28,8 @@ interface GameProps { playerName: string; gameLevel: number; onWin: (score: numb
 interface ScoreEntry { id: string; game: string; score: number; level: number; date: string; }
 
 // ─── Progress Storage (localStorage fallback) ────────────────────────────────
-const LEVEL_KEY  = 'fius_game_levels_v2';
-const SCORES_KEY = 'fius_scores_v2';
+const LEVEL_KEY  = 'blinga_game_levels_v2';
+const SCORES_KEY = 'blinga_scores_v2';
 
 function loadLevels(): Record<string, number> { try { return JSON.parse(localStorage.getItem(LEVEL_KEY) || '{}'); } catch { return {}; } }
 function saveLevels(l: Record<string, number>) { localStorage.setItem(LEVEL_KEY, JSON.stringify(l)); }
@@ -72,7 +73,7 @@ function getMemoryConfig(lv: number): { pairs: number; time: number } {
 
 // ─── Question History (anti-repeat for 25 games) ─────────────────────────────
 const MAX_Q_HIST = 130; // 25 games × ~5 questions
-function qHistKey(game: string, diff: string) { return `fius_qhist_${game}_${diff}`; }
+function qHistKey(game: string, diff: string) { return `blinga_qhist_${game}_${diff}`; }
 function getQHistory(game: string, diff: string): string[] {
   try { return JSON.parse(localStorage.getItem(qHistKey(game, diff)) || '[]'); } catch { return []; }
 }
@@ -502,8 +503,8 @@ function ContinueModal({ nextLevel, onYes, onNo }: { nextLevel: number; onYes: (
   );
 }
 
-// ─── FIUS MATHS ──────────────────────────────────────────────────────────────
-function FiusMaths({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+// ─── BLINGA MATHS ──────────────────────────────────────────────────────────────
+function BlingaMaths({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
   const Q_TIME = getTimer(gameLevel, 12);
@@ -620,11 +621,11 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack, paused = false }: GamePro
           </div>
           {/* Input row — type=text + inputMode=numeric kills browser +/- spinner arrows */}
           <div className="flex gap-2">
-            <style>{`input.fius-num::-webkit-outer-spin-button,input.fius-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}input.fius-num{-moz-appearance:textfield}`}</style>
+            <style>{`input.blinga-num::-webkit-outer-spin-button,input.blinga-num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}input.blinga-num{-moz-appearance:textfield}`}</style>
             <input ref={inputRef} type="text" inputMode="numeric" pattern="[0-9-]*" value={answer}
               onChange={e => { const v = e.target.value; if (/^-?\d*$/.test(v)) setAnswer(v); }}
               onKeyDown={e => e.key === 'Enter' && submit()} placeholder="Your answer…"
-              className="fius-num flex-1 rounded-xl px-4 py-3 text-lg text-center font-bold text-white focus:outline-none transition-all"
+              className="blinga-num flex-1 rounded-xl px-4 py-3 text-lg text-center font-bold text-white focus:outline-none transition-all"
               style={{ background: 'rgba(255,255,255,0.06)', border: `1.5px solid ${feedback ? 'rgba(255,255,255,0.06)' : 'rgba(132,204,22,0.30)'}`, caretColor: ACCENT }}
               disabled={!!feedback} />
             <button onClick={submit} disabled={!!feedback || !answer.trim()}
@@ -639,8 +640,8 @@ function FiusMaths({ gameLevel, onWin, onLose, onBack, paused = false }: GamePro
   );
 }
 
-// ─── FIUS WORD ───────────────────────────────────────────────────────────────
-function FiusWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+// ─── BLINGA WORD ───────────────────────────────────────────────────────────────
+function BlingaWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const ROUNDS = getRounds(gameLevel, 5);
   const Q_TIME = getTimer(gameLevel, 14);
@@ -792,9 +793,9 @@ function FiusWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProp
   );
 }
 
-// ─── FIUS MEMORY ─────────────────────────────────────────────────────────────
+// ─── BLINGA MEMORY ─────────────────────────────────────────────────────────────
 interface MemoryCard { id: number; emoji: string; flipped: boolean; matched: boolean; }
-function FiusMemory({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+function BlingaMemory({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const { pairs: pairCount, time: totalTime } = getMemoryConfig(gameLevel);
   const cols = pairCount >= 8 ? 5 : 4;
   const [symbols] = useState(() => shuffleArray([...Array(CARD_SYMBOLS.length).keys()]).slice(0, pairCount));
@@ -924,8 +925,8 @@ function FiusMemory({ gameLevel, onWin, onLose, onBack, paused = false }: GamePr
   );
 }
 
-// ─── FIUS QUIZ ───────────────────────────────────────────────────────────────
-function FiusQuiz({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+// ─── BLINGA QUIZ ───────────────────────────────────────────────────────────────
+function BlingaQuiz({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const staticPool = { easy: QUIZ_EASY, medium: QUIZ_MEDIUM, hard: QUIZ_HARD }[diff];
   const total = getRounds(gameLevel, 5);
@@ -1058,8 +1059,8 @@ function FiusQuiz({ gameLevel, onWin, onLose, onBack, paused = false }: GameProp
   );
 }
 
-// ─── FIUS ODD WORD ───────────────────────────────────────────────────────────
-function FiusOddWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
+// ─── BLINGA ODD WORD ───────────────────────────────────────────────────────────
+function BlingaOddWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameProps) {
   const diff = getDifficulty(gameLevel);
   const staticPool = { easy: ODD_EASY, medium: ODD_MEDIUM, hard: ODD_HARD }[diff];
   const ROUNDS = getRounds(gameLevel, 5);
@@ -1194,7 +1195,7 @@ function FiusOddWord({ gameLevel, onWin, onLose, onBack, paused = false }: GameP
 }
 
 // ─── CAR DODGE ────────────────────────────────────────────────────────────────
-function FiusCar({ gameLevel, onWin, onLose }: GameProps) {
+function BlingaCar({ gameLevel, onWin, onLose }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [uiScore, setUiScore] = useState(0);
   const [uiLives, setUiLives] = useState(3);
@@ -2236,14 +2237,14 @@ function addScore(gameId: string, gameName: string, rawScore: number, level: num
 // ─── MAIN GAME HUB ────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface FiusGamesProps { playerName: string; userId?: string; }
+interface BlingaGamesProps { playerName: string; userId?: string; }
 
 // ── Module-level cache so the leaderboard + owned/fragment/score data survive
 // unmount/remount (the tab content is conditionally rendered, so switching
 // away and back used to always start from a blank scoreboard while a fresh
 // fetch ran). Also exposes an eager `preloadGamesData` so callers can warm
 // this cache as soon as the app/chat surface mounts — well before the user
-// opens the Fius Games tab — for both desktop and mobile.
+// opens the Blinga Games tab — for both desktop and mobile.
 type LeaderboardEntry = { userId: string; name: string; totalScore: number; bestGame: any | null; gameLevels?: Record<string, number> };
 let _leaderboardCache: LeaderboardEntry[] | null = null;
 let _serverDataCache: {levels:Record<string,number>;scores:ScoreEntry[]} | null = null;
@@ -2315,7 +2316,7 @@ const BrainQuizCard    = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailI
 const CarDodgeCard     = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'car')!}     onShowDetail={onShowDetail} />);
 const OddOneOutCard    = memo(({ onShowDetail }: { onShowDetail: (g: GameDetailInfo) => void }) => <GameCard game={FREE_GAMES.find(g => g.id === 'oddword')!} onShowDetail={onShowDetail} />);
 
-export function FiusGames({ playerName, userId }: FiusGamesProps) {
+export function BlingaGames({ playerName, userId }: BlingaGamesProps) {
   const [screen, setScreen] = useState<'menu'|'detail'|'game'>('menu');
   const [activeGame, setActiveGame] = useState<GameId|null>(null);
   const [activeGameLabel, setActiveGameLabel] = useState('');
@@ -2400,12 +2401,12 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
     if (!activeGame) return null;
     const props: GameProps = { playerName, gameLevel, onWin: handleWin, onLose: handleLose, onBack: goToMenu, paused: isPaused };
     switch (activeGame) {
-      case 'maths':       return <FiusMaths key={key} {...props} />;
-      case 'word':        return <FiusWord key={key} {...props} />;
-      case 'memory':      return <FiusMemory key={key} {...props} />;
-      case 'quiz':        return <FiusQuiz key={key} {...props} />;
-      case 'car':         return <FiusCar key={key} {...props} />;
-      case 'oddword':     return <FiusOddWord key={key} {...props} />;
+      case 'maths':       return <BlingaMaths key={key} {...props} />;
+      case 'word':        return <BlingaWord key={key} {...props} />;
+      case 'memory':      return <BlingaMemory key={key} {...props} />;
+      case 'quiz':        return <BlingaQuiz key={key} {...props} />;
+      case 'car':         return <BlingaCar key={key} {...props} />;
+      case 'oddword':     return <BlingaOddWord key={key} {...props} />;
       case 'tictactoe':   return <TicTacToe key={key} {...props} />;
       case 'hangman':     return <Hangman key={key} {...props} />;
       case 'rps':         return <RockPaperScissors key={key} {...props} />;
@@ -2436,10 +2437,10 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
     const lt = GAME_LIGHT_THEMES[detailGame.id] ?? { bg: '#f3f4f6', text: '#374151' };
 
     // Fixed full-screen overlay — covers the nav bar (z-[46]) completely
-    return (
+    return createPortal(
       <div
         className="flex flex-col overflow-y-auto bg-background"
-        style={{ position: 'fixed', inset: 0, zIndex: 50, scrollbarWidth: 'thin' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 9999, scrollbarWidth: 'thin' }}
       >
         {/* ── Hero banner — tall, full bleed ── */}
         <div
@@ -2581,15 +2582,16 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   // ─── GAME SCREEN ──────────────────────────────────────────────────────────
   if (screen === 'game') {
     const _gameAccent = GAME_ACCENT_COLOR[activeGame ?? ''] ?? '#60a5fa';
-    return (
-      <div className="flex flex-col h-full relative">
+    return createPortal(
+      <div className="flex flex-col bg-background" style={{ position: 'fixed', inset: 0, zIndex: 9999, padding: '10px 10px 0 10px' }}>
         {/* ── Game screen top bar ── */}
         <div className="flex items-center gap-2.5 pb-2.5 mb-1 flex-shrink-0"
           style={{ borderBottom: `1px solid rgba(255,255,255,0.06)` }}>
@@ -2715,7 +2717,8 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
         {modal === 'win' && <WinModal level={gameLevel} score={lastScore} onContinue={() => setModal('continue')} onLeave={handleLeave} />}
         {modal === 'lose' && <LoseModal level={gameLevel} onRetry={handleRetry} onLeave={handleLeave} />}
         {modal === 'continue' && <ContinueModal nextLevel={gameLevel + 1} onYes={() => { const nextLv = gameLevel + 1; if (activeGame) persistGameLevel(activeGame, nextLv); setGameLevel(nextLv); setModal(null); setKey(k => k + 1); doSync({}); }} onNo={() => { setModal(null); goToMenu(); }} />}
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -2726,7 +2729,7 @@ export function FiusGames({ playerName, userId }: FiusGamesProps) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0 w-full">
         <div>
-          <h2 className="text-xl font-black text-foreground tracking-tight">Fius Game Hub</h2>
+          <h2 className="text-xl font-black text-foreground tracking-tight">Blinga Game Hub</h2>
           <p className="text-muted-foreground text-[11px] mt-0.5">{playerName} · Play games · Climb the ranks</p>
         </div>
       </div>

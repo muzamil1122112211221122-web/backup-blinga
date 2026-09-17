@@ -31,7 +31,7 @@ export default function AuthCallback() {
           // attempt — e.g. a page refresh, browser back/forward, or a
           // duplicate effect run replaying the same `?code=`. Supabase
           // rejects a reused code with "flow_state_already_used".
-          const consumedKey = `fius_oauth_code_consumed:${code}`;
+          const consumedKey = `blinga_oauth_code_consumed:${code}`;
           if (sessionStorage.getItem(consumedKey)) {
             // Already handled in this browser — just move on, the session
             // (if it succeeded) is already in localStorage.
@@ -56,7 +56,7 @@ export default function AuthCallback() {
          // The session is now in Supabase localStorage. Let the onboarding
          // screen fetch the profile with the fresh bearer token instead of
          // racing an immediate refetch here.
-         queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
+         await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
          setLocation("/start", { replace: true });
       } catch (err: any) {
         console.error("[auth-callback] unexpected error:", err);
@@ -68,7 +68,7 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
       <div className="flex flex-col items-center space-y-4 text-center">
-        <img src="/fius-logo.png" alt="Fius" className="w-16 h-16 object-contain animate-pulse" />
+        <img src="/blinga-logo.png" alt="Blinga" className="w-16 h-16 object-contain animate-pulse" />
         {error ? (
           <>
             <p className="text-red-400 max-w-sm">{error}</p>

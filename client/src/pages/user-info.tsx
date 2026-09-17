@@ -82,7 +82,7 @@ function LoadingCard() {
     <div className="flex min-h-[320px] items-center justify-center rounded-[30px] border border-zinc-200 bg-white p-8 shadow-[0_24px_70px_rgba(0,0,0,0.08)]">
       <div className="flex flex-col items-center gap-4">
         <Logo size="lg" className="animate-pulse text-zinc-900" />
-        <p className="text-sm text-zinc-400">Preparing your Fius account…</p>
+        <p className="text-sm text-zinc-400">Preparing your Blinga account…</p>
       </div>
     </div>
   );
@@ -158,26 +158,26 @@ function ProfileSetup({ user }: { user: UserProfile }) {
 
   return (
     <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
-      <div className="fius-onboarding-enter w-full max-w-[540px]">
+      <div className="blinga-onboarding-enter w-full max-w-[540px]">
         <div className="mb-7 flex flex-col items-center text-center">
-          <div className="fius-logo-breathe mb-3">
+          <div className="blinga-logo-breathe mb-3">
             <Logo size="xl" className="text-zinc-900" />
           </div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">Fius</span>
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">Blinga</span>
         </div>
         <div className="overflow-hidden rounded-[40px] border border-zinc-200/90 bg-white shadow-[0_32px_100px_rgba(0,0,0,0.11),0_8px_24px_rgba(0,0,0,0.03)]">
           <div className="h-1.5 w-full bg-zinc-100/80">
-            <div className="fius-progress-sweep h-full w-2/3 rounded-full bg-zinc-900" />
+            <div className="blinga-progress-sweep h-full w-2/3 rounded-full bg-zinc-900" />
           </div>
           <form onSubmit={submit} className="p-7 sm:p-11">
             <div className="mb-9 text-center">
               <div className="mb-5 flex justify-center">
-                <div className="fius-account-icon flex h-[72px] w-[72px] items-center justify-center rounded-[26px] bg-zinc-900 text-white shadow-[0_14px_28px_rgba(24,24,27,0.2)]">
+                <div className="blinga-account-icon flex h-[72px] w-[72px] items-center justify-center rounded-[26px] bg-zinc-900 text-white shadow-[0_14px_28px_rgba(24,24,27,0.2)]">
                   <UserRound className="h-8 w-8" strokeWidth={1.8} />
                 </div>
               </div>
               <h1 className="text-[29px] font-black tracking-tight text-zinc-900 sm:text-[32px]">Tell us a little about you</h1>
-              <p className="mx-auto mt-3 max-w-[390px] text-sm leading-6 text-zinc-500">This helps us personalize your Fius experience. Your phone number is used once to keep every account unique.</p>
+              <p className="mx-auto mt-3 max-w-[390px] text-sm leading-6 text-zinc-500">This helps us personalize your Blinga experience. Your phone number is used once to keep every account unique.</p>
             </div>
 
             <div className="space-y-5">
@@ -190,7 +190,7 @@ function ProfileSetup({ user }: { user: UserProfile }) {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder="What should we call you?"
-                    className="fius-onboarding-input min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-zinc-900 outline-none shadow-none placeholder:text-zinc-300"
+                    className="blinga-onboarding-input min-w-0 flex-1 border-0 bg-transparent text-base font-medium text-zinc-900 outline-none shadow-none placeholder:text-zinc-300"
                   />
                 </div>
                 {nameError ? <p className="mt-2 px-1 text-xs font-medium text-red-600">{nameError}</p> : <p className="mt-2 px-1 text-xs text-zinc-400">Use any name you like.</p>}
@@ -219,10 +219,10 @@ function ProfileSetup({ user }: { user: UserProfile }) {
             {submitError && <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-relaxed text-red-700">{submitError}</div>}
 
             <Button type="submit" disabled={isSaving} className="mt-8 h-13 w-full rounded-[22px] bg-zinc-900 text-sm font-bold text-white shadow-lg shadow-zinc-900/10 transition-[background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-xl disabled:opacity-60">
-              {isSaving ? "Saving your details…" : "Continue to Fius"}
+              {isSaving ? "Saving your details…" : "Continue to Blinga"}
               {!isSaving && <Check className="ml-2 h-4 w-4" />}
             </Button>
-            <p className="mt-4 text-center text-[11px] leading-relaxed text-zinc-400">One phone number can only be connected to one Fius account.</p>
+            <p className="mt-4 text-center text-[11px] leading-relaxed text-zinc-400">One phone number can only be connected to one Blinga account.</p>
           </form>
         </div>
         <p className="mt-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-zinc-300">Fly With Us!</p>
@@ -237,16 +237,15 @@ function LoginCard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const storedError = sessionStorage.getItem("fius_auth_error");
+    const storedError = sessionStorage.getItem("blinga_auth_error");
     if (!storedError) return;
     setError(storedError.includes("already been used") ? "That sign-in link was already used. Please click Continue with Google again." : storedError);
-    sessionStorage.removeItem("fius_auth_error");
+    sessionStorage.removeItem("blinga_auth_error");
   }, []);
 
-  const handleGuestLogin = () => {
+  const handleGuestLogin = async () => {
     startGuestSession();
-    queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
-    setLocation("/start");
+    await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
   };
 
   const handleGoogleLogin = async () => {
@@ -274,7 +273,7 @@ function LoginCard() {
         <div className="rounded-[30px] border border-zinc-200 bg-white p-8 shadow-[0_24px_70px_rgba(0,0,0,0.08)] sm:p-10">
           <div className="mb-8 flex flex-col items-center text-center">
             <Logo size="lg" className="mb-4 text-zinc-900" />
-            <h1 className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl">Welcome to Fius</h1>
+            <h1 className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl">Welcome to Blinga</h1>
             <p className="mt-2 text-sm text-zinc-500">Sign in to chat with the future of AI.</p>
           </div>
           {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-sm text-red-600">{error}</div>}

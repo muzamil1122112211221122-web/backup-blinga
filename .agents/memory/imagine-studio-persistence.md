@@ -4,7 +4,7 @@ description: How generated images are persisted across sessions in imagine-modal
 ---
 
 ## Storage
-- Key: `fius_my_images` in localStorage
+- Key: `blinga_my_images` in localStorage
 - Format: `GenImage[]` (serialized, max 30 items, only completed images)
 - Load on mount via state initializer: `useState(() => loadPersistedImages())`
 - Persist after each image resolves (inside the `then` callback in generateSingle)

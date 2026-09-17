@@ -1,5 +1,5 @@
 ---
-name: Fius per-conversation settings persistence
+name: Blinga per-conversation settings persistence
 description: Why a per-chat setting (e.g. "AI role") can appear to save client-side but never actually persist or apply.
 ---
 

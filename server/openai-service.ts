@@ -215,7 +215,7 @@ async function fetchPollinationsImage(url: string, model: string): Promise<{ b64
 }
 
 export async function generateImage(prompt: string, size: string = "1024x1024", quality: string = "standard") {
-  console.log(`Fius Studio generating image…`);
+  console.log(`Blinga Studio generating image…`);
   const [w, h] = (size.includes('x') ? size.split('x').map(n => parseInt(n, 10)) : [1024, 1024])
     .map(n => (Number.isFinite(n) && n > 0 ? n : 1024));
   const enc = encodeURIComponent(prompt.slice(0, 400));

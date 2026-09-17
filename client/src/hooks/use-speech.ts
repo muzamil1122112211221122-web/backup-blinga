@@ -8,16 +8,16 @@ interface UseSpeechRecognitionOptions {
   language?: string;
 }
 
-// Fix common speech-recognition mishearings of "Fius" ONLY when context
+// Fix common speech-recognition mishearings of "Blinga" ONLY when context
 // suggests it's the app name — preserves real words like "forest" otherwise.
 function fixTranscript(text: string): string {
   // Replace only when adjacent to AI/app context words
   return text
-    .replace(/\b(forest|forums?|phoebus|foras)\s+(ai|app|assistant)\b/gi, 'Fius $2')
-    .replace(/\b(hey|hi|hello|open|use|ask|tell|to|talk)\s+(forest|forums?|phoebus|foras)\b/gi, '$1 Fius')
+    .replace(/\b(forest|forums?|phoebus|foras)\s+(ai|app|assistant)\b/gi, 'Blinga $2')
+    .replace(/\b(hey|hi|hello|open|use|ask|tell|to|talk)\s+(forest|forums?|phoebus|foras)\b/gi, '$1 Blinga')
     // Capitalise if already looks like a proper noun usage (all caps or at start of sentence)
-    .replace(/\bFORAS\b/g, 'Fius')
-    .replace(/\bPhoebus\b/g, 'Fius');
+    .replace(/\bFORAS\b/g, 'Blinga')
+    .replace(/\bPhoebus\b/g, 'Blinga');
 }
 
 export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}) {

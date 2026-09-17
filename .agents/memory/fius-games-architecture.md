@@ -1,6 +1,6 @@
 ---
-name: Fius Games Architecture
-description: Key decisions about fius-games.tsx structure — logos, store catalog, leaderboard
+name: Blinga Games Architecture
+description: Key decisions about blinga-games.tsx structure — logos, store catalog, leaderboard
 ---
 
 ## Game logos

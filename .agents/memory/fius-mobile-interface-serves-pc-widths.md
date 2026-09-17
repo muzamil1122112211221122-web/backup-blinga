@@ -1,5 +1,5 @@
 ---
-name: Fius mobile-chat-interface also serves PC widths
+name: Blinga mobile-chat-interface also serves PC widths
 description: Why a "desktop/PC" bug report can actually be about mobile-chat-interface.tsx, not chat-interface.tsx.
 ---
 

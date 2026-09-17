@@ -33,10 +33,10 @@ function applyThemeClass(theme: Theme) {
 
 /** One reusable overlay div — opacity-only animation, GPU-composited, zero layout cost. */
 function getOverlay(): HTMLDivElement {
-  let el = document.getElementById("fius-theme-overlay") as HTMLDivElement | null
+  let el = document.getElementById("blinga-theme-overlay") as HTMLDivElement | null
   if (!el) {
     el = document.createElement("div")
-    el.id = "fius-theme-overlay"
+    el.id = "blinga-theme-overlay"
     Object.assign(el.style, {
       position: "fixed",
       inset: "0",

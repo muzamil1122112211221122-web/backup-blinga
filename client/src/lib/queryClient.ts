@@ -10,7 +10,7 @@ async function throwIfResNotOk(res: Response) {
 
 // TEMPORARY: Guest mode for testing — see server/supabaseAuth.ts for the
 // matching server-side bypass. Remove both sides once testing is done.
-const GUEST_ID_KEY = "fius_guest_id";
+const GUEST_ID_KEY = "blinga_guest_id";
 export function getGuestId(): string | null {
   return localStorage.getItem(GUEST_ID_KEY);
 }

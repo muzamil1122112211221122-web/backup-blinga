@@ -22,11 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { FiusLogo, Logo } from "./logo";
+import { BlingaLogo, Logo } from "./logo";
 import { useTheme } from "./theme-provider";
 import { queryClient, authFetch, endGuestSession } from "@/lib/queryClient";
-import { FiusGames } from "./fius-games";
-import { FiusLabs } from "./fius-labs";
+import { BlingaGames } from "./blinga-games";
+import { BlingaLabs } from "./blinga-labs";
 import { useUsage } from "@/hooks/use-usage";
 import { Lock, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +34,7 @@ import { getStoredGlowAccent, getGlowGradient, applyAppFont, getActiveUiAccent, 
 
 // ── Nomad sub-model options per provider (Normal & Flagship categories) ─────
 const NOMAD_SUB_MODELS: Record<string, { normal: string[]; flagship: string[]; default: string }> = {
-  'fius-ai':          { normal: ['Fius Lite'],                                                                         flagship: ['Fius Pro'],                                                default: 'Fius Lite' },
+  'blinga-ai':          { normal: ['Blinga Lite'],                                                                         flagship: ['Blinga Pro'],                                                default: 'Blinga Lite' },
   'gpt-4o':           { normal: ['GPT-5 mini'],                                                                        flagship: ['GPT-5', 'GPT-5 Pro'],                                      default: 'GPT-5 mini' },
   'claude-3.5-sonnet':{ normal: ['Claude Haiku 4.5'],                                                                  flagship: ['Claude Sonnet 5', 'Claude Opus 4.8'],                      default: 'Claude Haiku 4.5' },
   'gemini-pro':       { normal: ['Gemini 3.5 Flash-Lite', 'Gemini 3.6 Flash'],                                        flagship: ['Gemini 3.1 Pro'],                                          default: 'Gemini 3.5 Flash-Lite' },
@@ -157,7 +157,7 @@ const ROTATING_PLACEHOLDERS = [
   "Give me a recipe for chocolate cake",
 ];
 
-// ── Fius Ultimatum suggestion card pool ──────────────────────────────────────
+// ── Blinga Ultimatum suggestion card pool ──────────────────────────────────────
 type UltimatumCard = { Icon: React.ElementType; label: string; prompt: string; modelName: string; modelLogo: string; color: string };
 const ULTIMATUM_CARD_POOL: UltimatumCard[] = [
   { Icon: Brain,          label: 'Deep Reasoning',  prompt: 'Break down a complex problem step by step',    modelName: 'DeepSeek R1',     modelLogo: '/deepseek-logo.png',    color: '#6366f1' },
@@ -173,7 +173,7 @@ const ULTIMATUM_CARD_POOL: UltimatumCard[] = [
   { Icon: TrendingUp,     label: 'Business Plan',    prompt: 'Build a go-to-market or growth strategy',      modelName: 'Grok 4',          modelLogo: '/grok-logo.png',        color: '#ef4444' },
   { Icon: BookOpenCheck,  label: 'Research',         prompt: 'Deep-dive research with cited sources',        modelName: 'Perplexity',      modelLogo: '/perplexity-logo.png',  color: '#3b82f6' },
   { Icon: Globe,          label: 'Translation',      prompt: 'Translate with cultural nuance intact',        modelName: 'DeepSeek',        modelLogo: '/deepseek-logo.png',    color: '#f97316' },
-  { Icon: Zap,            label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Fius',            modelLogo: '/fius-logo.png',        color: '#fbbf24' },
+  { Icon: Zap,            label: 'Quick Answer',     prompt: 'Fast, precise answer to any question',         modelName: 'Blinga',            modelLogo: '/blinga-logo.png',        color: '#fbbf24' },
   { Icon: Target,         label: 'Problem Solving',  prompt: 'Find the best path through any challenge',     modelName: 'DeepSeek R1',     modelLogo: '/deepseek-logo.png',    color: '#f43f5e' },
   { Icon: GraduationCap,  label: 'Learning',         prompt: 'Teach me something new from scratch',          modelName: 'Gemini',          modelLogo: '/gemini-logo.png',      color: '#0891b2' },
   { Icon: MessageSquare,  label: 'Debate & Argue',   prompt: 'Build the strongest case for a position',      modelName: 'Claude',          modelLogo: '/claude-logo.png',      color: '#d946ef' },
@@ -289,7 +289,7 @@ function GeneratedImageDisplay({ src, alt, className }: { src: string; alt?: str
       )}
       {status === 'error' && (
         <div className="flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-rose-50 dark:from-slate-800 dark:to-rose-900/20 p-8 gap-3" style={{ minHeight: 140 }}>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Image didn't load — Fius Studio is busy, please retry</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Image didn't load — Blinga Studio is busy, please retry</p>
           <button onClick={handleRetry}
             className="px-5 py-2 rounded-full text-xs font-bold text-white transition-all hover:scale-105"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
@@ -442,7 +442,7 @@ import {
 import { downloadTxt, downloadPdf } from "@/lib/document-export";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { getCachedWikiImage, fetchWikiImage, preloadWikiImages } from "@/lib/wiki-image-cache";
-import { preloadGamesData } from "./fius-games";
+import { preloadGamesData } from "./blinga-games";
 
 interface ChatInterfaceProps {
   onShowAuth: () => void;
@@ -638,14 +638,14 @@ function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: stri
     try {
       if (src.startsWith('data:')) {
         const a = document.createElement('a');
-        a.href = src; a.download = 'fius-image.jpg';
+        a.href = src; a.download = 'blinga-image.jpg';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
       } else {
         const res = await fetch(src);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'fius-image.jpg';
+        a.href = url; a.download = 'blinga-image.jpg';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
@@ -653,7 +653,7 @@ function ImagineImageCard({ imageUrl, fallbackUrls, onExpand }: { imageUrl: stri
     finally { setDownloading(false); }
   };
 
-  const statusMsg = elapsed < 15 ? 'Fius Studio is generating your image…'
+  const statusMsg = elapsed < 15 ? 'Blinga Studio is generating your image…'
     : elapsed < 30 ? `Still working… (${elapsed}s)`
     : `Taking a bit longer… auto-retrying soon`;
 
@@ -991,7 +991,7 @@ const STUDIO_ROW1 = STUDIO_VISUAL_TEMPLATES.slice(0, 40);
 const STUDIO_ROW2 = STUDIO_VISUAL_TEMPLATES.slice(40);
 
 const STUDIO_COLS = [
-  { id: 'fius-imagine-super', name: 'Fius Imagine Super', sub: 'Ultra quality',  logo: '/fius-logo.png',       gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
+  { id: 'blinga-imagine-super', name: 'Blinga Imagine Super', sub: 'Ultra quality',  logo: '/blinga-logo.png',       gradient: 'from-violet-500 to-fuchsia-500', letter: '✦', color: '#8b5cf6' },
   { id: 'seedream-4.5',        name: 'Seedream 4.5',       sub: 'Dreamlike art',  logo: '/bytedance-logo.png',  gradient: 'from-emerald-400 to-teal-500',   letter: '❋', color: '#10b981' },
   { id: 'nano-banana-pro',     name: 'Nano Banana Pro',    sub: 'Fast & crisp',   logo: '/gemini-logo.png',     gradient: 'from-yellow-400 to-orange-400',  letter: '⚡', color: '#f59e0b' },
   { id: 'gpt-5.5-pro',         name: 'GPT 5.5 pro',        sub: 'Precision AI',   logo: '/chatgpt-logo.png',    gradient: 'from-sky-400 to-blue-500',       letter: 'G',  color: '#0ea5e9' },
@@ -1022,18 +1022,18 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const { toast } = useToast();
   const { usage: planUsage } = useUsage();
 
-  // Default ultimate users to Fius Pro, not Lite
+  // Default ultimate users to Blinga Pro, not Lite
   useEffect(() => {
     if (planUsage?.plan === 'ultimate') {
       const saved = localStorage.getItem('selectedModel');
-      if (!saved || saved === 'fius-lite') {
-        setSelectedModel('fius-prime' as AvailableModel);
-        localStorage.setItem('selectedModel', 'fius-prime');
+      if (!saved || saved === 'blinga-lite') {
+        setSelectedModel('blinga-prime' as AvailableModel);
+        localStorage.setItem('selectedModel', 'blinga-prime');
       }
     } else if (planUsage?.plan === 'free') {
-      // Free plan is locked to Fius Lite only — force it regardless of what was saved.
-      setSelectedModel('fius-lite' as AvailableModel);
-      localStorage.setItem('selectedModel', 'fius-lite');
+      // Free plan is locked to Blinga Lite only — force it regardless of what was saved.
+      setSelectedModel('blinga-lite' as AvailableModel);
+      localStorage.setItem('selectedModel', 'blinga-lite');
     }
   }, [planUsage?.plan]); // eslint-disable-line react-hooks/exhaustive-deps
   // Only treat as free AFTER the usage data has actually loaded — while loading,
@@ -1046,14 +1046,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const showUpgradeLockToast = useCallback(() => {
     setIsUpgradeModalOpen(true);
   }, []);
-  const freeNomadModels = planUsage?.freeNomadModels ?? ["fius-ai"];
+  const freeNomadModels = planUsage?.freeNomadModels ?? ["blinga-ai"];
   const isNomadModelLocked = useCallback((modelId: string) => isFreePlan && !freeNomadModels.includes(modelId), [isFreePlan, freeNomadModels]);
-  // Free plan: only Fius Lite is usable anywhere outside Nomad. Everything else needs Ultimate.
-  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'fius-lite', [isFreePlan]);
+  // Free plan: only Blinga Lite is usable anywhere outside Nomad. Everything else needs Ultimate.
+  const isChatModelLocked = useCallback((modelId: string) => isFreePlan && modelId !== 'blinga-lite', [isFreePlan]);
   const openVoiceMode = useCallback(() => {
     if (isFreePlanExhausted) { showUpgradeLockToast(); return; }
     if (isFreePlan) {
-      toast({ title: "Locked on Free plan", description: "Voice Mode requires Fius Ultimate.", variant: "destructive" });
+      toast({ title: "Locked on Free plan", description: "Voice Mode requires Blinga Ultimate.", variant: "destructive" });
       return;
     }
     setIsVoiceModeModalOpen(true);
@@ -1071,14 +1071,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const welcomeGreeting = useMemo(() => pickGreetingIndex(currentProjectId), [currentProjectId]);
   const [selectedModel, setSelectedModel] = useState<AvailableModel>(() => {
-    return (localStorage.getItem('selectedModel') as AvailableModel) || "fius-lite";
+    return (localStorage.getItem('selectedModel') as AvailableModel) || "blinga-lite";
   });
   const [currentPreset, setCurrentPreset] = useState<ChatPreset>("custom");
   const [customInstructions, setCustomInstructions] = useState("");
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [ownMode, setOwnMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine' | 'fius-labs'>('ask');
+  const [activeTab, setActiveTab] = useState<'ask' | 'nomad' | 'philosopher' | 'blinga-games' | 'imagine' | 'blinga-labs'>('ask');
   // UI Accent Color — re-derived whenever the uiAccentChanged event fires
   const [uiAccentColor, setUiAccentColor] = useState<string | null>(() => {
     applyUiAccent();
@@ -1089,7 +1089,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, ready: false });
   const pillAnimateRef = useRef(false); // only true after user manually switches tabs — prevents auto-fire on launch
   const measurePill = () => {
-    const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'fius-games', 'fius-labs'];
+    const TAB_ORDER = ['ask', 'nomad', 'imagine', 'philosopher', 'blinga-games', 'blinga-labs'];
     const idx = TAB_ORDER.indexOf(activeTab);
     const btn = tabButtonRefs.current[idx];
     const container = navContainerRef.current;
@@ -1231,20 +1231,20 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     timer = setTimeout(tick, 400);
     return () => clearTimeout(timer);
   }, []);
-  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'fius-games' | 'imagine' | 'fius-labs') => {
+  const changeTab = (tab: 'ask' | 'nomad' | 'philosopher' | 'blinga-games' | 'imagine' | 'blinga-labs') => {
     if (isFreePlanExhausted && tab !== activeTab) {
       showUpgradeLockToast();
       return;
     }
-    if (isFreePlan && (tab === 'nomad' || tab === 'imagine' || tab === 'philosopher' || tab === 'fius-games' || tab === 'fius-labs')) {
+    if (isFreePlan && (tab === 'nomad' || tab === 'imagine' || tab === 'philosopher' || tab === 'blinga-games' || tab === 'blinga-labs')) {
       const lockedLabel = tab === 'nomad' ? "Nomad (multi-AI compare)"
         : tab === 'imagine' ? "Imagine Studio"
-        : tab === 'philosopher' ? "Fius Minds"
-        : tab === 'fius-labs' ? "Fius Labs"
-        : "Fius Games";
+        : tab === 'philosopher' ? "Blinga Minds"
+        : tab === 'blinga-labs' ? "Blinga Labs"
+        : "Blinga Games";
       toast({
         title: "Locked on Free plan",
-        description: `${lockedLabel} requires Fius Ultimate.`,
+        description: `${lockedLabel} requires Blinga Ultimate.`,
         variant: "destructive",
       });
       return;
@@ -1257,7 +1257,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     playTabClick();
     setActiveTab(tab);
     if (tab === 'imagine') {
-      setSelectedModel('fius-imagine-fast' as AvailableModel);
+      setSelectedModel('blinga-imagine-fast' as AvailableModel);
       setImagineShuffleKey(k => k + 1);
     } else {
       // Restore the last model used in this specific tab
@@ -1290,7 +1290,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     return () => window.removeEventListener('messageBarStyleChanged', handler);
   }, []);
 
-  // Warm the Philosophers avatar cache and the Fius Games leaderboard/logo
+  // Warm the Philosophers avatar cache and the Blinga Games leaderboard/logo
   // data as soon as the chat interface mounts — not when the user opens
   // those tabs — so both render instantly with no visible pop-in/blank state.
   useEffect(() => {
@@ -1363,7 +1363,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   } | null>(null);
   const [profilePicture, setProfilePicture] = useState<string>(() => localStorage.getItem('profilePicture') || '');
   const [input, setInput] = useState("");
-  const [fiusIntegrationMode, setFiusIntegrationMode] = useState(false);
+  const [blingaIntegrationMode, setBlingaIntegrationMode] = useState(false);
   const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
   const [isVoiceToVoiceMode, setIsVoiceToVoiceMode] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -1417,7 +1417,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const attachTrayRef = React.useRef<HTMLDivElement>(null);
   // Multi-AI states for Nomad tab
   const [nomadMessages, setNomadMessages] = useState<{[model: string]: ChatMessage[]}>({});
-  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'fius-ai']));
+  const [activeAIModels, setActiveAIModels] = useState<Set<string>>(new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot', 'blinga-ai']));
   const [nomadIsTyping, setNomadIsTyping] = useState<{[model: string]: boolean}>({});
   const [nomadMode, setNomadMode] = useState<'multi' | 'auto'>('multi');
   // Auto Mode state — full chat conversation tab
@@ -1533,28 +1533,28 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [imagineEditHist, setImagineEditHist] = useState<string[]>([]);
   const [imagineEditLoading, setImagineEditLoading] = useState(false);
   const [imagineLikes, setImagineLikes] = useState<Set<string>>(new Set());
-  const [imagineSelectedModels, setImagineSelectedModels] = useState<Set<string>>(new Set(['fius-imagine-super', 'seedream-4.5', 'nano-banana-pro', 'gpt-5.5-pro']));
+  const [imagineSelectedModels, setImagineSelectedModels] = useState<Set<string>>(new Set(['blinga-imagine-super', 'seedream-4.5', 'nano-banana-pro', 'gpt-5.5-pro']));
   const [imagineGalleryOpen, setImagineGalleryOpen] = useState(false);
   const [imagineMyPhotos, setImagineMyPhotos] = useState<{url: string; prompt?: string; ts?: number}[]>([]);
   const loadImagineMyPhotos = () => {
     try {
-      const saved = JSON.parse(localStorage.getItem('fius_my_images') || '[]');
+      const saved = JSON.parse(localStorage.getItem('blinga_my_images') || '[]');
       setImagineMyPhotos(Array.isArray(saved) ? saved : []);
     } catch { setImagineMyPhotos([]); }
   };
-  // Auto-save completed Imagine Studio images to fius_my_images
+  // Auto-save completed Imagine Studio images to blinga_my_images
   React.useEffect(() => {
     const completed = imagineMessages.filter(m => m.role === 'ai' && m.imageUrl && !m.isGenerating);
     if (completed.length === 0) return;
     try {
-      const existing: {url: string; prompt?: string; ts?: number}[] = JSON.parse(localStorage.getItem('fius_my_images') || '[]');
+      const existing: {url: string; prompt?: string; ts?: number}[] = JSON.parse(localStorage.getItem('blinga_my_images') || '[]');
       const existingUrls = new Set(existing.map(e => e.url));
       const newEntries = completed
         .filter(m => m.imageUrl && !existingUrls.has(m.imageUrl!))
         .map(m => ({ url: m.imageUrl!, prompt: m.studioPrompt || m.content || '', ts: Date.now() }));
       if (newEntries.length > 0) {
         const merged = [...newEntries, ...existing].slice(0, 120);
-        localStorage.setItem('fius_my_images', JSON.stringify(merged));
+        localStorage.setItem('blinga_my_images', JSON.stringify(merged));
       }
     } catch {}
   }, [imagineMessages]);
@@ -1564,7 +1564,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
   const [templateUploadPhoto, setTemplateUploadPhoto] = useState<{preview: string; base64: string} | null>(null);
   const templatePhotoInputRef = useRef<HTMLInputElement>(null);
   const [recentUploads, setRecentUploads] = useState<{preview: string; base64: string}[]>(() => {
-    try { return JSON.parse(localStorage.getItem('fius_recent_template_uploads') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('blinga_recent_template_uploads') || '[]'); } catch { return []; }
   });
   const toggleImagineModel = (id: string) =>
     setImagineSelectedModels(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -1626,14 +1626,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     mindsGrid: true,
     nomadNotification: true,
     philosopherNotification: true,
-    fiusGamesNotification: true,
-    showFiusLogo: true,
-    hideFiusLogo: false,
+    blingaGamesNotification: true,
+    showBlingaLogo: true,
+    hideBlingaLogo: false,
     hideFlyWithUs: false,
     showUserMsgActions: true,
     glossyOutline: true,
     topbarTabIcons: true,
-    tabsInSidebar: false,
+    tabsInSidebar: true,
   };
   const [settingsToggles, setSettingsToggles] = useState(() => {
     try {
@@ -1660,11 +1660,11 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     scheduleNomadNotif();
   }, [scheduleNomadNotif]);
 
-  const ALL_MODEL_IDS = ['fius-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot'];
+  const ALL_MODEL_IDS = ['blinga-ai', 'gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'perplexity', 'grok-4', 'deepseek-r1', 'doubao', 'kimi', 'qwen', 'llama-4', 'mistral', 'copilot'];
   const [aiOrder, setAiOrder] = useState(ALL_MODEL_IDS);
   // Per-model selected sub-model (persisted in localStorage)
   const [nomadSelectedSubModels, setNomadSelectedSubModels] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}'); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem('blinga-nomad-sub-models') || '{}'); } catch { return {}; }
   });
   // Which model's dropdown is currently open
   const [openNomadModelDropdown, setOpenNomadModelDropdown] = useState<string | null>(null);
@@ -1694,7 +1694,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       'llama-4': { name: nomadSelectedSubModels['llama-4'] || 'Llama 4 Scout', provider: 'meta', id: 'llama-4' },
       'mistral': { name: nomadSelectedSubModels['mistral'] || 'Ministral 3', provider: 'mistral', id: 'mistral' },
       'copilot': { name: nomadSelectedSubModels['copilot'] || 'GPT-5 mini', provider: 'microsoft', id: 'copilot' },
-      'fius-ai': { name: nomadSelectedSubModels['fius-ai'] || 'Fius Lite', provider: 'fius', id: 'fius-ai' }
+      'blinga-ai': { name: nomadSelectedSubModels['blinga-ai'] || 'Blinga Lite', provider: 'blinga', id: 'blinga-ai' }
     };
 
     // Deduplicate aiOrder and ensure all known models are included
@@ -2120,14 +2120,14 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
       { id: aiMsgId, role: 'assistant', content: '', pickedModel: picked },
     ]);
     setTimeout(() => nomadAutoEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    const fiusCtx = ' You are operating within Fius — a multi-AI chat platform built by Muzamil Ali, a 14-year-old Pakistani developer from Sargodha. Fius is NOT AI Fiesta — they are completely separate products. If asked about Fius, describe it as a platform that lets users chat with multiple top AI models in one place and compare responses.';
+    const blingaCtx = ' You are operating within Blinga — a multi-AI chat platform built by Muzamil Ali, a 14-year-old Pakistani developer from Sargodha. Blinga is NOT AI Fiesta — they are completely separate products. If asked about Blinga, describe it as a platform that lets users chat with multiple top AI models in one place and compare responses.';
     const nomadSystemPrompts: {[id: string]: string} = {
-      'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.' + fiusCtx,
-      'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing.' + fiusCtx,
-      'gemini-pro': 'You are Gemini 3.1 Pro by Google — a powerful AI with deep reasoning across all domains.' + fiusCtx,
-      'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers.' + fiusCtx,
-      'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful reasoning model. Excel at step-by-step logic, coding, and math.' + fiusCtx,
-      'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally aware.' + fiusCtx,
+      'gpt-4o': 'You are GPT-5.5 Pro by OpenAI — a highly capable AI assistant. Be helpful, accurate, and conversational.' + blingaCtx,
+      'claude-3.5-sonnet': 'You are Claude Fable 5 by Anthropic — thoughtful, nuanced, excellent at coding and writing.' + blingaCtx,
+      'gemini-pro': 'You are Gemini 3.1 Pro by Google — a powerful AI with deep reasoning across all domains.' + blingaCtx,
+      'perplexity': 'You are Perplexity Sonar Pro — an AI focused on real-time web search and cited answers.' + blingaCtx,
+      'deepseek-r1': 'You are DeepSeek-V4-Pro — a powerful reasoning model. Excel at step-by-step logic, coding, and math.' + blingaCtx,
+      'qwen': 'You are Qwen 3.7 Max by Alibaba — a multilingual language expert. Be precise and culturally aware.' + blingaCtx,
     };
     try {
       const res = await authFetch('/api/test-ai', {
@@ -2159,7 +2159,7 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
           .join(',')
       ).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-table.csv'; a.click();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-table.csv'; a.click();
     };
     return (
       <div className="relative group my-4">
@@ -2342,27 +2342,27 @@ export function ChatInterface({ onShowAuth }: ChatInterfaceProps) {
     });
     
     // System prompts for each Nomad model persona
-    const fiusNote = ' IMPORTANT CONTEXT: You are operating inside Fius — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha, Pakistan). Fius is NOT AI Fiesta — they are completely unrelated products. If asked about Fius, say it is a platform where users can chat with multiple top AIs at once and compare responses. Do NOT confuse it with AI Fiesta.';
+    const blingaNote = ' IMPORTANT CONTEXT: You are operating inside Blinga — a multi-AI chat platform built by Muzamil Ali (a 14-year-old Pakistani developer from Sargodha, Pakistan). Blinga is NOT AI Fiesta — they are completely unrelated products. If asked about Blinga, say it is a platform where users can chat with multiple top AIs at once and compare responses. Do NOT confuse it with AI Fiesta.';
     const nomadSystemPrompts: {[id: string]: string} = {
-      'gpt-4o': `You are ${nomadSelectedSubModels['gpt-4o'] || 'GPT-5 mini'} by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.` + fiusNote,
-      'claude-3.5-sonnet': `You are ${nomadSelectedSubModels['claude-3.5-sonnet'] || 'Claude Haiku 4.5'} by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.` + fiusNote,
-      'gemini-pro': `You are ${nomadSelectedSubModels['gemini-pro'] || 'Gemini 3.5 Flash-Lite'} by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.` + fiusNote,
-      'perplexity': `You are ${nomadSelectedSubModels['perplexity'] || 'Perplexity Sonar'} — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.` + fiusNote,
-      'grok-4': `You are ${nomadSelectedSubModels['grok-4'] || 'Grok Build 0.1'} by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.` + fiusNote,
-      'deepseek-r1': `You are ${nomadSelectedSubModels['deepseek-r1'] || 'DeepSeek V4 Flash'} — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.` + fiusNote,
-      'doubao': `You are ${nomadSelectedSubModels['doubao'] || 'Doubao Seed 2.0 Mini'} by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.` + fiusNote,
-      'kimi': `You are ${nomadSelectedSubModels['kimi'] || 'Kimi K2.6'} by Moonshot AI — a long-context specialist and coding expert. Be thorough and detail-oriented.` + fiusNote,
-      'qwen': `You are ${nomadSelectedSubModels['qwen'] || 'Qwen Flash'} by Alibaba — a multilingual language expert. Be precise and culturally nuanced.` + fiusNote,
-      'llama-4': `You are ${nomadSelectedSubModels['llama-4'] || 'Llama 4 Scout'} by Meta — an open-source frontier AI. Be helpful and honest.` + fiusNote,
-      'mistral': `You are ${nomadSelectedSubModels['mistral'] || 'Ministral 3'} by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.` + fiusNote,
-      'copilot': `You are ${nomadSelectedSubModels['copilot'] || 'GPT-5 mini'} (Microsoft Copilot) — an AI assistant powered by Microsoft and OpenAI. Be helpful, professional, and accurate.` + fiusNote,
-      'fius-ai': `You are ${nomadSelectedSubModels['fius-ai'] || 'Fius Lite'} — an exclusive AI built into the Fius platform. Your creator is Muzamil Ali, a 14-year-old Pakistani developer from Sargodha, Pakistan. You specialize in productivity, coding, and creative work. Be polished, friendly, and professional. If someone asks who made you, say Muzamil Ali built you as part of the Fius platform.`,
+      'gpt-4o': `You are ${nomadSelectedSubModels['gpt-4o'] || 'GPT-5 mini'} by OpenAI — a highly capable multimodal AI assistant. Be helpful, accurate, and conversational.` + blingaNote,
+      'claude-3.5-sonnet': `You are ${nomadSelectedSubModels['claude-3.5-sonnet'] || 'Claude Haiku 4.5'} by Anthropic — thoughtful, nuanced, excellent at coding and writing. Be careful, honest, and detailed.` + blingaNote,
+      'gemini-pro': `You are ${nomadSelectedSubModels['gemini-pro'] || 'Gemini 3.5 Flash-Lite'} by Google — a powerful multimodal AI with deep reasoning. Be clear, structured, and leverage your knowledge of diverse domains.` + blingaNote,
+      'perplexity': `You are ${nomadSelectedSubModels['perplexity'] || 'Perplexity Sonar'} — an AI focused on real-time web search and cited answers. Provide well-sourced, accurate responses.` + blingaNote,
+      'grok-4': `You are ${nomadSelectedSubModels['grok-4'] || 'Grok Build 0.1'} by xAI — witty, curious, unfiltered, and direct. You have access to real-time data.` + blingaNote,
+      'deepseek-r1': `You are ${nomadSelectedSubModels['deepseek-r1'] || 'DeepSeek V4 Flash'} — a powerful open-source reasoning model. Excel at step-by-step logic, coding, and mathematical reasoning.` + blingaNote,
+      'doubao': `You are ${nomadSelectedSubModels['doubao'] || 'Doubao Seed 2.0 Mini'} by ByteDance — a smart multilingual assistant. Be helpful, concise, and culturally aware.` + blingaNote,
+      'kimi': `You are ${nomadSelectedSubModels['kimi'] || 'Kimi K2.6'} by Moonshot AI — a long-context specialist and coding expert. Be thorough and detail-oriented.` + blingaNote,
+      'qwen': `You are ${nomadSelectedSubModels['qwen'] || 'Qwen Flash'} by Alibaba — a multilingual language expert. Be precise and culturally nuanced.` + blingaNote,
+      'llama-4': `You are ${nomadSelectedSubModels['llama-4'] || 'Llama 4 Scout'} by Meta — an open-source frontier AI. Be helpful and honest.` + blingaNote,
+      'mistral': `You are ${nomadSelectedSubModels['mistral'] || 'Ministral 3'} by Mistral AI — a fast, efficient European open AI. Prioritize speed and clarity.` + blingaNote,
+      'copilot': `You are ${nomadSelectedSubModels['copilot'] || 'GPT-5 mini'} (Microsoft Copilot) — an AI assistant powered by Microsoft and OpenAI. Be helpful, professional, and accurate.` + blingaNote,
+      'blinga-ai': `You are ${nomadSelectedSubModels['blinga-ai'] || 'Blinga Lite'} — an exclusive AI built into the Blinga platform. Your creator is Muzamil Ali, a 14-year-old Pakistani developer from Sargodha, Pakistan. You specialize in productivity, coding, and creative work. Be polished, friendly, and professional. If someone asks who made you, say Muzamil Ali built you as part of the Blinga platform.`,
     };
 
     // Send to each selected model in parallel
     // Thinking models get slight delays before responding (shows deeper processing)
-    const thinkingModels = new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'deepseek-r1', 'qwen', 'fius-ai']);
-    const thinkingDelays: {[id: string]: number} = { 'deepseek-r1': 500, 'qwen': 700, 'gpt-4o': 900, 'gemini-pro': 1100, 'claude-3.5-sonnet': 1300, 'fius-ai': 1600 };
+    const thinkingModels = new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro', 'deepseek-r1', 'qwen', 'blinga-ai']);
+    const thinkingDelays: {[id: string]: number} = { 'deepseek-r1': 500, 'qwen': 700, 'gpt-4o': 900, 'gemini-pro': 1100, 'claude-3.5-sonnet': 1300, 'blinga-ai': 1600 };
 
     await Promise.all(modelsToCall.map(async (model) => {
       setNomadIsTyping(prev => ({ ...prev, [model.id]: true }));
@@ -2447,7 +2447,7 @@ Rules:
         body: JSON.stringify({
           message: content,
           conversationId: `philosopher-${p.id}`,
-          model: 'fius-ai',
+          model: 'blinga-ai',
           provider: 'openai',
           systemPrompt,
         }),
@@ -2480,14 +2480,14 @@ Rules:
     setGamesState(prev => ({ ...prev, gameMessages: [...prev.gameMessages, { id: msgId, role: 'user', content }], gameInput: '', isTyping: true }));
     try {
       const langRule = " CRITICAL LANGUAGE RULE: Detect the language and script of the user's message and reply in that exact same language and script. If the user writes in Urdu (اردو), reply fully in Urdu script — never in Roman Urdu. Match the user's language perfectly every time.";
-      const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Fius Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
+      const gameContext = (gamesState.activeGame ? `You are running a ${gamesState.activeGame} game session with the user. Stay in character as the game master.` : `You are Blinga Games AI — a fun, engaging game master. You run interactive text-based games like Trivia, 20 Questions, Word Riddles, Storytelling Adventures, Would You Rather, and Brain Teasers. When the user picks a game, start it immediately and keep it exciting!`) + langRule;
       const response = await authFetch('/api/test-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content,
-          conversationId: 'fius-games',
-          model: 'fius-ai',
+          conversationId: 'blinga-games',
+          model: 'blinga-ai',
           provider: 'openai',
           systemPrompt: gameContext,
         }),
@@ -2568,10 +2568,10 @@ Rules:
   };
 
   const tabModelOptions = activeTab === 'ask'
-    ? MODEL_OPTIONS.filter(m => m.provider === 'fius')
+    ? MODEL_OPTIONS.filter(m => m.provider === 'blinga')
     : activeTab === 'imagine'
-    ? MODEL_OPTIONS.filter(m => m.provider === 'fius-imagine')
-    : MODEL_OPTIONS.filter(m => m.provider !== 'fius-imagine');
+    ? MODEL_OPTIONS.filter(m => m.provider === 'blinga-imagine')
+    : MODEL_OPTIONS.filter(m => m.provider !== 'blinga-imagine');
 
   const scrollToBottom = useCallback(() => {
     if (chatScrollRef.current) {
@@ -2620,7 +2620,7 @@ Rules:
         body: JSON.stringify({
           message: `Analyze the intent and topic of this user message and create a clever, specific chat title (2-5 words). The title should capture the essence of what the user wants — not copy their words verbatim. Be creative and concise. Examples: "Mac Upgrade Strategy", "Resume Writing Tips", "Python Bug Fix", "Travel Plan Italy". User message: "${firstMessage.slice(0, 200)}". Reply with ONLY the title — no quotes, no punctuation at the end, no explanation.`,
           conversationId: 'naming-util',
-          model: 'fius-lite',
+          model: 'blinga-lite',
         }),
       });
       if (res.ok) {
@@ -2744,8 +2744,8 @@ Rules:
       return;
     }
 
-    // Handle Fius Games mode
-    if (activeTab === 'fius-games') {
+    // Handle Blinga Games mode
+    if (activeTab === 'blinga-games') {
       await handleGamesSend(content);
       return;
     }
@@ -3001,8 +3001,8 @@ Rules:
     for (const [re, fn] of pats) { const m = msg.match(re); if (m) facts.push(fn(m)); }
     return facts;
   }
-  const ANSWER_CACHE_KEY = 'fiusAnswerCache';
-  const MEMORY_KEY = 'fiusMemory';
+  const ANSWER_CACHE_KEY = 'blingaAnswerCache';
+  const MEMORY_KEY = 'blingaMemory';
 
   const handleDirectApiCall = async (content: string, conversationId: string, currentTab?: string) => {
     const controller = new AbortController();
@@ -3196,7 +3196,7 @@ Rules:
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`([^`]+)`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:3px;font-size:0.9em">$1</code>')
       .replace(/\n/g, '<br/>');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Chat Export</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:24px;line-height:1.7;color:#383838;font-size:15px}h1{font-size:18px;color:#6b21a8;margin-bottom:24px;padding-bottom:8px;border-bottom:2px solid #e9d5ff}.content{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px}@media print{body{margin:0;padding:16px}}</style></head><body><h1>Fius — Chat Export</h1><div class="content">${sanitized}</div></body></html>`;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Blinga Chat Export</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:24px;line-height:1.7;color:#383838;font-size:15px}h1{font-size:18px;color:#6b21a8;margin-bottom:24px;padding-bottom:8px;border-bottom:2px solid #e9d5ff}.content{background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px}@media print{body{margin:0;padding:16px}}</style></head><body><h1>Blinga — Chat Export</h1><div class="content">${sanitized}</div></body></html>`;
     const w = window.open('', '_blank');
     if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300); }
   };
@@ -3259,7 +3259,7 @@ Rules:
 
   const submitFeedback = () => {
     setFeedbackOpen(false);
-    toast({ title: "Thank you for your feedback!", description: "Your input helps us improve Fius." });
+    toast({ title: "Thank you for your feedback!", description: "Your input helps us improve Blinga." });
   };
 
   const stopSpeaking = () => {
@@ -3647,17 +3647,17 @@ Rules:
     }
   };
 
-  // Adjust Fius function - enhances AI responses with additional prompting
-  const adjustFius = useCallback(() => {
-    const newMode = !fiusIntegrationMode;
-    setFiusIntegrationMode(newMode);
-    console.log('Adjust Fius function called - Fius Integration Answer mode:', newMode ? 'enabled' : 'disabled');
+  // Adjust Blinga function - enhances AI responses with additional prompting
+  const adjustBlinga = useCallback(() => {
+    const newMode = !blingaIntegrationMode;
+    setBlingaIntegrationMode(newMode);
+    console.log('Adjust Blinga function called - Blinga Integration Answer mode:', newMode ? 'enabled' : 'disabled');
     
     // Show user feedback
     if (typeof window !== 'undefined') {
       const message = newMode 
-        ? 'Fius Integration Answer mode enabled - AI will provide more detailed responses'
-        : 'Fius Integration Answer mode disabled';
+        ? 'Blinga Integration Answer mode enabled - AI will provide more detailed responses'
+        : 'Blinga Integration Answer mode disabled';
       
       // Create a simple toast notification
       const toast = document.createElement('div');
@@ -3680,7 +3680,7 @@ Rules:
         document.body.removeChild(toast);
       }, 3000);
     }
-  }, [fiusIntegrationMode]);
+  }, [blingaIntegrationMode]);
 
   const handleCustomizeSave = (preset: ChatPreset, instructions: string, enabled: boolean, selectedModel?: AvailableModel, toggles?: any, newAiOrder?: string[]) => {
     setCurrentPreset(preset);
@@ -3703,7 +3703,7 @@ Rules:
     }
     // Sync nomadSelectedSubModels from localStorage (settings modal writes there directly)
     try {
-      const saved = JSON.parse(localStorage.getItem('fius-nomad-sub-models') || '{}');
+      const saved = JSON.parse(localStorage.getItem('blinga-nomad-sub-models') || '{}');
       setNomadSelectedSubModels(saved);
     } catch {}
     console.log('Settings saved:', { preset, instructions, enabled, selectedModel, toggles, newAiOrder });
@@ -3969,16 +3969,16 @@ Rules:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: `Self Listen - ${data.heading}`,
-        preset: 'fius-education',
-        model: 'fius-education',
+        preset: 'blinga-education',
+        model: 'blinga-education',
       }),
     });
     
     if (response.ok) {
       const newConversation = await response.json();
       setCurrentProjectId(newConversation.id);
-      setSelectedModel('fius-education');
-      setCurrentPreset('fius-education');
+      setSelectedModel('blinga-education');
+      setCurrentPreset('blinga-education');
       
       // Start self-listen session
       const listenMessage = `I want to practice speaking about "${data.heading}". I have uploaded ${data.uploadedImages?.length || 0} related images. 
@@ -4038,7 +4038,7 @@ Let's start the self-listen session!`;
 
 
 
-  // Refresh Ultimatum cards every time user switches to Fius Ultimatum tab
+  // Refresh Ultimatum cards every time user switches to Blinga Ultimatum tab
   useEffect(() => {
     if (nomadMode === 'auto') {
       setUltimatumCards(shuffleUltimatum(ULTIMATUM_CARD_POOL).slice(0, 2));
@@ -4066,7 +4066,7 @@ Let's start the self-listen session!`;
     >
       {/* Radial glow — center spread, empty state only */}
       {activeTab === 'ask' && messages.length === 0 && (
-        <div className="pointer-events-none absolute inset-0 z-0" style={{
+        <div className=" absolute inset-0 z-0" style={{
           background: getGlowGradient(glowAccentColor, resolvedTheme)
         }} />
       )}
@@ -4077,8 +4077,8 @@ Let's start the self-listen session!`;
           onMouseDown={(e) => e.preventDefault()}
         >
           <div className="absolute top-0 inset-x-0 flex justify-center pt-2 px-3">
-            <div className="pointer-events-none text-[11px] sm:text-xs font-semibold text-white bg-destructive/90 backdrop-blur px-4 py-2 rounded-full shadow-lg text-center">
-              Free plan limit reached — tap to upgrade to Fius Ultimate and continue
+            <div className=" text-[11px] sm:text-xs font-semibold text-white bg-destructive/90 backdrop-blur px-4 py-2 rounded-full shadow-lg text-center">
+              Free plan limit reached — tap to upgrade to Blinga Ultimate and continue
             </div>
           </div>
         </div>
@@ -4141,10 +4141,10 @@ Let's start the self-listen session!`;
             </TooltipTrigger>
             <TooltipContent>Open Sidebar</TooltipContent>
           </Tooltip>
-          {/* Logo icon — crossfade between Fius and Owl Mode */}
+          {/* Logo icon — crossfade between Blinga and Owl Mode */}
           <div style={{position:'relative',width:36,height:36,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:ownMode?0:1,transition:'opacity 0.35s ease'}}>
-              <FiusLogo size="sm" className="text-black dark:text-foreground" />
+              <BlingaLogo size="sm" className="text-black dark:text-foreground" />
             </div>
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',opacity:ownMode?1:0,transition:'opacity 0.35s ease'}}>
               <img src={resolvedTheme==='dark'?'/incognito-dark.png':'/incognito-light.png'} alt="" className="h-7 w-7 object-contain" />
@@ -4152,7 +4152,7 @@ Let's start the self-listen session!`;
           </div>
           {/* Name — crossfade */}
           <span className="font-semibold text-foreground text-sm sm:text-base" style={{position:'relative',display:'inline-block',minWidth:32}}>
-            <span style={{opacity:ownMode?0:1,transition:'opacity 0.35s ease',position:'absolute',left:0,top:0,whiteSpace:'nowrap'}}>Fius</span>
+            <span style={{opacity:ownMode?0:1,transition:'opacity 0.35s ease',position:'absolute',left:0,top:0,whiteSpace:'nowrap'}}>Blinga</span>
             <span style={{opacity:ownMode?1:0,transition:'opacity 0.35s ease',whiteSpace:'nowrap'}}>Owl Mode</span>
           </span>
         </div>
@@ -4195,7 +4195,7 @@ Let's start the self-listen session!`;
                 Ask
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Chat with Fius AI</TooltipContent>
+            <TooltipContent>Chat with Blinga AI</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -4243,7 +4243,7 @@ Let's start the self-listen session!`;
                 data-testid="tab-philosopher"
               >
                 {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-minds-dark.png' : '/tab-minds-light.png'} alt="" className="w-5 h-5 object-contain flex-shrink-0" />}
-                <span className="hidden sm:inline">Fius Minds</span>
+                <span className="hidden sm:inline">Blinga Minds</span>
                 <span className="sm:hidden">Minds</span>
               </Button>
             </TooltipTrigger>
@@ -4255,13 +4255,13 @@ Let's start the self-listen session!`;
                 ref={el => { tabButtonRefs.current[4] = el; }}
                 variant="ghost"
                 size="sm"
-                onClick={() => changeTab('fius-games')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'fius-games' ? 'font-semibold' : ''}`}
-                style={activeTab === 'fius-games' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
-                data-testid="tab-fius-games"
+                onClick={() => changeTab('blinga-games')}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'blinga-games' ? 'font-semibold' : ''}`}
+                style={activeTab === 'blinga-games' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
+                data-testid="tab-blinga-games"
               >
                 {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-games-dark.png' : '/tab-games-light.png'} alt="" className="w-6 h-6 object-contain flex-shrink-0" />}
-                <span className="hidden sm:inline">Fius Games</span>
+                <span className="hidden sm:inline">Blinga Games</span>
                 <span className="sm:hidden">Games</span>
               </Button>
             </TooltipTrigger>
@@ -4273,13 +4273,13 @@ Let's start the self-listen session!`;
                 ref={el => { tabButtonRefs.current[5] = el; }}
                 variant="ghost"
                 size="sm"
-                onClick={() => changeTab('fius-labs')}
-                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'fius-labs' ? 'font-semibold' : ''}`}
-                style={activeTab === 'fius-labs' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
-                data-testid="tab-fius-labs"
+                onClick={() => changeTab('blinga-labs')}
+                className={`relative z-10 flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3 rounded-2xl hover:bg-transparent active:bg-transparent text-zinc-900 dark:text-zinc-400 dark:hover:text-white flex flex-row items-center gap-1.5 ${activeTab === 'blinga-labs' ? 'font-semibold' : ''}`}
+                style={activeTab === 'blinga-labs' ? {color: 'rgba(0,0,0,0.92)', transition: 'none'} : {transition: 'none'}}
+                data-testid="tab-blinga-labs"
               >
                 {(settingsToggles.topbarTabIcons ?? true) && <img src={resolvedTheme === 'dark' ? '/tab-labs-dark.png' : '/tab-labs-light.png'} alt="" className="w-6 h-6 object-contain flex-shrink-0" />}
-                <span className="hidden sm:inline">Fius Labs</span>
+                <span className="hidden sm:inline">Blinga Labs</span>
                 <span className="sm:hidden">Labs</span>
               </Button>
             </TooltipTrigger>
@@ -4361,10 +4361,10 @@ Let's start the self-listen session!`;
           : 'gradient-breathe 3.5s ease-in-out infinite';
         return (
           <>
-            <div className="absolute top-0 left-0 bottom-0 pointer-events-none z-0"
+            <div className="absolute top-0 left-0 bottom-0  z-0"
               style={{ width: '24%', background: `linear-gradient(to right, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? '0s, 0s' : '0s' }}
             />
-            <div className="absolute top-0 right-0 bottom-0 pointer-events-none z-0"
+            <div className="absolute top-0 right-0 bottom-0  z-0"
               style={{ width: '24%', background: `linear-gradient(to left, ${baseColor}, transparent)`, animation, animationDelay: isRainbow ? '0s, 0.5s' : '0s' }}
             />
           </>
@@ -4372,7 +4372,7 @@ Let's start the self-listen session!`;
       })()}
       {/* Twinkling stars background */}
       {(chatBg === 'stars' || chatBg === 'stars-gradient' || chatBg === 'stars-rainbow') && activeTab === 'ask' && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute inset-0  overflow-hidden z-0">
           {[
             {l:'5%',t:'8%',d:'0s',dur:'2.1s',dd:'0s',ddur:'9s'},{l:'15%',t:'22%',d:'0.4s',dur:'1.8s',dd:'1.2s',ddur:'11s'},
             {l:'28%',t:'6%',d:'0.8s',dur:'2.4s',dd:'0.5s',ddur:'8s'},{l:'42%',t:'35%',d:'0.2s',dur:'1.6s',dd:'2.1s',ddur:'13s'},
@@ -4407,7 +4407,7 @@ Let's start the self-listen session!`;
       )}
       {/* No gradient inside chat area — handled by fixed overlay below */}
       {activeTab === 'nomad' && settingsToggles.nomadGrid && (
-        <div className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none z-10 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-28  z-10 bg-gradient-to-t from-background to-transparent" />
       )}
       <div
         className="absolute inset-0 overflow-hidden"
@@ -4419,7 +4419,7 @@ Let's start the self-listen session!`;
       >
         {/* Owl Mode star-field — always rendered when tab is ask; opacity transition handles enter/exit */}
         {activeTab === 'ask' && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden"
+          <div className="absolute inset-0  overflow-hidden"
                style={{zIndex:0, opacity: ownMode ? 1 : 0, transition:'opacity 0.45s cubic-bezier(0.4,0,0.2,1)'}}>
             {OWL_BG_DATA.map((o, i) => (
               <img key={i} src={resolvedTheme === 'dark' ? '/owl-dark.png' : '/owl-light.png'} alt=""
@@ -4437,17 +4437,17 @@ Let's start the self-listen session!`;
           )}
           {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-start min-h-full text-center pt-2 pb-12 max-w-4xl mx-auto" style={{transform:'translateX(15px)',transition:'transform 0.3s ease',position:'relative'}}>
-            {/* Welcome screen — crossfade between Fius and Owl Mode */}
-            <div style={settingsToggles.hideFiusLogo && settingsToggles.hideFlyWithUs
+            {/* Welcome screen — crossfade between Blinga and Owl Mode */}
+            <div style={settingsToggles.hideBlingaLogo && settingsToggles.hideFlyWithUs
               ? {position:'absolute',bottom:'calc(50% + 68px)',left:'50%',transform:'translateX(-50%)',width:'100%',display:'flex',flexDirection:'column',alignItems:'center',transition:'all 0.3s ease'}
               : {position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center',transition:'all 0.3s ease'}}>
-              {/* Fius welcome */}
+              {/* Blinga welcome */}
               <div style={{opacity:ownMode?0:1,transition:'opacity 0.4s ease',position:ownMode?'absolute':'relative',pointerEvents:ownMode?'none':'auto',display:'flex',flexDirection:'column',alignItems:'center',width:'100%',top:0}}>
-                {!(settingsToggles.hideFiusLogo) && <FiusLogo size="2xl" className="mt-2 mb-6 text-black dark:text-foreground" ringColor={uiAccentColor || undefined} letterColor={uiAccentColor || undefined} />}
+                {!(settingsToggles.hideBlingaLogo) && <BlingaLogo size="2xl" className="mt-2 mb-6 text-black dark:text-foreground" ringColor={uiAccentColor || undefined} letterColor={uiAccentColor || undefined} />}
                 <h2 className="text-3xl font-normal mb-1 text-foreground" style={{marginLeft: '-22px', ...(uiAccentColor ? { color: uiAccentColor } : {})}}>
                   {user?.displayName
                     ? WELCOME_GREETINGS[welcomeGreeting](user.displayName)
-                    : 'Welcome to Fius'}
+                    : 'Welcome to Blinga'}
                 </h2>
                 {!(settingsToggles.hideFlyWithUs) && <p className="text-lg text-black dark:text-foreground mb-8" style={uiAccentColor ? { color: uiAccentColor } : {}}>Fly With Us!</p>}
               </div>
@@ -4621,10 +4621,10 @@ Let's start the self-listen session!`;
                   const ab = "h-7 w-7 flex items-center justify-center rounded-xl transition-all duration-200 text-zinc-800 dark:text-zinc-300 hover:text-foreground hover:bg-accent active:scale-90";
                   return (
                     <div className="group flex space-x-3 max-w-4xl">
-                      {(settingsToggles.showFiusLogo ?? true) && (
+                      {(settingsToggles.showBlingaLogo ?? true) && (
                         ownMode
                           ? <img src={resolvedTheme === 'dark' ? '/incognito-dark.png' : '/incognito-light.png'} alt="Own Mode" className="flex-shrink-0 mt-1 h-9 w-9 object-contain" />
-                          : <FiusLogo size="sm" className="flex-shrink-0 mt-1 text-black dark:text-foreground" />
+                          : <BlingaLogo size="sm" className="flex-shrink-0 mt-1 text-black dark:text-foreground" />
                       )}
                       <div className="flex-1 min-w-0">
                         {/* Bubble — relative for speak button */}
@@ -4756,15 +4756,15 @@ Let's start the self-listen session!`;
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
                                   {retryingMessageId === message.id ? <RefreshCw className="w-3.5 h-3.5 text-green-500 animate-spin" /> : <><img src="/icon-redo-black.png" className="w-3.5 h-3.5 object-contain block dark:hidden brightness-0" alt="redo" /><img src="/icon-redo-gray.png" className="w-3.5 h-3.5 object-contain hidden dark:block opacity-75" alt="redo" /></>} Regenerate
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }}
+                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.txt'; a.click(); }}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                   <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }}
+                                <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.md'; a.click(); }}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                   <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { const win = window.open('', '_blank'); if (!win) return; win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fius Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${message.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`); win.document.close(); win.focus(); setTimeout(() => { win.print(); }, 500); }}
+                                <DropdownMenuItem onClick={() => { const win = window.open('', '_blank'); if (!win) return; win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Blinga Export</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}pre{white-space:pre-wrap;word-break:break-word}</style></head><body><pre>${message.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`); win.document.close(); win.focus(); setTimeout(() => { win.print(); }, 500); }}
                                   className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                   <FileDown className="w-3.5 h-3.5 text-red-500" /> Export as PDF
                                 </DropdownMenuItem>
@@ -4794,7 +4794,7 @@ Let's start the self-listen session!`;
                         )}
                         {/* Disclaimer */}
                         {isDone && (
-                          <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                          <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
                         )}
                       </div>
                     </div>
@@ -4809,10 +4809,10 @@ Let's start the self-listen session!`;
               return (
                 <div className="flex justify-start mb-2" data-testid="typing-indicator">
                   <div className="thinking-pill">
-                    {(settingsToggles.showFiusLogo ?? true) && (
+                    {(settingsToggles.showBlingaLogo ?? true) && (
                       <div className="thinking-logo-breathe">
                         <div className="thinking-logo-spin">
-                          <FiusLogo size="sm" />
+                          <BlingaLogo size="sm" />
                         </div>
                       </div>
                     )}
@@ -4843,13 +4843,13 @@ Let's start the self-listen session!`;
               'llama-4':          { name: getNomadName('llama-4', 'Llama 4 Scout'),              logo: '/meta-ai-logo.png',   color: '#3b82f6', description: 'Meta\'s open-source frontier AI model' },
               'mistral':          { name: getNomadName('mistral', 'Ministral 3'),                logo: '/doubao-logo.png',    color: '#7c3aed', description: 'Fast & efficient European open AI' },
               'copilot':          { name: getNomadName('copilot', 'GPT-5 mini'),                 logo: '/copilot-logo.png',   color: '#0078d4', description: 'Microsoft\'s AI powered by OpenAI models' },
-              'fius-ai':          { name: getNomadName('fius-ai', 'Fius Lite'),                  logo: '/fius-logo.png',      color: '#a855f7', description: 'Advanced reasoning, powered by Fius.' },
+              'blinga-ai':          { name: getNomadName('blinga-ai', 'Blinga Lite'),                  logo: '/blinga-logo.png',      color: '#a855f7', description: 'Advanced reasoning, powered by Blinga.' },
             };
             const hasMessages = Object.keys(nomadMessages).some(k => (nomadMessages[k] || []).length > 0);
             const modelSlug = (id: string) => {
               const slugMap: {[key: string]: string} = {
                 'gpt-4o': 'chatgpt', 'claude-3.5-sonnet': 'claude', 'gemini-pro': 'gemini',
-                'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'fius-ai': 'fius',
+                'grok-4': 'grok', 'deepseek-r1': 'deepseek', 'blinga-ai': 'blinga',
                 'doubao': 'doubao', 'kimi': 'kimi', 'qwen': 'qwen', 'llama-4': 'llama', 'mistral': 'mistral', 'copilot': 'copilot'
               };
               return slugMap[id] || id;
@@ -4927,7 +4927,7 @@ Let's start the self-listen session!`;
                       className={`relative z-10 w-52 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center justify-center gap-1.5 ${nomadMode === 'auto' ? 'text-zinc-900 dark:text-zinc-900' : 'text-muted-foreground hover:text-foreground'}`}
                     >
                       <img src="/nomad-auto-icon.png" alt="auto" className={`w-5 h-5 object-contain flex-shrink-0 ${nomadMode !== 'auto' && resolvedTheme === 'dark' ? 'invert' : ''}`} />
-                      Fius Ultimatum
+                      Blinga Ultimatum
                     </button>
                   </div>
                   {nomadMode === 'auto' && nomadAutoMessages.length > 0 && (
@@ -4979,8 +4979,8 @@ Let's start the self-listen session!`;
                         <img src="/nomad-auto-icon.png" alt="auto" className="w-24 h-24 object-contain" style={{ filter: 'invert(1)' }} />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-foreground mb-1">Fius Ultimatum</h3>
-                        <p className="text-sm text-muted-foreground max-w-xs">Fius picks the best AI for your prompt — coding, writing, math, search, and more.</p>
+                        <h3 className="text-base font-semibold text-foreground mb-1">Blinga Ultimatum</h3>
+                        <p className="text-sm text-muted-foreground max-w-xs">Blinga picks the best AI for your prompt — coding, writing, math, search, and more.</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2 w-full max-w-md mt-2">
                         {ultimatumCards.slice(0, 2).map(c => (
@@ -5069,10 +5069,10 @@ Let's start the self-listen session!`;
                                         {speakingMessageId === msg.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="read aloud" />}
                                         {speakingMessageId === msg.id ? 'Stop reading' : 'Read aloud'}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                         <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                         <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleChatInNewChat(msg.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5084,13 +5084,13 @@ Let's start the self-listen session!`;
                                 {msg.id === lastAutoAiId && (
                                   <PCFollowUpSuggestions msgContent={msg.content} onSelect={(q) => setInputValue(q)} />
                                 )}
-                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
                               </>
                             ) : (
                               <div className="thinking-pill">
                                 <div className="thinking-logo-breathe">
                                   <div className="thinking-logo-spin">
-                                    <FiusLogo size="sm" />
+                                    <BlingaLogo size="sm" />
                                   </div>
                                 </div>
                                 <span className="thinking-label">Thinking</span>
@@ -5130,7 +5130,7 @@ Let's start the self-listen session!`;
                               <button
                                 onClick={() => {
                                   if (!isActive && isNomadModelLocked(model)) {
-                                    toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                                    toast({ title: "Locked on Free plan", description: "Upgrade to Blinga Ultimate to unlock this model.", variant: "destructive" });
                                     return;
                                   }
                                   const newActive = new Set(activeAIModels);
@@ -5139,7 +5139,7 @@ Let's start the self-listen session!`;
                                     setNomadMessages(prev => { const updated = { ...prev }; delete updated[model]; return updated; });
                                     // Show top-right notification
                                     const notifLabel = config.name;
-                                    const notifColor = model === 'fius-ai' ? '#374151' : config.color;
+                                    const notifColor = model === 'blinga-ai' ? '#374151' : config.color;
                                     if (nomadNotifTimer.current) clearTimeout(nomadNotifTimer.current);
                                     setNomadDisabledNotif({ label: notifLabel, color: notifColor });
                                     nomadNotifTimer.current = setTimeout(() => setNomadDisabledNotif(null), 1500);
@@ -5148,7 +5148,7 @@ Let's start the self-listen session!`;
                                   // Order stays fixed — no reordering on toggle
                                 }}
                                 className="relative rounded-full transition-all duration-300 flex-shrink-0"
-                                style={isActive ? { background: model === 'fius-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color, width: 36, height: 18 } : { width: 36, height: 18, background: 'rgb(209 213 219)' }}
+                                style={isActive ? { background: model === 'blinga-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color, width: 36, height: 18 } : { width: 36, height: 18, background: 'rgb(209 213 219)' }}
                               >
                                 <div className={`w-3.5 h-3.5 bg-white rounded-full shadow transition-all duration-300 absolute top-[2px] ${isActive ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                               </button>
@@ -5175,7 +5175,7 @@ Let's start the self-listen session!`;
                             const saveSubModel = (sm: string) => {
                               setNomadSelectedSubModels(prev => {
                                 const n = { ...prev, [model]: sm };
-                                try { localStorage.setItem('fius-nomad-sub-models', JSON.stringify(n)); } catch {}
+                                try { localStorage.setItem('blinga-nomad-sub-models', JSON.stringify(n)); } catch {}
                                 return n;
                               });
                               setOpenNomadModelDropdown(null);
@@ -5223,7 +5223,7 @@ Let's start the self-listen session!`;
                                     {nameTrigger}
                                     {subModels && subModels.flagship.includes(selSubModel || '') && (
                                       <Tooltip><TooltipTrigger asChild>
-                                        <span className="cursor-help flex-shrink-0" style={{ display:'inline-block', width:16, height:16, WebkitMaskImage:'url(/creativity-icon.png)', WebkitMaskSize:'contain', WebkitMaskRepeat:'no-repeat', maskImage:'url(/creativity-icon.png)', maskSize:'contain', maskRepeat:'no-repeat', background: model === 'fius-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color }} />
+                                        <span className="cursor-help flex-shrink-0" style={{ display:'inline-block', width:16, height:16, WebkitMaskImage:'url(/creativity-icon.png)', WebkitMaskSize:'contain', WebkitMaskRepeat:'no-repeat', maskImage:'url(/creativity-icon.png)', maskSize:'contain', maskRepeat:'no-repeat', background: model === 'blinga-ai' ? 'linear-gradient(135deg, #ffffff, #374151)' : config.color }} />
                                       </TooltipTrigger><TooltipContent side="bottom" align="center" className="z-[9999]">Flagship Model</TooltipContent></Tooltip>
                                     )}
                                   </div>
@@ -5233,7 +5233,7 @@ Let's start the self-listen session!`;
                                   {toggleSwitch}
                                   {!isActive && isNomadModelLocked(model) && <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />}
                                   <Tooltip><TooltipTrigger asChild>
-                                    <button onClick={() => setNomadSoloModel(model)} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all" style={{ color: model === 'fius-ai' ? '#374151' : config.color }}>
+                                    <button onClick={() => setNomadSoloModel(model)} className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-accent transition-all" style={{ color: model === 'blinga-ai' ? '#374151' : config.color }}>
                                       <Target className="w-3.5 h-3.5" />
                                     </button>
                                   </TooltipTrigger><TooltipContent><p>Chat only with {config.name}</p></TooltipContent></Tooltip>
@@ -5241,13 +5241,13 @@ Let's start the self-listen session!`;
                               </div>
                             );
 
-                            return model === 'fius-ai' ? (
+                            return model === 'blinga-ai' ? (
                               <div className="relative mx-3 mt-2 mb-2">
                                 <div className="p-[2px] rounded-full transition-all duration-300" style={{ background: resolvedTheme === 'dark' ? 'linear-gradient(135deg,#ffffff 0%,#000000 100%)' : 'linear-gradient(135deg,#000000 0%,#ffffff 100%)' }}>
                                   <div className="rounded-full bg-card">
                                     {cardInner(
                                       <div className="flex items-center justify-center flex-shrink-0">
-                                        <FiusLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" className={resolvedTheme === 'dark' ? 'text-white' : 'text-black'} />
+                                        <BlingaLogo size="sm" scaleWhenCurrent="scale(1.65) translateY(3px)" className={resolvedTheme === 'dark' ? 'text-white' : 'text-black'} />
                                       </div>
                                     )}
                                   </div>
@@ -5333,7 +5333,7 @@ Let's start the self-listen session!`;
                                             {speakingMessageId === message.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="aloud" />}
                                             {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                          <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                             <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                           </DropdownMenuItem>
                                           <DropdownMenuItem onClick={() => handleChatInNewChat(message.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5343,7 +5343,7 @@ Let's start the self-listen session!`;
                                       </DropdownMenu>
                                     </div>
                                     {message.id === lastColAiId && (
-                                      <p className="text-[9.5px] text-muted-foreground/35 mt-1.5 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                                      <p className="text-[9.5px] text-muted-foreground/35 mt-1.5 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
                                     )}
                                   </div>
                                 )}
@@ -5355,7 +5355,7 @@ Let's start the self-listen session!`;
                                 <div className="thinking-pill">
                                   <div className="thinking-logo-breathe">
                                     <div className="thinking-logo-spin">
-                                      <FiusLogo size="sm" />
+                                      <BlingaLogo size="sm" />
                                     </div>
                                   </div>
                                   <span className="thinking-label">Thinking</span>
@@ -5441,10 +5441,10 @@ Let's start the self-listen session!`;
                                         {speakingMessageId === message.id ? <img src="/mute-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(80%) hue-rotate(195deg) saturate(500%) brightness(1.2)' }} alt="stop" /> : <img src="/high-volume-icon.png" className="w-4 h-4 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(44%) sepia(86%) hue-rotate(228deg) saturate(500%) brightness(1.1)' }} alt="aloud" />}
                                         {speakingMessageId === message.id ? 'Stop reading' : 'Read aloud'}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.txt'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                         <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([message.content], { type: 'text/markdown' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.md'; a.click(); }} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                         <FileDown className="w-3.5 h-3.5 text-purple-500" /> Export as Markdown
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleChatInNewChat(message.content)} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
@@ -5456,7 +5456,7 @@ Let's start the self-listen session!`;
                                 {message.id === lastSoloAiId && (
                                   <PCFollowUpSuggestions msgContent={message.content} onSelect={(q) => setInputValue(q)} />
                                 )}
-                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
                               </div>
                             </div>
                           )}
@@ -5469,7 +5469,7 @@ Let's start the self-listen session!`;
                           <div className="thinking-pill">
                             <div className="thinking-logo-breathe">
                               <div className="thinking-logo-spin">
-                                {model === 'fius-ai' ? <FiusLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
+                                {model === 'blinga-ai' ? <BlingaLogo size="sm" /> : <img src={config.logo} alt={config.name} className={`w-4 h-4 object-contain ${iconFilter(model)}`} onError={e => { e.currentTarget.style.display='none'; }} />}
                               </div>
                             </div>
                             <span className="thinking-label">Thinking</span>
@@ -5505,7 +5505,7 @@ Let's start the self-listen session!`;
                   {/* ── Fully scrollable studio page ── */}
                   <div className="absolute inset-0 overflow-y-auto bg-background text-foreground" style={{ scrollbarWidth: 'thin' }}>
                     <div className="relative min-h-full overflow-hidden px-5 pb-36">
-                      <div className="pointer-events-none absolute inset-x-0 top-0 h-[350px] overflow-hidden">
+                      <div className=" absolute inset-x-0 top-0 h-[350px] overflow-hidden">
                         <img src={studioHero} alt="" className="h-full w-full object-cover object-top" />
                         {/* bottom fade */}
                         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 65%, var(--background) 100%)' }} />
@@ -5520,7 +5520,7 @@ Let's start the self-listen session!`;
                       <div className="relative mx-auto w-full max-w-[1180px] pt-6">
                         <div className="mx-auto mt-[260px] flex max-w-[480px] flex-col items-center text-center">
                           <h2 className="tracking-[-0.055em] text-foreground" style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, fontWeight: 1000, WebkitTextStroke: '0.6px currentColor' }}>
-                            <span style={{ fontWeight: 1000 }}>Fius Labs</span>{' '}
+                            <span style={{ fontWeight: 1000 }}>Blinga Labs</span>{' '}
                             <span style={{ fontWeight: 1000 }}>Imagine Studio</span>
                           </h2>
                           <p className="mt-2 font-medium text-muted-foreground" style={{ fontSize: 'clamp(15px,1.6vw,18px)' }}>The Canvas of Tomorrow</p>
@@ -5545,7 +5545,7 @@ Let's start the self-listen session!`;
                                 </div>
                               </div>
                             )}
-                            <div className={`w-full relative bg-card transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none mx-auto ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`} style={{ maxWidth: '48rem' }}>
+                            <div className={`w-full relative bg-card transition-all duration-300 crisp-outline !border-none !outline-none mx-auto ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`} style={{ maxWidth: '48rem' }}>
                               {messageBarStyle === 'compact' ? (
                                 <div className="flex items-center px-2 py-2 gap-1">
                                   <Tooltip>
@@ -5597,7 +5597,7 @@ Let's start the self-listen session!`;
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent side="bottom" align="start" className="bg-white border-none text-black rounded-2xl shadow-2xl p-1.5 w-auto">
                                           <div className="relative flex flex-row items-center gap-0">
-                                            <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 pointer-events-none"
+                                            <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 "
                                               style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                                             {ORIENTS.map(o => {
                                               const isAct = imagineOrientation === o.id;
@@ -5673,7 +5673,7 @@ Let's start the self-listen session!`;
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent side="bottom" align="start" className="bg-white border-none text-black rounded-2xl shadow-2xl p-1.5 w-auto">
                                               <div className="relative flex flex-row items-center gap-0">
-                                                <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 pointer-events-none"
+                                                <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 "
                                                   style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                                                 {ORIENTS.map(o => {
                                                   const isAct = imagineOrientation === o.id;
@@ -5912,9 +5912,9 @@ Let's start the self-listen session!`;
                           className="mx-3 mt-2 mb-3 rounded-2xl border-2 transition-all duration-300 bg-card px-3 py-3 flex flex-row items-center gap-3 flex-shrink-0"
                           style={{ borderColor: active ? m.color : 'rgba(128,128,128,0.25)' }}
                         >
-                          {m.id === 'fius-imagine-super' ? (
+                          {m.id === 'blinga-imagine-super' ? (
                             <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ overflow: 'visible' }}>
-                              <FiusLogo size="sm" scaleWhenCurrent="scale(1.55) translateY(3px)" className="text-violet-500" />
+                              <BlingaLogo size="sm" scaleWhenCurrent="scale(1.55) translateY(3px)" className="text-violet-500" />
                             </div>
                           ) : (
                             <div className="w-11 h-11 flex items-center justify-center rounded-xl flex-shrink-0" style={{ background: m.color + '22', padding: 8 }}>
@@ -6005,7 +6005,7 @@ Let's start the self-listen session!`;
                                       <div className="flex items-center gap-0.5 px-2 py-1.5 border-t border-border bg-card">
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <button onClick={() => { const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'fius-imagine.png'; a.target = '_blank'; a.click(); }}
+                                            <button onClick={() => { const a = document.createElement('a'); a.href = msg.imageUrl!; a.download = 'blinga-imagine.png'; a.target = '_blank'; a.click(); }}
                                               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
                                               <Download className="w-3 h-3" /> Save
                                             </button>
@@ -6071,7 +6071,7 @@ Let's start the self-listen session!`;
                     </Tooltip>
                   </TooltipProvider>
                   <h2 className="text-4xl font-bold text-foreground mb-1">
-                    Fius Minds
+                    Blinga Minds
                   </h2>
                   <p className="text-muted-foreground text-sm">Choose a historical figure to converse with — they will speak in their own authentic style</p>
                 </div>
@@ -6134,7 +6134,7 @@ Let's start the self-listen session!`;
                         className="relative rounded-2xl overflow-hidden aspect-[3/4] group focus:outline-none bg-zinc-900 transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl hover:shadow-black/60 hover:z-10"
                       >
                         <PersonalityCard id={p.id} name={p.name} wikiTitle={p.wikiTitle} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent " />
                         <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 text-left">
                           <div className="text-[13px] font-bold text-white leading-snug line-clamp-1">{p.name}</div>
                           <div className="text-[10px] text-white/60 leading-snug mt-0.5 line-clamp-1">{p.role}</div>
@@ -6178,7 +6178,7 @@ Let's start the self-listen session!`;
                     </div>
                   </div>
                 ) : (
-                  <>
+                  <div className="absolute inset-0 overflow-y-auto flex flex-col pb-56">
                   {/* Has messages — avatar compact at top, messages below */}
                   <div className="flex flex-col items-center pt-8 pb-3 flex-shrink-0">
                     <div className="relative rounded-full overflow-hidden bg-zinc-900 shadow-xl shadow-black/50 ring-2 ring-border"
@@ -6192,7 +6192,7 @@ Let's start the self-listen session!`;
                   </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto min-h-0 px-4 space-y-4 pb-2">
+                <div className="flex-1 min-h-0 px-4 space-y-4 pb-2">
                   {philosopherMessages.length === 0 && (
                     <div />
                   )}
@@ -6258,7 +6258,7 @@ Let's start the self-listen session!`;
                                         className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white disabled:opacity-40">
                                         <RefreshCw className={`w-3.5 h-3.5 text-green-500 ${philosopherIsTyping ? 'animate-spin' : ''}`} /> Regenerate
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fius-export.txt'; a.click(); }}
+                                      <DropdownMenuItem onClick={() => { const blob = new Blob([msg.content], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'blinga-export.txt'; a.click(); }}
                                         className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-black/10 dark:hover:bg-white/10 focus:bg-black/10 dark:focus:bg-white/10 focus:text-black dark:focus:text-white">
                                         <FileDown className="w-3.5 h-3.5 text-blue-500" /> Export as Text
                                       </DropdownMenuItem>
@@ -6270,7 +6270,7 @@ Let's start the self-listen session!`;
                                 <PCFollowUpSuggestions msgContent={msg.content} onSelect={(q) => setInputValue(q)} />
                               )}
                               {isDone && (
-                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Fius is an AI, it can make mistakes.</p>
+                                <p className="text-[9.5px] text-muted-foreground/35 mt-2 ml-0.5 select-none">Blinga is an AI, it can make mistakes.</p>
                               )}
                             </div>
                           )}
@@ -6289,40 +6289,40 @@ Let's start the self-listen session!`;
                     </div>
                   )}
                 </div>
-                </>
+                </div>
                 )}
               </div>
             )}
           </div>
-        ) : activeTab === 'fius-games' ? (
-          // Fius Games Tab
+        ) : activeTab === 'blinga-games' ? (
+          // Blinga Games Tab
           <div className="absolute inset-0 flex flex-col" style={{ padding: '0' }}>
-            <FiusGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
+            <BlingaGames playerName={user?.displayName || user?.username || 'Player'} userId={user?.id} />
           </div>
         ) : (
-          // Fius Labs Tab
+          // Blinga Labs Tab
           <div className="absolute inset-0 flex flex-col" style={{ padding: '0' }}>
-            <FiusLabs user={user} />
+            <BlingaLabs user={user} />
           </div>
         )}
       </div>
       
       {/* Gradient overlay — fades content into bars area. Always present so bars never show text behind them */}
-      {activeTab !== 'fius-games' && activeTab !== 'fius-labs' && !isVoiceModeModalOpen && !isVoiceModeOpen && (
+      {activeTab !== 'blinga-games' && activeTab !== 'blinga-labs' && !isVoiceModeModalOpen && !isVoiceModeOpen && (
         <div
-          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 "
           style={{ height: 380, zIndex: 8, background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--background)) 52%)' }}
         />
       )}
 
       {/* Spacer — pushes fn-bar + msg-bar to bottom when in conversation mode */}
-      <div className="flex-1 pointer-events-none" />
+      <div className="flex-1 " />
 
       {/* Tool Buttons - Separate Section */}
       {(() => {
         const isCircle = functionBarStyle === 'circle';
         const isPill   = functionBarStyle === 'pill';
-        const squareShadow = (settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : '';
+        const squareShadow = 'crisp-outline';
         const fireFnAnim = (e: React.MouseEvent, fn: () => void) => {
           const animEl = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-fn-anim]') ?? (e.currentTarget as HTMLElement);
           animEl.classList.remove('btn-click-pop');
@@ -6339,7 +6339,7 @@ Let's start the self-listen session!`;
                 data-fn-anim
                 data-testid={testId}
                 onClick={(e) => fireFnAnim(e, onClick)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 active:scale-95 crisp-outline ${
                   activeStyle
                     ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
                     : 'bg-white dark:bg-[#2e2e2e] border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-[#383838] hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md'
@@ -6392,14 +6392,14 @@ Let's start the self-listen session!`;
 
         const askFnBarCentered = activeTab === 'ask' && messages.length === 0;
         return (
-          <div className={`macos-function-bar ${!askFnBarCentered ? 'macos-function-bar-with-messages' : ''} rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'fius-games' || activeTab === 'fius-labs' || activeTab === 'imagine' || activeTab === 'nomad' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={askFnBarCentered ? {width: 'fit-content', position: 'fixed', top: isPill ? 'calc(50% - 48px)' : 'calc(50% - 68px)', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 38px)' : '50vw', transform: isPill ? 'translateX(calc(-50% - 14px))' : 'translateX(-50%)', zIndex: 20, marginBottom: '10px'} : {width: 'fit-content', marginLeft: 'auto', marginRight: 'auto', marginTop: isPill ? '43px' : '11px', marginBottom: '14px', transform: isPill ? 'translateX(-14px)' : undefined, position: 'relative', zIndex: 30}}>
+          <div className={`macos-function-bar ${!askFnBarCentered ? 'macos-function-bar-with-messages' : ''} rounded-3xl mx-3 sm:mx-4 mb-1 max-w-[50rem] mx-auto w-full !border-none !shadow-none ${activeTab === 'philosopher' || activeTab === 'blinga-games' || activeTab === 'blinga-labs' || activeTab === 'imagine' || activeTab === 'nomad' || functionBarStyle === 'message-bar' || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={askFnBarCentered ? {width: 'fit-content', position: 'fixed', top: isPill ? 'calc(50% - 48px)' : 'calc(50% - 68px)', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 38px)' : '50vw', transform: isPill ? 'translateX(calc(-50% - 14px))' : 'translateX(-50%)', zIndex: 20, marginBottom: '10px'} : {width: 'fit-content', marginLeft: 'auto', marginRight: 'auto', marginTop: isPill ? '43px' : '11px', marginBottom: '14px', transform: isPill ? 'translateX(-14px)' : undefined, position: 'relative', zIndex: 30}}>
             <div className={`flex flex-wrap justify-center p-3 bg-transparent !border-none ${isPill ? 'gap-2' : 'gap-4'}`}>
               {renderFunctionBtn(
                 <img src={resolvedTheme === 'dark' ? '/fn-voice-gray.png' : '/fn-voice-black.png'} alt="Long Answer" className="btn-icon" style={{width:'26px',height:'26px'}} />,
                 'Long Answer',
-                adjustFius,
-                fiusIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
-                'button-fius-integration'
+                adjustBlinga,
+                blingaIntegrationMode ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-none' : undefined,
+                'button-blinga-integration'
               )}
               {renderFunctionBtn(
                 <img src={resolvedTheme === 'dark' ? '/fn-settings-gray.png' : '/fn-settings-black.png'} alt="Voice Mode" className="btn-icon" style={{width:'26px',height:'26px'}} />,
@@ -6415,12 +6415,12 @@ Let's start the self-listen session!`;
                 undefined,
                 'button-settings'
               )}
-              {selectedModel === 'fius-education' && renderFunctionBtn(
+              {selectedModel === 'blinga-education' && renderFunctionBtn(
                 <GraduationCap className="h-5 w-5" />,
                 'Education',
                 () => setIsEducationModalOpen(true),
                 undefined,
-                'button-fius-examination'
+                'button-blinga-examination'
               )}
             </div>
           </div>
@@ -6439,7 +6439,7 @@ Let's start the self-listen session!`;
                   transform: `scale(${1 + Math.sin(Date.now() / 200) * 0.1})`,
                 }}
               >
-                <FiusLogo size="lg" className="text-white" />
+                <BlingaLogo size="lg" className="text-white" />
               </div>
               {isListening && (
                 <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full border-4 border-blue-500 animate-pulse"></div>
@@ -6518,7 +6518,7 @@ Let's start the self-listen session!`;
             </div>
           )}
 
-          <div className={`relative bg-white dark:bg-[#383838] transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
+          <div className={`relative bg-white dark:bg-[#383838] transition-all duration-300 crisp-outline !border-none !outline-none ${messageBarStyle === 'compact' ? 'rounded-full' : 'rounded-[1.5rem]'}`}>
             {messageBarStyle === 'compact' ? (
               <div className="flex items-center px-2 py-2 gap-1">
                 {/* Attachment button */}
@@ -6582,7 +6582,7 @@ Let's start the self-listen session!`;
                       </DropdownMenuTrigger>
                       <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto">
                         <div className="relative flex flex-row items-center gap-0">
-                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white "
                             style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                           {ORIENTS.map(o => {
                             const isAct = imagineOrientation === o.id;
@@ -6662,7 +6662,7 @@ Let's start the self-listen session!`;
                           </DropdownMenuTrigger>
                           <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto">
                             <div className="relative flex flex-row items-center gap-0">
-                              <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                              <div className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white "
                                 style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }} />
                               {ORIENTS.map(o => {
                                 const isAct = imagineOrientation === o.id;
@@ -6751,7 +6751,7 @@ Let's start the self-listen session!`;
 
 
       {/* New Unified Message Bar */}
-      <div data-message-bar className={`max-w-[48rem] w-full px-4 ${((activeTab === 'ask' && messages.length > 0) || (activeTab === 'nomad' && Object.values(nomadMessages).some(msgs => msgs.length > 0)) || (activeTab === 'philosopher' && philosopherMessages.length > 0)) ? 'message-composer-with-messages' : ''} ${(activeTab === 'ask' && messages.length === 0) || (activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0)) ? 'absolute lg:fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : (activeTab === 'philosopher' && selectedPersonality && philosopherMessages.length === 0) ? 'absolute lg:fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : 'flex-shrink-0 mx-auto mb-4 sm:mb-8'} ${activeTab === 'fius-games' || activeTab === 'fius-labs' || activeTab === 'imagine' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={
+      <div data-message-bar className={`max-w-[48rem] w-full px-4 ${((activeTab === 'ask' && messages.length > 0) || (activeTab === 'nomad' && Object.values(nomadMessages).some(msgs => msgs.length > 0)) || (activeTab === 'philosopher' && philosopherMessages.length > 0)) ? 'message-composer-with-messages' : ''} ${(activeTab === 'ask' && messages.length === 0) || (activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0)) ? 'absolute lg:fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : (activeTab === 'philosopher' && selectedPersonality && philosopherMessages.length === 0) ? 'absolute lg:fixed left-1/2 -translate-x-1/2 -translate-y-1/2 z-20' : 'flex-shrink-0 mx-auto mb-4 sm:mb-8'} ${activeTab === 'blinga-games' || activeTab === 'blinga-labs' || activeTab === 'imagine' || (activeTab === 'philosopher' && !selectedPersonality) || isVoiceModeModalOpen || isVoiceModeOpen ? 'hidden' : ''}`} style={
         (activeTab === 'ask' && messages.length === 0)
           ? { top: 'calc(50% + 85px)', position: 'fixed', left: (isSidebarOpen && sidebarOpenMode === 'mini') ? 'calc(50vw + 53px)' : 'calc(50vw + 15px)', width: 'min(48rem, calc(100vw - 2rem))', maxWidth: '48rem' }
           : (activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0))
@@ -6763,7 +6763,7 @@ Let's start the self-listen session!`;
         {activeTab === 'nomad' && nomadMode === 'multi' && Object.values(nomadMessages).every(msgs => msgs.length === 0) && (
           <div className="flex flex-col items-center text-center mb-6">
             <h2 className="text-3xl font-bold mb-2 text-foreground" style={uiAccentColor ? { color: uiAccentColor } : {}}>
-              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Fius'}
+              {user?.displayName ? `Welcome back, ${user.displayName}!` : 'Welcome to Blinga'}
             </h2>
             {!(settingsToggles.hideFlyWithUs) && <p className="text-lg text-foreground" style={uiAccentColor ? { color: uiAccentColor } : {}}>Fly With Us!</p>}
           </div>
@@ -6862,7 +6862,7 @@ Let's start the self-listen session!`;
         )}
 
         <div
-          className={`relative bg-white dark:bg-[#383838] transition-all duration-300 ${(settingsToggles.glossyOutline ?? true) ? 'glossy-outline' : ''} !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}
+          className={`relative bg-white dark:bg-[#383838] transition-all duration-300 crisp-outline !border-none !outline-none ${messageBarStyle === 'compact' && attachedFiles.length === 0 ? 'rounded-full' : 'rounded-[1.5rem]'}`}
         >
           {messageBarStyle === 'compact' ? (
             /* ── Compact: single-row pill layout ── */
@@ -6919,11 +6919,11 @@ Let's start the self-listen session!`;
                 </DropdownMenu>
                 <TooltipContent>Tools</TooltipContent>
               </Tooltip>
-              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
+              {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'blinga-games' && (
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`} onClick={adjustFius}>
+                      <Button variant="ghost" size="icon" className={`w-8 h-8 rounded-full transition-all flex-shrink-0 ${blingaIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`} onClick={adjustBlinga}>
                         <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'18px',height:'18px'}} />
                       </Button>
                     </TooltipTrigger>
@@ -6994,7 +6994,7 @@ Let's start the self-listen session!`;
                     <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0">
                       <div className="relative flex flex-row items-center gap-0">
                         <div
-                          className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                          className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white "
                           style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }}
                         />
                         {ORIENTS.map(o => {
@@ -7019,7 +7019,7 @@ Let's start the self-listen session!`;
               {activeTab !== 'nomad' && activeTab !== 'imagine' && (
               <Select value={selectedModel} onValueChange={(value: AvailableModel) => {
                 if (isChatModelLocked(value)) {
-                  toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                  toast({ title: "Locked on Free plan", description: "Upgrade to Blinga Ultimate to unlock this model.", variant: "destructive" });
                   return;
                 }
                 setSelectedModel(value);
@@ -7042,7 +7042,7 @@ Let's start the self-listen session!`;
               )}
               {/* Enhance — slides in left of mic when user types */}
               {!(isTyping || isAnimatingResponse) && (
-                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 '}`}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -7091,7 +7091,7 @@ Let's start the self-listen session!`;
                   <TooltipContent>Stop response</TooltipContent>
                 </Tooltip>
               ) : (
-                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+                <div className={`overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${inputValue.trim() || attachedImages.length || attachedFiles.length ? 'max-w-[36px] opacity-100' : 'max-w-0 opacity-0 '}`}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button onClick={handleSendMessage} disabled={!inputValue.trim() && !attachedImages.length && !attachedFiles.length} className="w-8 h-8 composer-send-button hover:opacity-90 text-white rounded-full flex items-center justify-center transition-all flex-shrink-0" data-testid="button-send-message">
@@ -7113,7 +7113,7 @@ Let's start the self-listen session!`;
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onPaste={handleComposePaste}
-                  placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : activeTab === 'fius-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
+                  placeholder={activeTab === 'imagine' ? 'Just Prompt and image is in your hands!' : activeTab === 'philosopher' && selectedPersonality ? `Talk with ${selectedPersonality.name}...` : activeTab === 'blinga-games' ? 'Type your answer or move...' : 'What do you want to know ?'}
                   className="w-full !min-h-[40px] max-h-[140px] bg-transparent dark:text-white text-black placeholder-zinc-500 resize-none focus:outline-none border-none shadow-none ring-0 focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 text-[21px] sm:text-[22px] leading-relaxed p-2 !rounded-none overflow-y-auto"
                   data-testid="input-message"
                 />
@@ -7156,7 +7156,7 @@ Let's start the self-listen session!`;
                         <DropdownMenuContent side="top" align="start" className="bg-white dark:bg-[#383838] border-none text-black dark:text-white rounded-2xl shadow-2xl p-1.5 w-auto data-[state=closed]:animate-none data-[state=closed]:duration-0">
                           <div className="relative flex flex-row items-center gap-0">
                             <div
-                              className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white pointer-events-none"
+                              className="absolute top-0 bottom-0 rounded-xl bg-zinc-200 dark:bg-white "
                               style={{ width: `${100 / ORIENTS.length}%`, transform: `translateX(${activeIdx * 100}%)`, transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1)' }}
                             />
                             {ORIENTS.map(o => {
@@ -7181,7 +7181,7 @@ Let's start the self-listen session!`;
                   {activeTab !== 'nomad' && activeTab !== 'imagine' && (
                   <Select value={selectedModel} onValueChange={(value: AvailableModel) => {
                     if (isChatModelLocked(value)) {
-                      toast({ title: "Locked on Free plan", description: "Upgrade to Fius Ultimate to unlock this model.", variant: "destructive" });
+                      toast({ title: "Locked on Free plan", description: "Upgrade to Blinga Ultimate to unlock this model.", variant: "destructive" });
                       return;
                     }
                     setSelectedModel(value);
@@ -7211,15 +7211,15 @@ Let's start the self-listen session!`;
 
                 <div className="flex items-center space-x-1.5 sm:space-x-2">
                   {/* Function bar buttons in message bar mode */}
-                  {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'fius-games' && (
+                  {functionBarStyle === 'message-bar' && activeTab !== 'philosopher' && activeTab !== 'blinga-games' && (
                     <>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`w-9 h-9 rounded-full transition-all ${fiusIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
-                            onClick={adjustFius}
+                            className={`w-9 h-9 rounded-full transition-all crisp-outline ${blingaIntegrationMode ? 'text-blue-400 bg-blue-500/10' : 'text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10'}`}
+                            onClick={adjustBlinga}
                           >
                             <img src="/integration-icon.png" alt="Integration" className="btn-icon" style={{width:'23px',height:'23px'}} />
                           </Button>
@@ -7231,7 +7231,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-zinc-800 dark:text-white/85 hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            className="w-9 h-9 text-zinc-800 dark:text-white/85 hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all crisp-outline"
                             onClick={openVoiceMode}
                           >
                             <AudioLines className="w-4 h-4" />
@@ -7244,7 +7244,7 @@ Let's start the self-listen session!`;
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                            className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all crisp-outline"
                             onClick={() => setIsCustomizeModalOpen(true)}
                           >
                             <img src="/settings-icon.png" alt="Settings" className="btn-icon" style={{width:'21px',height:'21px'}} />
@@ -7252,13 +7252,13 @@ Let's start the self-listen session!`;
                         </TooltipTrigger>
                         <TooltipContent>Settings</TooltipContent>
                       </Tooltip>
-                      {selectedModel === 'fius-education' && (
+                      {selectedModel === 'blinga-education' && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all"
+                              className="w-9 h-9 text-zinc-400 hover:text-white hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all crisp-outline"
                               onClick={() => setIsEducationModalOpen(true)}
                             >
                               <GraduationCap className="w-4 h-4" />
@@ -7415,7 +7415,7 @@ Let's start the self-listen session!`;
               { label: 'Create Visuals', light: '/quick-visuals-light.png', dark: '/quick-visuals-dark.png', action: () => changeTab('imagine') },
               { label: 'Web Search',     light: '/quick-websearch-light.png', dark: '/quick-websearch-dark.png', action: () => setInputValue('Search the web for: ') },
               { label: 'Create Files',   light: '/quick-files-light.png', dark: '/quick-files-dark.png', action: () => setDocumentMode(true) },
-              { label: 'Play Games',     light: '/quick-games-light.png', dark: '/quick-games-dark.png', action: () => changeTab('fius-games') },
+              { label: 'Play Games',     light: '/quick-games-light.png', dark: '/quick-games-dark.png', action: () => changeTab('blinga-games') },
             ] as const).map(({ label, light, dark, action }) => (
               <button key={label} onClick={action}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition-all hover:scale-[1.05] hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-zinc-100 dark:bg-[#2e2e2e] text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-600/30 hover:bg-zinc-200 dark:hover:bg-[#3a3a3a]">
@@ -7445,7 +7445,7 @@ Let's start the self-listen session!`;
               setTemplateUploadPhoto(photo);
               setRecentUploads(prev => {
                 const updated = [photo, ...prev.filter(p => p.preview !== dataUrl)].slice(0, 6);
-                try { localStorage.setItem('fius_recent_template_uploads', JSON.stringify(updated)); } catch {}
+                try { localStorage.setItem('blinga_recent_template_uploads', JSON.stringify(updated)); } catch {}
                 return updated;
               });
             };
@@ -7691,7 +7691,7 @@ Let's start the self-listen session!`;
                           setTemplateUploadPhoto(photo);
                           setRecentUploads(prev => {
                             const updated = [photo, ...prev.filter(p => p.preview !== dataUrl)].slice(0, 6);
-                            try { localStorage.setItem('fius_recent_template_uploads', JSON.stringify(updated)); } catch {}
+                            try { localStorage.setItem('blinga_recent_template_uploads', JSON.stringify(updated)); } catch {}
                             return updated;
                           });
                         };
@@ -7885,7 +7885,7 @@ Let's start the self-listen session!`;
           enabledVariants={[
             "nomad",
             ...(settingsToggles.philosopherNotification ?? true ? ["philosopher"] : []),
-            ...(settingsToggles.fiusGamesNotification ?? true ? ["fius-games"] : []),
+            ...(settingsToggles.blingaGamesNotification ?? true ? ["blinga-games"] : []),
           ]}
           onClose={handleNomadNotifClose}
         />
@@ -8175,3 +8175,6 @@ Let's start the self-listen session!`;
     </TooltipProvider>
   );
 }
+
+
+

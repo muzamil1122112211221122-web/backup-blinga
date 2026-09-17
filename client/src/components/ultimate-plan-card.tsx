@@ -7,7 +7,7 @@ import { useTheme } from "@/components/theme-provider";
 // in-app Settings upgrade card, so both always show the exact same plan.
 export const PLAN_FEATURES = [
   "10+ Frontier AI Models — GPT-5, Claude 4, Gemini 3, Grok 4 & More",
-  "Fius Pro & Lite Proprietary Models",
+  "Blinga Pro & Lite Proprietary Models",
   "Nomad Mode — Real-Time Multi-AI Side-by-Side Comparisons",
   "3,000,000 Tokens per 30 Days (Premium Models Included)",
   "Imagine Studio — 250 AI Images per Period",
@@ -15,8 +15,8 @@ export const PLAN_FEATURES = [
   "Full Voice-to-Voice Interaction Mode",
   "Professional AI Image Creation & Editing Suite",
   "Priority Response Speeds Across All Models",
-  "Exclusive Extras — Fius Minds, Games & Hidden Modes",
-  "Fius Ultimatum — Automatically Picks the Best AI for Every Request",
+  "Exclusive Extras — Blinga Minds, Games & Hidden Modes",
+  "Blinga Ultimatum — Automatically Picks the Best AI for Every Request",
   "Multiple Projects with Custom Instructions & Timelines",
   "Broader File Support — PDF, DOC, PPTX, CSV, TXT, MD & Images",
   "Personal AI Role Per Chat — Set a Custom Assistant Persona for Every Conversation",
@@ -41,7 +41,7 @@ function UsageBar({ used, limit, dark }: { used: number; limit: number; dark: bo
 }
 
 /**
- * The exact Fius Ultimate plan card design used on the landing page pricing
+ * The exact Blinga Ultimate plan card design used on the landing page pricing
  * section. Reused as-is (same copy, same visuals) anywhere else in the app
  * that offers the upgrade — e.g. the Settings "Upgrade" flow — so users see
  * one consistent plan card everywhere.
@@ -55,7 +55,7 @@ function UsageBar({ used, limit, dark }: { used: number; limit: number; dark: bo
  */
 export function UltimatePlanCard({
   onUpgrade,
-  buttonLabel = "Upgrade to Fius Ultimate",
+  buttonLabel = "Upgrade to Blinga Ultimate",
   ctaBusy = false,
   activated = false,
   usage,
@@ -101,7 +101,7 @@ export function UltimatePlanCard({
             <div className="flex items-center justify-between gap-6 mb-5">
               <p className="text-xs font-bold uppercase tracking-widest"
                 style={{ background: "linear-gradient(90deg, #888 0%, #fff 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Fius Ultimate
+                Blinga Ultimate
               </p>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/20 text-white/70"
                 style={{ background: "rgba(255,255,255,0.06)" }}>{activated ? "ACTIVATED" : "BEST VALUE"}</span>
@@ -181,7 +181,7 @@ export function UltimatePlanCard({
 
         <div className="relative z-10">
           <div className="flex items-center justify-between gap-6 mb-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Fius Ultimate</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Blinga Ultimate</p>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-zinc-200 text-zinc-500 bg-zinc-50">
               {activated ? "ACTIVATED" : "BEST VALUE"}
             </span>

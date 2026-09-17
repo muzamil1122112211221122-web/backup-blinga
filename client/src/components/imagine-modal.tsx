@@ -296,7 +296,7 @@ function ImageWithLoader({ src, alt, className, style }: { src: string; alt: str
   );
 }
 
-const IMAGINE_STORAGE_KEY = 'fius_my_images';
+const IMAGINE_STORAGE_KEY = 'blinga_my_images';
 
 function loadPersistedImages(): GenImage[] {
   try {
@@ -736,7 +736,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
     reader.readAsDataURL(file);
   }
 
-  function handleDownload(url: string, label = 'fius-imagine') {
+  function handleDownload(url: string, label = 'blinga-imagine') {
     const a = document.createElement('a');
     a.href = url; a.download = `${label}.png`; a.target = '_blank'; a.click();
   }
@@ -807,7 +807,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 )}
                 <ImageWithLoader src={latestUrl} alt="preview" className="w-full h-full object-cover" />
               </div>
-              <button onClick={() => handleDownload(latestUrl, 'fius-edited')}
+              <button onClick={() => handleDownload(latestUrl, 'blinga-edited')}
                 className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
                 style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                 <Download size={13} /> Download
@@ -823,7 +823,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                       <ImageWithLoader src={url} alt={`v${i + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-2">
                         <span className="text-white text-xs font-semibold">v{i + 1}</span>
-                        <button onClick={(e) => { e.stopPropagation(); handleDownload(url, `fius-v${i + 1}`); }}
+                        <button onClick={(e) => { e.stopPropagation(); handleDownload(url, `blinga-v${i + 1}`); }}
                           className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/40 flex items-center justify-center transition-all">
                           <Download size={11} className="text-white" />
                         </button>
@@ -911,7 +911,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
           <img src={lightboxImg.url} alt="Full view" className="max-w-[90vw] max-h-[85vh] object-contain" />
           <div className="absolute top-3 right-3 flex gap-2">
             <button
-              onClick={() => handleDownload(lightboxImg.url, 'fius-imagine')}
+              onClick={() => handleDownload(lightboxImg.url, 'blinga-imagine')}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur hover:bg-black/80 transition"
             >
               <Download size={15} />
@@ -978,7 +978,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/85 shadow-sm ring-1 ring-black/[0.06] backdrop-blur">
                   <Sparkles size={15} className="text-amber-400" />
                 </div>
-                <span>Fius Studio</span>
+                <span>Blinga Studio</span>
               </div>
               <button onClick={onClose} aria-label="Close Image Studio"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-neutral-500 shadow-sm ring-1 ring-black/[0.07] transition hover:bg-white hover:text-neutral-900 active:scale-95">
@@ -989,7 +989,7 @@ export function ImagineModal({ isOpen, onClose }: ImagineModalProps) {
             {/* ── Hero heading ── */}
             <div className="mx-auto flex w-full max-w-[640px] flex-col items-center pt-[clamp(112px,18vw,190px)] sm:pt-[clamp(126px,17vw,182px)]">
               <h2 className="text-center tracking-[-0.05em] text-neutral-900" style={{ fontSize: 'clamp(28px,5vw,44px)', lineHeight: 1.1, fontWeight: 1000, WebkitTextStroke: '0.6px currentColor' }}>
-                <span style={{ fontWeight: 1000 }}>Fius Labs</span>{' '}
+                <span style={{ fontWeight: 1000 }}>Blinga Labs</span>{' '}
                 <span style={{ fontWeight: 1000 }}>Imagine Studio</span>
               </h2>
               <p className="mt-2 text-center font-medium text-neutral-500" style={{ fontSize: 'clamp(15px,1.8vw,18px)' }}>
